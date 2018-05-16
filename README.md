@@ -1,5 +1,5 @@
 # Recorder用于html5录音
-支持大部分已实现`getUserMedia`的浏览器，包括微信
+支持大部分已实现`getUserMedia`的浏览器，包括微信，演示地址：[](https://xiangyuecn.github.io/Recorder/)
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）
 
@@ -66,6 +66,7 @@ set={
 结束录音并返回录音数据`blob对象`，拿到blob对象就可以为所欲为了，不限于立即播放、上传
 `success(blob,duration)`：`blob`：录音数据audio/mp3|wav格式，`duration`：录音时长，单位毫秒
 `fail(errMsg)`：录音出错回调
+
 提示：stop时会进行音频编码，音频编码可能会很慢，10几秒录音花费2秒左右算是正常，编码并未使用Worker方案(文件多)，内部采取的是分段编码+setTimeout来处理，界面卡顿不明显。
 
 ### Recorder.IsOpen()
