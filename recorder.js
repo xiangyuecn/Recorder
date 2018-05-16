@@ -87,7 +87,7 @@ RecorderFn.prototype={
 			Recorder.Stream=0;
 			call();
 		};
-		if(!Recorder.IsOpen()){
+		if(!Recorder.IsOpen()||!Recorder.Stream.stop){//新版本无需关闭？
 			fn();
 		}else{
 			Recorder.Stream.onended=fn;

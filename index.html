@@ -93,7 +93,7 @@ function recstop(){
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,rec:rec,time:time};
-			reclog("已录制:编码"+(Date.now()-t1)+"ms "+rec.set.bitRate+"kbps "+blob.size+"b "+time+'ms <div class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</div>');
+			reclog("已录制:编码"+(Date.now()-t1)+"ms "+rec.set.bitRate+"kbps "+blob.size+"b "+time+'ms <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
 		},function(s){
 			reclog("失败："+s);
 		});
