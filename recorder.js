@@ -90,30 +90,16 @@ RecorderFn.prototype={
 		var This=this;
 		This._stop();
 		
-		var fn=function(){
-			Recorder.Stream=0;
-			call();
-		};
-		
 		var stream=Recorder.Stream;
 		if(stream){
-			var tracks=Recorder.Stream.getTracks();
-			if(tracks.length>0){
-				var t0=tracks[0];
-				if(t0.readyState=="live"){
-					t0.onended=fn;
-					t0=0;
-				};
-				for(var i=0;i<tracks.length;i++){
-					tracks[i].stop();
-				};
-				if(!t0){
-					return;
-				};
+			var tracks=stream.getTracks();
+			for(var i=0;i<tracks.length;i++){
+				tracks[i].stop();
 			};
 		};
 		
-		fn();
+		Recorder.Stream=0;
+		call();
 	}
 	
 	
