@@ -21,7 +21,14 @@ function Recorder(set){
 	return new RecorderFn(set);
 };
 Recorder.IsOpen=function(){
-	return Recorder.Stream&&!Recorder.Stream.ended;
+	var stream=Recorder.Stream;
+	if(stream){
+		var tracks=stream.getTracks();
+		if(tracks.length>0){
+			return tracks[0].readyState=="live";
+		};
+	};
+	return false;
 };
 function RecorderFn(set){
 	this.set=$.extend({
@@ -87,12 +94,26 @@ RecorderFn.prototype={
 			Recorder.Stream=0;
 			call();
 		};
-		if(!Recorder.IsOpen()||!Recorder.Stream.stop){//新版本无需关闭？
-			fn();
-		}else{
-			Recorder.Stream.onended=fn;
-			Recorder.Stream.stop();
+		
+		var stream=Recorder.Stream;
+		if(stream){
+			var tracks=Recorder.Stream.getTracks();
+			if(tracks.length>0){
+				var t0=tracks[0];
+				if(t0.readyState=="live"){
+					t0.onended=fn;
+					t0=0;
+				};
+				for(var i=0;i<tracks.length;i++){
+					tracks[i].stop();
+				};
+				if(!t0){
+					return;
+				};
+			};
 		};
+		
+		fn();
 	}
 	
 	
