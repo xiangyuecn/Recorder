@@ -1,5 +1,5 @@
 # Recorder用于html5录音
-支持大部分已实现`getUserMedia`的浏览器，包括微信，演示地址：[https://xiangyuecn.github.io/Recorder/]()
+支持大部分已实现`getUserMedia`的浏览器，包括微信，演示地址：https://xiangyuecn.github.io/Recorder/
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）
 
