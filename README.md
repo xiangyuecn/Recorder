@@ -1,11 +1,14 @@
 # Recorder用于html5录音
-支持大部分已实现`getUserMedia`的浏览器，包括微信，演示地址：[](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
+支持大部分已实现`getUserMedia`的浏览器，包括微信，演示地址：[https://xiangyuecn.github.io/Recorder/]()
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）
 
 mp3默认16kbps的比特率，大概2kb每秒，如果使用8kbps可达到1kb每秒，不过音质很渣，没有amr格式的可比性。
 
 ~~已内置lamejs依赖用于mp3编码，剥离后核心代码不足300行~~
+
+# 已知问题
+[mozilla](https://developer.mozilla.org/zh-CN/docs/Web/API/MediaDevices/getUserMedia) 和 [caniuse](https://caniuse.com/#search=getUserMedia) 注明的IOS 11以上Safari是支持调用getUserMedia的，但有用户反馈苹果手机IOS11 Safari和微信都不能录音，演示页面内两个关键指标：获取getUserMedia都是返回false（没有苹果手机未能复现）。但经测试桌面版Safari能获取到getUserMedia。原因不明。
 
 # 快速使用
 在需要录音功能的页面引入js文件代码即可，*对于https的要求不做解释*
