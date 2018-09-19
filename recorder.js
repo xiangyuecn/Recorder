@@ -4,7 +4,7 @@
 */
 (function(window){
 //兼容环境
-window.RecorderLM="2018-09-19 10:27";
+window.RecorderLM="2018-09-19 10:50";
 var NOOP=function(){};
 var $={
 	extend:function(a,b){
@@ -136,7 +136,8 @@ RecorderFn.prototype={
 			var res=new Int16Array(size);
 			var power=0;
 			for(var j=0;j<size;j++){//floatTo16BitPCM 
-				var s=Math.max(-1,Math.min(1,o[j]*8));//PCM 音量直接放大8倍，失真还能接受
+				//var s=Math.max(-1,Math.min(1,o[j]*8));//PCM 音量直接放大8倍，失真还能接受
+				var s=Math.max(-1,Math.min(1,o[j]));
 				s=s<0?s*0x8000:s*0x7FFF;
 				res[j]=s;
 				power+=Math.abs(s);
