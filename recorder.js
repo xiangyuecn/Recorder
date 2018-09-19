@@ -55,10 +55,11 @@ RecorderFn.prototype={
 			return;
 		};
 		var notSupport="此浏览器不支持录音";
-		if(!window.AudioContext){
-			window.AudioContext=window.webkitAudioContext;
+		var AC=window.AudioContext;
+		if(!AC){
+			AC=window.webkitAudioContext;
 		};
-		if(!window.AudioContext){
+		if(!AC){
 			False(notSupport);
 			return;
 		};
@@ -72,7 +73,7 @@ RecorderFn.prototype={
 			return;
 		};
 		
-		Recorder.Ctx=Recorder.Ctx||new AudioContext();//不能反复构造，number of hardware contexts reached maximum (6)
+		Recorder.Ctx=Recorder.Ctx||new AC();//不能反复构造，number of hardware contexts reached maximum (6)
 		var f1=function(stream){
 			Recorder.Stream=stream;
 			True();
