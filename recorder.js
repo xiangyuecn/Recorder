@@ -4,7 +4,7 @@
 */
 (function(window){
 //兼容环境
-var RecorderLM="2018-09-19 10:27";
+window.RecorderLM="2018-09-19 10:27";
 var NOOP=function(){};
 var $={
 	extend:function(a,b){
