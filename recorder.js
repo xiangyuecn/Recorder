@@ -54,7 +54,10 @@ RecorderFn.prototype={
 			return;
 		};
 		var notSupport="此浏览器不支持录音";
-		if(!window.AudioContext){//kill webkitAudioContext 无需支持
+		if(!window.AudioContext){
+			window.AudioContext=window.webkitAudioContext;
+		};
+		if(!window.AudioContext){
 			False(notSupport);
 			return;
 		};
