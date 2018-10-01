@@ -17,7 +17,7 @@ body{
 	word-wrap: break-word;
 }
 </style>
-<script src="https://cdn.bootcss.com/jquery/1.9.1/jquery.min.js"></script>
+<script src="https://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
 
 <script>
 //兼容环境
@@ -66,7 +66,7 @@ Recorder Last Modified:{fn:RecorderLM}
 <script>
 var rec
 function reclog(s){
-	$(".reclog").prepend('<div>['+Date.now()+']'+s+'</div>');
+	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
 };
 function recopen(){
 	var bit=+$(".bit").val();
@@ -100,7 +100,7 @@ function recstop(){
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,rec:rec,time:time};
-			reclog("已录制:编码"+(Date.now()-t1)+"ms "+rec.set.bitRate+"kbps "+blob.size+"b "+time+'ms <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
+			reclog("已录制:编码耗时"+(Date.now()-t1)+"ms 比特率"+rec.set.bitRate+"kbps 文件大小"+blob.size+"b 音频时长"+time+'ms <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
 		},function(s){
 			reclog("失败："+s);
 		});
