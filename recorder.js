@@ -127,7 +127,7 @@ RecorderFn.prototype={
 		
 		var onInt;
 		process.onaudioprocess=function(e){
-			if(!This.state){
+			if(This.state!=1){
 				return;
 			};
 			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
@@ -170,6 +170,17 @@ RecorderFn.prototype={
 			This.media.disconnect();
 			This.process.disconnect();
 		};
+	}
+	/*暂停录音*/
+	,pause:function(_resume){
+		var This=this;
+		if(This.state){
+			This.state=_resume||2;
+		};
+	}
+	/*恢复录音*/
+	,resume:function(){
+		this.pause(1);
 	}
 	/*
 	结束录音并返回录音数据blob对象

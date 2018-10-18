@@ -29,7 +29,7 @@ RandomKey.idx=0;
 </script>
 
 <div>
-	比特率:<input type="text" class="bit" value="16">
+	比特率:<input type="text" class="bit" value="16">kbps
 	<div>
 		<button class="Btn" onclick="recopen()">打开录音</button>
 		<button class="Btn" onclick="recclose()">关闭录音</button>
@@ -37,6 +37,9 @@ RandomKey.idx=0;
 	<div>
 		<button class="Btn" onclick="recstart()">录制</button>
 		<button class="Btn" onclick="recstop()">停止</button>
+		
+		<button class="Btn" onclick="recpause()" style="margin-left:60px">暂停</button>
+		<button class="Btn" onclick="recresume()">继续</button>
 	</div>
 	<div class="recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
@@ -91,6 +94,18 @@ function recstart(){
 	if(rec){
 		rec.start();
 		reclog("录制中...");
+	};
+};
+function recpause(){
+	if(rec){
+		rec.pause();
+		reclog("已暂停");
+	};
+};
+function recresume(){
+	if(rec){
+		rec.resume();
+		reclog("继续录音中...");
 	};
 };
 var recblob={};

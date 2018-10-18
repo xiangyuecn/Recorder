@@ -55,24 +55,30 @@ set={
 }
 ```
 
-##### rec.open(success,fail)
+### rec.open(success,fail)
 请求打开录音资源，如果用户拒绝麦克风权限将会调用`fail`，打开后需要调用`close`。
 注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音。
 `success`=fn();
 `fail`=fn(errMsg);
 
-##### rec.close(success)
+### rec.close(success)
 关闭释放录音资源，释放完成后会调用`success()`回调
 
-##### rec.start()
+### rec.start()
 开始录音，需先调用`open`；如果不支持、错误，不会有任何提示，因为stop时自然能得到错误。
 
-##### rec.stop(success,fail)
+### rec.stop(success,fail)
 结束录音并返回录音数据`blob对象`，拿到blob对象就可以为所欲为了，不限于立即播放、上传
 `success(blob,duration)`：`blob`：录音数据audio/mp3|wav格式，`duration`：录音时长，单位毫秒
 `fail(errMsg)`：录音出错回调
 
 提示：stop时会进行音频编码，音频编码可能会很慢，10几秒录音花费2秒左右算是正常，编码并未使用Worker方案(文件多)，内部采取的是分段编码+setTimeout来处理，界面卡顿不明显。
+
+### rec.pause()
+暂停录音。
+
+### rec.resume()
+恢复继续录音。
 
 ### Recorder.IsOpen()
 由于Recorder持有的录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了录音功能。
@@ -88,3 +94,19 @@ recorder.js用Uglify压缩一下剩余156kb，不算大
 
 # 兼容性
 对于支持录音的浏览器能够正常录音并返回录音数据；对于不支持的浏览器，引入此js和执行相关方法都不会产生异常，并且进入相关的fail回调。一般在open的时候就能检测到是否支持或者被用户拒绝，可在用户开始录音之前提示浏览器不支持录音或授权。
+
+# 其他音频格式支持办法
+``` javascript
+//直接在源码中增加代码，比如增加ogg格式支持 (可参看内置的mp3实现)
+
+RecorderFn.prototype.ogg=function(pcmData,successCall){
+	//通过ogg编码器把pcm数据转成ogg格式数据，通过this.set拿到传入的配置数据
+	... pcmData->oggData
+	
+	//返回数据
+	successCall(new Blob(oggData,{type:"audio/ogg"}));
+}
+
+//调用
+Recorder({type:"ogg"})
+```
