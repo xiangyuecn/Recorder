@@ -16,11 +16,16 @@
 body{
 	word-wrap: break-word;
 }
+.pd{
+	padding:0 0 6px 0;
+}
 </style>
 <script src="https://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
 
 <script>
 //兼容环境
+var PageLM="2018-11-29 11:42:35";
+
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -29,19 +34,26 @@ RandomKey.idx=0;
 </script>
 
 <div>
-	比特率:<input type="text" class="bit" value="16">kbps
-	<div>
+	<div class="pd">
+		类型:
+		<label><input type="radio" name="type" value="mp3" checked>MP3</label>
+		<label><input type="radio" name="type" value="wav">WAV</label>
+	</div>
+	<div class="pd">
+		比特率:<input type="text" class="bit" value="16">kbps
+	</div>
+	<div class="pd">
 		<button class="Btn" onclick="recopen()">打开录音</button>
 		<button class="Btn" onclick="recclose()">关闭录音</button>
 	</div>
-	<div>
+	<div class="pd">
 		<button class="Btn" onclick="recstart()">录制</button>
 		<button class="Btn" onclick="recstop()">停止</button>
 		
 		<button class="Btn" onclick="recpause()" style="margin-left:60px">暂停</button>
 		<button class="Btn" onclick="recresume()">继续</button>
 	</div>
-	<div class="recpower">
+	<div class="pd recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
 			<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
 			<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
@@ -63,7 +75,11 @@ navigator.getUserMedia:{fn:!!navigator.getUserMedia}
 navigator.webkitGetUserMedia:{fn:!!navigator.webkitGetUserMedia}
 
 UA:{fn:navigator.userAgent}
-Recorder Last Modified:{fn:RecorderLM}
+
+Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
+本页面修改时间（有可能修改了忘改）：{fn:PageLM}
+
+注：如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有可以反馈一下。
 </pre>
 </script>
 <script>
@@ -72,8 +88,9 @@ function reclog(s){
 	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
 };
 function recopen(){
+	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
-	rec=Recorder({bitRate:bit,onProcess:function(a,level,time){
+	rec=Recorder({type:type,bitRate:bit,onProcess:function(a,level,time){
 		$(".recpowerx").css("width",level+"%");
 		$(".recpowert").html(time+"/"+level);
 	}});
@@ -115,7 +132,7 @@ function recstop(){
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,rec:rec,time:time};
-			reclog("已录制:编码耗时"+(Date.now()-t1)+"ms 比特率"+rec.set.bitRate+"kbps 文件大小"+blob.size+"b 音频时长"+time+'ms <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
+			reclog("已录制:编码耗时"+(Date.now()-t1)+"ms 比特率"+rec.set.bitRate+"kbps 文件大小"+blob.size+"b "+rec.set.type+"音频时长"+time+'ms <button class="Btn BtnMinMin" onclick="recdown(\''+id+'\')">下载</button> <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
 		},function(s){
 			reclog("失败："+s);
 		});
@@ -130,7 +147,16 @@ function recplay(key){
 		};
 		audio.src=URL.createObjectURL(o.blob);
 		audio.play();
-		reclog("已播放"+o.blob.size+"b "+o.time+'ms '+o.rec.set.bitRate+'kbps');
+		reclog("已播放"+o.blob.size+"b "+o.time+'ms '+o.rec.set.type+' '+o.rec.set.bitRate+'kbps');
+	};
+};
+function recdown(key){
+	var o=recblob[key];
+	if(o){
+		var downA=document.createElement("A");
+		downA.href=URL.createObjectURL(o.blob);
+		downA.download="rec-"+o.time+"ms."+o.rec.set.type;
+		downA.click();
 	};
 };
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
