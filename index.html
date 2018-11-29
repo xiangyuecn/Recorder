@@ -95,7 +95,7 @@ function recopen(){
 		$(".recpowert").html(time+"/"+level);
 	}});
 	rec.open(function(){
-		reclog("已打开:"+bit+"kbps");
+		reclog("已打开:"+type+" "+bit+"kbps");
 	},function(e){
 		reclog("打开失败："+e);
 	});
