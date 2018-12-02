@@ -23,11 +23,10 @@ pre{
 	padding:0 0 6px 0;
 }
 </style>
-<script src="https://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
 
 <script>
 //兼容环境
-var PageLM="2018-11-29 11:42:35";
+var PageLM="2018-12-2 16:22:34";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -35,6 +34,7 @@ function RandomKey(){
 };
 RandomKey.idx=0;
 </script>
+<script src="https://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
 
 <div>
 	<div class="pd">
@@ -161,7 +161,7 @@ function recdown(key){
 	if(o){
 		var cls=RandomKey(16);
 		var name="rec-"+o.time+"ms."+o.rec.set.type;
-		reclog('<div class="'+cls+'> 如果没弹出下载点这个试试</div>');
+		reclog('<div class="'+cls+'"> 如果没弹出下载点这个试试</div>');
 		
 		var downA=document.createElement("A");
 		downA.innerHTML="下载 "+name;
