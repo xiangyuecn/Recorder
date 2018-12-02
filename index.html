@@ -159,9 +159,15 @@ function recplay(key){
 function recdown(key){
 	var o=recblob[key];
 	if(o){
+		var cls=RandomKey(16);
+		var name="rec-"+o.time+"ms."+o.rec.set.type;
+		reclog('<div class="'+cls+'> 如果没弹出下载点这个试试</div>');
+		
 		var downA=document.createElement("A");
+		downA.innerHTML="下载 "+name;
 		downA.href=URL.createObjectURL(o.blob);
-		downA.download="rec-"+o.time+"ms."+o.rec.set.type;
+		downA.download=name;
+		$("."+cls).prepend(downA);
 		downA.click();
 	};
 };
