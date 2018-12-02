@@ -161,7 +161,7 @@ function recdown(key){
 	if(o){
 		var cls=RandomKey(16);
 		var name="rec-"+o.time+"ms."+o.rec.set.type;
-		reclog('<span class="'+cls+'"> 如果没弹出下载点链接试试</span>');
+		reclog('<span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button class="Btn BtnMinMin" onclick="recdown64(\''+key+'\',\''+cls+'\')">生成Base64文本</button></span>');
 		
 		var downA=document.createElement("A");
 		downA.innerHTML="下载 "+name;
@@ -169,6 +169,17 @@ function recdown(key){
 		downA.download=name;
 		$("."+cls).prepend(downA);
 		downA.click();
+	};
+};
+function recdown64(key, cls){
+	var o=recblob[key];
+	
+	var reader = new FileReader();
+	reader.readAsDataURL(o.blob); 
+	reader.onloadend = function() {
+		var id=RandomKey(16);
+		$("."+cls).append('<textarea class="'+id+'"></textarea>');
+		$("."+id).val(reader.result);
 	};
 };
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
