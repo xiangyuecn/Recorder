@@ -46,24 +46,31 @@ RandomKey.idx=0;
 		<label><input type="radio" name="type" value="wav">WAV</label>
 	</div>
 	<div class="pd">
-		比特率:<input type="text" class="bit" value="16">kbps
+		比特率:<input type="text" class="bit" value="16">(kbps mp3) (wav取值8、16)
 	</div>
 	<div class="pd">
-		<button class="Btn" onclick="recopen()">打开录音</button>
-		<button class="Btn" onclick="recclose()">关闭录音</button>
+		采样率:<input type="text" class="sample" value="16000">wav专用，mp3无效
 	</div>
 	<div class="pd">
-		<button class="Btn" onclick="recstart()">录制</button>
-		<button class="Btn" onclick="recstop()">停止</button>
+		<button onclick="recopen()">打开录音</button>
+		<button onclick="recclose()">关闭录音</button>
+	</div>
+	<div class="pd">
+		<button onclick="recstart()">录制</button>
+		<button onclick="recstop()">停止</button>
 		
-		<button class="Btn" onclick="recpause()" style="margin-left:60px">暂停</button>
-		<button class="Btn" onclick="recresume()">继续</button>
+		<button onclick="recpause()" style="margin-left:60px">暂停</button>
+		<button onclick="recresume()">继续</button>
 	</div>
 	<div class="pd recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
 			<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
 			<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
 		</div>
+	</div>
+	<div class="pd">
+		<button onclick="recstop2()">批量编码</button>
+		<input type="text" class="bits" value="8 to 96 step 8">kbps，测试音质用的（wav填了也只有8、16）
 	</div>
 	<div class="reclog"></div>
 	<div class="recinfo"></div>
@@ -96,7 +103,12 @@ function reclog(s){
 function recopen(){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
-	rec=Recorder({type:type,bitRate:bit,onProcess:function(a,level,time){
+	var sample=+$(".sample").val();
+	rec=Recorder({
+		type:type
+		,bitRate:bit
+		,sampleRate:sample
+		,onProcess:function(a,level,time){
 		$(".recpowerx").css("width",level+"%");
 		$(".recpowert").html(time+"/"+level);
 	}});
@@ -132,17 +144,52 @@ function recresume(){
 	};
 };
 var recblob={};
-function recstop(){
+function recstop(call){
 	if(rec){
 		var t1=Date.now();
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
-			recblob[id]={blob:blob,rec:rec,time:time};
+			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
 			reclog("已录制:编码耗时"+(Date.now()-t1)+"ms 比特率"+rec.set.bitRate+"kbps 文件大小"+blob.size+"b "+rec.set.type+"音频时长"+time+'ms <button class="Btn BtnMinMin" onclick="recdown(\''+id+'\')">下载</button> <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
+			call&&call();
 		},function(s){
 			reclog("失败："+s);
+			call&&call();
 		});
 	};
+};
+function recstop2(){
+	if(!rec||!rec.buffer){
+		reclog("需先录个音");
+		return;
+	};
+	var bits=/(\d+)\s+to\s+(\d+)\s+step\s+(\d+)\s*/i.exec($(".bits").val());
+	if(!bits){
+		reclog("码率列表有误，需要? to ? step ?结构");
+		return;
+	};
+	var list=[];
+	for(var i=+bits[1];i<+bits[2]+1;i+=+bits[3]){
+		list.push(i);
+	};
+	if(rec.set.type=="wav"){
+		list=[8,16];
+	};
+	
+	var i=-1;
+	var bak=rec.set.bitRate;
+	var run=function(){
+		i++;
+		if(i>=list.length){
+			rec.set.bitRate=bak;
+			reclog("批量编码完成");
+			return;
+		};
+		rec.set.bitRate=list[i];
+		rec.state=1;
+		recstop(run);
+	};
+	run();
 };
 function recplay(key){
 	var o=recblob[key];
@@ -153,14 +200,14 @@ function recplay(key){
 		};
 		audio.src=URL.createObjectURL(o.blob);
 		audio.play();
-		reclog("已播放"+o.blob.size+"b "+o.time+'ms '+o.rec.set.type+' '+o.rec.set.bitRate+'kbps');
+		reclog("已播放"+o.blob.size+"b "+o.time+'ms '+o.set.type+' '+o.set.bitRate+'kbps');
 	};
 };
 function recdown(key){
 	var o=recblob[key];
 	if(o){
 		var cls=RandomKey(16);
-		var name="rec-"+o.time+"ms."+o.rec.set.type;
+		var name="rec-"+o.time+"ms."+o.set.type;
 		reclog('<span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button class="Btn BtnMinMin" onclick="recdown64(\''+key+'\',\''+cls+'\')">生成Base64文本</button></span>');
 		
 		var downA=document.createElement("A");
