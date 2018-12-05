@@ -16,7 +16,7 @@ var $={
 		return a;
 	}
 };
-//end兼容环境
+//end1 兼容环境 ****从以下开始copy源码*****
 
 function Recorder(set){
 	return new RecorderFn(set);
@@ -34,9 +34,9 @@ Recorder.IsOpen=function(){
 function RecorderFn(set){
 	this.set=$.extend({
 		type:"mp3" //输出类型：mp3,wav，wav输出文件尺寸超大不推荐使用，但mp3编码支持会导致js文件超大，如果不需支持mp3可以使js文件大幅减小
-		,bitRate:16 //比特率 wav:16或8位，MP3：8比特1k/s，16比特2k/s 比较划得来
+		,bitRate:16 //比特率 wav:16或8位，MP3：8kbps 1k/s，8kbps 2k/s 录音文件很小
 		
-		,sampleRate:16000 //采样率，wav专用；wav格式大小=sampleRate*时间；mp3此项无效，对文件大小无影响，直接使用源采样率
+		,sampleRate:16000 //采样率，wav格式大小=sampleRate*时间；mp3此项对低比特率有影响，高比特率几乎无影响。wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 					//采样率参考https://www.cnblogs.com/devin87/p/mp3-recorder.html
 		
 		,bufferSize:8192 //AudioContext缓冲大小，相对于ctx.sampleRate=48000/秒：
@@ -205,15 +205,31 @@ RecorderFn.prototype={
 			return;
 		};
 		
+		var sampleRate=set.sampleRate
+			,ctxSampleRate=Recorder.Ctx.sampleRate;
+		//采样 https://www.cnblogs.com/blqw/p/3782420.html
+		var step=ctxSampleRate/sampleRate;
+		if(step>1){//新采样高于录音采样不处理，省去了插值处理，直接抽样
+			size=Math.floor(size/step);
+		}else{
+			step=1;
+			sampleRate=ctxSampleRate;
+			set.sampleRate=sampleRate;
+		};
 		//准备数据
 		var res=new Int16Array(size);
-		var offset=0;
-		for (var i=0;i<This.buffer.length;i++) {
-			var o=This.buffer[i];
-			res.set(o,offset);
-			offset+=o.length;
-		}
-		var duration=Math.round(size/Recorder.Ctx.sampleRate*1000);
+		var last=0,idx=0;
+		for (var n=0,nl=This.buffer.length;n<nl;n++) {
+			var o=This.buffer[n];
+			var i=last,il=o.length;
+			while(i<il){
+				res[idx]=o[Math.round(i)];
+				idx++;
+				i+=step;//抽样
+			};
+			last=i-il;
+		};
+		var duration=Math.round(size/sampleRate*1000);
 		
 		setTimeout(function(){
 			var t1=Date.now();
@@ -225,27 +241,9 @@ RecorderFn.prototype={
 	}
 	,wav:function(res,call){
 		var This=this,set=This.set
-			,size=This.recSize
+			,size=res.length
 			,sampleRate=set.sampleRate
-			,ctxSampleRate=Recorder.Ctx.sampleRate
 			,bitRate=set.bitRate==8?8:16;
-		
-		//采样 https://www.cnblogs.com/blqw/p/3782420.html
-		var compression=Math.round(ctxSampleRate/sampleRate);
-		if(compression>1){//新采样高于录音采样不处理，省去了插值处理，直接抽样
-			size=Math.floor(size/compression);
-			var compRes=new Int16Array(size);
-			var i=0,j=0;
-			while(i<size){
-				compRes[i]=res[j];
-				j+=compression;
-				i++;
-			};
-			res=compRes;
-		}else{
-			sampleRate=ctxSampleRate;
-		};
-		
 		
 		//编码数据 https://github.com/mattdiamond/Recorderjs https://www.cnblogs.com/blqw/p/3782420.html https://www.cnblogs.com/xiaoqi/p/6993912.html
 		var dataLength=size*(bitRate/8);
@@ -313,7 +311,7 @@ RecorderFn.prototype={
 		var This=this,set=This.set,size=res.length;
 		//https://github.com/wangpengfei15975/recorder.js
 		//https://github.com/zhuker/lamejs bug:采样率必须和源一致，不然8k时没有声音，有问题fix：https://github.com/zhuker/lamejs/pull/11
-		var mp3=new lamejs.Mp3Encoder(1,Recorder.Ctx.sampleRate,set.bitRate);
+		var mp3=new lamejs.Mp3Encoder(1,set.sampleRate,set.bitRate);
 		
 		var blockSize=5760;
 		var data=[];
@@ -342,13 +340,8 @@ RecorderFn.prototype={
 
 window.Recorder=Recorder;
 
-
-
-
-
-
-
-
+//end1 ****copy源码结束*****
+//end2 ****开始copy lamejs*****
 
 /*
 mp3编码依赖lamejs，如果无需mp3支持直接移除此代码
@@ -15782,6 +15775,7 @@ function Mp3Encoder(channels, samplerate, kbps) {
 
     gfp.num_channels = channels;
     gfp.in_samplerate = samplerate;
+    gfp.out_samplerate = samplerate;//fix by xiangyuecn 2018-12-6 01:48:12 64kbps以下可能无声音，手动控制输出码率
     gfp.brate = kbps;
     gfp.mode = MPEGMode.STEREO;
     gfp.quality = 3;
@@ -15881,4 +15875,7 @@ lamejs();
 
 
 Recorder.lamejs=lamejs;
+
+//end3 ****结束copy lamejs*****
+
 })(window);

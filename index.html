@@ -49,7 +49,7 @@ RandomKey.idx=0;
 		比特率:<input type="text" class="bit" value="16">(kbps mp3) (wav取值8、16)
 	</div>
 	<div class="pd">
-		采样率:<input type="text" class="sample" value="16000">wav专用，mp3无效
+		采样率:<input type="text" class="sample" value="16000">(mp3标准值，wav任意)
 	</div>
 	<div class="pd">
 		<button onclick="recopen()">打开录音</button>
@@ -70,7 +70,7 @@ RandomKey.idx=0;
 	</div>
 	<div class="pd">
 		<button onclick="recstop2()">批量编码</button>
-		<input type="text" class="bits" value="8 to 96 step 8">kbps，测试音质用的（wav填了也只有8、16）
+		<input type="text" class="bits" value="8 to 96 step 8">kbps（wav固定8、16），测试音质用的，除比特率外其他参数可调整
 	</div>
 	<div class="reclog"></div>
 	<div class="recinfo"></div>
@@ -150,7 +150,7 @@ function recstop(call){
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
-			reclog("已录制:编码耗时"+(Date.now()-t1)+"ms 比特率"+rec.set.bitRate+"kbps 文件大小"+blob.size+"b "+rec.set.type+"音频时长"+time+'ms <button class="Btn BtnMinMin" onclick="recdown(\''+id+'\')">下载</button> <button class="Btn BtnMinMin" onclick="recplay(\''+id+'\')">播放</button>');
+			reclog("已录制["+rec.set.type+"]"+intp(time,6)+"ms:"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+'b <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 			call&&call();
 		},function(s){
 			reclog("失败："+s);
@@ -158,16 +158,26 @@ function recstop(call){
 		});
 	};
 };
+var intp=function(s,len){
+	return ("_______"+s).substr(-len);
+};
 function recstop2(){
 	if(!rec||!rec.buffer){
 		reclog("需先录个音");
 		return;
 	};
+	
+	var type=$("[name=type]:checked").val();
+	var sample=+$(".sample").val();
 	var bits=/(\d+)\s+to\s+(\d+)\s+step\s+(\d+)\s*/i.exec($(".bits").val());
 	if(!bits){
 		reclog("码率列表有误，需要? to ? step ?结构");
 		return;
 	};
+	
+	rec.set.type=type;
+	rec.set.sampleRate=sample;
+	
 	var list=[];
 	for(var i=+bits[1];i<+bits[2]+1;i+=+bits[3]){
 		list.push(i);
@@ -175,6 +185,7 @@ function recstop2(){
 	if(rec.set.type=="wav"){
 		list=[8,16];
 	};
+	
 	
 	var i=-1;
 	var bak=rec.set.bitRate;
@@ -200,15 +211,18 @@ function recplay(key){
 		};
 		audio.src=URL.createObjectURL(o.blob);
 		audio.play();
-		reclog("已播放"+o.blob.size+"b "+o.time+'ms '+o.set.type+' '+o.set.bitRate+'kbps');
+		o.play=(o.play||0)+1;
+		$(".p"+key).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString());
 	};
 };
 function recdown(key){
 	var o=recblob[key];
 	if(o){
 		var cls=RandomKey(16);
-		var name="rec-"+o.time+"ms."+o.set.type;
-		reclog('<span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button class="Btn BtnMinMin" onclick="recdown64(\''+key+'\',\''+cls+'\')">生成Base64文本</button></span>');
+		var name="rec-"+o.time+"ms-"+o.set.bitRate+"kbps-"+o.set.sampleRate+"hz."+o.set.type;
+		
+		o.down=(o.down||0)+1;
+		$(".d"+key).html('<span style="color:red">'+o.down+'</span> <span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button onclick="recdown64(\''+key+'\',\''+cls+'\')">生成Base64文本</button></span>');
 		
 		var downA=document.createElement("A");
 		downA.innerHTML="下载 "+name;
