@@ -36,6 +36,7 @@ RandomKey.idx=0;
 </script>
 <script src="https://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
 
+<!-- begin 开始copy源码 -->
 <div>
 	<div class="pd">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a>
@@ -150,7 +151,7 @@ function recstop(call){
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
-			reclog("已录制["+rec.set.type+"]"+intp(time,6)+"ms:"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+'b <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+			reclog("已录制:"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 			call&&call();
 		},function(s){
 			reclog("失败："+s);
@@ -246,6 +247,7 @@ function recdown64(key, cls){
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
 reclog("点击打开录音开始哦");
 </script>
+<!-- end 结束copy源码 -->
 
 
 
