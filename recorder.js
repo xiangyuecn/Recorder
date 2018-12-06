@@ -85,7 +85,7 @@ RecorderFn.prototype={
 		};
 		var pro=scope.getUserMedia({audio:true},f1,f2);
 		if(pro&&pro.then){
-			pro.then(f1).catch(f2);
+			pro.then(f1)["catch"](f2);
 		};
 	}
 	//关闭释放录音资源
