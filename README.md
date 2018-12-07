@@ -12,7 +12,7 @@ mp3默认16kbps的比特率，大概2kb每秒，如果使用8kbps可达到1kb每
 
 *2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明IOS 12 Safari支持调用getUserMedia，经用户测试反馈IOS 12上chrome、UC都无法获取到，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)
 
-*2018-12-6* **【修复测试中】** [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
+*2018-12-06* **【已修复】** [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
 
 # 快速使用
 在需要录音功能的页面引入js文件代码即可，*对于https的要求不做解释*
