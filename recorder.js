@@ -79,9 +79,9 @@ RecorderFn.prototype={
 			True();
 		};
 		var f2=function(e){
-			var code=e.code||e.name||"";
+			var code=e.name||e.message||"";
 			console.error(e);
-			False(/Permission/i.test(code)?"用户拒绝了录音权限":"无法录音："+code);
+			False(/Permission|Allow/i.test(code)?"用户拒绝了录音权限":"无法录音："+code);
 		};
 		var pro=scope.getUserMedia({audio:true},f1,f2);
 		if(pro&&pro.then){

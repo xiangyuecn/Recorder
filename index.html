@@ -38,68 +38,6 @@ RandomKey.idx=0;
 
 <!-- begin 开始copy源码 -->
 <div>
-	<div class="pd">
-		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a>
-	</div>
-	<div class="pd">
-		类型:
-		<label><input type="radio" name="type" value="mp3" checked>MP3</label>
-		<label><input type="radio" name="type" value="wav">WAV</label>
-	</div>
-	<div class="pd">
-		比特率:<input type="text" class="bit" value="16">(kbps mp3) (wav取值8、16)
-	</div>
-	<div class="pd">
-		采样率:<input type="text" class="sample" value="16000">(mp3标准值，wav任意)
-	</div>
-	<div class="pd">
-		<button onclick="recopen()">打开录音</button>
-		<button onclick="recclose()">关闭录音</button>
-	</div>
-	<div class="pd">
-		<button onclick="recstart()">录制</button>
-		<button onclick="recstop()">停止</button>
-		
-		<button onclick="recpause()" style="margin-left:60px">暂停</button>
-		<button onclick="recresume()">继续</button>
-	</div>
-	<div class="pd recpower">
-		<div style="height:40px;width:300px;background:#999;position:relative;">
-			<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
-			<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
-		</div>
-	</div>
-	<div class="pd">
-		<button onclick="recstop2()">批量编码</button>
-		<input type="text" class="bits" value="8 to 96 step 8">kbps（wav固定8、16），测试音质用的，除比特率外其他参数可调整
-	</div>
-	
-	<hr>
-	<div class="reclog"></div>
-	<div class="recinfo"></div>
-	<audio class="recPlay"></audio>
-</div>
-<script type="text/template" class="tp_recinfo">
-<hr/>
-浏览器环境情况:
-<pre>
-AudioContext:{fn:!!window.AudioContext}
-webkitAudioContext:{fn:!!window.webkitAudioContext}
-mediaDevices:{fn:!!navigator.mediaDevices}
-mediaDevices.getUserMedia:{fn:!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}
-navigator.getUserMedia:{fn:!!navigator.getUserMedia}
-navigator.webkitGetUserMedia:{fn:!!navigator.webkitGetUserMedia}
-
-UA:{fn:navigator.userAgent}
-
-Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
-本页面修改时间（有可能修改了忘改）：{fn:PageLM}
-
-
-
-
-</pre>
-<div>
 <hr>
 注：录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
 </div>
@@ -281,7 +219,7 @@ reclog("点击打开录音开始哦");
 ,function(){
 	JsVal.value+="\n支持录音";
 },function(e){
-	JsVal.value+="\n"+e.code||e.name||""
+	JsVal.value+="\n"+(e.name||e.message)
 });
 "wait..."</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
