@@ -92,8 +92,13 @@ UA:{fn:navigator.userAgent}
 
 Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 本页面修改时间（有可能修改了忘改）：{fn:PageLM}
+
+
+
+
 </pre>
 <div>
+<hr>
 注：录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
 </div>
 <div>
@@ -101,10 +106,15 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 </div>
 </script>
 <script>
-var rec
 function reclog(s){
 	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
 };
+$(window).bind("error",function(e){
+	reclog('<span style="color:red">【Error】:<pre>'+e.error.stack+'</pre></span>');
+});
+</script>
+<script>
+var rec;
 function recopen(){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
@@ -251,6 +261,39 @@ function recdown64(key, cls){
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
 reclog("点击打开录音开始哦");
 </script>
+
+<hr>
+<div>简易js运行控制台</div>
+<div>
+<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">(navigator.webkitGetUserMedia||navigator.getUserMedia).call(navigator,
+{audio:true}
+,function(){
+	JsVal.value+="\n支持录音";
+},function(e){
+	JsVal.value+="\n"+e.code||e.name||""
+});
+"wait..."</textarea>
+<input type="button" value="执行js" onclick="cmdExec()">
+<textarea id="cmdExecVal" style="width:300px;height:160px;" placeholder="运行结果"></textarea>
+<script>
+var JsVal;
+var cmdExec=function(){
+	JsVal=document.getElementById("cmdExecVal");
+	JsVal.value="";
+	
+	var cmd=document.getElementById("cmdExecTxt").value;
+	var val="";
+	try{
+		val=eval(cmd);
+	}catch(e){
+		val="执行出错："+(e.stack||e.message);
+	};
+	JsVal=document.getElementById("cmdExecVal");
+	JsVal.value+=(JsVal.value?"\n":"")+val;
+};
+</script>
+</div>
+<div style="padding:100px;"></div>
 <!-- end 结束copy源码 -->
 
 
