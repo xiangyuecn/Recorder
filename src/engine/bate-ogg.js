@@ -11,7 +11,7 @@ https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats
 
 Recorder.prototype.enc_ogg={
 	stable:false
-	,testmsg:"比特率16-100kbps，此编码引擎源码超级大，压缩完也有1.5M，gzip后大小感觉还过得去"
+	,testmsg:"比特率16-100kbps，此编码器源码2.2M，超级大，压缩后1.6M，开启gzip后327K左右，对录音的压缩率非常出色(相对mp3)"
 };
 Recorder.prototype.ogg=function(res,True,False){
 		var This=this,set=This.set,size=res.length,bitRate=set.bitRate;
