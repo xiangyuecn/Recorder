@@ -1,6 +1,9 @@
 var fs = require("fs");
 var UglifyJS = require("uglify-js");
 
+!fs.existsSync("../dist")&&fs.mkdirSync("../dist");
+!fs.existsSync("../dist/engine")&&fs.mkdirSync("../dist/engine");
+
 console.log("开始处理文件...");
 
 minify("../recorder.mp3.min.js",["recorder-core.js","engine/mp3.js","engine/mp3-engine.js"]);
@@ -10,8 +13,8 @@ minify("../dist/recorder-core.js",["recorder-core.js","engine/wav.js"]);
 minify("../dist/engine/mp3.js",["engine/mp3.js","engine/mp3-engine.js"]);
 minify("../dist/engine/wav.js",["engine/wav.js"]);
 
-minify("../dist/engine/bate-ogg.js",["engine/bate-ogg.js","engine/bate-ogg-engine.js"]);
 minify("../dist/engine/bate-webm.js",["engine/bate-webm.js"]);
+minify("../dist/engine/bate-ogg.js",["engine/bate-ogg.js","engine/bate-ogg-engine.js"]);
 
 console.log("处理完成");
 

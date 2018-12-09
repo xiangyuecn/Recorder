@@ -21,7 +21,7 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右。如�
 ``` html
 <script src="recorder.mp3.min.js"></script>
 ```
-或者直接使用源码，可以引用src目录中的recorder-core.js+相应类型的实现文件，比如要mp3录音：
+或者直接使用源码（src内的为源码、dist内的为压缩后的），可以引用src目录中的recorder-core.js+相应类型的实现文件，比如要mp3录音：
 ``` html
 <script src="src/recorder-core.js"></script> <!--必须引入的录音核心-->
 <script src="src/engine/mp3.js"></script> <!--相应格式支持文件-->
