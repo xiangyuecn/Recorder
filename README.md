@@ -5,9 +5,9 @@
 
 mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）。
 
-mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右。
+mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
-如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
+[浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
 
 # 已知问题
 *2018-07-22* [mozilla](https://developer.mozilla.org/zh-CN/docs/Web/API/MediaDevices/getUserMedia) 和 [caniuse](https://caniuse.com/#search=getUserMedia) 注明的IOS 11以上Safari是支持调用getUserMedia的，但有用户反馈苹果手机IOS11 Safari和微信都不能录音，演示页面内两个关键指标：获取getUserMedia都是返回false（没有苹果手机未能复现）。但经测试桌面版Safari能获取到getUserMedia。原因不明。
@@ -55,7 +55,7 @@ rec.open(function(){//打开麦克风授权获得相关资源
 拿到`Recorder`的实例，然后可以进行请求获取麦克风权限和录音。
 
 `set`参数为配置对象，默认配置值如下：
-```
+``` javascript
 set={
 	type:"mp3" //输出类型：mp3,wav等，使用一个类型前需要先引入对应的编码引擎
 	,bitRate:16 //比特率 wav:16或8位，MP3：8kbps 1k/s，16kbps 2k/s 录音文件很小
@@ -115,6 +115,12 @@ lamejs的引用
 可参考/src/package-build.js中如何合并的一个文件，比如mp3是由`recorder-core.js`,`engine/mp3.js`,`engine/mp3-engine.js`组成的。
 
 除了`recorder-core.js`其他引擎文件都是可选的，可以把全部编码格式合到一起也，也可以只合并几种，然后就可以支持相应格式的录音了。
+
+可以修改/src/package-build.js后，在src目录内执行压缩：
+``` javascript
+cnpm install
+npm start
+```
 
 # 关于现有编码器
 如果你有其他格式的编码器并且想贡献出来，可以提交新增格式文件的pull（文件放到/src/engine中），我们升级它。

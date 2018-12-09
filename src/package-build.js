@@ -1,7 +1,6 @@
 var fs = require("fs");
 var UglifyJS = require("uglify-js");
 
-
 console.log("开始处理文件...");
 
 minify("../recorder.mp3.min.js",["recorder-core.js","engine/mp3.js","engine/mp3-engine.js"]);
@@ -34,7 +33,6 @@ function minify(output,srcs){
 `/*
 录音
 https://github.com/xiangyuecn/Recorder
-at: ${new Date().toLocaleString()}
 src: ${srcs.join(",")}
 */
 `;
