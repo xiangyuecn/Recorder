@@ -9,7 +9,7 @@
 </head>
 
 <body>
-<script src="recorder.js"></script>
+<script src="src/recorder-core.js"></script>
 
 
 <style>
@@ -36,21 +36,28 @@ RandomKey.idx=0;
 </script>
 <script src="https://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
 
+
+
 <!-- begin 开始copy源码 -->
 <div>
 	<div class="pd">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a>
 	</div>
-	<div class="pd">
+	<div class="pd types">
 		类型:
-		<label><input type="radio" name="type" value="mp3" checked>MP3</label>
-		<label><input type="radio" name="type" value="wav">WAV</label>
+		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" class="initType" checked>mp3</label>
+		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
+		<label><input type="radio" name="type" value="ogg" engine="bate-ogg,bate-ogg-engine">ogg(bate)</label>
+		<label><input type="radio" name="type" value="webm" engine="bate-webm">webm(bate)</label>
 	</div>
 	<div class="pd">
-		比特率:<input type="text" class="bit" value="16">(kbps mp3) (wav取值8、16)
+		提示：<span class="typeTips">-</span>
 	</div>
 	<div class="pd">
-		采样率:<input type="text" class="sample" value="16000">(mp3标准值，wav任意)
+		比特率:<input type="text" class="bit" value="16">如：kbps mp3、wav取值8位16位
+	</div>
+	<div class="pd">
+		采样率:<input type="text" class="sample" value="16000">如：mp3标准值，wav任意
 	</div>
 	<div class="pd">
 		<button onclick="recopen()">打开录音</button>
@@ -308,6 +315,58 @@ var cmdExec=function(){
 <!-- end 结束copy源码 -->
 
 
+
+
+
+
+<script>
+$(function(){
+	var prev;
+	$(".types").bind("click",function(e){
+		var input=$(e.target);
+		if(input[0].nodeName=="LABEL"){
+			input=$(input).find("input");
+		};
+		if(prev!=input[0]){
+			prev=input[0];
+			loadEngine($(input));
+		};
+	});
+});
+function loadEngine(input){
+	if(input.length&&input[0].nodeName=="INPUT"){
+		var type=input.val();
+		var engines=input.attr("engine").split(",");
+		var end=function(){
+			var enc=Recorder.prototype["enc_"+type];
+			$(".typeTips").html(!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"bate版")+"，"+enc.testmsg);
+		};
+		if(!Recorder.prototype[type]){
+			reclog("正在加载"+type+"编码器...");
+			var i=-1;
+			var load=function(){
+				i++;
+				if(i>=engines.length){
+					reclog(type+"编码器已准备好");
+					end();
+					return;
+				}
+				var elem=document.createElement("script");
+				elem.setAttribute("type","text/javascript");
+				elem.setAttribute("src","src/engine/"+engines[i]+".js");
+				elem.onload=function(){
+					load();
+				};
+				$("head")[0].appendChild(elem);
+			};
+			load();
+		}else{
+			end();
+		};
+	};
+};
+loadEngine($(".initType"));
+</script>
 
 </body>
 </html>

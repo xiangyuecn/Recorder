@@ -1,0 +1,10 @@
+{
+  "name": "build",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node package-build.js"
+  },
+  "dependencies": {
+    "uglify-js": "3.3.16"
+  }
+}
