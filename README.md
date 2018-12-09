@@ -107,9 +107,6 @@ set={
 ### Recorder.IsOpen()
 由于Recorder持有的录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了录音功能。
 
-### Recorder.lamejs
-lamejs的引用
-
 
 # 压缩合并一个自己需要的js文件
 可参考/src/package-build.js中如何合并的一个文件，比如mp3是由`recorder-core.js`,`engine/mp3.js`,`engine/mp3-engine.js`组成的。
@@ -144,9 +141,10 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 
 # 其他音频格式支持办法
 ``` javascript
-//直接在源码中增加代码，比如增加aac格式支持 (可参考/src/engine/mp3.js实现)
+//比如增加aac格式支持 (可参考/src/engine/mp3.js实现)
 
-RecorderFn.prototype.aac=function(pcmData,successCall,failCall){
+//新增一个aac.js，编写以下格式代码即可实现这个类型
+Recorder.prototype.aac=function(pcmData,successCall,failCall){
 	//通过aac编码器把pcm数据转成aac格式数据，通过this.set拿到传入的配置数据
 	... pcmData->aacData
 	
