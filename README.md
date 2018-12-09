@@ -128,10 +128,10 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 ## mp3
 采用的是[lamejs](https://github.com/zhuker/lamejs)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于修复发现的问题。
 
-## ogg
-还未实现。
+## bate-ogg
+采用的是[ogg-vorbis-encoder-js](https://github.com/higuma/ogg-vorbis-encoder-js)，`https://github.com/higuma/ogg-vorbis-encoder-js/blob/7a872423f416e330e925f5266d2eb66cff63c1b6/lib/OggVorbisEncoder.js`这个版本的文件代码。此编码器源码2.2M，超级大，压缩后1.6M，开启gzip后327K左右。对录音的压缩率非常出色，比lamejs高出不少（8、16kbps比lamejs低一点）,但Vorbis in Ogg好像Safari不支持（[真的假的](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats)）。
 
-## webm
+## bate-webm
 还未实现。
 
 
