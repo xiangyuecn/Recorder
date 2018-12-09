@@ -5,7 +5,7 @@
 
 mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）。
 
-mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
+mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
 [浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
 
