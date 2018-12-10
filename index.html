@@ -122,7 +122,7 @@ function reclog(s){
 	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
 };
 $(window).bind("error",function(e){
-	reclog('<span style="color:red">【Error】:<pre>'+e.error.stack+'</pre></span>');
+	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
 });
 </script>
 
