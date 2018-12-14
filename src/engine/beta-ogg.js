@@ -1,5 +1,5 @@
 /*
-ogg编码器，bate版，需带上ogg-engine.js引擎使用
+ogg编码器，beta版，需带上ogg-engine.js引擎使用
 https://github.com/xiangyuecn/Recorder
 
 当然最佳推荐使用mp3、wav格式，代码也是优先照顾这两种格式

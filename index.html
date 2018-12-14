@@ -47,8 +47,8 @@ RandomKey.idx=0;
 		类型:
 		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" class="initType" checked>mp3</label>
 		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
-		<label><input type="radio" name="type" value="ogg" engine="bate-ogg,bate-ogg-engine">ogg(bate)</label>
-		<label><input type="radio" name="type" value="webm" engine="bate-webm">webm(bate)</label>
+		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine">ogg(beta)</label>
+		<label><input type="radio" name="type" value="webm" engine="beta-webm">webm(beta)</label>
 	</div>
 	<div class="pd">
 		提示：<span class="typeTips">-</span>
@@ -339,7 +339,7 @@ function loadEngine(input){
 		var engines=input.attr("engine").split(",");
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
-			$(".typeTips").html(!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"bate版")+"，"+enc.testmsg);
+			$(".typeTips").html(!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，"+enc.testmsg);
 		};
 		if(!Recorder.prototype[type]){
 			reclog("正在加载"+type+"编码器...");

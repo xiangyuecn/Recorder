@@ -13,8 +13,8 @@ minify("../dist/recorder-core.js",["recorder-core.js","engine/wav.js"]);
 minify("../dist/engine/mp3.js",["engine/mp3.js","engine/mp3-engine.js"]);
 minify("../dist/engine/wav.js",["engine/wav.js"]);
 
-minify("../dist/engine/bate-webm.js",["engine/bate-webm.js"]);
-minify("../dist/engine/bate-ogg.js",["engine/bate-ogg.js","engine/bate-ogg-engine.js"]);
+minify("../dist/engine/beta-webm.js",["engine/beta-webm.js"]);
+minify("../dist/engine/beta-ogg.js",["engine/beta-ogg.js","engine/beta-ogg-engine.js"]);
 
 console.log("处理完成");
 
