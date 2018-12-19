@@ -1,5 +1,5 @@
 # Recorder用于html5录音
-支持大部分已实现`getUserMedia`的浏览器，包括腾讯X5内核(QQ、微信)，演示地址：https://xiangyuecn.github.io/Recorder/
+支持大部分已实现`getUserMedia`的浏览器，包括腾讯Android X5内核(QQ、微信)，演示地址：https://xiangyuecn.github.io/Recorder/
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -8,6 +8,8 @@ mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如�
 mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
 [浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
+
+IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebView(UIWebView?)](https://forums.developer.apple.com/thread/88052)。
 
 # 已知问题
 *2018-07-22* [mozilla](https://developer.mozilla.org/zh-CN/docs/Web/API/MediaDevices/getUserMedia) 和 [caniuse](https://caniuse.com/#search=getUserMedia) 注明的IOS 11以上Safari是支持调用getUserMedia的，但有用户反馈苹果手机IOS11 Safari和微信都不能录音，演示页面内两个关键指标：获取getUserMedia都是返回false（没有苹果手机未能复现）。但经测试桌面版Safari能获取到getUserMedia。原因不明。
