@@ -1,6 +1,6 @@
 # Recorder用于html5录音
 
-** 演示地址：https://xiangyuecn.github.io/Recorder/ **
+**演示地址：https://xiangyuecn.github.io/Recorder/**
 
 支持大部分已实现`getUserMedia`的浏览器，包括腾讯Android X5内核(QQ、微信)。
 
