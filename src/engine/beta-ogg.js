@@ -26,12 +26,11 @@ Recorder.prototype.ogg=function(res,True,False){
 		var idx=0;
 		var run=function(){
 			if(idx<size){
-				var buf=res.subarray(idx,idx+blockSize);
-				var floatBuf=new Float32Array(set.sampleRate);
-				for(var j=0;j<size;j++){
-					var s=buf[j];
+				var floatBuf=new Float32Array(idx+blockSize>=size?size-(idx+1):blockSize);
+				for(var i=0,j=idx,len=idx+floatBuf.length;j<len;j++,i++){
+					var s=res[j];
 					s=s<0?s/0x8000:s/0x7FFF;
-					floatBuf[j]=s;
+					floatBuf[i]=s;
 				};
 				ogg.encode([floatBuf]);
 				
