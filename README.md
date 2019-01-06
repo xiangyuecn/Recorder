@@ -149,7 +149,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 在`src/extensions`目录内为扩展支持库。
 
 ## `WaveView`扩展
-`waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。
+`waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
 
 此扩展是在录音时`onProcess`回调中使用；`bufferSize`会影响绘制帧率，越低越流畅（但会越消耗cpu），默认配置的大概23帧/s。基础使用方法：
 ``` javascript

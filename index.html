@@ -386,7 +386,7 @@ ConsoleX.log=function(tag,arr){
 		}
 		msg.push(xobjv(arr[i],1));
 	};
-	msg.push("---↑["+tag+"]"+FormatDate(null,FormatDate.HMS)+"↑---\n");
+	msg.push("---↑["+tag+"]"+new Date().toLocaleTimeString()+"↑---\n");
 	XLogInput.value=msg.join("\n")+XLogInput.value;
 };
 function xobjv(v,deep){
