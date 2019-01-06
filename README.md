@@ -1,4 +1,4 @@
-# Recorder用于html5录音
+# :open_book:Recorder用于html5录音
 
 **演示地址：https://xiangyuecn.github.io/Recorder/**
 
@@ -14,14 +14,14 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 
 IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebView(UIWebView?)相关资料](https://forums.developer.apple.com/thread/88052)。
 
-# 已知问题
+# :open_book:已知问题
 *2018-07-22* [mozilla](https://developer.mozilla.org/zh-CN/docs/Web/API/MediaDevices/getUserMedia) 和 [caniuse](https://caniuse.com/#search=getUserMedia) 注明的IOS 11以上Safari是支持调用getUserMedia的，但有用户反馈苹果手机IOS11 Safari和微信都不能录音，演示页面内两个关键指标：获取getUserMedia都是返回false（没有苹果手机未能复现）。但经测试桌面版Safari能获取到getUserMedia。原因不明。
 
 *2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明IOS 12 Safari支持调用getUserMedia，经用户测试反馈IOS 12上chrome、UC都无法获取到，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)
 
 *2018-12-06* **【已修复】** [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
 
-# 快速使用
+# :open_book:快速使用
 在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可，**对于https的要求不做解释**
 ``` html
 <script src="recorder.mp3.min.js"></script>
@@ -53,47 +53,49 @@ rec.open(function(){//打开麦克风授权获得相关资源
 ```
 
 
-# 方法文档
+# :open_book:方法文档
 
-### rec=Recorder(set)
+### 【构造】rec=Recorder(set)
 
-拿到`Recorder`的实例，然后可以进行请求获取麦克风权限和录音。
+构造函数，拿到`Recorder`的实例，然后可以进行请求获取麦克风权限和录音。
 
 `set`参数为配置对象，默认配置值如下：
 ``` javascript
 set={
 	type:"mp3" //输出类型：mp3,wav等，使用一个类型前需要先引入对应的编码引擎
-	,bitRate:16 //比特率 wav:16或8位，MP3：8kbps 1k/s，16kbps 2k/s 录音文件很小
+	,bitRate:16 //比特率 wav(位):16、8，MP3(单位kbps)：8kbps时文件大小1k/s，16kbps 2k/s，录音文件很小
 	
-	,sampleRate:16000 //采样率，wav格式大小=sampleRate*时间；mp3此项对低比特率有影响，高比特率几乎无影响。
+	,sampleRate:16000 //采样率，wav格式文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
 				//wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 	
-	,bufferSize:8192 //AudioContext缓冲大小
-					//取值256, 512, 1024, 2048, 4096, 8192, or 16384，会影响onProcess调用速度
+	,bufferSize:2048 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，2048接近23帧/s，调节此参数可生成比较流畅的回调动画。
+					//取值256, 512, 1024, 2048, 4096, 8192, or 16384
 	
-	,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffer,powerLevel,bufferDuration) 
-				//buffer=[缓冲数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长
+	,onProcess:NOOP //接收到录音数据时的回调函数：fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) 
+				//buffer=[缓冲PCM数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
 				//如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffer可以达到更高级效果
 }
 ```
 
-### rec.open(success,fail)
-请求打开录音资源，如果用户拒绝麦克风权限将会调用`fail`，打开后需要调用`close`。
+### 【方法】rec.open(success,fail)
+请求打开录音资源，如果浏览器不支持录音或用户拒绝麦克风权限将会调用`fail`，打开后需要调用`close`。
 
 注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音。
 
+另外：因为此方法会调起用户授权请求，如果仅仅想知道浏览器是否支持录音（比如：如果浏览器不支持就走另外一套录音方案），应使用`Recorder.Support()`方法。
+
 `success`=fn();
 
-`fail`=fn(errMsg);
+`fail`=fn(errMsg,isUserNotAllow); 如果是用户主动拒绝的录音权限，除了有错误消息外，isUserNotAllow=true，方便程序中做不同的提示，提升用户主动授权概率
 
 
-### rec.close(success)
+### 【方法】rec.close(success)
 关闭释放录音资源，释放完成后会调用`success()`回调
 
-### rec.start()
+### 【方法】rec.start()
 开始录音，需先调用`open`；如果不支持、错误，不会有任何提示，因为stop时自然能得到错误。
 
-### rec.stop(success,fail)
+### 【方法】rec.stop(success,fail)
 结束录音并返回录音数据`blob对象`，拿到blob对象就可以为所欲为了，不限于立即播放、上传
 
 `success(blob,duration)`：`blob`：录音数据audio/mp3|wav...格式，`duration`：录音时长，单位毫秒
@@ -103,17 +105,20 @@ set={
 提示：stop时会进行音频编码，音频编码可能会很慢，10几秒录音花费2秒左右算是正常，编码并未使用Worker方案(文件多)，内部采取的是分段编码+setTimeout来处理，界面卡顿不明显。
 
 
-### rec.pause()
+### 【方法】rec.pause()
 暂停录音。
 
-### rec.resume()
+### 【方法】rec.resume()
 恢复继续录音。
 
-### Recorder.IsOpen()
+### 【静态方法】Recorder.Support()
+判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
+
+### 【静态方法】Recorder.IsOpen()
 由于Recorder持有的录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了录音功能。
 
 
-# 压缩合并一个自己需要的js文件
+# :open_book:压缩合并一个自己需要的js文件
 可参考/src/package-build.js中如何合并的一个文件，比如mp3是由`recorder-core.js`,`engine/mp3.js`,`engine/mp3-engine.js`组成的。
 
 除了`recorder-core.js`其他引擎文件都是可选的，可以把全部编码格式合到一起也，也可以只合并几种，然后就可以支持相应格式的录音了。
@@ -124,7 +129,7 @@ cnpm install
 npm start
 ```
 
-# 关于现有编码器
+# :open_book:关于现有编码器
 如果你有其他格式的编码器并且想贡献出来，可以提交新增格式文件的pull（文件放到/src/engine中），我们升级它。
 
 ## wav
@@ -140,17 +145,60 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 这个编码器时通过查阅MDN编写的一个玩意，没多大使用价值：录几秒就至少要几秒来编码。。。原因是：未找到对已有pcm数据进行快速编码的方法。数据导入到MediaRecorder，音频有几秒就要等几秒，类似边播放边收听形。(想接原始录音Stream？我不可能给的!)输出音频虽然可以通过比特率来控制文件大小，但音频文件中的比特率并非设定比特率，采样率由于是我们自己采样的，到这个编码器随他怎么搞。只有比较新的浏览器支持（需实现浏览器MediaRecorder），压缩率和mp3差不多。源码2kb大小。
 
 
-# 兼容性
+# :open_book:扩展
+在`src/extensions`目录内为扩展支持库。
+
+## `WaveView`扩展
+`waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。
+
+此扩展是在录音时`onProcess`回调中使用；`bufferSize`会影响绘制帧率，越低越流畅（但会越消耗cpu），默认配置的大概23帧/s。基础使用方法：
+``` javascript
+var wave=Recorder.WaveView({elem:".elem"}); //创建wave对象
+var rec=Recorder({
+	onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+		wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);//输入音频数据，更新显示波形
+	}
+});
+rec.open(function(){
+	rec.start();
+});
+```
+
+### 【构造】wave=Recorder.WaveView(set)
+构造函数，`set`参数为配置对象，默认配置值如下：
+```
+set={
+	elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
+		//或者配置显示大小，手动把this.canvas显示到别的地方
+	,width:0 //显示宽度
+	,height:0 //显示高度
+	
+	//以上配置二选一
+	
+	,lineWidth:2 //线条粗细
+			
+	//渐变色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
+	,linear1:[0,"rgba(150,97,236,1)",1,"rgba(54,197,252,1)"] //线条渐变色1，从左到右
+	,linear2:[0,"rgba(209,130,253,0.6)",1,"rgba(54,197,252,0.6)"] //线条渐变色2，从左到右
+	,linearBg:[0,"rgba(255,255,255,0.2)",1,"rgba(54,197,252,0.2)"] //背景渐变色，从上到下
+}
+```
+
+### 【方法】wave.input(pcmData,powerLevel,sampleRate)
+输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData为当前的录音数据片段，其他参数和`onProcess`回调相同。
+
+
+# :open_book:兼容性
 对于支持录音的浏览器能够正常录音并返回录音数据；对于不支持的浏览器，引入js和执行相关方法都不会产生异常，并且进入相关的fail回调。一般在open的时候就能检测到是否支持或者被用户拒绝，可在用户开始录音之前提示浏览器不支持录音或授权。
 
 
-# 关于微信JsSDK
+# :open_book:关于微信JsSDK
 微信内浏览器他家的[JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)也支持录音，涉及笨重难调的公众号开发（光sdk初始化就能阻碍很多新奇想法的产生，signature限制太多），只能满足最基本的使用（大部分情况足够了）。如果JsSDK录完音能返回音频数据，这个SDK将好用10000倍，如果能实时返回音频数据，将好用100000倍。关键是他们家是拒绝给这种简单好用的功能的，必须绕一个大圈：录好音了->上传到微信服务器->自家服务器请求微信服务器多进行媒体下载->保存录音（微信小程序以前也是二逼路子，现在稍微好点能实时拿到录音mp3数据），如果能升级：录好音了拿到音频数据->上传保存录音，目测对最终结果是没有区别的，还简单不少，对微信自家也算是非常经济实用。[2018]由于微信IOS上不支持原生JS录音，Android上又支持，为了兼容而去兼容的事情我是拒绝的（而且是仅仅为了兼容IOS上面的微信），其实也算不上去兼容，因为微信JsSDK中的接口完全算是另外一种东西，接入的话对整个录音流程都会产生完全不一样的变化，还不如没有进入录音流程之前就进行分支判断处理。
 
 最后：如果是在微信上用的多，应优先直接接入他家的JsSDK（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
 
 
-# 其他音频格式支持办法
+# :open_book:其他音频格式支持办法
 ``` javascript
 //比如增加aac格式支持 (可参考/src/engine/mp3.js实现)
 

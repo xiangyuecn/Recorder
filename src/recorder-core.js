@@ -6,23 +6,14 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2018-12-09 19:16";
+window.RecorderLM="2019-01-06 21:38:00";
 var NOOP=function(){};
-var $={
-	extend:function(a,b){
-		a||(a={});
-		b||(b={});
-		for(var k in b){
-			a[k]=b[k];
-		}
-		return a;
-	}
-};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
 function Recorder(set){
 	return new initFn(set);
 };
+//是否已经打开了录音，所有工作都已经准备好了，就等接收音频数据了
 Recorder.IsOpen=function(){
 	var stream=Recorder.Stream;
 	if(stream){
@@ -33,8 +24,33 @@ Recorder.IsOpen=function(){
 	};
 	return false;
 };
+//判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权，不会判断是否支持特定格式录音。
+Recorder.Support=function(){
+	var AC=window.AudioContext;
+	if(!AC){
+		AC=window.webkitAudioContext;
+	};
+	if(!AC){
+		return false;
+	};
+	var scope=navigator.mediaDevices||{};
+	if(!scope.getUserMedia){
+		scope=navigator;
+		scope.getUserMedia||(scope.getUserMedia=scope.webkitGetUserMedia||scope.mozGetUserMedia||scope.msGetUserMedia);
+	};
+	if(!scope.getUserMedia){
+		return false;
+	};
+	
+	Recorder.Scope=scope;
+	if(!Recorder.Ctx||Recorder.Ctx.state=="closed"){
+		//不能反复构造，低版本number of hardware contexts reached maximum (6)
+		Recorder.Ctx=new AC();
+	};
+	return true;
+};
 function initFn(set){
-	this.set=$.extend({
+	var o={
 		type:"mp3" //输出类型：mp3,wav，wav输出文件尺寸超大不推荐使用，但mp3编码支持会导致js文件超大，如果不需支持mp3可以使js文件大幅减小
 		,bitRate:16 //比特率 wav:16或8位，MP3：8kbps 1k/s，8kbps 2k/s 录音文件很小
 		
@@ -42,13 +58,18 @@ function initFn(set){
 					//wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 					//采样率参考https://www.cnblogs.com/devin87/p/mp3-recorder.html
 		
-		,bufferSize:8192 //AudioContext缓冲大小，相对于ctx.sampleRate=48000/秒：
-				//取值256, 512, 1024, 2048, 4096, 8192, or 16384，会影响onProcess调用速度
-		,onProcess:NOOP //fn(this.buffer,powerLevel,bufferDuration) buffer=[缓冲数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长
-	},set);
+		,bufferSize:2048 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，2048接近23帧/s，调节此参数可生成比较流畅的回调动画。
+				//取值256, 512, 1024, 2048, 4096, 8192, or 16384
+		,onProcess:NOOP //fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) buffer=[缓冲PCM数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
+	};
+	
+	for(var k in set){
+		o[k]=set[k];
+	};
+	this.set=o;
 };
 Recorder.prototype=initFn.prototype={
-	//打开录音资源True(),False(msg)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
+	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
 	open:function(True,False){
 		True=True||NOOP;
 		False=False||NOOP;
@@ -57,26 +78,11 @@ Recorder.prototype=initFn.prototype={
 			True();
 			return;
 		};
-		var notSupport="此浏览器不支持录音";
-		var AC=window.AudioContext;
-		if(!AC){
-			AC=window.webkitAudioContext;
-		};
-		if(!AC){
-			False(notSupport);
-			return;
-		};
-		var scope=navigator.mediaDevices||{};
-		if(!scope.getUserMedia){
-			scope=navigator;
-			scope.getUserMedia||(scope.getUserMedia=scope.webkitGetUserMedia||scope.mozGetUserMedia||scope.msGetUserMedia);
-		};
-		if(!scope.getUserMedia){
-			False(notSupport);
+		if(!Recorder.Support()){
+			False("此浏览器不支持录音",false);
 			return;
 		};
 		
-		Recorder.Ctx=Recorder.Ctx||new AC();//不能反复构造，number of hardware contexts reached maximum (6)
 		var f1=function(stream){
 			Recorder.Stream=stream;
 			True();
@@ -84,9 +90,10 @@ Recorder.prototype=initFn.prototype={
 		var f2=function(e){
 			var code=e.name||e.message||"";
 			console.error(e);
-			False(/Permission|Allow/i.test(code)?"用户拒绝了录音权限":"无法录音："+code);
+			var notAllow=/Permission|Allow/i.test(code);
+			False(notAllow?"用户拒绝了录音权限":"无法录音："+code,notAllow);
 		};
-		var pro=scope.getUserMedia({audio:true},f1,f2);
+		var pro=Recorder.Scope.getUserMedia({audio:true},f1,f2);
 		if(pro&&pro.then){
 			pro.then(f1)["catch"](f2);
 		};
@@ -113,8 +120,7 @@ Recorder.prototype=initFn.prototype={
 	
 	//开始录音，需先调用open；不支持、错误，不会有任何提示，stop时自然能得到错误
 	,start:function(){
-		console.log("["+Date.now()+"]Start");
-		var This=this,set=This.set;
+		var This=this,ctx=Recorder.Ctx;
 		var buffer=This.buffer=[];//数据缓冲
 		This.recSize=0;//数据大小
 		This._stop();
@@ -123,7 +129,19 @@ Recorder.prototype=initFn.prototype={
 		if(!Recorder.IsOpen()){
 			return;
 		};
+		console.log("["+Date.now()+"]Start");
 		
+		if(ctx.state=="suspended"){
+			ctx.resume().then(function(){
+				console.log("ctx resume");
+				This._start();
+			});
+		}else{
+			This._start();
+		};
+	}
+	,_start:function(){
+		var This=this,set=This.set,buffer=This.buffer;
 		var ctx=Recorder.Ctx;
 		var media=This.media=ctx.createMediaStreamSource(Recorder.Stream);
 		var process=This.process=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,set.bufferSize,1,1);//单声道，省的数据处理复杂
@@ -154,11 +172,12 @@ Recorder.prototype=initFn.prototype={
 				//https://blog.csdn.net/jody1989/article/details/73480259
 				powerLevel=Math.round(Math.max(0,(20*Math.log10(power/0x7fff)+34)*100/34));
 			};
-			var duration=Math.round(This.recSize/Recorder.Ctx.sampleRate*1000);
+			var bufferSampleRate=Recorder.Ctx.sampleRate;
+			var duration=Math.round(This.recSize/bufferSampleRate*1000);
 			
 			clearTimeout(onInt);
 			onInt=setTimeout(function(){
-				set.onProcess(buffer,powerLevel,duration);
+				set.onProcess(buffer,powerLevel,duration,bufferSampleRate);
 			});
 		};
 		

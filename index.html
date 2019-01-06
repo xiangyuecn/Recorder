@@ -9,7 +9,11 @@
 </head>
 
 <body>
+<!--加载核心库，其他类型支持库在下面根据用户点击选择加载-->
 <script src="src/recorder-core.js"></script>
+
+<!--加载可选扩展库-->
+<script src="src/extensions/waveview.js"></script>
 
 
 <style>
@@ -26,7 +30,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2018-12-2 16:22:34";
+var PageLM="2019-01-06 21:38:00";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -80,11 +84,14 @@ RandomKey.idx=0;
 		<button onclick="recstop2()">批量编码</button>
 		<input type="text" class="bits" value="8 to 96 step 8">kbps（wav固定8、16），测试音质用的，除比特率外其他参数可调整
 	</div>
+	<div class="pd">
+		<div style="height:100px;width:300px;" class="recwave"></div>
+	</div>
 	
 	<hr>
+	<audio class="recPlay"></audio>
 	<div class="reclog"></div>
 	<div class="recinfo"></div>
-	<audio class="recPlay"></audio>
 </div>
 <script type="text/template" class="tp_recinfo">
 <hr/>
@@ -138,15 +145,20 @@ function recopen(){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
-		,onProcess:function(a,level,time){
-		$(".recpowerx").css("width",level+"%");
-		$(".recpowert").html(time+"/"+level);
-	}});
+		,onProcess:function(buffer,level,time,sampleRate){
+			$(".recpowerx").css("width",level+"%");
+			$(".recpowert").html(time+"/"+level);
+			
+			wave.input(buffer[level.length-1],level,sampleRate);
+		}
+	});
 	rec.open(function(){
 		reclog("已打开:"+type+" "+bit+"kbps");
-	},function(e){
-		reclog("打开失败："+e);
+	},function(e,isUserNotAllow){
+		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
 	});
+	
+	var wave=Recorder.WaveView({elem:".recwave"});
 };
 function recclose(){
 	if(rec){
@@ -189,6 +201,8 @@ function recstop(call){
 	};
 };
 var intp=function(s,len){
+	s=""+s;
+	if(s.length>=len)return s;
 	return ("_______"+s).substr(-len);
 };
 function recstop2(){
@@ -236,6 +250,7 @@ function recplay(key){
 	var o=recblob[key];
 	if(o){
 		var audio=$(".recPlay")[0];
+		audio.controls=true;
 		if(!(audio.ended || audio.paused)){
 			audio.pause();
 		};
@@ -274,21 +289,40 @@ function recdown64(key, cls){
 	};
 };
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
-reclog("点击打开录音开始哦");
+reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");
+reclog("WaveView Extensions已启用");
 </script>
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <hr>
-<div>简易js运行控制台</div>
 <div>
+<h3>移动端js运行简易控制台</h3>
 <textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">(navigator.webkitGetUserMedia||navigator.getUserMedia).call(navigator,
 {audio:true}
 ,function(){
 	JsVal.value+="\n支持录音";
+	console.log(JsVal.value);
 },function(e){
 	JsVal.value+="\n"+(e.name||e.message)
+	console.error(e);
 });
 "wait..."</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
@@ -309,6 +343,90 @@ var cmdExec=function(){
 	JsVal=document.getElementById("cmdExecVal");
 	JsVal.value+=(JsVal.value?"\n":"")+val;
 };
+</script>
+
+<h3>ConsoleX:</h3>
+<textarea class="Xlog" style="width:300px;height:160px;"></textarea>
+<script>
+var XLogInput=$(".Xlog")[0];
+(function(){
+if(!/mobile/i.test(navigator.userAgent)){
+	XLogInput.value="非移动端不开启ConsoleX引擎";
+	return;
+};
+var ConsoleX=function(tag,arr){
+	if(parent!=window){
+		parent.ConsoleX(tag,arr);
+		return;
+	};
+	
+	ConsoleX.log(tag,arr);
+};
+var logx=console.log;
+var infox=console.info;
+var warnx=console.warn;
+var errorx=console.error;
+console.log=function(){
+	ConsoleX("log",arguments);logx.apply(console,arguments);
+};
+console.info=function(){
+	ConsoleX("info",arguments);infox.apply(console,arguments);
+};
+console.warn=function(){
+	ConsoleX("warn",arguments);warnx.apply(console,arguments);
+};
+console.error=function(){
+	ConsoleX("error",arguments);errorx.apply(console,arguments);
+};
+ConsoleX.log=function(tag,arr){
+	var msg=[];
+	for(var i=0;i<arr.length;i++){
+		if(i!=0){
+			msg.push("");
+		}
+		msg.push(xobjv(arr[i],1));
+	};
+	msg.push("---↑["+tag+"]"+FormatDate(null,FormatDate.HMS)+"↑---\n");
+	XLogInput.value=msg.join("\n")+XLogInput.value;
+};
+function xobjv(v,deep){
+	if(v===null)return "null";
+	if(v==undefined)return "undefined";
+	if(typeof(v)!="object"){
+		v=v+"";
+		if(v.length<500)return v;
+		return v.substring(0,500)+"[省略"+(v.length-500)+"字]";
+	}
+	
+	if(deep&&deep<=3){
+		v= xobj(v,deep+1);
+		if(deep==1){
+			return xobjv(v);
+		};
+		return v;
+	}
+	return xobjv(v+"");
+};
+function xobj(obj,deep){
+	if($.isArray(obj)){
+		var arr=[];
+		for(var i=0;i<obj.length;i++){
+			arr.push(xobjv(obj[i],deep));
+		};
+	}else{
+		var arr={};
+		for(var k in obj){
+			arr[k]=xobjv(obj[k],deep);
+		};
+	};
+	if(deep>2){
+		return arr;
+	};
+	return JSON.stringify(arr);
+};
+
+console.log("ConsoleX引擎已开启");
+})();
 </script>
 </div>
 <div style="padding:100px;"></div>

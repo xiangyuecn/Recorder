@@ -3,6 +3,7 @@ var UglifyJS = require("uglify-js");
 
 !fs.existsSync("../dist")&&fs.mkdirSync("../dist");
 !fs.existsSync("../dist/engine")&&fs.mkdirSync("../dist/engine");
+!fs.existsSync("../dist/extensions")&&fs.mkdirSync("../dist/extensions");
 
 console.log("开始处理文件...");
 
@@ -15,6 +16,8 @@ minify("../dist/engine/wav.js",["engine/wav.js"]);
 
 minify("../dist/engine/beta-webm.js",["engine/beta-webm.js"]);
 minify("../dist/engine/beta-ogg.js",["engine/beta-ogg.js","engine/beta-ogg-engine.js"]);
+
+minify("../dist/extensions/waveview.js",["extensions/waveview.js"]);
 
 console.log("处理完成");
 
