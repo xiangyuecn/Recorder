@@ -146,7 +146,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 
 
 # :open_book:扩展
-在`src/extensions`目录内为扩展支持库。
+在`src/extensions`目录内为扩展支持库，这些扩展库默认都没有合并到生成代码中，需单独引用(`dist`或`src`中的)才能使用。
 
 ## `WaveView`扩展
 `waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
@@ -166,7 +166,7 @@ rec.open(function(){
 
 ### 【构造】wave=Recorder.WaveView(set)
 构造函数，`set`参数为配置对象，默认配置值如下：
-```
+``` javascript
 set={
 	elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
 		//或者配置显示大小，手动把this.canvas显示到别的地方
