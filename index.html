@@ -141,6 +141,7 @@ function recopen(){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
+	var wave;
 	rec=Recorder({
 		type:type
 		,bitRate:bit
@@ -154,11 +155,11 @@ function recopen(){
 	});
 	rec.open(function(){
 		reclog("已打开:"+type+" "+bit+"kbps");
+		
+		wave=Recorder.WaveView({elem:".recwave"});
 	},function(e,isUserNotAllow){
 		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
 	});
-	
-	var wave=Recorder.WaveView({elem:".recwave"});
 };
 function recclose(){
 	if(rec){
