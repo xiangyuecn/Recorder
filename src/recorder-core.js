@@ -58,8 +58,9 @@ function initFn(set){
 					//wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 					//采样率参考https://www.cnblogs.com/devin87/p/mp3-recorder.html
 		
-		,bufferSize:2048 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，2048接近23帧/s，调节此参数可生成比较流畅的回调动画。
+		,bufferSize:4096//AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
 				//取值256, 512, 1024, 2048, 4096, 8192, or 16384
+				//注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
 		,onProcess:NOOP //fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) buffer=[缓冲PCM数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
 	};
 	

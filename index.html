@@ -85,7 +85,8 @@ RandomKey.idx=0;
 		<input type="text" class="bits" value="8 to 96 step 8">kbps（wav固定8、16），测试音质用的，除比特率外其他参数可调整
 	</div>
 	<div class="pd">
-		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;" class="recwave"></div>
+		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
+		<input type="checkbox" class="recwaveSet" checked>
 	</div>
 	
 	<hr>
@@ -141,7 +142,7 @@ function recopen(){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
-	var wave;
+	var wave,waveSet=$(".recwaveSet")[0].checked;
 	rec=Recorder({
 		type:type
 		,bitRate:bit
@@ -150,7 +151,7 @@ function recopen(){
 			$(".recpowerx").css("width",level+"%");
 			$(".recpowert").html(time+"/"+level);
 			
-			wave.input(buffers[buffers.length-1],level,sampleRate);
+			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
 		}
 	});
 	rec.open(function(){

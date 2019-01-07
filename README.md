@@ -68,8 +68,9 @@ set={
 	,sampleRate:16000 //采样率，wav格式文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
 				//wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 	
-	,bufferSize:2048 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，2048接近23帧/s，调节此参数可生成比较流畅的回调动画。
-					//取值256, 512, 1024, 2048, 4096, 8192, or 16384
+	,bufferSize:4096 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
+				//取值256, 512, 1024, 2048, 4096, 8192, or 16384
+				//注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
 	
 	,onProcess:NOOP //接收到录音数据时的回调函数：fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) 
 				//buffer=[缓冲PCM数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
@@ -170,7 +171,7 @@ Recorder({type:"aac"})
 ## `WaveView`扩展
 `waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
 
-此扩展是在录音时`onProcess`回调中使用；`bufferSize`会影响绘制帧率，越低越流畅（但会越消耗cpu），默认配置的大概23帧/s。基础使用方法：
+此扩展是在录音时`onProcess`回调中使用；`bufferSize`会影响绘制帧率，越小越流畅（但越消耗cpu），默认配置的大概12帧/s。基础使用方法：
 ``` javascript
 var wave;
 var rec=Recorder({
@@ -197,7 +198,7 @@ set={
 	//以上配置二选一
 	
 	scale:2 //缩放系数，因为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
-	,speed:10 //移动速度系数，越大越快
+	,speed:8 //移动速度系数，越大越快
 	
 	,lineWidth:2 //线条基础粗细
 			
