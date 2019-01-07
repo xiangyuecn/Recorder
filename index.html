@@ -85,11 +85,11 @@ RandomKey.idx=0;
 		<input type="text" class="bits" value="8 to 96 step 8">kbps（wav固定8、16），测试音质用的，除比特率外其他参数可调整
 	</div>
 	<div class="pd">
-		<div style="height:100px;width:300px;" class="recwave"></div>
+		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;" class="recwave"></div>
 	</div>
 	
 	<hr>
-	<audio class="recPlay"></audio>
+	<audio class="recPlay" style="width:100%"></audio>
 	<div class="reclog"></div>
 	<div class="recinfo"></div>
 </div>
@@ -187,17 +187,20 @@ function recresume(){
 	};
 };
 var recblob={};
-function recstop(call){
+function recstop(batCall){
 	if(rec){
+		if(!batCall){
+			reclog("正在编码"+rec.set.type+"...");
+		};
 		var t1=Date.now();
 		rec.stop(function(blob,time){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
 			reclog("已录制:"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
-			call&&call();
+			batCall&&batCall();
 		},function(s){
 			reclog("失败："+s);
-			call&&call();
+			batCall&&batCall();
 		});
 	};
 };
@@ -219,6 +222,7 @@ function recstop2(){
 		reclog("码率列表有误，需要? to ? step ?结构");
 		return;
 	};
+	reclog("开始批量编码，请勿进行其他操作~");
 	
 	rec.set.type=type;
 	rec.set.sampleRate=sample;

@@ -166,12 +166,22 @@ Recorder.prototype=initFn.prototype={
 			};
 			buffer.push(res);
 			
+			/*https://blog.csdn.net/jody1989/article/details/73480259
+			更高灵敏度算法:
+				限定最大感应值10000
+					线性曲线：低音量不友好
+						power/10000*100 
+					对数曲线：低音量友好，但需限定最低感应值
+						(1+Math.log10(power/10000))*100
+			*/
 			power/=size;
-			var powerLevel=0;
-			if(power>0){
-				//https://blog.csdn.net/jody1989/article/details/73480259
-				powerLevel=Math.round(Math.max(0,(20*Math.log10(power/0x7fff)+34)*100/34));
-			};
+			var powerLevel;
+			if(power<1251){//1250的结果10%，更小的音量采用线性取值
+				powerLevel=Math.round(power/1250*10);
+			}else{
+				powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log10(power/10000))*100)));
+			}
+			
 			var bufferSampleRate=Recorder.Ctx.sampleRate;
 			var duration=Math.round(This.recSize/bufferSampleRate*1000);
 			

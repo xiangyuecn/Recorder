@@ -190,13 +190,15 @@ rec.open(function(){
 ``` javascript
 set={
 	elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
-		//或者配置显示大小，手动把this.canvas显示到别的地方
+		//或者配置显示大小，手动把waveviewObj.elem显示到别的地方
 	,width:0 //显示宽度
 	,height:0 //显示高度
 	
 	//以上配置二选一
 	
-	,lineWidth:2 //线条粗细
+	scale:2 //缩放系数，因为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
+	
+	,lineWidth:2 //线条基础粗细
 			
 	//渐变色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
 	,linear1:[0,"rgba(150,97,236,1)",1,"rgba(54,197,252,1)"] //线条渐变色1，从左到右
