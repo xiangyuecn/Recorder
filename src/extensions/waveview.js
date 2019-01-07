@@ -20,6 +20,7 @@ var fn=function(set){
 		*/
 		
 		scale:2 //缩放系数，因为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
+		,speed:10 //移动速度系数，越大越快
 		
 		,lineWidth:2 //线条基础粗细
 		
@@ -99,7 +100,7 @@ fn.prototype=WaveView.prototype={
 		var width=set.width*scale;
 		var height=set.height*scale;
 		
-		var phase=This._phase-=0.22;//位移
+		var phase=This._phase-=set.speed*pcmData.length/sampleRate;//位移速度
 		var amplitude=powerLevel/100;
 		var path1=This.genPath(2,amplitude,phase);
 		var path2=This.genPath(1.8,amplitude,phase+3);

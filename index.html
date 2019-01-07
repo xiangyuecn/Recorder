@@ -146,11 +146,11 @@ function recopen(){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
-		,onProcess:function(buffer,level,time,sampleRate){
+		,onProcess:function(buffers,level,time,sampleRate){
 			$(".recpowerx").css("width",level+"%");
 			$(".recpowert").html(time+"/"+level);
 			
-			wave.input(buffer[level.length-1],level,sampleRate);
+			wave.input(buffers[buffers.length-1],level,sampleRate);
 		}
 	});
 	rec.open(function(){
