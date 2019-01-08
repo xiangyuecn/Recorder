@@ -21,7 +21,7 @@ Recorder.prototype.mp3=function(res,True,False){
 		//https://github.com/zhuker/lamejs bug:采样率必须和源一致，不然8k时没有声音，有问题fix：https://github.com/zhuker/lamejs/pull/11
 		var mp3=new Recorder.lamejs.Mp3Encoder(1,set.sampleRate,set.bitRate);
 		
-		var blockSize=5760;
+		var blockSize=57600;
 		var data=[];
 		
 		var idx=0;
