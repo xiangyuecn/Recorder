@@ -16,6 +16,7 @@ minify("../dist/engine/wav.js",["engine/wav.js"]);
 
 minify("../dist/engine/beta-webm.js",["engine/beta-webm.js"]);
 minify("../dist/engine/beta-ogg.js",["engine/beta-ogg.js","engine/beta-ogg-engine.js"]);
+minify("../dist/engine/beta-amr.js",["engine/beta-amr.js","engine/beta-amr-engine.js","engine/wav.js"]);
 
 minify("../dist/extensions/waveview.js",["extensions/waveview.js"]);
 

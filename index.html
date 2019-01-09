@@ -53,6 +53,7 @@ RandomKey.idx=0;
 		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
 		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine">ogg(beta)</label>
 		<label><input type="radio" name="type" value="webm" engine="beta-webm">webm(beta)</label>
+		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine,wav">amr(beta)</label>
 	</div>
 	<div class="pd">
 		提示：<span class="typeTips">-</span>
@@ -260,10 +261,28 @@ function recplay(key){
 		if(!(audio.ended || audio.paused)){
 			audio.pause();
 		};
-		audio.src=URL.createObjectURL(o.blob);
-		audio.play();
 		o.play=(o.play||0)+1;
-		$(".p"+key).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString());
+		var logmsg=function(msg){
+			$(".p"+key).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString()+" "+msg);
+		};
+		logmsg("");
+		
+		var end=function(blob){
+			audio.src=URL.createObjectURL(blob);
+			audio.play();
+		};
+		var wav=Recorder[o.set.type+"2wav"];
+		if(wav){
+			logmsg("正在转码成wav...");
+			wav(o.blob,function(blob){
+				end(blob);
+				logmsg("已转码成wav播放");
+			},function(msg){
+				logmsg("转码成wav失败："+msg);
+			});
+		}else{
+			end(o.blob);
+		};
 	};
 };
 function recdown(key){
@@ -287,12 +306,12 @@ function recdown64(key, cls){
 	var o=recblob[key];
 	
 	var reader = new FileReader();
-	reader.readAsDataURL(o.blob); 
 	reader.onloadend = function() {
 		var id=RandomKey(16);
 		$("."+cls).append('<textarea class="'+id+'"></textarea>');
 		$("."+id).val(reader.result);
 	};
+	reader.readAsDataURL(o.blob);
 };
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
 reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");

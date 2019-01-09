@@ -123,6 +123,8 @@ Recorder.prototype=initFn.prototype={
 	,start:function(){
 		var This=this,ctx=Recorder.Ctx;
 		var buffer=This.buffer=[];//数据缓冲
+		This.srcSampleRate=ctx.sampleRate;
+		This.isMock=0;
 		This.recSize=0;//数据大小
 		This._stop();
 		
@@ -183,7 +185,7 @@ Recorder.prototype=initFn.prototype={
 				powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log10(power/10000))*100)));
 			}
 			
-			var bufferSampleRate=Recorder.Ctx.sampleRate;
+			var bufferSampleRate=This.srcSampleRate;
 			var duration=Math.round(This.recSize/bufferSampleRate*1000);
 			
 			clearTimeout(onInt);
@@ -215,6 +217,15 @@ Recorder.prototype=initFn.prototype={
 	,resume:function(){
 		this.pause(1);
 	}
+	/*模拟一段录音数据，后面可以调用stop进行编码，需提供pcm数据[1,2,3...]，pcm的采样率*/
+	,mock:function(pcmData,pcmSampleRate){
+		var This=this;
+		This.isMock=1;
+		This.buffer=[pcmData];
+		This.recSize=pcmData.length;
+		This.srcSampleRate=pcmSampleRate;
+		return This;
+	}
 	/*
 	结束录音并返回录音数据blob对象
 		True(blob,duration) blob：录音数据audio/mp3|wav格式
@@ -227,11 +238,13 @@ Recorder.prototype=initFn.prototype={
 		False=False||NOOP;
 		var This=this,set=This.set;
 		
-		if(!This.state){
-			False("未开始录音");
-			return;
+		if(!This.isMock){
+			if(!This.state){
+				False("未开始录音");
+				return;
+			};
+			This._stop();
 		};
-		This._stop();
 		var size=This.recSize;
 		if(!size){
 			False("未采集到录音");
@@ -239,14 +252,14 @@ Recorder.prototype=initFn.prototype={
 		};
 		
 		var sampleRate=set.sampleRate
-			,ctxSampleRate=Recorder.Ctx.sampleRate;
+			,srcSampleRate=This.srcSampleRate;
 		//采样 https://www.cnblogs.com/blqw/p/3782420.html
-		var step=ctxSampleRate/sampleRate;
+		var step=srcSampleRate/sampleRate;
 		if(step>1){//新采样高于录音采样不处理，省去了插值处理，直接抽样
 			size=Math.floor(size/step);
 		}else{
 			step=1;
-			sampleRate=ctxSampleRate;
+			sampleRate=srcSampleRate;
 			set.sampleRate=sampleRate;
 		};
 		//准备数据
