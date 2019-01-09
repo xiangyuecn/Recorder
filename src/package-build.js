@@ -10,7 +10,7 @@ console.log("开始处理文件...");
 minify("../recorder.mp3.min.js",["recorder-core.js","engine/mp3.js","engine/mp3-engine.js"]);
 minify("../recorder.wav.min.js",["recorder-core.js","engine/wav.js"]);
 
-minify("../dist/recorder-core.js",["recorder-core.js","engine/wav.js"]);
+minify("../dist/recorder-core.js",["recorder-core.js"]);
 minify("../dist/engine/mp3.js",["engine/mp3.js","engine/mp3-engine.js"]);
 minify("../dist/engine/wav.js",["engine/wav.js"]);
 
