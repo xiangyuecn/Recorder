@@ -123,8 +123,6 @@ Recorder.prototype=initFn.prototype={
 	,start:function(){
 		var This=this,ctx=Recorder.Ctx;
 		var buffer=This.buffer=[];//数据缓冲
-		This.srcSampleRate=ctx.sampleRate;
-		This.isMock=0;
 		This.recSize=0;//数据大小
 		This._stop();
 		
@@ -133,6 +131,8 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		console.log("["+Date.now()+"]Start");
+		This.srcSampleRate=ctx.sampleRate;
+		This.isMock=0;
 		
 		if(ctx.state=="suspended"){
 			ctx.resume().then(function(){
