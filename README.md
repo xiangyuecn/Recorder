@@ -1,7 +1,5 @@
 # :open_book:Recorder用于html5录音
 
-**演示地址：https://xiangyuecn.github.io/Recorder/**
-
 支持大部分已实现`getUserMedia`的浏览器，包括腾讯Android X5内核(QQ、微信)。
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
@@ -13,6 +11,24 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 [浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
 
 IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebView(UIWebView?)相关资料](https://forums.developer.apple.com/thread/88052)。
+
+
+## 案例演示
+
+### Demo
+https://xiangyuecn.github.io/Recorder/
+
+### 祝福贺卡助手
+使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版，专门针对IOS的微信中进行了兼容处理，调用的微信的api（小程序、公众号api）。
+
+小程序地址：<img src=".assets/jiebian.life-xcx.png" width="100px">
+
+网页地址：<img src=".assets/jiebian.life-web.png" width="100px">
+
+### 注：
+如果你的项目用到了这个库，可以发个isuse，注明使用介绍和访问方式，我们收录到这里*
+
+
 
 # :open_book:已知问题
 *2018-07-22* [mozilla](https://developer.mozilla.org/zh-CN/docs/Web/API/MediaDevices/getUserMedia) 和 [caniuse](https://caniuse.com/#search=getUserMedia) 注明的IOS 11以上Safari是支持调用getUserMedia的，但有用户反馈苹果手机IOS11 Safari和微信都不能录音，演示页面内两个关键指标：获取getUserMedia都是返回false（没有苹果手机未能复现）。但经测试桌面版Safari能获取到getUserMedia。原因不明。
