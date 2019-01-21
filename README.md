@@ -16,7 +16,7 @@ IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebVie
 ## 案例演示
 
 ### Demo
-https://xiangyuecn.github.io/Recorder/
+https://xiangyuecn.github.io/Recorder/ <img src=".assets/demo.png" width="100px">
 
 #### 祝福贺卡助手
 使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版，专门针对IOS的微信中进行了兼容处理，调用的微信的api（小程序、公众号api）。小程序地址：<img src=".assets/jiebian.life-xcx.png" width="100px">；网页地址：<img src=".assets/jiebian.life-web.png" width="100px">
