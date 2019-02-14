@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-支持大部分已实现`getUserMedia`的浏览器，包括腾讯Android X5内核(QQ、微信)。
+支持大部分已实现`getUserMedia`的移动端、PC端浏览器，包括腾讯Android X5内核(QQ、微信)。[点此查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -270,3 +270,10 @@ set={
 
 最后：如果是在微信上用的多，应优先直接接入他家的JsSDK（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
 
+
+# :star:捐赠
+如果这个库有帮助到您，请 Star 一下。
+
+你也可以选择使用支付宝给我捐赠：
+
+![](.assets/donate-alipay.png)  ![](.assets/donate-weixin.png)
