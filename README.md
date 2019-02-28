@@ -31,9 +31,9 @@ IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebVie
 
 *2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明IOS 12 Safari支持调用getUserMedia，经用户测试反馈IOS 12上chrome、UC都无法获取到，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)
 
-*2018-12-06* **【已修复】** [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
+*2018-12-06* 【已修复】 [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
 
-*2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) `.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成issues#14`ended`原因是App`AndroidManifest.xml`中需要声明的权限没有声明，导致App没有权限获取录音数据。
+*2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
 
 # :open_book:快速使用
 在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可，**对于https的要求不做解释**
@@ -270,12 +270,12 @@ set={
 # :open_book:Android Hybrid App中录音示例
 在Android Hybrid App中使用本库来录音，需要在App源码中实现以下两步分：
 
-1. 在AndroidManifest.xml声明需要用到的两个权限
+1. 在`AndroidManifest.xml`声明需要用到的两个权限
 ``` xml
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 ```
-注：如果应用的腾讯X5内核除了以上两个权限外，还必须提供`android.permission.CAMERA`权限。
+注：如果应用的`腾讯X5内核`除了以上两个权限外，还必须提供`android.permission.CAMERA`权限。
 
 2. `WebChromeClient`中实现`onPermissionRequest`网页授权请求
 ``` java
@@ -291,7 +291,7 @@ public void onPermissionRequest(PermissionRequest request) {
 如果不出意外，App内显示的网页就能正常录音了。
 
 ### 附带测试项目
-`.assets/android`目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，位于`.assets/android/app-debug-xxx.apk`）。提供了系统自带WebView、和腾讯X5内核两个测试界面。
+`.assets/android_test`目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，位于`.assets/android_test/app-debug-xxx.apk`）。提供了`系统自带WebView`、和`腾讯X5内核`两个测试界面。
 
 
 
