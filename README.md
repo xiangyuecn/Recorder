@@ -267,6 +267,30 @@ set={
 对于支持录音的浏览器能够正常录音并返回录音数据；对于不支持的浏览器，引入js和执行相关方法都不会产生异常，并且进入相关的fail回调。一般在open的时候就能检测到是否支持或者被用户拒绝，可在用户开始录音之前提示浏览器不支持录音或授权。
 
 
+# :open_book:Android Hybrid App中录音示例
+在Android Hybrid App中使用本库来录音，需要在App源码中实现以下两步分：
+
+1. 在AndroidManifest.xml声明需要用到的两个权限
+``` xml
+<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+```
+
+2. `WebChromeClient`中实现`onPermissionRequest`网页授权请求
+``` java
+@Override
+public void onPermissionRequest(PermissionRequest request) {
+	...此处应包裹一层系统权限请求
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        request.grant(request.getResources());
+    }
+}
+```
+
+如果不出意外，App内显示的网页就能正常录音了。腾讯X5内核可能会产生问题，参考楼上已知问题部分。
+
+
+
 # :open_book:关于微信JsSDK
 微信内浏览器他家的[JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)也支持录音，涉及笨重难调的公众号开发（光sdk初始化就能阻碍很多新奇想法的产生，signature限制太多），只能满足最基本的使用（大部分情况足够了）。如果JsSDK录完音能返回音频数据，这个SDK将好用10000倍，如果能实时返回音频数据，将好用100000倍。关键是他们家是拒绝给这种简单好用的功能的，必须绕一个大圈：录好音了->上传到微信服务器->自家服务器请求微信服务器多进行媒体下载->保存录音（微信小程序以前也是二逼路子，现在稍微好点能实时拿到录音mp3数据），如果能升级：录好音了拿到音频数据->上传保存录音，目测对最终结果是没有区别的，还简单不少，对微信自家也算是非常经济实用。[2018]由于微信IOS上不支持原生JS录音，Android上又支持，为了兼容而去兼容的事情我是拒绝的（而且是仅仅为了兼容IOS上面的微信），其实也算不上去兼容，因为微信JsSDK中的接口完全算是另外一种东西，接入的话对整个录音流程都会产生完全不一样的变化，还不如没有进入录音流程之前就进行分支判断处理。
 
