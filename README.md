@@ -280,7 +280,7 @@ set={
 ``` java
 @Override
 public void onPermissionRequest(PermissionRequest request) {
-	...此处应包裹一层系统权限请求
+    ...此处应包裹一层系统权限请求
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         request.grant(request.getResources());
     }
