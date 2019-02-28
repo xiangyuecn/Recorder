@@ -1,0 +1,7 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/action_x5"
+        android:title="腾讯X5"
+        android:orderInCategory="100"
+        android:showAsAction="always"/>
+</menu>
