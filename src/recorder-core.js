@@ -86,7 +86,15 @@ Recorder.prototype=initFn.prototype={
 		
 		var f1=function(stream){
 			Recorder.Stream=stream;
-			True();
+			
+			//https://github.com/xiangyuecn/Recorder/issues/14 获取到的track.readyState!="live"，刚刚回调时可能是正常的，但过一下可能就被关掉了，原因不明。延迟一下保证真异步。对正常浏览器不影响
+			setTimeout(function(){
+				if(Recorder.IsOpen()){
+					True();
+				}else{
+					False("录音功能无效：无音频流");
+				};
+			},100);
 		};
 		var f2=function(e){
 			var code=e.name||e.message||"";

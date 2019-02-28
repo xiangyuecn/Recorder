@@ -33,6 +33,8 @@ IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebVie
 
 *2018-12-06* **【已修复】** [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
 
+*2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) `.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。已知在Android App内使用腾讯X5内核时会产生这种情况。
+
 # :open_book:快速使用
 在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可，**对于https的要求不做解释**
 ``` html
