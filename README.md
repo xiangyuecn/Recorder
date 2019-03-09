@@ -35,6 +35,8 @@ IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebVie
 
 *2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
 
+*2019-03-09* 在QQ、微信Android版里面，请求授权使用麦克风的提示，有段时间是每次在调用`getUserMedia`时候都会弹选择，不知道哪天又恢复成了选择一次就不弹提示了，但好歹第二天请求时还会弹一次；如果用户拒绝了，要么等一天，要么重置(装)App。使用腾讯X5内核的App目测也是一样，但第二天不弹，必须重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
+
 # :open_book:快速使用
 在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可，**对于https的要求不做解释**
 ``` html
@@ -275,7 +277,6 @@ set={
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 ```
-注：如果应用的`腾讯X5内核`除了以上两个权限外，还必须提供`android.permission.CAMERA`权限。
 
 2. `WebChromeClient`中实现`onPermissionRequest`网页授权请求
 ``` java
@@ -287,6 +288,8 @@ public void onPermissionRequest(PermissionRequest request) {
     }
 }
 ```
+
+> 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，他会自己弹框询问，如果被拒绝了就永远拒绝了，参考已知问题部分。
 
 如果不出意外，App内显示的网页就能正常录音了。
 
