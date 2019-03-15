@@ -10,7 +10,7 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 
 [浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
 
-IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebView(UIWebView?)相关资料](https://forums.developer.apple.com/thread/88052)。
+`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，其他浏览器均不支持，参考下面的已知问题。
 
 
 ## 案例演示
@@ -27,18 +27,19 @@ IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebVie
 
 
 # :open_book:已知问题
-*2018-07-22* [mozilla](https://developer.mozilla.org/zh-CN/docs/Web/API/MediaDevices/getUserMedia) 和 [caniuse](https://caniuse.com/#search=getUserMedia) 注明的IOS 11以上Safari是支持调用getUserMedia的，但有用户反馈苹果手机IOS11 Safari和微信都不能录音，演示页面内两个关键指标：获取getUserMedia都是返回false（没有苹果手机未能复现）。但经测试桌面版Safari能获取到getUserMedia。原因不明。
-
-*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明IOS 12 Safari支持调用getUserMedia，经用户测试反馈IOS 12上chrome、UC都无法获取到，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)
-
-*2018-12-06* 【已修复】 [issues#1](https://github.com/xiangyuecn/Recorder/issues/1)不同OS上低码率mp3有可能无声，测试发现问题出在lamejs编码器有问题，此编码器本来就是精简版的，可能有地方魔改坏了，用lame测试没有这种问题。已对lamejs源码进行了改动，已通过基础测试，此问题未再次出现。
+*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
 
 *2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
 
-*2019-03-09* 在QQ、微信Android版里面，请求授权使用麦克风的提示，有段时间是每次在调用`getUserMedia`时候都会弹选择，不知道哪天又恢复成了选择一次就不弹提示了，但好歹第二天请求时还会弹一次；如果用户拒绝了，要么等一天，要么重置(装)App。使用腾讯X5内核的App目测也是一样，但第二天不弹，必须重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
+*2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
+
+
+
 
 # :open_book:快速使用
-在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可，**对于https的要求不做解释**
+
+## 【1】加载框架
+在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可 （**注意：需要在https等安全环境下才能进行录音**）
 ``` html
 <script src="recorder.mp3.min.js"></script>
 ```
@@ -49,6 +50,7 @@ IOS(11?、12?)上只有Safari支持getUserMedia，[其他就呵呵了，WKWebVie
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
 ```
 
+## 【2】调用录音
 然后使用，假设立即运行，只录3秒
 ``` javascript
 var rec=Recorder();
@@ -67,6 +69,13 @@ rec.open(function(){//打开麦克风授权获得相关资源
     console.log("无法录音:"+msg);
 });
 ```
+
+## 【附】问题排查
+- 打开[Demo页面](https://xiangyuecn.github.io/Recorder/)试试看，是不是也有同样的问题。
+- 检查是不是在https之类的安全环境下调用的。
+- 检查是不是IOS系统，确认[caniuse](https://caniuse.com/#search=getUserMedia)IOS对`getUserMedia`的支持情况。
+- 检查上面第1步是否把框架加载到位，在[Demo页面](https://xiangyuecn.github.io/Recorder/)有应该加载哪些js的提示。
+- 提交Issue，热心网友帮你解答。
 
 
 # :open_book:方法文档
