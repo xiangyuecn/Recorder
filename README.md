@@ -15,13 +15,15 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 
 ## 案例演示
 
-### Demo
+### 【Demo】
 [<img src=".assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
 
-#### 祝福贺卡助手
+> `2019-3-27` 在QQ和微信打开时，发现这个网址被屏蔽了，尝试申诉了一下。微信要根目录传文件或者传身份证，传了还没有搞定根目录问题，然后刷新了一下居然自己好了；QQ简单些，提交了点信息，一会就恢复了。对于这个事件很是惊喜：惊多些，对恶意举报然后腾讯的处理很是震惊；喜在我的这个网址没有被残废。
+
+#### 【祝福贺卡助手】
 使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src=".assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src=".assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
 
-#### 注：
+#### 【注】
 如果你的项目用到了这个库也想展示到这里，可以发个isuse，注明使用介绍和访问方式，我们收录在这里。
 
 
