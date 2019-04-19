@@ -55,14 +55,25 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 ## 【2】调用录音
 然后使用，假设立即运行，只录3秒
 ``` javascript
-var rec=Recorder();
+var rec=Recorder();//默认使用mp3格式
+
 rec.open(function(){//打开麦克风授权获得相关资源
     rec.start();//开始录音
     
     setTimeout(function(){
-        rec.stop(function(blob,duration){//到达指定条件停止录音，拿到blob对象想干嘛就干嘛：立即播放、上传
+        rec.stop(function(blob,duration){//到达指定条件停止录音
             console.log(URL.createObjectURL(blob),"时长:"+duration+"ms");
             rec.close();//释放录音资源
+            //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
+            
+            /*立即播放例子*/
+            var audio=document.createElement("audio");
+            audio.controls=true;
+            document.body.appendChild(audio);
+            //简单的一哔
+            audio.src=URL.createObjectURL(blob);
+            audio.play();
+            
         },function(msg){
             console.log("录音失败:"+msg);
         });
@@ -70,6 +81,59 @@ rec.open(function(){//打开麦克风授权获得相关资源
 },function(msg){//未授权或不支持
     console.log("无法录音:"+msg);
 });
+```
+
+## 【附】录音上传示例
+``` javascript
+var TestApi="/test_request";//用来在控制台network中能看到请求数据，测试请求结果无关紧要
+var rec=Recorder();rec.open(function(){rec.start();setTimeout(function(){rec.stop(function(blob,duration){
+//-----↓↓↓以下才是主要代码↓↓↓-------
+
+//本例子假设使用jQuery封装的请求方式，实际使用中自行调整为实际的请求方式
+//路径结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+var api=TestApi;
+
+/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
+var reader=new FileReader();
+reader.onloadend=function(){
+    $.ajax({
+        url:api //上传接口地址
+        ,type:"POST"
+        ,data:{
+            mime:blob.type //告诉后端，这个录音是什么格式的，可能前后端都固定的mp3可以不用写
+            ,upfile_b64:(/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result)||[])[1] //录音文件内容，后端进行base64解码成二进制
+            //...其他表单参数
+        }
+        ,success:function(v){
+            console.log("上传成功",v);
+        }
+        ,error:function(s){
+            console.error("上传失败",s);
+        }
+    });
+};
+reader.readAsDataURL(blob);
+
+/***方式二：使用FormData用multipart/form-data表单上传文件***/
+var form=new FormData();
+form.append("upfile",blob,"recorder.mp3"); //和普通form表单并无二致，服务器端接收到upfile参数的文件，文件名为recorder.mp3
+//...其他表单参数
+$.ajax({
+    url:api //上传接口地址
+    ,type:"POST"
+    ,contentType:false //Content-Type header，标准的上传表单需要生成随机的boundary
+    ,processData:false
+    ,data:form
+    ,success:function(v){
+        console.log("上传成功",v);
+    }
+    ,error:function(s){
+        console.error("上传失败",s);
+    }
+});
+
+//-----↑↑↑以上才是主要代码↑↑↑-------
+},function(msg){console.log("录音失败:"+msg);});},3000);},function(msg){console.log("无法录音:"+msg);});
 ```
 
 ## 【附】问题排查
