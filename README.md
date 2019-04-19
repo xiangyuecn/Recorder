@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-支持大部分已实现`getUserMedia`的移动端、PC端浏览器，包括腾讯Android X5内核(QQ、微信)。[点此查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)
+支持大部分已实现`getUserMedia`的移动端、PC端浏览器，包括腾讯Android X5内核(QQ、微信)。[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -8,9 +8,9 @@ mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如�
 
 mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
-[浏览器兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
+浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
 
-`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，其他浏览器均不支持，参考下面的已知问题。
+特别注：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，其他浏览器均不支持，参考下面的已知问题。
 
 
 ## 案例演示
@@ -55,7 +55,7 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 ## 【2】调用录音
 然后使用，假设立即运行，只录3秒
 ``` javascript
-var rec=Recorder();//默认使用mp3格式
+var rec=Recorder();//使用默认配置，mp3格式
 
 rec.open(function(){//打开麦克风授权获得相关资源
     rec.start();//开始录音
@@ -78,18 +78,18 @@ rec.open(function(){//打开麦克风授权获得相关资源
             console.log("录音失败:"+msg);
         });
     },3000);
-},function(msg){//未授权或不支持
-    console.log("无法录音:"+msg);
+},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+    console.log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg);
 });
 ```
 
 ## 【附】录音上传示例
 ``` javascript
-var TestApi="/test_request";//用来在控制台network中能看到请求数据，测试请求结果无关紧要
+var TestApi="/test_request";//用来在控制台network中能看到请求数据，测试的请求结果无关紧要
 var rec=Recorder();rec.open(function(){rec.start();setTimeout(function(){rec.stop(function(blob,duration){
 //-----↓↓↓以下才是主要代码↓↓↓-------
 
-//本例子假设使用jQuery封装的请求方式，实际使用中自行调整为实际的请求方式
+//本例子假设使用jQuery封装的请求方式，实际使用中自行调整为自己的请求方式
 //路径结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
 var api=TestApi;
 
@@ -116,13 +116,13 @@ reader.readAsDataURL(blob);
 
 /***方式二：使用FormData用multipart/form-data表单上传文件***/
 var form=new FormData();
-form.append("upfile",blob,"recorder.mp3"); //和普通form表单并无二致，服务器端接收到upfile参数的文件，文件名为recorder.mp3
+form.append("upfile",blob,"recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
 //...其他表单参数
 $.ajax({
     url:api //上传接口地址
     ,type:"POST"
-    ,contentType:false //Content-Type header，标准的上传表单需要生成随机的boundary
-    ,processData:false
+    ,contentType:false //让xhr自动处理Content-Type header，multipart/form-data需要生成随机的boundary
+    ,processData:false //不要处理data，让xhr自动处理
     ,data:form
     ,success:function(v){
         console.log("上传成功",v);
