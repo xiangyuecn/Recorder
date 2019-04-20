@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-支持大部分已实现`getUserMedia`的移动端、PC端浏览器，包括腾讯Android X5内核(QQ、微信)。[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器，包括腾讯Android X5内核(QQ、微信)。[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -90,7 +90,7 @@ var rec=Recorder();rec.open(function(){rec.start();setTimeout(function(){rec.sto
 //-----↓↓↓以下才是主要代码↓↓↓-------
 
 //本例子假设使用jQuery封装的请求方式，实际使用中自行调整为自己的请求方式
-//路径结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
 var api=TestApi;
 
 /***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
