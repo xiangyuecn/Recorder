@@ -258,6 +258,10 @@ Recorder.prototype=initFn.prototype={
 			False("未采集到录音");
 			return;
 		};
+		if(!This[set.type]){
+			False("未加载"+set.type+"编码器");
+			return;
+		};
 		
 		var sampleRate=set.sampleRate
 			,srcSampleRate=This.srcSampleRate;
