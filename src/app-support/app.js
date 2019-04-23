@@ -270,7 +270,7 @@ fail: fn(msg) 初始化失败
 			return;
 		};
 		var config=platform.Config;
-		var paths=config.paths||[BaseFolder+"app-support/app-"+platform.Key.toLowerCase()+"-support.js"];
+		var paths=config.paths||[{url:BaseFolder+"app-support/app-"+platform.Key.toLowerCase()+"-support.js",check:function(){}}];
 		
 		//加载需要的支持js文件
 		App.Js(paths,function(){

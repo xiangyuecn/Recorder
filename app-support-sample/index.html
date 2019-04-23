@@ -226,7 +226,7 @@ function recreq(){
 	RecordApp.RequestPermission(function(){
 		reclog(RecordApp.Current.Key+"已授权");
 	},function(err,isUserNotAllow){
-		reclog(RecordApp.Current.Key+(isUserNotAllow?" UserNotAllow，":"")+" 授权失败："+e);
+		reclog(RecordApp.Current.Key+(isUserNotAllow?" UserNotAllow，":"")+" 授权失败："+err);
 	});
 };
 var curSet;
