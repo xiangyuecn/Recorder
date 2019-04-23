@@ -281,7 +281,7 @@ function recstop(batCall){
 				u8arr[n]=bstr.charCodeAt(n);
 			};
 			var blob2=new Blob([u8arr], {type:obj.mime});
-			add("发现微信JsSDK服务器端下载下来的音频源文件，播放可能需要上面点击换到amr类型，加载amr解码器");
+			reclog("发现微信JsSDK服务器端下载下来的音频源文件，播放可能需要上面点击换到amr类型，加载amr解码器");
 			add("微信下载源",blob2,{type:/\/(\w+)/.exec(obj.mime)[0]});
 		};
 		add("已录制",blob,curSet);
