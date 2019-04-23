@@ -214,6 +214,11 @@ $(window).bind("error",function(e){
 <script>
 function baseSet(){
 	var alwaysUseWeixinJS=$(".alwaysUseWeixinJS")[0].checked;
+	if(!!RecordApp.alwaysUseWeixinJSPrev!=alwaysUseWeixinJS){
+		reclog("JsSDK选项变更，已重置RecordApp，请先进行权限测试");
+		RecordApp.Current=null;
+		RecordApp.alwaysUseWeixinJSPrev=alwaysUseWeixinJS;
+	};
 	RecordApp.AlwaysUseWeixinJS=alwaysUseWeixinJS;
 };
 function recreq(){
@@ -226,11 +231,11 @@ function recreq(){
 };
 var curSet;
 function recstart(){
+	baseSet();
 	if(!RecordApp.Current){
 		reclog("需先调用RequestPermission");
 		return;
 	};
-	baseSet();
 	if(RecordApp.Current==RecordApp.Platforms.Weixin){
 		reclog("正在使用微信JsSDK，录音过程中不会有任何回调，不要惊慌");
 	};
@@ -361,8 +366,7 @@ reclog("WaveView Extensions已启用");
 <hr>
 <div>
 <h3>移动端js运行简易控制台</h3>
-<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">console.log(RecordApp.AlwaysUseWeixinJS)
-"wait..."</textarea>
+<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">"AlwaysUseWeixinJS: "+RecordApp.AlwaysUseWeixinJS</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
 <textarea id="cmdExecVal" style="width:300px;height:160px;" placeholder="运行结果"></textarea>
 <script>
