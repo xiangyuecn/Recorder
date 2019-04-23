@@ -1,8 +1,11 @@
 /*
-录音 RecordApp： app统一录音接口支持，用于兼容原生应用、ios上的微信 等，需要和app-xxx-support.js配合使用。
+录音 RecordApp： app统一录音接口支持，用于兼容原生应用、ios上的微信 等，需要和app-ios-weixin-support.js（支持IOS上的微信）、app-native-support.js（支持原生应用）配合使用。
+
+特别注明：使用本功能虽然可以最大限度的兼容Android和IOS，但需ios-weixin需要后端提供支持，native需要app端提供支持，具体情况查看相应的文件。
+
 本功能独立于recorder-core.js，可以仅使用RecordApp作为入口，可以不关心recorder-core中的方法，因为RecordApp已经对他进行了一次封装，并且屏蔽了非通用的功能。
 
-注意：此文件并非拿来就能用的，需要改动【需实现】标注的地方，或者使用另外的初始化配置文件来进行配置，可参考.assets/app-support-sample目录内的配置文件。
+注意：此文件并非拿来就能用的，需要改动【需实现】标注的地方，或者使用另外的初始化配置文件来进行配置，可参考app-support-sample目录内的配置文件。
 
 https://github.com/xiangyuecn/Recorder
 */
@@ -13,7 +16,7 @@ var IsWx=/MicroMessenger/i.test(navigator.userAgent);
 
 //文件基础目录，此目录内包含recorder-core.js、engine等。实际取值需自行根据自己的网站目录调整，或者加载本js前，设置RecordAppBaseFolder全局变量。
 //【需实现】
-var BaseFolder=window.RecordAppBaseFolder || /*=:=*/ "/Recorder/src/" /*<% "/Recorder/dist/" %>*/; //编译指令：源码时使用前面的文件夹，压缩时使用后面的文件夹
+var BaseFolder=window.RecordAppBaseFolder || /*=:=*/ "/Recorder/src/" /*<@ "/Recorder/dist/" @>*/; //编译指令：源码时使用前面的文件夹，压缩时使用后面的文件夹
 
 
 //提供一个回调fn()，免得BaseFolder要在这个文件之前定义，其他值又要在之后定义的麻烦。
@@ -69,7 +72,7 @@ var Config_SupportPlatforms=[
 			//amr解码引擎文件，因为微信临时素材接口返回的音频为amr格式，刚好有amr解码器，省去了服务器端的复杂性
 			,AMREngine:[
 				{url:BaseFolder+"engine/beta-amr.js",check:function(){return !Recorder.prototype.amr}}
-				/*=:=*/ ,{url:BaseFolder+"engine/beta-amr-engine.js",check:function(){return !Recorder.AMR}} /*<% %>*/
+				/*=:=*/ ,{url:BaseFolder+"engine/beta-amr-engine.js",check:function(){return !Recorder.AMR}} /*<@ @>*/
 			]
 		}
 		,ExtendDefault:true
@@ -84,7 +87,7 @@ var Config_SupportPlatforms=[
 			paths:[//当使用默认实现时，会自动把这些js全部加载，如果core和编码器已手动加载，可以把此数组清空
 				{url:BaseFolder+"recorder-core.js",check:function(){return !window.Recorder}}
 				,{url:BaseFolder+"engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
-				/*=:=*/ ,{url:BaseFolder+"engine/mp3-engine.js",check:function(){return !Recorder.lamejs}} /*<% %>*/ //编译指令：压缩后mp3-engine已包含在了mp3.js中
+				/*=:=*/ ,{url:BaseFolder+"engine/mp3-engine.js",check:function(){return !Recorder.lamejs}} /*<@ @>*/ //编译指令：压缩后mp3-engine已包含在了mp3.js中
 			]
 		}
 	}
@@ -108,20 +111,20 @@ Default.RequestPermission=function(success,fail){
 	},fail);
 };
 Default.Start=function(set,success,fail){
-	set||(set={});
 	var appRec=App.__Rec;
 	if(appRec!=null){
 		appRec.close();
 	};
 	App.__Rec=appRec=Recorder({
-		type:set.type||"mp3"
-		,sampleRate:set.sampleRate||16000
-		,bitRate:set.bitRate||16
+		type:set.type
+		,sampleRate:set.sampleRate
+		,bitRate:set.bitRate
 		
 		,onProcess:function(pcmData,powerLevel,duration,sampleRate){
 			App.ReceivePCM(pcmData[pcmData.length-1],powerLevel,duration,sampleRate);
 		}
 	});
+	appRec.appSet=set;
 	appRec.open(function(){
 		appRec.start();
 		success();
@@ -130,9 +133,17 @@ Default.Start=function(set,success,fail){
 	});
 };
 Default.Stop=function(success,fail){
-	var appRec=App.__Rec;//不调用start就来stop，不做任何处理
+	var appRec=App.__Rec;
+	if(!appRec){
+		fail("未开始录音");
+		return;
+	};
 	var end=function(){
 		appRec.close();
+		//把配置写回去
+		for(var k in appRec.set){
+			appRec.appSet[k]=appRec.set[k];
+		};
 		App.__Rec=null;
 	};
 	appRec.stop(function(blob,duration){
@@ -156,7 +167,9 @@ Default.Stop=function(success,fail){
 
 
 var App={
-Current:0
+LM:"2019-4-23 14:51:14"
+,Current:0
+,IsWx:IsWx
 ,BaseFolder:BaseFolder
 ,AlwaysUseWeixinJS:false //测试用的，微信里面总是使用微信的接口，方便Android上调试
 ,Platforms:{
@@ -223,19 +236,20 @@ powerLevel,duration,sampleRate 和Recorder的onProcess相同
 //OnProcess:function(pcmDatas,powerLevel,duration,sampleRate){}
 
 
+
 /*
-请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调，调用start前需先至少调用一次此方法
-success:fn() 有权限时回调
-fail:fn(errMsg,isUserNotAllow) 没有权限或者不能录音时回调，如果是用户主动拒绝的录音权限，除了有错误消息外，isUserNotAllow=true，方便程序中做不同的提示，提升用户主动授权概率
+初始化安装，可反复调用
+success: fn() 初始化成功
+fail: fn(msg) 初始化失败
 */
-,RequestPermission:function(success,fail){
+,Install:function(success,fail){
 	//因为此操作是异步的，为了避免竞争Current资源，此代码保证得到结果前只会发起一次调用
 	var reqs=App.__reqs||(App.__reqs=[]);
 	reqs.push({s:success,f:fail});
 	success=function(){
 		call("s",arguments);
 	};
-	fail=function(){
+	fail=function(errMsg,isUserNotAllow){
 		call("f",arguments);
 	};
 	var call=function(fn,args){
@@ -296,11 +310,35 @@ fail:fn(errMsg,isUserNotAllow) 没有权限或者不能录音时回调，如果�
 		
 		//已获取支持的底层平台
 		App.Current=cur;
-		cur.RequestPermission(success,fail);
+		success();
 	};
 	
 	
 	next(App.Current);
+}
+
+
+/*
+请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调，调用start前需先至少调用一次此方法
+success:fn() 有权限时回调
+fail:fn(errMsg,isUserNotAllow) 没有权限或者不能录音时回调，如果是用户主动拒绝的录音权限，除了有错误消息外，isUserNotAllow=true，方便程序中做不同的提示，提升用户主动授权概率
+*/
+,RequestPermission:function(success,fail){
+	App.Install(function(){
+		var cur=App.Current;
+		console.log("开始请求"+cur.Key+"录音权限");
+		
+		cur.RequestPermission(function(){
+			console.log("录音权限请求成功");
+			success();
+		},function(errMsg,isUserNotAllow){
+			console.log("录音权限请求失败："+errMsg+",isUserNotAllow:"+isUserNotAllow);
+			fail(errMsg,isUserNotAllow);
+		});
+	},function(err){
+		console.log("Install失败",err);
+		fail(err);
+	});
 }
 /*
 开始录音，需先调用RequestPermission
@@ -310,8 +348,8 @@ set：设置默认值：{
 	type:"mp3"//最佳输出格式，如果底层实现能够支持就应当优先返回此格式
 	sampleRate:16000//最佳采样率hz
 	bitRate:16//最佳比特率kbps
-}
-success:fn() 有权限时回调
+} 注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
+success:fn() 打开录音时回调
 fail:fn(errMsg) 开启录音出错时回调
 */
 ,Start:function(set,success,fail){
@@ -320,28 +358,38 @@ fail:fn(errMsg) 开启录音出错时回调
 		fail("需先调用RequestPermission");
 		return;
 	};
+	set||(set={});
 	var obj={
 		type:"mp3"
 		,sampleRate:16000
 		,bitRate:16
 	};
-	if(set){
-		for(var k in set){
-			obj[k]=set[k];
-		};
+	for(var k in obj){
+		set[k]||(set[k]=obj[k]);
 	};
-	cur.Start(obj,success,fail);
+	cur.Start(set,function(){
+		console.log("开始录音",set);
+		success();
+	},function(msg){
+		console.log("开始录音失败："+msg);
+		fail(msg);
+	});
 }
 /*
 结束录音
 
-success:fn(obj) 有权限时回调，obj={
-		mime:"audio/mp3" //录音数据格式，注意：不一定和start传入的set.type相同，可能为其他值
-		,duration:123 //音频持续时间
-		,data:"base64" //音频数据，base64编码后的纯文本格式
-	}
+success:fn(blob,duration)	结束录音时回调
+	blob:Blob 录音数据audio/mp3|wav...格式
+	duration:123 //音频持续时间
 	
-fail:fn(errMsg) 开启录音出错时回调
+	注意：个个平台统一实现时，这个回调格式是这样的：
+		fn(obj) 平台结束录音时回调，obj={
+			mime:"audio/mp3" //录音数据格式，注意：不一定和start传入的set.type相同，可能为其他值
+			,duration:123 //音频持续时间
+			,data:"base64" //音频数据，base64编码后的纯文本格式
+		}
+	
+fail:fn(errMsg) 录音出错时回调
 */
 ,Stop:function(success,fail){
 	var cur=App.Current;
@@ -349,7 +397,20 @@ fail:fn(errMsg) 开启录音出错时回调
 		fail("需先调用RequestPermission");
 		return;
 	};
-	cur.Stop(success,fail);
+	
+	cur.Stop(function(obj){
+		var bstr=atob(obj.data),n=bstr.length,u8arr=new Uint8Array(n);
+		while(n--){
+			u8arr[n]=bstr.charCodeAt(n);
+		};
+		var blob=new Blob([u8arr], {type:obj.mime});
+		
+		console.log("结束录音"+blob.size+"b "+obj.duration+"ms",blob);
+		success(blob, obj.duration);
+	},function(msg){
+		console.log("结束录音失败："+msg);
+		fail(msg);
+	});
 }
 
 };

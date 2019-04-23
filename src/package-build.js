@@ -5,9 +5,9 @@ js压缩合并用的nodejs代码
 	```
 	/ *=:=* /
 		源码时执行的js代码
-	/ *<%
+	/ *<@
 		编译后执行的js代码
-	%>* /
+	@>* /
 	```
 */
 
@@ -47,7 +47,7 @@ function minify(output,srcs){
 		codes.push(fs.readFileSync(srcs[i],"utf-8"));
 	};
 	var code=codes.join("\n").replace(
-		/\/\*=:=\*\/([\S\s]+?)\/\*<%([\S\s]+?)%>\*\//g
+		/\/\*=:=\*\/([\S\s]+?)\/\*<@([\S\s]+?)@>\*\//g
 		,function(a,b,c){
 			console.log("*******使用编译指令：\n"+a+"\n\n");
 			return c;

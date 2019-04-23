@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2019-4-18 09:31:44";
+window.RecorderLM="2019-4-23 15:23:07";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 

@@ -9,6 +9,8 @@
 
 JsBridge可以是自己实现的交互方式 或 别人提供的框架。因为不知道具体使用的桥接方式，对应的底下有三个方法需要自行实现。
 
+录音必须是单声道的，因为这个库从头到尾就没有打算支持双声道。
+
 https://github.com/xiangyuecn/Recorder
 */
 (function(){
@@ -22,11 +24,11 @@ platform.IsInit=true;
 
 /*******App Native层在录音时定时回调本js方法*******/
 /*
-pcmData: int[] 当前录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
+pcmData: int[] 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
 duration: 123456 已录制总时长
 sampleRate：123456 录制音频实际的采样率
 */
-window.NativeRecordReceivePCM=function(pcmData,duration,sampleRate){
+window.top.NativeRecordReceivePCM=function(pcmData,duration,sampleRate){//无视iframe
 	//本算法来自recorder-core.js，如果需要改动，两个地方一块改
 	var size=pcmData.length;
 	var power=0;

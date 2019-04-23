@@ -1,6 +1,8 @@
 /*
 录音 RecordApp：ios上的微信支持文件。
 
+特别注明：本文件涉及的功能需要后端的支持，如果你不能提供微信JsSDK签名、素材下载api，并且坚决要使用本文件，那将会很困难。
+
 本文件诞生的原因是因为IOS端WKWebView(UIWebView)中未开放getUserMedia功能来录音，对应的微信内也不能用H5录音，只能寻求其他解决方案。Android端没有此问题。当以后IOS任何地方的网页都能录音时，本文件就可以删除了。
 
 本文件源码可以不用改动，因为需要改动的地方已放到了app.js的IOS-Weixin.Config中了。
@@ -61,7 +63,12 @@ platform.Stop=function(success,fail){
 				//音质差是跟微信服务器返回的amr本来就音质差，转其他格式几乎无损音质，和微信本地播放音质有区别
 				var set=WXRecordData.start;
 				
-				Recorder(set).mock(pcm,8000).stop(function(blob,duration){
+				var rec=Recorder(set).mock(pcm,8000);
+				rec.stop(function(blob,duration){
+					//把配置写回去
+					for(var k in rec.set){
+						set[k]=rec.set[k];
+					};
 					App.BlobRead(blob,duration,success);
 				},fail);
 			},function(msg){
