@@ -125,9 +125,12 @@ RandomKey.idx=0;
 	<div class="pd">
 		<span style="font-size:18px;color:#ef6ea8">打动干戈，仅为兼容IOS而生，不得不向大厂低头</span>
 		在未开启原生App支持(Platforms.Native)的情况下，RecordApp会加载Recorder，因此算是完全兼容Recorder，Native没法网页测试，请自行研究。
+		
+		<br>
+		本测试页面重点测试应放在IOS的微信（浏览器、小程序）内的兼容测试。其他环境会走Recorder。
 	</div>
 	<div class="pd">
-		GitHub：<a href="https://github.com/xiangyuecn/Recorder/app-support-sample/">https://github.com/xiangyuecn/Recorder/app-support-sample</a>
+		GitHub：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample">https://github.com/xiangyuecn/Recorder/ => app-support-sample</a>
 	</div>
 	<div class="pd types">
 		类型:
@@ -209,11 +212,16 @@ $(window).bind("error",function(e){
 
 
 <script>
+function baseSet(){
+	var alwaysUseWeixinJS=$(".alwaysUseWeixinJS")[0].checked;
+	RecordApp.AlwaysUseWeixinJS=alwaysUseWeixinJS;
+};
 function recreq(){
+	baseSet();
 	RecordApp.RequestPermission(function(){
-		reclog("已授权");
+		reclog(RecordApp.Current.Key+"已授权");
 	},function(err,isUserNotAllow){
-		reclog((isUserNotAllow?"UserNotAllow，":"")+"授权失败："+e);
+		reclog(RecordApp.Current.Key+(isUserNotAllow?" UserNotAllow，":"")+" 授权失败："+e);
 	});
 };
 var curSet;
@@ -221,6 +229,10 @@ function recstart(){
 	if(!RecordApp.Current){
 		reclog("需先调用RequestPermission");
 		return;
+	};
+	baseSet();
+	if(RecordApp.Current==RecordApp.Platforms.Weixin){
+		reclog("正在使用微信JsSDK，录音过程中不会有任何回调，不要惊慌");
 	};
 	
 	var type=$("[name=type]:checked").val();
@@ -233,11 +245,11 @@ function recstart(){
 		,sampleRate:sample
 	};
 	RecordApp.Start(curSet,function(){
-		reclog("已打开:"+type+" "+bit+"kbps");
+		reclog(RecordApp.Current.Key+"已打开:"+type+" "+bit+"kbps");
 		
 		wave=Recorder.WaveView({elem:".recwave"});
 	},function(err){
-		reclog("打开失败："+err);
+		reclog(RecordApp.Current.Key+"打开失败："+err);
 	});
 	RecordApp.OnProcess=function(buffers,level,time,sampleRate){
 		$(".recpowerx").css("width",level+"%");
@@ -248,7 +260,7 @@ function recstart(){
 };
 var recblob={};
 function recstop(batCall){
-	reclog("正在结束"+curSet.type+"...");
+	reclog(RecordApp.Current.Key+"正在结束"+curSet.type+"...");
 	var t1=Date.now();
 	RecordApp.Stop(function(blob,time){
 		var id=RandomKey(16);
@@ -349,15 +361,7 @@ reclog("WaveView Extensions已启用");
 <hr>
 <div>
 <h3>移动端js运行简易控制台</h3>
-<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">(navigator.webkitGetUserMedia||navigator.getUserMedia).call(navigator,
-{audio:true}
-,function(){
-	JsVal.value+="\n支持录音";
-	console.log(JsVal.value);
-},function(e){
-	JsVal.value+="\n"+(e.name||e.message)
-	console.error(e);
-});
+<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">console.log(RecordApp.AlwaysUseWeixinJS)
 "wait..."</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
 <textarea id="cmdExecVal" style="width:300px;height:160px;" placeholder="运行结果"></textarea>
