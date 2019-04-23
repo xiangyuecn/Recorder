@@ -10,7 +10,7 @@ https://github.com/xiangyuecn/Recorder
 console.error("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
 
 //请使用自己的js文件，不要用我的，github.io直接外链【超级】【不稳定】
-var RecordAppBaseFolder="https://xiangyuecn.github.io/Recorder/src/";
+var RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
 //请使用自己的素材下载接口，不要用我的，微信【强制】要【绑安全域名】，别的站用不了
 var MyWxApi="https://jiebian.life/api/weixin/git_record";
 
@@ -195,7 +195,8 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 };
 
 
-alert("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
+if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href))
+	alert("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
 
 
 if(window.RecordApp){
