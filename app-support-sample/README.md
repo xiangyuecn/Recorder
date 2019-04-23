@@ -1,4 +1,4 @@
-[Recorder](https://github.com/xiangyuecn/Recorder/) | [RecordApp]
+[Recorder](https://github.com/xiangyuecn/Recorder/) | RecordApp
 
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
@@ -35,6 +35,22 @@
 `IOS 12`上`getUserMedia`功能表现特异，如果是都不支持也就无话可说了，但`Safari`又支持，[那是谁的问题](https://forums.developer.apple.com/thread/88052)！但不得不向大厂低头，于是就有了此最大限度的兼容方案（能兼容一点是一点，枪打微信出头鸟）；由于有些开发者比较关心此问题，于是就开源了。
 
 当`IOS`哪天开始支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
+
+
+> `RecordApp`单纯点来讲就是为了兼容IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
+
+支持|[Recorder](https://github.com/xiangyuecn/Recorder/)|RecordApp
+-:|:-:|:-:
+PC浏览器|√|√
+Android浏览器|√|√
+Android微信(含小程序)|√|√
+Android Hybrid App|√|√
+IOS Safari|√|√
+IOS微信(含小程序)||√
+IOS Hybrid App||√
+IOS其他浏览器||
+开发难度|简单|复杂
+第三方依赖|无|依赖微信公众号
 
 
 ## 使用重要前提

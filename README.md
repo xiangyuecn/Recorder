@@ -21,9 +21,9 @@ Android浏览器|√|√
 Android微信(含小程序)|√|√
 Android Hybrid App|√|√
 IOS Safari|√|√
-IOS其他浏览器||
 IOS微信(含小程序)||√
 IOS Hybrid App||√
+IOS其他浏览器||
 开发难度|简单|复杂
 第三方依赖|无|依赖微信公众号
 
