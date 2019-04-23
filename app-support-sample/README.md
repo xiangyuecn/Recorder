@@ -125,9 +125,9 @@ RecordApp.OnProcess=function(pcmData,powerLevel,duration,sampleRate){
 ``` javascript
 set配置默认值：
 {
-	type:"mp3"//最佳输出格式，如果底层实现能够支持就应当优先返回此格式
-	sampleRate:16000//最佳采样率hz
-	bitRate:16//最佳比特率kbps
+    type:"mp3"//最佳输出格式，如果底层实现能够支持就应当优先返回此格式
+    sampleRate:16000//最佳采样率hz
+    bitRate:16//最佳比特率kbps
 }
 注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
 
@@ -142,7 +142,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 ## 【静态方法】RecordApp.Stop(success,fail)
 结束录音。
 
-`success`: `fn(blob,duration)`	结束录音时回调，`blob:Blob` 录音数据`audio/mp3|wav...`格式，`duration`: `123` 音频持续时间。
+`success`: `fn(blob,duration)`    结束录音时回调，`blob:Blob` 录音数据`audio/mp3|wav...`格式，`duration`: `123` 音频持续时间。
 
 `fail`: `fn(errMsg)` 录音出错时回调
 
@@ -211,11 +211,11 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 `success`: `fn(obj)` 结束录音时回调返回数据
 ``` javascript
-	obj={
-		mime:"audio/mp3" //录音数据格式，注意：不一定要和start传入的set.type相同，可能为其他值
-		,duration:123 //音频持续时间
-		,data:"base64" //音频数据，base64编码后的纯文本格式
-	}
+    obj={
+        mime:"audio/mp3" //录音数据格式，注意：不一定要和start传入的set.type相同，可能为其他值
+        ,duration:123 //音频持续时间
+        ,data:"base64" //音频数据，base64编码后的纯文本格式
+    }
 ```
 
 `fail`: `fn(errMsg)` 录音失败回调
@@ -261,4 +261,4 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 你也可以选择使用支付宝或微信给我捐赠：
 
-![](.assets/donate-alipay.png)  ![](.assets/donate-weixin.png)
+![](../.assets/donate-alipay.png)  ![](../.assets/donate-weixin.png)
