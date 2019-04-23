@@ -127,7 +127,7 @@ RandomKey.idx=0;
 		在未开启原生App支持(Platforms.Native)的情况下，RecordApp会加载Recorder，因此算是完全兼容Recorder，Native没法网页测试，请自行研究。
 		
 		<br>
-		本测试页面重点测试应放在IOS的微信（浏览器、小程序）内的兼容测试。其他环境会走Recorder。
+		本测试页面重点兼容测试应放在IOS的微信（浏览器、小程序）内。因为其他环境会走Recorder。
 	</div>
 	<div class="pd">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample">https://github.com/xiangyuecn/Recorder/ => app-support-sample</a>
@@ -268,9 +268,23 @@ function recstop(batCall){
 	reclog(RecordApp.Current.Key+"正在结束"+curSet.type+"...");
 	var t1=Date.now();
 	RecordApp.Stop(function(blob,time){
-		var id=RandomKey(16);
-		recblob[id]={blob:blob,set:$.extend({},curSet),time:time};
-		reclog("已录制:"+intp(curSet.bitRate,3)+"kbps "+intp(curSet.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+curSet.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+		var add=function(tag,blob,set){
+			var id=RandomKey(16);
+			recblob[id]={blob:blob,set:$.extend({},set),time:time};
+			reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+		};
+		
+		var obj=curSet.__DownWxMedia;//微信JsSDK 下载到的音频源文件
+		if(obj){
+			var bstr=atob(obj.data),n=bstr.length,u8arr=new Uint8Array(n);
+			while(n--){
+				u8arr[n]=bstr.charCodeAt(n);
+			};
+			var blob2=new Blob([u8arr], {type:obj.mime});
+			add("发现微信JsSDK服务器端下载下来的音频源文件，播放可能需要上面点击换到amr类型，加载amr解码器");
+			add("微信下载源",blob2,{type:/\/(\w+)/.exec(obj.mime)[0]});
+		};
+		add("已录制",blob,curSet);
 	},function(s){
 		reclog("失败："+s);
 	});

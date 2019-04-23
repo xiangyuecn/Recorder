@@ -50,9 +50,20 @@ platform.Stop=function(success,fail){
 	var fail=function(msg){
 		fail("录音失败："+(msg.errMsg||msg));
 	};
+	var set=WXRecordData.start;
 	
-	//amr格式转换
-	var amr=function(data){
+	//格式转换
+	var transform=function(data,sevType,sevDuration){
+		//服务器端已经转码了，就直接返回
+		if(sevDuration){
+			success({
+				mime:"audio/"+sevType
+				,duration:sevDuration
+				,data:data
+			});
+			return;
+		};
+		
 		var end=function(){
 			var bstr=atob(data),n=bstr.length,u8arr=new Uint8Array(n);
 			while(n--){
@@ -61,7 +72,6 @@ platform.Stop=function(success,fail){
 			
 			Recorder.AMR.decode(u8arr,function(pcm){
 				//音质差是跟微信服务器返回的amr本来就音质差，转其他格式几乎无损音质，和微信本地播放音质有区别
-				var set=WXRecordData.start;
 				
 				var rec=Recorder(set).mock(pcm,8000);
 				rec.stop(function(blob,duration){
@@ -75,6 +85,7 @@ platform.Stop=function(success,fail){
 				fail("AMR音频无法解码:"+msg);
 			});
 		};
+		
 		if(Recorder.AMR){
 			end();
 		}else{
@@ -97,9 +108,17 @@ platform.Stop=function(success,fail){
 					var serverId=res.serverId;
 					console.log("微信录音serverId:"+serverId);
 					
-					config.DownWxMedia(serverId,function(data){
-						if(/amr/i.test(data.mime)){
-							amr(data.data);
+					config.DownWxMedia({
+						mediaId:serverId
+						,type:set.type
+					},function(data){
+						//写到set里面，方便调试
+						set.__DownWxMedia=data;
+						
+						if(new RegExp(set.type,"i").test(data.mime)){
+							transform(data.data,set.type,data.duration);
+						}else if(/amr/i.test(data.mime)){
+							transform(data.data);
 						}else{
 							fail("微信服务器返回了未知音频类型："+data.mime);
 						};

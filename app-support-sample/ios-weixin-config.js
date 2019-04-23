@@ -61,20 +61,26 @@ config.WxReady=function(call){
 	
 	win.WxReady(call);
 };
-config.DownWxMedia=function(mediaId,success,fail){
+config.DownWxMedia=function(param,success,fail){
 	/*下载微信录音素材，服务器端接口文档： https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
-		mediaId： 录音接口上传得到的微信服务器上的ID
-		success： fn(obj) 下载成功返回结果
-			obj:{
-				mime:"audio/amr" //这个值是服务器端请求临时素材接口返回的Content-Type响应头
-				,data:"base64文本" //服务器端下载到的文件二进制内容进行base64编码
-			}
-		fail: fn(msg) 下载出错回调
+	param:{//接口调用参数
+		mediaId："" 录音接口上传得到的微信服务器上的ID
+		type:"mp3" 录音set中的类型，用于转码参考，正常情况下这个参数用不到。如果接口返回的mime不是audio/amr，那必须是：audio/type(如：audio/mp3)；因为amr可以在js中完成转码，其他类型目前只能靠服务器端转码。另外素材下载的amr音质很渣，也许可以通过高清接口获得清晰点的音频，那么这个参数就有用武之地。
+	}
+	success： fn(obj) 下载成功返回结果
+		obj:{
+			mime:"audio/amr" //这个值是服务器端请求临时素材接口返回的Content-Type响应头
+			,data:"base64文本" //服务器端下载到的文件二进制内容进行base64编码
+			
+			,duration:0 //音频时长，这个是可选的，如果服务器端进行了转码，返回的mime不是amr类型，必须提供这个参数
+		}
+	fail: fn(msg) 下载出错回调
 	*/
 	
 	ajax(MyWxApi,{
 		action:"wxdown"
-		,mediaID:mediaId
+		,mediaID:param.mediaId
+		,type:param.type
 	},function(data){
 		success(data.v);
 	},function(msg){
