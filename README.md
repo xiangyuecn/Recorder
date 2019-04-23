@@ -12,6 +12,21 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 
 特别注：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，其他浏览器均不支持，参考下面的已知问题。
 
+> 如果需要最大限度的兼容IOS，可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
+
+支持|Recorder|[RecordApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)
+-:|:-:|:-:
+PC浏览器|√|√
+Android浏览器|√|√
+Android微信(含小程序)|√|√
+Android Hybrid App|√|√
+IOS Safari|√|√
+IOS其他浏览器||
+IOS微信(含小程序)||√
+IOS Hybrid App||√
+开发难度|简单|复杂
+第三方依赖|无|依赖微信公众号
+
 
 ## 案例演示
 
@@ -373,15 +388,19 @@ public void onPermissionRequest(PermissionRequest request) {
 
 
 
-# :open_book:关于微信JsSDK
-微信内浏览器他家的[JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)也支持录音，涉及笨重难调的公众号开发（光sdk初始化就能阻碍很多新奇想法的产生，signature限制太多），只能满足最基本的使用（大部分情况足够了）。如果JsSDK录完音能返回音频数据，这个SDK将好用10000倍，如果能实时返回音频数据，将好用100000倍。关键是他们家是拒绝给这种简单好用的功能的，必须绕一个大圈：录好音了->上传到微信服务器->自家服务器请求微信服务器多进行媒体下载->保存录音（微信小程序以前也是二逼路子，现在稍微好点能实时拿到录音mp3数据），如果能升级：录好音了拿到音频数据->上传保存录音，目测对最终结果是没有区别的，还简单不少，对微信自家也算是非常经济实用。[2018]由于微信IOS上不支持原生JS录音，Android上又支持，为了兼容而去兼容的事情我是拒绝的（而且是仅仅为了兼容IOS上面的微信），其实也算不上去兼容，因为微信JsSDK中的接口完全算是另外一种东西，接入的话对整个录音流程都会产生完全不一样的变化，还不如没有进入录音流程之前就进行分支判断处理。
+# :open_book:关于微信JsSDK和RecordApp
+微信内浏览器他家的[JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)也支持录音，涉及笨重难调的公众号开发（光sdk初始化就能阻碍很多新奇想法的产生，signature限制太多），只能满足最基本的使用（大部分情况足够了）。获取音频数据必须绕一个大圈：录好音了->上传到微信服务器->自家服务器请求微信服务器多进行媒体下载->保存录音（微信小程序以前也是二逼路子，现在稍微好点能实时拿到录音mp3数据）。
 
-最后：如果是在微信上用的多，应优先直接接入他家的JsSDK（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
+[2018]由于微信IOS上不支持原生JS录音，Android上又支持，为了兼容而去兼容的事情我是拒绝的（而且是仅仅为了兼容IOS上面的微信），其实也算不上去兼容，因为微信JsSDK中的接口完全算是另外一种东西，接入的话对整个录音流程都会产生完全不一样的变化，还不如没有进入录音流程之前就进行分支判断处理。
+
+[2019]大动干戈，仅为兼容IOS而生，不得不向大厂低头，我还是为兼容而去兼容了IOS微信，对不支持录音的IOS微信`浏览器`、`小程序web-view`进行了兼容，使用微信JsSDK来录音，并以前未开源的兼容代码基础上重写了`RecordApp`，源码在`app-support-sample`、`src/app-support`内。
+
+最后：如果要兼容IOS，可以自行接入JsSDK或使用`RecordApp`（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
 
 
 # :star:捐赠
 如果这个库有帮助到您，请 Star 一下。
 
-你也可以选择使用支付宝给我捐赠：
+你也可以选择使用支付宝或微信给我捐赠：
 
 ![](.assets/donate-alipay.png)  ![](.assets/donate-weixin.png)

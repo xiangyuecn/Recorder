@@ -228,7 +228,7 @@ LM:"2019-4-23 14:51:14"
 
 /*
 此方法由底层实现来调用，在开始录音后，底层如果能实时返还pcm数据，则会调用此方法
-pcmData:int[]
+pcmData:int[] 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
 powerLevel,duration,sampleRate 和Recorder的onProcess相同
 */
 ,ReceivePCM:function(pcmData,powerLevel,duration,sampleRate){

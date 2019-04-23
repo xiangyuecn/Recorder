@@ -113,7 +113,7 @@ platform.Stop=function(success,fail){
 						,type:set.type
 					},function(data){
 						//写到set里面，方便调试
-						set.__DownWxMedia=data;
+						set.DownWxMediaData=data;
 						
 						if(new RegExp(set.type,"i").test(data.mime)){
 							transform(data.data,set.type,data.duration);

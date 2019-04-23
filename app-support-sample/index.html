@@ -126,11 +126,11 @@ RandomKey.idx=0;
 <!-- begin 开始copy源码 -->
 <div>
 	<div class="pd">
-		<span style="font-size:18px;color:#ef6ea8">打动干戈，仅为兼容IOS而生，不得不向大厂低头</span>
+		<span style="font-size:18px;color:#ef6ea8">大动干戈，仅为兼容IOS而生，不得不向大厂低头</span>
 		在未开启原生App支持(Platforms.Native)的情况下，RecordApp会加载Recorder，因此算是完全兼容Recorder，Native没法网页测试，请自行研究。
 		
 		<br>
-		本测试页面重点兼容测试应放在IOS的微信（浏览器、小程序）内。因为其他环境会走Recorder。
+		本测试页面重点兼容测试应放在IOS的微信（浏览器、小程序web-view）内。因为其他环境会走Recorder。
 	</div>
 	<div class="pd">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample">https://github.com/xiangyuecn/Recorder/ => app-support-sample</a>
@@ -281,7 +281,7 @@ function recstop(batCall){
 			reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 		};
 		
-		var obj=curSet.__DownWxMedia;//微信JsSDK 下载到的音频源文件
+		var obj=curSet.DownWxMediaData;//微信JsSDK 下载到的音频源文件
 		if(obj){
 			var bstr=atob(obj.data),n=bstr.length,u8arr=new Uint8Array(n);
 			while(n--){
@@ -557,6 +557,9 @@ function onInstall(){
 	loadEngine($(".initType"));
 	
 	$(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
+	if(!/:\/\/[^\/]*jiebian.life(\/|$)/.test(location.href)){
+		reclog("<span style='color:red'>当前域名不在微信JsSDK绑定的域名中，无法使用JsSDK相关功能</span>");
+	};
 };
 if(isInstall){
 	onInstall();
