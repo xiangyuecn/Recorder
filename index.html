@@ -26,6 +26,9 @@ pre{
 .pd{
 	padding:0 0 6px 0;
 }
+.btns button{
+	padding: 5px 10px;
+}
 </style>
 
 <script>
@@ -108,11 +111,11 @@ RandomKey.idx=0;
 	<div class="pd">
 		采样率:<input type="text" class="sample" value="16000">如：mp3标准值，wav任意
 	</div>
-	<div class="pd">
+	<div class="pd btns">
 		<button onclick="recopen()">打开录音</button>
 		<button onclick="recclose()">关闭录音</button>
 	</div>
-	<div class="pd">
+	<div class="pd btns">
 		<button onclick="recstart()">录制</button>
 		<button onclick="recstop()">停止</button>
 		
@@ -251,7 +254,7 @@ function recstop(batCall){
 	};
 };
 var intp=function(s,len){
-	s=""+s;
+	s=s==null?"-":s+"";
 	if(s.length>=len)return s;
 	return ("_______"+s).substr(-len);
 };

@@ -61,6 +61,9 @@ pre{
 .pd{
 	padding:0 0 6px 0;
 }
+.btns button{
+	padding: 5px 10px;
+}
 </style>
 
 <script>
@@ -152,10 +155,10 @@ RandomKey.idx=0;
 	<div class="pd">
 		JsSDK: <label><input type="checkbox" class="alwaysUseWeixinJS">Android微信内也用JsSDK</label>
 	</div>
-	<div class="pd">
+	<div class="pd btns">
 		<button onclick="recreq()">请求权限测试</button>
 	</div>
-	<div class="pd">
+	<div class="pd btns">
 		<button onclick="recstart()">录制</button>
 		<button onclick="recstop()">停止</button>
 	</div>
@@ -223,6 +226,7 @@ function baseSet(){
 };
 function recreq(){
 	baseSet();
+	reclog("开始请求授权...");
 	RecordApp.RequestPermission(function(){
 		reclog(RecordApp.Current.Key+"已授权");
 	},function(err,isUserNotAllow){
@@ -265,6 +269,9 @@ function recstart(){
 };
 var recblob={};
 function recstop(batCall){
+	if(!curSet){
+		reclog("请先开始录音");
+	};
 	reclog(RecordApp.Current.Key+"正在结束"+curSet.type+"...");
 	var t1=Date.now();
 	RecordApp.Stop(function(blob,time){
@@ -290,7 +297,7 @@ function recstop(batCall){
 	});
 };
 var intp=function(s,len){
-	s=s==null?"":s+"";
+	s=s==null?"-":s+"";
 	if(s.length>=len)return s;
 	return ("_______"+s).substr(-len);
 };
