@@ -48,6 +48,7 @@ var ajax=function(url,data,True,False){
 	for(var k in data){
 		arr.push(k+"="+encodeURIComponent(data[k]));
 	};
+	xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
 	xhr.send(arr.join("&"));
 };
 
