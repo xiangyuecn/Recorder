@@ -35,7 +35,7 @@ Recorder.prototype.amr=function(res,True,False){
 		if(sampleRate!=8000){
 			console.log("amr mock start")
 			set.sampleRate=8000;
-			This.mock(res,sampleRate).stop(function(blob,d){
+			Recorder(set).mock(res,sampleRate).stop(function(blob,d){
 				console.log("amr mock end")
 				True(blob);
 			},False);
