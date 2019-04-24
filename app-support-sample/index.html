@@ -308,6 +308,7 @@ function recstop(batCall){
 			reclog("<span style='color:#fb0'>发现微信JsSDK服务器端下载下来的音频源文件，播放可能需要上面点击换到amr类型，加载amr解码器<span>");
 			reclog("共"+list.length+"段，时间统计："+JSON.stringify(wxData));
 			
+			var timex=time;
 			var t1x=t1;
 			t1=Date.now();
 			for(var i=0;i<list.length;i++){
@@ -317,9 +318,11 @@ function recstop(batCall){
 					u8arr[n]=bstr.charCodeAt(n);
 				};
 				var blob2=new Blob([u8arr], {type:obj.mime});
+				time=obj.duration;
 				add("<span style='color:#0b1'>微信源片段"+(i+1)+"</span>",blob2,{type:/\/(\w+)/.exec(obj.mime)[1]});
 			};
 			t1=t1x;
+			time=timex;
 		};
 		add("已录制",blob,setData);
 	},function(s){

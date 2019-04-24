@@ -43,6 +43,7 @@ platform.Start=function(set,success,fail){
 	};
 	wx.startRecord({
 		success:function(){
+			WXRecordData.startTime=Date.now();
 			WXRecordData.start=set;
 			success();
 		}
@@ -56,11 +57,19 @@ platform.Start=function(set,success,fail){
 	WXRecordData.err="";
 	wx.onVoiceRecordEnd({
 		complete:function(res){
-			WXRecordData.timeout.push({res:res,time:Date.now()});
+			var t1=Date.now();
+			WXRecordData.timeout.push({res:res,duration:t1-WXRecordData.startTime,time:t1});
 			
+			console.log("微信录音超时，正在重启...");
 			wx.startRecord({
-				fail:function(o){
-					WXRecordData.err="无法接续录音："+o.errMsg;
+				success:function(){
+					WXRecordData.startTime=Date.now();
+					console.log("已接续录音,中断"+(Date.now()-t1)+"ms");
+				}
+				,fail:function(o){
+					var msg="无法接续录音："+o.errMsg;
+					console.error(msg,o);
+					WXRecordData.err=msg;
 				}
 			});
 		}
@@ -81,7 +90,6 @@ platform.Stop=function(success,failx){
 	
 	//格式转换 音质差是跟微信服务器返回的amr本来就音质差，转其他格式几乎无损音质，和微信本地播放音质有区别
 	var transform=function(){
-		var tfTime=Date.now();
 		var list=dwxData.list;
 		if(list[0].duration){
 			//服务器端已经转码了，就直接返回
@@ -104,7 +112,6 @@ platform.Stop=function(success,failx){
 			var rec=Recorder(set).mock(pcm,8000);
 			rec.stop(function(blob,duration){
 				dwxData.encodeTime=Date.now()-enTime;
-				dwxData.transformTime=Date.now()-tfTime;
 				
 				//把配置写回去
 				for(var k in rec.set){
@@ -143,7 +150,11 @@ platform.Stop=function(success,failx){
 			decode();
 		}else{
 			console.log("加载AMR转换引擎");
-			App.Js(config.AMREngine,decode,function(){
+			var amreTime=Date.now();
+			App.Js(config.AMREngine,function(){
+				dwxData.amrEngineLoadTime=Date.now()-amreTime;
+				decode();
+			},function(){
 				fail("加载AMR转换引擎失败");
 			});
 		};
@@ -244,7 +255,8 @@ platform.Stop=function(success,failx){
 	WXRecordData.wx.stopRecord({
 		fail:fail
 		,success:function(res){
-			timeouts.push({res:res,time:Date.now()});
+			var t1=Date.now();
+			timeouts.push({res:res,duration:t1-WXRecordData.startTime,time:t1});
 			stopFn();
 		}
 	});
