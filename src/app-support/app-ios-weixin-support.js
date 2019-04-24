@@ -35,22 +35,34 @@ platform.RequestPermission=function(success,fail){
 	});
 };
 platform.Start=function(set,success,fail){
-	WXRecordData.start=set;
-	
 	WXRecordData.wx.startRecord({
 		success:function(){
+			WXRecordData.start=set;
 			success();
 		}
 		,fail:function(o){
 			fail("无法录音："+o.errMsg);
 		}
 	});
+	
+	//监听超时自动停止
+	WXRecordData.timeout=null;
+	WXRecordData.wx.onVoiceRecordEnd({
+		complete:function(res){
+			WXRecordData.timeout=res;
+		}
+	});
 };
-platform.Stop=function(success,fail){
+platform.Stop=function(success,failx){
 	var fail=function(msg){
-		fail("录音失败："+(msg.errMsg||msg));
+		failx("录音失败："+(msg.errMsg||msg));
 	};
 	var set=WXRecordData.start;
+	if(!set){
+		fail("未开始录音");
+		return;
+	};
+	WXRecordData.start=null;
 	
 	//格式转换
 	var transform=function(data,sevType,sevDuration){
@@ -95,39 +107,45 @@ platform.Stop=function(success,fail){
 		};
 	};
 	
+	var stopFn=function(res){
+		var localId=res.localId;
+		console.log("微信录音 wx.playVoice({localId:'"+localId+"'})");
+		wx.uploadVoice({
+			localId:localId
+			,isShowProgressTips:0
+			,fail:fail
+			,success:function(res){
+				var serverId=res.serverId;
+				console.log("微信录音serverId:"+serverId);
+				
+				config.DownWxMedia({
+					mediaId:serverId
+					,type:set.type
+				},function(data){
+					//写到set里面，方便调试
+					set.DownWxMediaData=data;
+					
+					if(new RegExp(set.type,"i").test(data.mime)){
+						transform(data.data,set.type,data.duration);
+					}else if(/amr/i.test(data.mime)){
+						transform(data.data);
+					}else{
+						fail("微信服务器返回了未知音频类型："+data.mime);
+					};
+				},function(msg){
+					fail("下载音频失败："+msg);
+				});
+			}
+		});
+	};
+	
+	if(WXRecordData.timeout){
+		stopFn(WXRecordData.timeout);
+		return;
+	};
 	WXRecordData.wx.stopRecord({
 		fail:fail
-		,success:function(res){
-			var localId=res.localId;
-			console.log("微信录音 wx.playVoice({localId:'"+localId+"'})");
-			wx.uploadVoice({
-				localId:localId
-				,isShowProgressTips:0
-				,fail:fail
-				,success:function(res){
-					var serverId=res.serverId;
-					console.log("微信录音serverId:"+serverId);
-					
-					config.DownWxMedia({
-						mediaId:serverId
-						,type:set.type
-					},function(data){
-						//写到set里面，方便调试
-						set.DownWxMediaData=data;
-						
-						if(new RegExp(set.type,"i").test(data.mime)){
-							transform(data.data,set.type,data.duration);
-						}else if(/amr/i.test(data.mime)){
-							transform(data.data);
-						}else{
-							fail("微信服务器返回了未知音频类型："+data.mime);
-						};
-					},function(msg){
-						fail("下载音频失败："+msg);
-					});
-				}
-			});
-		}
+		,success:stopFn
 	});
 };
 })();

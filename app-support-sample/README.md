@@ -71,7 +71,7 @@ IOS其他浏览器||
 
 ## 限制功能
 
-- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形等功能不会有效果，并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
+- `IOS-Weixin`不支持实时回调、`微信JsSDK`限制录音最长为60秒；因此当在IOS微信上录音时，实时音量反馈、实时波形等功能不会有效果，录音超过60秒还未调用`Stop`进行停止录音时，停止时也仅仅会返回60秒录音；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
 - 如果开启了`Native`支持，并且环境支持App原生录音，`Recorder`对象将不可用，因为不会加载`Recorder`库。
 
 
@@ -257,7 +257,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 需提供`WxReady`、`DownWxMedia`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
 
-- `WxReady`: 对使用到的[微信JsSDK进行签名](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)，至少要包含`startRecord,stopRecord,uploadVoice`接口。签名操作需要后端支持。
+- `WxReady`: 对使用到的[微信JsSDK进行签名](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)，至少要包含`startRecord,stopRecord,onVoiceRecordEnd,uploadVoice`接口。签名操作需要后端支持。
 - `DownWxMedia`: 对[微信录音素材进行下载](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727)，下载操作需要后端支持。
 
 以上两个方法都是公众(订阅)号开发范畴，需要注册开通相应的微信服务账号。
