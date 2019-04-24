@@ -132,6 +132,8 @@ platform.Stop=function(success,failx){
 			};
 			
 			var data=list[deidx];
+			data.duration=timeouts[deidx].duration;
+			data.isAmr=true;
 			var bstr=atob(data.data),n=bstr.length,u8arr=new Uint8Array(n);
 			while(n--){
 				u8arr[n]=bstr.charCodeAt(n);

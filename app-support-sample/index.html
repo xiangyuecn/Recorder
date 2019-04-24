@@ -305,8 +305,10 @@ function recstop(batCall){
 			var list=wxData.list;
 			delete wxData.list;
 			
-			reclog("<span style='color:#fb0'>发现微信JsSDK服务器端下载下来的音频源文件，播放可能需要上面点击换到amr类型，加载amr解码器<span>");
-			reclog("共"+list.length+"段，时间统计："+JSON.stringify(wxData));
+			reclog("<span style='color:#0b1'>发现微信JsSDK录制的源文件，共"+list.length+"段，时间统计："+JSON.stringify(wxData)+"</span>");
+			if(!Recorder.AMR){
+				reclog("<span style='color:#fb0'>播放需要上面点击换到amr类型，加载amr解码器，目前未加载<span>");
+			};
 			
 			var timex=time;
 			var t1x=t1;
