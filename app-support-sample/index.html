@@ -12,18 +12,30 @@
 <script>
 //这里有几处编译指令，可以忽略掉，因为这个文件可以双击打开、github.io打开；主要的还是通过我的代理服务器来打开，这时候后面的值会生效，因为微信JsSDK只能在绑定的域名下调用。
 var PageSet_RecordAppBaseFolder=/*=:=*/ "../src/" /*<@ "https://xiangyuecn.github.io/Recorder/src/" @>*/;
+
+/*=:=*/ /*<@
+//crossorigin
+document.body._addChild=document.body.appendChild;
+document.body.appendChild=function(s){
+	this._addChild(s);
+	if(s.tagName=="SCRIPT"){
+		s.crossOrigin="anonymous";
+	};
+	return this;
+};
+@>*/
 </script>
 
 <!-- 加载独立配置文件，免得修改app.js -->
 <script
 	DEF="/*=:=*/" src="../app-support-sample/ios-weixin-config.js"
-	DEF="/*<@ src='https://xiangyuecn.github.io/Recorder/app-support-sample/ios-weixin-config.js' @>*/"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/app-support-sample/ios-weixin-config.js' @>*/"
 ></script>
 
 <!-- 加载app.js -->
 <script
 	DEF="/*=:=*/" src="../src/app-support/app.js"
-	DEF="/*<@ src='https://xiangyuecn.github.io/Recorder/src/app-support/app.js' @>*/"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/src/app-support/app.js' @>*/"
 ></script>
 
 <script>
@@ -207,9 +219,10 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 function reclog(s){
 	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
 };
-$(window).bind("error",function(e){
-	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
-});
+window.onerror=function(message, url, lineNo, columnNo, error){
+	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
+	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+};
 </script>
 
 
@@ -271,8 +284,12 @@ var recblob={};
 function recstop(batCall){
 	if(!curSet){
 		reclog("请先开始录音");
+		return;
 	};
-	reclog(RecordApp.Current.Key+"正在结束"+curSet.type+"...");
+	var setData=curSet;
+	curSet=null;
+	
+	reclog(RecordApp.Current.Key+"正在结束"+setData.type+"...");
 	var t1=Date.now();
 	RecordApp.Stop(function(blob,time){
 		var add=function(tag,blob,set){
@@ -281,7 +298,7 @@ function recstop(batCall){
 			reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 		};
 		
-		var obj=curSet.DownWxMediaData;//微信JsSDK 下载到的音频源文件
+		var obj=setData.DownWxMediaData;//微信JsSDK 下载到的音频源文件
 		if(obj){
 			var bstr=atob(obj.data),n=bstr.length,u8arr=new Uint8Array(n);
 			while(n--){
@@ -291,7 +308,7 @@ function recstop(batCall){
 			reclog("发现微信JsSDK服务器端下载下来的音频源文件，播放可能需要上面点击换到amr类型，加载amr解码器");
 			add("微信下载源",blob2,{type:/\/(\w+)/.exec(obj.mime)[1]});
 		};
-		add("已录制",blob,curSet);
+		add("已录制",blob,setData);
 	},function(s){
 		reclog("失败："+s);
 	});
@@ -559,6 +576,8 @@ function onInstall(){
 	$(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
 	if(!/:\/\/[^\/]*jiebian.life(\/|$)/.test(location.href)){
 		reclog("<span style='color:red'>当前域名不在微信JsSDK绑定的域名中，无法使用JsSDK相关功能</span>");
+	}else{
+		reclog("此页面由服务器代理，源网址<a href='https://xiangyuecn.github.io/Recorder/app-support-sample/'>https://xiangyuecn.github.io/Recorder/app-support-sample/</a>");
 	};
 };
 if(isInstall){
