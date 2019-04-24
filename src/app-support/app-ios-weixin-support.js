@@ -24,18 +24,24 @@ var WXRecordData={};
 
 platform.RequestPermission=function(success,fail){
 	config.WxReady(function(wx,err){
-		WXRecordData.wx=wx;
+		WXRecordData.wx=null;
 		if(err){
 			fail("微信JsSDK准备失败："+err);
 			return;
 		};
+		WXRecordData.wx=wx;
 		
 		//微信不能提前发起授权请求，需要等到开始录音时才会调起授权
 		success();
 	});
 };
 platform.Start=function(set,success,fail){
-	WXRecordData.wx.startRecord({
+	var wx=WXRecordData.wx;
+	if(!wx){
+		fail("请先调用RequestPermission");
+		return;
+	};
+	wx.startRecord({
 		success:function(){
 			WXRecordData.start=set;
 			success();
@@ -45,11 +51,18 @@ platform.Start=function(set,success,fail){
 		}
 	});
 	
-	//监听超时自动停止
-	WXRecordData.timeout=null;
-	WXRecordData.wx.onVoiceRecordEnd({
+	//监听超时自动停止后接续录音
+	WXRecordData.timeout=[];
+	WXRecordData.err="";
+	wx.onVoiceRecordEnd({
 		complete:function(res){
-			WXRecordData.timeout=res;
+			WXRecordData.timeout.push({res:res,time:Date.now()});
+			
+			wx.startRecord({
+				fail:function(o){
+					WXRecordData.err="无法接续录音："+o.errMsg;
+				}
+			});
 		}
 	});
 };
@@ -63,89 +76,177 @@ platform.Stop=function(success,failx){
 		return;
 	};
 	WXRecordData.start=null;
+	var dwxData={list:[]};
+	set.DownWxMediaData=dwxData;
 	
-	//格式转换
-	var transform=function(data,sevType,sevDuration){
-		//服务器端已经转码了，就直接返回
-		if(sevDuration){
-			success({
-				mime:"audio/"+sevType
-				,duration:sevDuration
-				,data:data
-			});
+	//格式转换 音质差是跟微信服务器返回的amr本来就音质差，转其他格式几乎无损音质，和微信本地播放音质有区别
+	var transform=function(){
+		var tfTime=Date.now();
+		var list=dwxData.list;
+		if(list[0].duration){
+			//服务器端已经转码了，就直接返回
+			success(list[0]);
 			return;
 		};
 		
-		var end=function(){
-			var bstr=atob(data),n=bstr.length,u8arr=new Uint8Array(n);
+		var pcms=[];
+		var enTime=0;
+		var encode=function(){
+			enTime||(enTime=Date.now());
+			var pcm=[];
+			for(var i=0;i<pcms.length;i++){
+				var o=pcms[i];
+				for(var j=0;j<o.length;j++){
+					pcm.push(o[j]);
+				};
+			};
+			
+			var rec=Recorder(set).mock(pcm,8000);
+			rec.stop(function(blob,duration){
+				dwxData.encodeTime=Date.now()-enTime;
+				dwxData.transformTime=Date.now()-tfTime;
+				
+				//把配置写回去
+				for(var k in rec.set){
+					set[k]=rec.set[k];
+				};
+				App.BlobRead(blob,duration,success);
+			},fail);
+		};
+		
+		var deidx=0;
+		var deTime=0;
+		var decode=function(){
+			deTime||(deTime=Date.now());
+			if(deidx>=list.length){
+				dwxData.decodeTime=Date.now()-deTime;
+				encode();
+				return;
+			};
+			
+			var data=list[deidx];
+			var bstr=atob(data.data),n=bstr.length,u8arr=new Uint8Array(n);
 			while(n--){
 				u8arr[n]=bstr.charCodeAt(n);
 			};
 			
 			Recorder.AMR.decode(u8arr,function(pcm){
-				//音质差是跟微信服务器返回的amr本来就音质差，转其他格式几乎无损音质，和微信本地播放音质有区别
-				
-				var rec=Recorder(set).mock(pcm,8000);
-				rec.stop(function(blob,duration){
-					//把配置写回去
-					for(var k in rec.set){
-						set[k]=rec.set[k];
-					};
-					App.BlobRead(blob,duration,success);
-				},fail);
+				pcms.push(pcm);
+				deidx++;
+				decode();
 			},function(msg){
-				fail("AMR音频无法解码:"+msg);
+				fail("AMR音频"+(deidx+1)+"无法解码:"+msg);
 			});
 		};
 		
 		if(Recorder.AMR){
-			end();
+			decode();
 		}else{
-			App.Js(config.AMREngine,end,function(){
+			console.log("加载AMR转换引擎");
+			App.Js(config.AMREngine,decode,function(){
 				fail("加载AMR转换引擎失败");
 			});
 		};
 	};
 	
-	var stopFn=function(res){
-		var localId=res.localId;
-		console.log("微信录音 wx.playVoice({localId:'"+localId+"'})");
-		wx.uploadVoice({
-			localId:localId
-			,isShowProgressTips:0
-			,fail:fail
-			,success:function(res){
-				var serverId=res.serverId;
-				console.log("微信录音serverId:"+serverId);
+	
+	var mediaIds=[];
+	var stopFn=function(){
+		var upIds=[];
+		for(var i=0;i<timeouts.length;i++){
+			upIds.push(timeouts[i].res.localId);
+		};
+		console.log("结束录音共"+upIds.length+"段，开始上传下载");
+		
+		//下载片段
+		var downidx=0;
+		var downStart=0;
+		var downEnd=function(){
+			dwxData.downTime=Date.now()-downStart;
+			//上传下载都完成了，进行转码
+			transform();
+		};
+		var down=function(){
+			downStart||(downStart=Date.now());
+			if(downidx>=mediaIds.length){
+				downEnd();
+				return;
+			};
+			var serverId=mediaIds[downidx];
+			
+			config.DownWxMedia({
+				mediaId:serverId
+				,transform_mediaIds:mediaIds.join(",")
+				,transform_type:set.type
+				,transform_bitRate:set.bitRate
+				,transform_sampleRate:set.sampleRate
+			},function(data){
+				dwxData.list.push(data);
+				//转码结果，已全部转换合并好了
+				if(data.duration){
+					downEnd();
+					return;
+				};
 				
-				config.DownWxMedia({
-					mediaId:serverId
-					,type:set.type
-				},function(data){
-					//写到set里面，方便调试
-					set.DownWxMediaData=data;
+				if(/amr/i.test(data.mime)){
+					downidx++;
+					down();
+				}else{
+					fail("微信服务器返回了未知音频类型："+data.mime);
+				};
+			},function(msg){
+				fail("下载音频失败："+msg);
+			});
+		};
+		
+		
+		//微信上传所有片段
+		var upidx=0;
+		var up=function(){
+			if(upidx>=upIds.length){
+				dwxData.uploadTime=Date.now()-upStart;
+				down();
+				return;
+			};
+			var localId=upIds[upidx];
+			console.log("微信录音片段"+upidx+" wx.playVoice({localId:'"+localId+"'})");
+			wx.uploadVoice({
+				localId:localId
+				,isShowProgressTips:0
+				,fail:fail
+				,success:function(res){
+					var serverId=res.serverId;
+					console.log("serverId:"+serverId);
 					
-					if(new RegExp(set.type,"i").test(data.mime)){
-						transform(data.data,set.type,data.duration);
-					}else if(/amr/i.test(data.mime)){
-						transform(data.data);
-					}else{
-						fail("微信服务器返回了未知音频类型："+data.mime);
-					};
-				},function(msg){
-					fail("下载音频失败："+msg);
-				});
-			}
-		});
+					mediaIds.push(serverId);
+					upidx++;
+					up();
+				}
+			});
+		};
+		var upStart=Date.now();
+		up();
 	};
 	
-	if(WXRecordData.timeout){
-		stopFn(WXRecordData.timeout);
+	var timeouts=WXRecordData.timeout;
+	if(WXRecordData.err){
+		console.error(WXRecordData.err,timeouts);
+		fail("录制失败，已录制"+timeouts.length+"分钟，但后面出错："+WXRecordData.err);
 		return;
+	};
+	if(timeouts.length){
+		if(Date.now()-timeouts[timeouts.length-1].time<900){
+			WXRecordData.wx.stopRecord();//丢弃结尾的渣渣
+			stopFn();
+			return;
+		};
 	};
 	WXRecordData.wx.stopRecord({
 		fail:fail
-		,success:stopFn
+		,success:function(res){
+			timeouts.push({res:res,time:Date.now()});
+			stopFn();
+		}
 	});
 };
 })();
