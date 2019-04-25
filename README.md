@@ -379,7 +379,7 @@ public void onPermissionRequest(PermissionRequest request) {
 }
 ```
 
-> 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，他会自己弹框询问，如果被拒绝了就永远拒绝了，参考已知问题部分。
+> 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，他会自己弹框询问，如果被拒绝了就看X5脸色了（随着X5不停更新什么时候恢复弹框天知地知就是你不知），参考已知问题部分。
 
 如果不出意外，App内显示的网页就能正常录音了。
 
