@@ -1,0 +1,163 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+<title>工具-裸PCM转WAV播放测试</title>
+
+<style>
+html,body{
+	height:100%;
+}
+</style>
+</head>
+
+<body>
+<div style="padding-top:30px;font-size:24px;font-weight:bold;text-align:center;color:#0b1;">把原始PCM数据文件拖入此页面即可生成wav文件</div>
+<div style="text-align:center;padding-top:15px;">
+	<div style="color:#0b1;">本工具用来对原始PCM音频数据进行封装、播放，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord采集的音频。</div>
+	<div style="color:#F90;">wav文件可以反复拖入，只不过wav头会被当做音频内容而已</div>
+	<div style="color:#F00">乱填采样率、位数，会变声</div>
+	<div style="color:#F0f">除了PCM数据文件外，其他格式文件拖入可能导致惊悚的播放效果</div>
+	<div><a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a></div>
+</div>
+
+<div><audio id="recPlayAudio" style="width:100%"></audio></div>
+
+<div id="list"></div>
+<script>
+document.body.ondragover=function(e){
+	e.preventDefault();
+};
+document.body.ondrop=function(e){
+	e.preventDefault();
+	var div=document.createElement("div");
+	list.prepend(div);
+	div.append(new Date().toLocaleTimeString()+" ");
+	
+	if(e.dataTransfer.files.length!=1){
+		div.append("请只拖入一个文件");
+		return;
+	}
+	var fileObj = e.dataTransfer.files[0];
+	var fileReader = new FileReader();
+	fileReader.onload = function(e){
+		createWav(e.target.result,div,fileObj);
+	}
+	fileReader.readAsArrayBuffer(fileObj);
+};
+
+
+
+
+
+
+
+var createWav=function(arr,div,fileObj){
+	var sampleRate=prompt("请输入 "+fileObj.name+" 的\"采样率.位数\"(默认16位)，如：16000（8位的需填位数16000.8）")
+		,bitRate=16;
+	
+	if(/^(\d+)\.(\d+)$/.test(sampleRate)){
+		sampleRate=+RegExp.$1;
+		bitRate=+RegExp.$2==8?8:16;
+	}else{
+		sampleRate=+sampleRate||0;
+	};
+	if(sampleRate<6000){
+		div.append("乱填采样率："+sampleRate);
+		return;
+	};
+	
+	if(bitRate==16){
+		var res=new Int16Array(arr,0,(arr.byteLength-arr.byteLength%2)/2);
+	}else{
+		var res=new Uint8Array(arr);
+	};
+	size=res.length;
+	
+	//编码数据 https://github.com/mattdiamond/Recorderjs https://www.cnblogs.com/blqw/p/3782420.html https://www.cnblogs.com/xiaoqi/p/6993912.html
+	var dataLength=size*(bitRate/8);
+	var buffer=new ArrayBuffer(44+dataLength);
+	var data=new DataView(buffer);
+	
+	var offset=0;
+	var writeString=function(str){
+		for (var i=0;i<str.length;i++,offset++) {
+			data.setUint8(offset,str.charCodeAt(i));
+		};
+	};
+	var write16=function(v){
+		data.setUint16(offset,v,true);
+		offset+=2;
+	};
+	var write32=function(v){
+		data.setUint32(offset,v,true);
+		offset+=4;
+	};
+	
+	/* RIFF identifier */
+	writeString('RIFF');
+	/* RIFF chunk length */
+	write32(36+dataLength);
+	/* RIFF type */
+	writeString('WAVE');
+	/* format chunk identifier */
+	writeString('fmt ');
+	/* format chunk length */
+	write32(16);
+	/* sample format (raw) */
+	write16(1);
+	/* channel count */
+	write16(1);
+	/* sample rate */
+	write32(sampleRate);
+	/* byte rate (sample rate * block align) */
+	write32(sampleRate*(bitRate/8));
+	/* block align (channel count * bytes per sample) */
+	write16(bitRate/8);
+	/* bits per sample */
+	write16(bitRate);
+	/* data chunk identifier */
+	writeString('data');
+	/* data chunk length */
+	write32(dataLength);
+	// 写入采样数据
+	if(bitRate==8) {
+		for(var i=0;i<size;i++,offset++) {
+			data.setInt8(offset,res[i],true);
+		};
+	}else{
+		for (var i=0;i<size;i++,offset+=2){
+			data.setInt16(offset,res[i],true);
+		};
+	};
+	
+	
+	var blob=new Blob([data],{type:"audio/wav"});
+	var name=fileObj.name+"-"+sampleRate+"hz.wav";
+	var url=URL.createObjectURL(blob);
+	console.log(name,blob);
+	
+	div.innerHTML=div.innerHTML+" 【"+name+'】'+Math.floor(size/sampleRate*1000)+'ms '+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a> <button onclick="recplay(\''+url+'\')">播放</button>';
+};
+
+
+
+
+
+
+
+
+function recplay(url){
+	var audio=recPlayAudio;
+	audio.controls=true;
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	audio.src=url;
+	audio.play();
+};
+</script>
+</body>
+</html>
