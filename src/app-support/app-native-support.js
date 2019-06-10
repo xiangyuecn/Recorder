@@ -40,7 +40,7 @@ window.top.NativeRecordReceivePCM=function(pcmData,duration,sampleRate){//无视
 	if(power<1251){
 		powerLevel=Math.round(power/1250*10);
 	}else{
-		powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log10(power/10000))*100)));
+		powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
 	}
 	
 	App.ReceivePCM(pcmData,powerLevel,duration,sampleRate);

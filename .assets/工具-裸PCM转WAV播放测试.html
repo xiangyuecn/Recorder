@@ -55,17 +55,16 @@ document.body.ondrop=function(e){
 
 
 var createWav=function(arr,div,fileObj){
-	var sampleRate=prompt("请输入 "+fileObj.name+" 的\"采样率.位数\"(默认16位)，如：16000（8位的需填位数16000.8）")
-		,bitRate=16;
+	var instr=prompt("请输入 "+fileObj.name+" 的\"采样率.位数-新采样率\"(默认16位)，如：16000（8位的需填位数16000.8，新采样16000-8000）");
 	
-	if(/^(\d+)\.(\d+)$/.test(sampleRate)){
+	var sampleRate=0,bitRate=16,sampleRateNew=0;
+	if(/^(\d+)(?:\.(\d+))?(?:\-(\d+))?$/.test(instr)){
 		sampleRate=+RegExp.$1;
 		bitRate=+RegExp.$2==8?8:16;
-	}else{
-		sampleRate=+sampleRate||0;
+		sampleRateNew=+RegExp.$3||sampleRate;
 	};
-	if(sampleRate<6000){
-		div.append("乱填采样率："+sampleRate);
+	if(sampleRate<6000||sampleRateNew<6000){
+		div.append("乱填采样率："+sampleRate+" "+sampleRateNew);
 		return;
 	};
 	
@@ -73,6 +72,37 @@ var createWav=function(arr,div,fileObj){
 		var res=new Int16Array(arr,0,(arr.byteLength-arr.byteLength%2)/2);
 	}else{
 		var res=new Uint8Array(arr);
+	};
+	function sampleData(data, newSampleRate, oldSampleRate) {
+		var step=oldSampleRate/newSampleRate;
+		var fitCount = Math.floor(data.length / step);
+		var newData = bitRate==16?new Int16Array(fitCount):new Uint8Array(fitCount);
+		for (var i = 0; i < fitCount; i++) {
+			var tmp = i * step;
+			var before = Math.floor(tmp);
+			var after = Math.ceil(tmp);
+			var atPoint = tmp - before;
+			
+			newData[i] = data[before]+(data[after]-data[before])*atPoint;
+		}
+		return newData;
+	};
+	//对比直接抽样的音质
+	function sampleData2(data, newSampleRate, oldSampleRate) {
+		var step=oldSampleRate/newSampleRate;
+		var size=Math.floor(data.length/step);
+		var newData = bitRate==16?new Int16Array(size):new Uint8Array(size);
+		var i=0,il=data.length,idx=0;
+		while(i<il){
+			newData[idx]=data[Math.round(i)];
+			idx++;
+			i+=step;
+		};
+		return newData;
+	};
+	if(sampleRate>sampleRateNew){
+		res=sampleData(res,sampleRateNew,sampleRate);
+		sampleRate=sampleRateNew;
 	};
 	size=res.length;
 	
@@ -135,12 +165,15 @@ var createWav=function(arr,div,fileObj){
 	
 	
 	var blob=new Blob([data],{type:"audio/wav"});
-	var name=fileObj.name+"-"+sampleRate+"hz.wav";
+	var name=fileObj.name+"-"+bitRate+"bit-"+sampleRate+"hz.wav";
 	var url=URL.createObjectURL(blob);
 	console.log(name,blob);
 	
-	div.innerHTML=div.innerHTML+" 【"+name+'】'+Math.floor(size/sampleRate*1000)+'ms '+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a> <button onclick="recplay(\''+url+'\')">播放</button>';
+	var id=++rnd;
+	
+	div.innerHTML=div.innerHTML+" 【"+name+'】'+Math.floor(size/sampleRate*1000)+'ms '+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a> <button onclick="recplay('+id+',\''+url+'\')">播放</button> <span id="playc'+id+'" style="color:#0b1;"></span>';
 };
+var rnd=0;
 
 
 
@@ -149,7 +182,10 @@ var createWav=function(arr,div,fileObj){
 
 
 
-function recplay(url){
+function recplay(id,url){
+	var c=window["playc"+id];
+	c.innerHTML=(+c.innerHTML||0)+1;
+	
 	var audio=recPlayAudio;
 	audio.controls=true;
 	if(!(audio.ended || audio.paused)){

@@ -12,6 +12,10 @@ https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/l
 */
 
 function lamejs() {
+var Math_log10=function(s){//坚决不能用也不要报语言问题的错误
+	return Math.log(s)/Math.log(10);
+};
+
 function new_byte(count) {
     return new Int8Array(count);
 }
@@ -110,11 +114,11 @@ System.arraycopy = function (src, srcPos, dest, destPos, length) {
 var Util = {};
 Util.SQRT2 = 1.41421356237309504880;
 Util.FAST_LOG10 = function (x) {
-    return Math.log10(x);
+    return Math_log10(x);
 };
 
 Util.FAST_LOG10_X = function (x, y) {
-    return Math.log10(x) * y;
+    return Math_log10(x) * y;
 };
 
 function ShortBlock(ordinal) {
@@ -1877,7 +1881,7 @@ function GainAnalysis() {
                 /* Get the Root Mean Square (RMS) for this set of samples */
                 var val = GainAnalysis.STEPS_per_dB
                     * 10.
-                    * Math.log10((rgData.lsum + rgData.rsum)
+                    * Math_log10((rgData.lsum + rgData.rsum)
                         / rgData.totsamp * 0.5 + 1.e-37);
                 var ival = (val <= 0) ? 0 : 0 | val;
                 if (ival >= rgData.A.length)
@@ -4401,8 +4405,8 @@ function BitStream() {
 
         /* find the gain and scale change required for no clipping */
         if (gfc.findPeakSample) {
-            gfc.noclipGainChange = Math.ceil(Math
-                        .log10(gfc.PeakSample / 32767.0) * 20.0 * 10.0) | 0;
+            gfc.noclipGainChange = Math.ceil(
+                        Math_log10(gfc.PeakSample / 32767.0) * 20.0 * 10.0) | 0;
             /* round up */
 
             if (gfc.noclipGainChange > 0) {
@@ -5971,7 +5975,7 @@ function QuantizePVT() {
         /*
          * work in progress, don't rely on it too much
          */
-        gfc.ATH.floor = 10. * Math.log10(ATHmdct(gfp, -1.));
+        gfc.ATH.floor = 10. * Math_log10(ATHmdct(gfp, -1.));
     }
 
     /**

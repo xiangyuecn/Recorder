@@ -190,7 +190,7 @@ Recorder.prototype=initFn.prototype={
 			if(power<1251){//1250的结果10%，更小的音量采用线性取值
 				powerLevel=Math.round(power/1250*10);
 			}else{
-				powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log10(power/10000))*100)));
+				powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
 			}
 			
 			var bufferSampleRate=This.srcSampleRate;
@@ -281,7 +281,15 @@ Recorder.prototype=initFn.prototype={
 			var o=This.buffer[n];
 			var i=last,il=o.length;
 			while(i<il){
-				res[idx]=o[Math.round(i)];
+				//res[idx]=o[Math.round(i)]; 直接简单抽样
+				
+				//https://www.cnblogs.com/xiaoqi/p/6993912.html
+				//当前点=当前点+到后面一个点之间的增量，音质比直接简单抽样好些
+				var before = Math.floor(i);
+				var after = Math.ceil(i);
+				var atPoint = i - before;
+				res[idx]=o[before]+(o[after]-o[before])*atPoint;
+				
 				idx++;
 				i+=step;//抽样
 			};
@@ -292,7 +300,11 @@ Recorder.prototype=initFn.prototype={
 		setTimeout(function(){
 			var t1=Date.now();
 			This[set.type](res,function(blob){
-				console.log("["+Date.now()+"]End",blob,duration,"编码耗时:"+(Date.now()-t1));
+				console.log("["+Date.now()+"]End",duration,"编码耗时:"+(Date.now()-t1),blob);
+				if(blob.size<500){
+					False("生成的"+set.type+"无效");
+					return;
+				};
 				True(blob,duration);
 			},function(msg){
 				False(msg);
