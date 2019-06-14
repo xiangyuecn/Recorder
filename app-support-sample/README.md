@@ -42,9 +42,10 @@
 支持|[Recorder](https://github.com/xiangyuecn/Recorder/)|RecordApp
 -:|:-:|:-:
 PC浏览器|√|√
-Android浏览器|√|√
+Android Chrome Firefox|√|√
 Android微信(含小程序)|√|√
 Android Hybrid App|√|√
+Android其他浏览器|未知|未知
 IOS Safari|√|√
 IOS微信(含小程序)||√
 IOS Hybrid App||√
@@ -175,7 +176,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 ## 【Event】RecordApp.OnProcess(pcmDatas,powerLevel,duration,sampleRate)
 录音实时数据回调，如果底层会实时调用`RecordApp.ReceivePCM`返回数据，就会触发执行此方法，在需回调的地方绑定一个函数即可，注意：新函数会覆盖旧的函数。这个方法和`Recorder.set.onProcess`完全相同。
 
-`pcmDatas`: [[int,int,...]] 当前单声道录音缓冲PCM片段（数组的第一维长度始终为1，是为了和`Recorder`兼容）
+`pcmDatas`: [[Int16,...]] 当前单声道录音缓冲PCM片段（数组的第一维长度始终为1，是为了和`Recorder`兼容）
 
 `powerLevel`：当前缓冲的音量级别0-100
 
@@ -190,7 +191,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 ## 【静态方法】RecordApp.ReceivePCM(pcmData,powerLevel,duration,sampleRate)
 此方法由底层实现来调用，在开始录音后，底层如果能实时返还pcm数据，则会调用此方法。
 
-`pcmData`: `int[]` 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
+`pcmData`: `Int16[]` 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
 
 `powerLevel,duration,sampleRate` 和`RecordApp.OnProcess`参数意义相同
 

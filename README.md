@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器，包括腾讯Android X5内核(QQ、微信)。[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核、大部分国产手机厂商的浏览器；[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -10,16 +10,19 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 
 浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
 
-特别注：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，其他浏览器均不支持，参考下面的已知问题。
+**特别注**：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，IOS上其他浏览器均不支持，参考下面的已知问题。
 
-> 如果需要最大限度的兼容IOS，可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
+**特别注**：大部分国产手机厂商的浏览器（系统浏览器）虽然支持`getUserMedia`方法，但并不能使用，表现为直接返回拒绝或者干脆没有任何回调；UC系列目测全部阵亡（含支付宝）。
+
+> 如果需要最大限度的兼容IOS（仅增加微信支持），可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
 
 支持|Recorder|[RecordApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)
 -:|:-:|:-:
 PC浏览器|√|√
-Android浏览器|√|√
+Android Chrome Firefox|√|√
 Android微信(含小程序)|√|√
 Android Hybrid App|√|√
+Android其他浏览器|未知|未知
 IOS Safari|√|√
 IOS微信(含小程序)||√
 IOS Hybrid App||√
@@ -50,6 +53,7 @@ IOS其他浏览器||
 
 *2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
 
+*2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了😂或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
 
 
 
@@ -179,7 +183,7 @@ set={
                 //注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
     
     ,onProcess:NOOP //接收到录音数据时的回调函数：fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) 
-                //buffer=[缓冲PCM数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
+                //buffer=[[Int16,...],...]：缓冲PCM数据，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffer可以达到更高级效果
 }
 ```
@@ -221,7 +225,7 @@ set={
 恢复继续录音。
 
 ### 【方法】rec.mock(pcmData,pcmSampleRate)
-模拟一段录音数据，后面可以调用stop进行编码。需提供pcm数据int[]，和pcm数据的采样率。
+模拟一段录音数据，后面可以调用stop进行编码。需提供pcm数据[Int16,...]，和pcm数据的采样率。
 
 可用于将一个音频解码出来的pcm数据方便的转换成另外一个格式：
 ``` javascript
@@ -295,7 +299,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 
 //新增一个aac.js，编写以下格式代码即可实现这个类型
 Recorder.prototype.aac=function(pcmData,successCall,failCall){
-    //通过aac编码器把pcm数据转成aac格式数据，通过this.set拿到传入的配置数据
+    //通过aac编码器把pcm[Int16,...]数据转成aac格式数据，通过this.set拿到传入的配置数据
     ... pcmData->aacData
     
     //返回数据
@@ -352,7 +356,7 @@ set={
 ```
 
 ### 【方法】wave.input(pcmData,powerLevel,sampleRate)
-输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData为当前的录音数据片段，其他参数和`onProcess`回调相同。
+输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData [Int16,...]为当前的录音数据片段，其他参数和`onProcess`回调相同。
 
 
 # :open_book:兼容性
