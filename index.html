@@ -210,7 +210,7 @@ function recopen(){
 		}
 	});
 	
-	var dialogInt=setTimeout(function(){//定时8秒后打开弹窗，用于监测浏览器没有发起权限请求的情况，在open前放置定时器利于收到了回调能及时取消（不管open是同步还是异步回调的）
+	dialogInt=setTimeout(function(){//定时8秒后打开弹窗，用于监测浏览器没有发起权限请求的情况，在open前放置定时器利于收到了回调能及时取消（不管open是同步还是异步回调的）
 		showDialog();
 	},8000);
 	
@@ -223,34 +223,38 @@ function recopen(){
 		dialogCancel();
 		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
 	});
-	
-	//我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
-	window.waitDialogClick=function(){
-		dialogCancel();
-		reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>");
-	};
-	var dialogCancel=function(){
-		clearTimeout(dialogInt);
-		$(".waitDialog").remove();
-	};
-	var showDialog=function(){
-		if(!/mobile/i.test(navigator.userAgent)){
-			return;//只在移动端开启没有权限请求的检测
-		};
-		$("body").append(''
-			+'<div class="waitDialog" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">'
-				+'<div style="display:flex;height:100%;align-items:center;">'
-					+'<div style="flex:1;"></div>'
-					+'<div style="width:240px;background:#fff;padding:15px 20px;border-radius: 10px;">'
-						+'<div style="padding-bottom:10px;">录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~</div>'
-						+'<div style="text-align:center;"><a onclick="waitDialogClick()" style="color:#0B1">忽略</a></div>'
-					+'</div>'
-					+'<div style="flex:1;"></div>'
-				+'</div>'
-			+'</div>');
-	};
-	//弹框End
 };
+
+//我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
+var showDialog=function(){
+	if(!/mobile/i.test(navigator.userAgent)){
+		return;//只在移动端开启没有权限请求的检测
+	};
+	dialogCancel();
+	$("body").append(''
+		+'<div class="waitDialog" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">'
+			+'<div style="display:flex;height:100%;align-items:center;">'
+				+'<div style="flex:1;"></div>'
+				+'<div style="width:240px;background:#fff;padding:15px 20px;border-radius: 10px;">'
+					+'<div style="padding-bottom:10px;">录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~</div>'
+					+'<div style="text-align:center;"><a onclick="waitDialogClick()" style="color:#0B1">忽略</a></div>'
+				+'</div>'
+				+'<div style="flex:1;"></div>'
+			+'</div>'
+		+'</div>');
+};
+var waitDialogClick=function(){
+	dialogCancel();
+	reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>");
+};
+var dialogInt;
+var dialogCancel=function(){
+	clearTimeout(dialogInt);
+	$(".waitDialog").remove();
+};
+//弹框End
+
+
 function recclose(){
 	if(rec){
 		rec.close(function(){
