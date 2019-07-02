@@ -144,7 +144,7 @@ RandomKey.idx=0;
 	<hr>
 	<div class="pd">
 		<button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
-		测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况
+		测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，跨域时未设置相应策略权限永远是拒绝的
 	</div>
 	
 	<div class="recinfo"></div>
@@ -223,6 +223,11 @@ function recopen(){
 		dialogCancel();
 		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
 	});
+	
+	window.waitDialogClick=function(){
+		dialogCancel();
+		reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>");
+	};
 };
 
 //我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
@@ -242,10 +247,6 @@ var showDialog=function(){
 				+'<div style="flex:1;"></div>'
 			+'</div>'
 		+'</div>');
-};
-var waitDialogClick=function(){
-	dialogCancel();
-	reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>");
 };
 var dialogInt;
 var dialogCancel=function(){
@@ -413,7 +414,7 @@ reclog("WaveView Extensions已启用");
 function goiframe(){
 	$(".demoHead").hide();
 	$(".demoMain").html(''
-		+'<div>IFrame测试，提示：`RecordApp测试`可以模拟跨域</div>'
+		+'<div>IFrame测试，提示：`RecordApp测试`可以模拟跨域，跨域时未设置相应策略权限永远是拒绝的</div>'
 		+'<iframe src="'+location.href+'" style="width:98%;height:'+($(window).height()-100)+'px; border:4px solid #0B1"></iframe>');
 };
 if(window.top!=window){
@@ -423,7 +424,7 @@ if(window.top!=window){
 		isSelf=true;
 	}catch(e){};
 	
-	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域")+"</span>");
+	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略权限永远是拒绝的")+"</span>");
 };
 </script>
 
