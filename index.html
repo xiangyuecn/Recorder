@@ -484,11 +484,13 @@ if(!/mobile/i.test(navigator.userAgent)){
 	XLogInput.value="非移动端不开启ConsoleX引擎";
 	return;
 };
-var ConsoleX=function(tag,arr){
-	if(parent!=window){
-		parent.ConsoleX(tag,arr);
-		return;
-	};
+window.ConsoleX=function(tag,arr){
+	try{
+		if(parent!=window){
+			parent.ConsoleX(tag,arr);
+			return;
+		};
+	}catch(e){}
 	
 	ConsoleX.log(tag,arr);
 };
