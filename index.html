@@ -44,7 +44,7 @@ RandomKey.idx=0;
 <script src="https://cdn.bootcss.com/jquery/1.9.1/jquery.min.js"></script>
 
 
-<div>
+<div class="demoHead">
 	<style>
 		.navItem{
 			display:inline-block;
@@ -90,7 +90,7 @@ RandomKey.idx=0;
 
 
 <!-- begin 开始copy源码 -->
-<div>
+<div class="demoMain">
 	<div class="pd">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a>
 	</div>
@@ -140,6 +140,13 @@ RandomKey.idx=0;
 	<hr>
 	<audio class="recPlay" style="width:100%"></audio>
 	<div class="reclog"></div>
+	
+	<hr>
+	<div class="pd">
+		<button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
+		测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况
+	</div>
+	
 	<div class="recinfo"></div>
 </div>
 <script type="text/template" class="tp_recinfo">
@@ -202,13 +209,47 @@ function recopen(){
 			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
 		}
 	});
+	
+	var dialogInt=setTimeout(function(){//定时8秒后打开弹窗，用于监测浏览器没有发起权限请求的情况，在open前放置定时器利于收到了回调能及时取消（不管open是同步还是异步回调的）
+		showDialog();
+	},8000);
+	
 	rec.open(function(){
+		dialogCancel();
 		reclog("已打开:"+type+" "+bit+"kbps");
 		
 		wave=Recorder.WaveView({elem:".recwave"});
 	},function(e,isUserNotAllow){
+		dialogCancel();
 		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
 	});
+	
+	//我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
+	window.waitDialogClick=function(){
+		dialogCancel();
+		reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>");
+	};
+	var dialogCancel=function(){
+		clearTimeout(dialogInt);
+		$(".waitDialog").remove();
+	};
+	var showDialog=function(){
+		if(!/mobile/i.test(navigator.userAgent)){
+			return;//只在移动端开启没有权限请求的检测
+		};
+		$("body").append(''
+			+'<div class="waitDialog" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">'
+				+'<div style="display:flex;height:100%;align-items:center;">'
+					+'<div style="flex:1;"></div>'
+					+'<div style="width:240px;background:#fff;padding:15px 20px;border-radius: 10px;">'
+						+'<div style="padding-bottom:10px;">录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~</div>'
+						+'<div style="text-align:center;"><a onclick="waitDialogClick()" style="color:#0B1">忽略</a></div>'
+					+'</div>'
+					+'<div style="flex:1;"></div>'
+				+'</div>'
+			+'</div>');
+	};
+	//弹框End
 };
 function recclose(){
 	if(rec){
@@ -363,6 +404,23 @@ function recdown64(key, cls){
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
 reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");
 reclog("WaveView Extensions已启用");
+
+
+function goiframe(){
+	$(".demoHead").hide();
+	$(".demoMain").html(''
+		+'<div>IFrame测试，提示：`RecordApp测试`可以模拟跨域</div>'
+		+'<iframe src="'+location.href+'" style="width:98%;height:'+($(window).height()-100)+'px; border:4px solid #0B1"></iframe>');
+};
+if(window.top!=window){
+	var isSelf=false;
+	try{
+		window.top.aa=123;
+		isSelf=true;
+	}catch(e){};
+	
+	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域")+"</span>");
+};
 </script>
 
 

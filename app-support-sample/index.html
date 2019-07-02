@@ -398,6 +398,17 @@ function recdown64(key, cls){
 };
 reclog("点击录制开始哦");
 reclog("WaveView Extensions已启用");
+
+
+if(window.top!=window){
+	var isSelf=false;
+	try{
+		window.top.aa=123;
+		isSelf=true;
+	}catch(e){};
+	
+	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域")+"</span>");
+};
 </script>
 
 
