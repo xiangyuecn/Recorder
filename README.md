@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核、大部分国产手机厂商的浏览器；[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器）；[点此](https://caniuse.com/#search=getUserMedia)查看浏览器支持情况。
 
 录音默认输出mp3格式，另外可选wav格式（此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -36,12 +36,12 @@ IOS其他浏览器||
 ## 案例演示
 
 ### 【Demo】
-[<img src=".assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
+[<img src="assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
 
 > `2019-3-27` 在QQ和微信打开时，发现这个网址被屏蔽了，尝试申诉了一下。`2019-4-7`晚上又发现被屏蔽了，小米浏览器也一样报危险网站，尝试打开一下别人的`github.io`发现全是这样，看来是`github.io`的问题，被波及了，不过第二天又自己好了。
 
 #### 【祝福贺卡助手】
-使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src=".assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src=".assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
+使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
 
 #### 【注】
 如果你的项目用到了这个库也想展示到这里，可以发个isuse，注明使用介绍和访问方式，我们收录在这里。
@@ -55,7 +55,7 @@ IOS其他浏览器||
 
 *2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
 
-*2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
+*2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版（支付宝）：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
 
 
 
@@ -413,7 +413,7 @@ public void onPermissionRequest(PermissionRequest request) {
 如果不出意外，App内显示的网页就能正常录音了。
 
 ### 附带测试项目
-`.assets/android_test`目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，位于`.assets/android_test/app-debug-xxx.apk`）。提供了`系统自带WebView`、和`腾讯X5内核`两个测试界面。
+`assets/android_test`目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，位于`assets/android_test/app-debug-xxx.apk`）。提供了`系统自带WebView`、和`腾讯X5内核`两个测试界面。
 
 
 
@@ -432,4 +432,4 @@ public void onPermissionRequest(PermissionRequest request) {
 
 你也可以选择使用支付宝或微信给我捐赠：
 
-![](.assets/donate-alipay.png)  ![](.assets/donate-weixin.png)
+![](assets/donate-alipay.png)  ![](assets/donate-weixin.png)

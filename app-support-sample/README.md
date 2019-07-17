@@ -3,12 +3,12 @@
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
 ## 在线测试
-[<img src="../.assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
+[<img src="../assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
 此demo页面为代理页面，受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
 
 ## 小程序web-view测试
-[<img src="../.assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
+[<img src="../assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
 
 1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
 2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
@@ -279,4 +279,4 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 你也可以选择使用支付宝或微信给我捐赠：
 
-![](../.assets/donate-alipay.png)  ![](../.assets/donate-weixin.png)
+![](../assets/donate-alipay.png)  ![](../assets/donate-weixin.png)
