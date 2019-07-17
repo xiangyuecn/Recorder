@@ -33,7 +33,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-4-18 09:31:26";
+var PageLM="2019-7-17 20:21:42";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -91,7 +91,7 @@ RandomKey.idx=0;
 
 <!-- begin 开始copy源码 -->
 <div class="demoMain">
-	<div class="pd">
+	<div class="pd gitUrl">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a>
 	</div>
 	<div class="pd types">
@@ -132,7 +132,7 @@ RandomKey.idx=0;
 		<button onclick="recstop2()">批量编码</button>
 		<input type="text" class="bits" value="8 to 96 step 8">kbps 测试音质用的，除比特率外其他参数可调整
 	</div>
-	<div class="pd">
+	<div class="pd waveBox">
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
 		<input type="checkbox" class="recwaveSet" checked>
 	</div>
@@ -145,6 +145,18 @@ RandomKey.idx=0;
 	<div class="pd">
 		<button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
 		测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，跨域时未设置相应策略权限永远是拒绝的
+	</div>
+	
+	<hr>
+	<div class="pd">
+		点击播放：
+		<button onclick="recplay2(this,'rec-3000ms-16kbps-16000hz.wav')">wav</button>
+		<button onclick="recplay2(this,'rec-3000ms-96kbps-16000hz.mp3')">mp3</button>
+		<button onclick="recplay2(this,'rec-3000ms-96kbps-16000hz.ogg')">ogg</button>
+		<button onclick="recplay2(this,'rec-3000ms-96kbps-16000hz.webm')">webm</button>
+		<button onclick="recplay2(this,'rec-3000ms-12.8kbps-8000hz.amr')">amr</button>
+		
+		Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>），先播放，然后试试能否正常录音。另测试浏览器对音频的支持情况。
 	</div>
 	
 	<div class="recinfo"></div>
@@ -347,19 +359,29 @@ function recstop2(){
 	run();
 };
 function recplay(key){
+	var audio=$(".recPlay")[0];
+	audio.controls=true;
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	
 	var o=recblob[key];
 	if(o){
-		var audio=$(".recPlay")[0];
-		audio.controls=true;
-		if(!(audio.ended || audio.paused)){
-			audio.pause();
-		};
 		o.play=(o.play||0)+1;
 		var logmsg=function(msg){
 			$(".p"+key).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString()+" "+msg);
 		};
 		logmsg("");
+		audio.onerror=function(e){
+			console.log(arguments)
+			logmsg('<span style="color:red">播放失败</span>');
+		};
 		
+		if(o.play2Name){
+			audio.src="assets/audio/"+o.play2Name;
+			audio.play();
+			return;
+		};
 		var end=function(blob){
 			audio.src=URL.createObjectURL(blob);
 			audio.play();
@@ -377,6 +399,19 @@ function recplay(key){
 			end(o.blob);
 		};
 	};
+};
+function recplay2(elem,name){
+	elem=$(elem);
+	var key="recplay2"+elem.html();
+	recblob[key]||(recblob[key]={
+		play2Name:name
+	});
+	if(!$(".p"+key).length){
+		elem.before('<br>');
+		elem.after('<span class="p'+key+'"></span><br>');
+	};
+	
+	recplay(key);
 };
 function recdown(key){
 	var o=recblob[key];
@@ -628,6 +663,11 @@ function loadEngine(input){
 	};
 };
 loadEngine($(".initType"));
+
+//pcm测试页面来的
+if(/ispcm=1/.test(location.href)){
+	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox").hide();
+};
 </script>
 
 </body>

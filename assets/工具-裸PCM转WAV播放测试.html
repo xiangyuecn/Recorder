@@ -16,7 +16,7 @@ html,body{
 <body>
 <div style="padding-top:30px;font-size:24px;font-weight:bold;text-align:center;color:#0b1;">把原始PCM数据文件拖入此页面即可生成wav文件</div>
 <div style="text-align:center;padding-top:15px;">
-	<div style="color:#0b1;">本工具用来对原始PCM音频数据进行封装、播放，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord采集的音频。</div>
+	<div style="color:#0b1;">本工具用来对原始PCM音频数据进行封装、播放，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。</div>
 	<div style="color:#F90;">wav文件可以反复拖入，只不过wav头会被当做音频内容而已</div>
 	<div style="color:#F00">乱填采样率、位数，会变声</div>
 	<div style="color:#F0f">除了PCM数据文件外，其他格式文件拖入可能导致惊悚的播放效果</div>
@@ -26,6 +26,12 @@ html,body{
 <div><audio id="recPlayAudio" style="width:100%"></audio></div>
 
 <div id="list"></div>
+
+<div id="mockTransformDiv" style="display:none;width:98%; border:4px solid #0B1;margin:20px 0;">
+	<div id="mockTransformMsg"></div>
+	<iframe id="mockTransformIframe" style="width:100%;height:400px;"></iframe>
+</div>
+
 <script>
 document.body.ondragover=function(e){
 	e.preventDefault();
@@ -55,13 +61,16 @@ document.body.ondrop=function(e){
 
 
 var createWav=function(arr,div,fileObj){
-	var instr=prompt("请输入 "+fileObj.name+" 的\"采样率.位数-新采样率\"(默认16位)，如：16000（8位的需填位数16000.8，新采样16000-8000）");
+	var instr=prompt("请输入 "+fileObj.name+" 的\"采样率.位数-新采样率:结束毫秒:开始毫秒\"(默认16位)，如：16000（8位的需填位数16000.8，新采样16000-8000）");
 	
-	var sampleRate=0,bitRate=16,sampleRateNew=0;
-	if(/^(\d+)(?:\.(\d+))?(?:\-(\d+))?$/.test(instr)){
+	var sampleRate=0,bitRate=16,sampleRateNew=0,subA=0,subB=0;
+	if(/^(\d+)(?:\.(\d+))?(?:\-(\d+))?(?:\:(\d+))?(?:\:(\d+))?$/.test(instr)){
 		sampleRate=+RegExp.$1;
 		bitRate=+RegExp.$2==8?8:16;
 		sampleRateNew=+RegExp.$3||sampleRate;
+		
+		subB=+RegExp.$4||0;
+		subA=+RegExp.$5||0;
 	};
 	if(sampleRate<6000||sampleRateNew<6000){
 		div.append("乱填采样率："+sampleRate+" "+sampleRateNew);
@@ -104,7 +113,13 @@ var createWav=function(arr,div,fileObj){
 		res=sampleData(res,sampleRateNew,sampleRate);
 		sampleRate=sampleRateNew;
 	};
+	
+	//截取
+	if(subA||subB){
+		res=res.subarray(Math.round(subA*sampleRate/1000),subB?Math.round(subB*sampleRate/1000):res.length);
+	};
 	size=res.length;
+	var duration=Math.floor(size/sampleRate*1000);
 	
 	//编码数据 https://github.com/mattdiamond/Recorderjs https://www.cnblogs.com/blqw/p/3782420.html https://www.cnblogs.com/xiaoqi/p/6993912.html
 	var dataLength=size*(bitRate/8);
@@ -165,15 +180,25 @@ var createWav=function(arr,div,fileObj){
 	
 	
 	var blob=new Blob([data],{type:"audio/wav"});
-	var name=fileObj.name+"-"+bitRate+"bit-"+sampleRate+"hz.wav";
+	var name=fileObj.name+"-"+duration+"ms"+"-"+bitRate+"bit-"+sampleRate+"hz.wav";
 	var url=URL.createObjectURL(blob);
-	console.log(name,blob);
 	
 	var id=++rnd;
+	pcms[id]={
+		name:fileObj.name
+		,pcm:res
+		,sampleRate:sampleRate
+		,bitRate:bitRate
+		,duration:duration
+		
+		,blob:blob
+	};
+	console.log(pcms[id]);
 	
-	div.innerHTML=div.innerHTML+" 【"+name+'】'+Math.floor(size/sampleRate*1000)+'ms '+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a> <button onclick="recplay('+id+',\''+url+'\')">播放</button> <span id="playc'+id+'" style="color:#0b1;"></span>';
+	div.innerHTML=id+". "+div.innerHTML+" 【"+name+'】'+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a> <button onclick="mockTransform('+id+')">转码</button> <button onclick="recplay('+id+',\''+url+'\')">播放</button> <span id="playc'+id+'" style="color:#0b1;"></span>';
 };
 var rnd=0;
+var pcms={};
 
 
 
@@ -193,6 +218,48 @@ function recplay(id,url){
 	};
 	audio.src=url;
 	audio.play();
+};
+
+
+
+
+
+
+var isSetIframe=false;
+function mockTransform(id){
+	mockTransformDiv.style.display="block";
+	if(location.protocol.indexOf("http")!=0){
+		mockTransformMsg.innerHTML='<span style="color:red">因为转码需要写配置输入界面，就拿测试页面来用了（懒），所以需要在http环境下才能加载同域页面</span>';
+		return;
+	};
+	
+	if(isSetIframe){
+		var msg="";
+		try{
+			var win=mockTransformIframe.contentWindow;
+			if(win.Recorder){
+				var wav=pcms[id];
+				
+				win.rec=win.Recorder();
+				win.rec.mock(wav.pcm,wav.sampleRate);
+				
+				mockTransformMsg.innerHTML='<span style="color:#0b1;">'+id+". 已注入pcm数据，请点击批量编码进行转换。"+(new Date().toLocaleTimeString())+"</span> 因为转码需要写配置输入界面，就拿测试页面来用了（懒）";
+				return;
+			};
+		}catch(e){
+			console.error(e)
+			msg="注入异常：也许还没有准备好..."+e.stack;
+		};
+		mockTransformMsg.innerHTML='<span style="color:red">'+(msg||"页面未准备好，请稍后再试...")+'</span>'
+	}else{
+		isSetIframe=true;
+		
+		mockTransformIframe.src="../index.html?ispcm=1";
+		mockTransformIframe.onload=function(){
+			mockTransform(id);
+		};
+		mockTransformMsg.innerHTML="请稍后，正在加载页面...";
+	};
 };
 </script>
 </body>
