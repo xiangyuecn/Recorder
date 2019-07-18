@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
-<title>工具-裸PCM转WAV播放测试</title>
+<title>裸(RAW、WAV)PCM转WAV播放测试和转码</title>
 
 <style>
 html,body{
@@ -14,10 +14,11 @@ html,body{
 </head>
 
 <body>
-<div style="padding-top:30px;font-size:24px;font-weight:bold;text-align:center;color:#0b1;">把原始PCM数据文件拖入此页面即可生成wav文件</div>
+<div style="padding-top:30px;font-size:24px;font-weight:bold;text-align:center;color:#0b1;">把裸(RAW、WAV)PCM数据文件拖入此页面即可生成.wav文件，然后可转码成其他格式</div>
 <div style="text-align:center;padding-top:15px;">
-	<div style="color:#0b1;">本工具用来对原始PCM音频数据进行封装、播放，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。</div>
-	<div style="color:#F90;">wav文件可以反复拖入，只不过wav头会被当做音频内容而已</div>
+	<input type="file" onchange="choiceFile(this)" style="width:80%;line-height:60px;font-size:24px;color:#fff; background:#0b1;">
+	<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。</div>
+	<div style="color:#F90;">.wav（raw pcm format）文件可以反复拖入，只不过前44字节wav头会被删除而已</div>
 	<div style="color:#F00">乱填采样率、位数，会变声</div>
 	<div style="color:#F0f">除了PCM数据文件外，其他格式文件拖入可能导致惊悚的播放效果</div>
 	<div><a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a></div>
@@ -38,15 +39,25 @@ document.body.ondragover=function(e){
 };
 document.body.ondrop=function(e){
 	e.preventDefault();
+	
+	readFile(e.dataTransfer.files);
+};
+function choiceFile(elem){
+	if(!elem.files.length){
+		return;
+	};
+	readFile(elem.files);
+};
+function readFile(files){
 	var div=document.createElement("div");
 	list.prepend(div);
 	div.append(new Date().toLocaleTimeString()+" ");
 	
-	if(e.dataTransfer.files.length!=1){
+	if(files.length!=1){
 		div.append("请只拖入一个文件");
 		return;
 	}
-	var fileObj = e.dataTransfer.files[0];
+	var fileObj = files[0];
 	var fileReader = new FileReader();
 	fileReader.onload = function(e){
 		createWav(e.target.result,div,fileObj);
@@ -75,6 +86,28 @@ var createWav=function(arr,div,fileObj){
 	if(sampleRate<6000||sampleRateNew<6000){
 		div.append("乱填采样率："+sampleRate+" "+sampleRateNew);
 		return;
+	};
+	
+	//处理wav头
+	if(/\.wav$/i.test(fileObj.name)){
+		var arrView=new Uint8Array(arr);
+		var eq=function(p,s){
+			for(var i=0;i<s.length;i++){
+				if(arrView[p+i]!=s.charCodeAt(i)){
+					return false;
+				};
+			};
+			return true;
+		};
+		console.log("发现wav文件");
+		
+		if(eq(0,"RIFF")&&eq(8,"WAVEfmt ")){
+			console.log("    wav 格式");
+			if(arrView[20]==1){
+				console.log("    raw pcm format wav");
+				arr=arr.slice(44);
+			};
+		};
 	};
 	
 	if(bitRate==16){
