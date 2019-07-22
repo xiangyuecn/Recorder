@@ -156,7 +156,7 @@ RandomKey.idx=0;
 		<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
 		<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
 		
-		Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>），先播放，然后试试能否正常录音。另测试浏览器对音频的支持情况。
+		Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>）；IOS Safari如果未开始过录音并且播放了音乐，然后后续录音将会有问题；再现方法：刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。
 	</div>
 	
 	<div class="recinfo"></div>
@@ -186,7 +186,7 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 注：录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
 </div>
 <div style="padding-top:20px">
-如果浏览器不能正常录音，并且不确定是不是这个库的问题，可以到 <a href="https://collab-project.github.io/videojs-record/examples/audio-only.html">https://collab-project.github.io/videojs-record/examples/audio-only.html</a> 试一下。
+如果浏览器不能正常录音，并且不确定是不是这个库的问题，可以到 <a href="https://xiangyuecn.github.io/Recorder/assets/ztext_collab-project_videojs-record.html">assets/ztext_collab-project_videojs-record.html</a> 试一下。
 </div>
 </script>
 
