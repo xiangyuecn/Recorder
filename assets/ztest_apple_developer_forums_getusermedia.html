@@ -49,7 +49,7 @@ document.body.innerHTML=`
 Known problems:
   - iOS or macOS Safari: Call the 'MediaStream' object obtained by 'MediaDevices.getUserMedia({audio:true})', 'MediaStream' first use is no problem, but if 'MediaStream' second use will be a problem. If you call 'MediaDevices.getUserMedia({audio:true})' again to get 'MediaStream', there will be no problem.
   - iOS: if any audio has been played before calling 'MediaDevices.getUserMedia({audio:true})', recording will not be possible at all. If the getUserMedia is called first and then the audio is played, there is no problem.
-  - chrome and firefox don't have any of the above problems.
+  - win10/android chrome and firefox don't have any of the above problems.
 
 Test flow:
   1. use 【iOS】 or 【macOS】 Safari:
@@ -85,7 +85,7 @@ Test flow:
       - almost no animation on the recording volume. 
       - playing record discovery: recorded data is wrong.
     
-  3. use 【chrome】 or 【firefox】
+  3. use win10/android【chrome】 or 【firefox】
     Retry '1.' and '2.' above. no problem at all.
 </pre>
 <hr>
