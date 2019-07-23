@@ -1,0 +1,311 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+<title>The problem of getUserMedia[Audio]</title>
+
+<style>
+html,body{
+	height:100%;
+}
+</style>
+</head>
+
+<body>
+<script>
+(function(){
+
+/*user interface*/
+document.body.innerHTML=`
+<pre style="white-space: pre-wrap;">
+Known problems:
+	- iOS or macOS Safari: Call the 'MediaStream' object obtained by 'MediaDevices.getUserMedia({audio:true})', 'MediaStream' first use is no problem, but if 'MediaStream' second use will be a problem. If you call 'MediaDevices.getUserMedia({audio:true})' again to get 'MediaStream', there will be no problem.
+	- iOS: if any audio has been played before calling 'MediaDevices.getUserMedia({audio:true})', recording will not be possible at all. If the getUserMedia is called first and then the audio is played, there is no problem.
+	- chrome and firefox don't have any of the above problems.
+
+Test flow:
+	1. use 【iOS】 or 【macOS】 Safari:
+		step:
+			1. reload page
+			2. click 'Open Stream', grant permission
+			
+			//first recording
+			3. click 'rec start'
+			4. recording for a period of time, click 'rec stop'
+			
+			//keep stream, second recording
+			5. click 'rec start'
+			6. recording for a period of time, click 'rec stop'
+			
+			//new stream, third recording
+			7. click 'Close Stream'
+			8. click 'Open Stream', grant permission
+			9. click 'rec start'
+			10. recording for a period of time, click 'rec stop'
+		problem:
+			- first recording and third recording was right. but, second recording was wrong, the data transmitted by the browser seems to be fake.
+	
+	2. use 【iOS】 Safari:
+		step:
+			1. reload page
+			2. click 'Play mp3'
+			3. click 'Open Stream', grant permission
+			4. click 'rec start'
+			5. recording for a period of time, click 'rec stop'
+		problem:
+			- time varies abnormally slowly(onaudioprocess callback).
+			- almost no animation on the recording volume. 
+			- playing record discovery: recorded data is wrong.
+		
+	3. use 【chrome】 or 【firefox】
+		Retry '1.' and '2.' above. no problem at all.
+</pre>
+<hr>
+
+<input type="button" onclick="playMp3()" value="Play mp3"/>
+<hr>
+<audio id="recaudio" style="width:100%"></audio>
+
+<div>
+	<input type="button" onclick="recOpen()" value="Open Stream"/>
+	<input type="button" onclick="recClose()" value="Close Stream"/>
+</div>
+<br>
+<div>
+	<input type="button" onclick="recStart()" value="rec start"/>
+	<input type="button" onclick="recStop()" value="rec stop"/>
+</div>
+<div>
+	volume:
+	<div style="height:40px;width:300px;background:#999;position:relative;">
+		<div id="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+		<div id="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+	</div>
+</div>
+
+<div id="reclogs" style="padding-bottom:300px"></div>
+`;
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+	document.body.innerHTML="Need for new browser!";
+	return;
+};
+function log(msg, err){
+	var div=document.createElement("div");
+	div.innerHTML='<div style="color:'+(err?"red":"")+'">'+(new Date().toLocaleTimeString())+' '+msg+'</div>'
+	reclogs.prepend(div);
+};
+
+
+
+
+
+
+
+
+/*call getUserMedia*/
+var Ctx,Stream;
+
+//request permission, get stream
+window.recOpen=function(){
+	if(!Ctx){
+		Ctx=new (AudioContext||webkitAudioContext)();
+	};
+	recClose();
+	
+	navigator.mediaDevices.getUserMedia({audio:true})
+		.then(function(stream){
+			Stream=stream;
+			log("open success");
+		}).catch(function(){
+			log("open fail",1);
+		});
+};
+
+//close record stream
+window.recClose=function(){
+	if(Stream){
+		var tracks=Stream.getTracks();
+		for(var i=0;i<tracks.length;i++){
+			tracks[i].stop();
+		};
+		Stream=0;
+		
+		log("close done.");
+	};
+	buffers=0;
+};
+
+
+
+
+var buffers,recSize,media,process;
+window.recStart=function(){
+	if(!Stream){
+		log("please open!",1);
+		return;
+	};
+	if(!!buffers){
+		log("please stop!",1);
+		return;
+	};
+	buffers=[];
+	recSize=0;
+	media=Ctx.createMediaStreamSource(Stream);
+	process=(Ctx.createScriptProcessor||Ctx.createJavaScriptNode).call(Ctx,4096,1,1);
+	
+	process.onaudioprocess=function(e){
+		if(!buffers){
+			return;
+		};
+		var o=e.inputBuffer.getChannelData(0);
+		var size=o.length;
+		recSize+=size;
+		
+		var res=new Int16Array(size);
+		var power=0;
+		for(var j=0;j<size;j++){
+			var s=Math.max(-1,Math.min(1,o[j]));
+			s=s<0?s*0x8000:s*0x7FFF;
+			res[j]=s;
+			power+=Math.abs(s);
+		};
+		buffers.push(res);
+		
+		
+		var duration=Math.round(recSize/Ctx.sampleRate*1000);
+		
+		power/=size;
+		var powerLevel;
+		if(power<1251){
+			powerLevel=Math.round(power/1250*10);
+		}else{
+			powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
+		}
+		
+		recpowerx.style.width=powerLevel+"%";
+		recpowert.innerHTML=duration+"/"+powerLevel;
+	};
+	
+	media.connect(process);
+	process.connect(Ctx.destination);
+};
+window.recStop=function(){
+	var buffer=buffers;
+	buffers=0;
+	if(!buffer){
+		log("please start!",1);
+		return;
+	};
+	media.disconnect();
+	process.disconnect();
+	
+	var res=new Int16Array(recSize);
+	for(var i=0,n=0;i<buffer.length;i++){
+		var a=buffer[i];
+		for(var j=0;j<a.length;j++){
+			res[n++]=a[j];
+		};
+	};
+	
+	var blob=createWav(res);
+	blobs.push({blob:blob});
+	
+	var idx=blobs.length-1;
+	var duration=Math.round(recSize/Ctx.sampleRate*1000);
+	
+	log('<span>'+duration+'ms <input type="button" onclick="playBlob('+idx+')" value="play"></span> <span id="blob_'+idx+'"></span>');
+};
+
+
+
+
+
+window.blobs=[];
+
+/*player*/
+var play=function(src){
+	var audio=recaudio;
+	audio.controls=true;
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	audio.src=src;
+	audio.play();
+};
+window.playBlob=function(idx){
+	var o=blobs[idx];
+	play(URL.createObjectURL(o.blob));
+	
+	o.playCount=(o.playCount||0)+1
+	window["blob_"+idx].innerHTML=o.playCount;
+};
+window.playMp3=function(){
+	play(rawMp3);
+};
+
+
+
+
+
+function createWav(res){
+	var dataLength=recSize*(16/8);
+	var buffer=new ArrayBuffer(44+dataLength);
+	var data=new DataView(buffer);
+	
+	var offset=0;
+	var writeString=function(str){
+		for (var i=0;i<str.length;i++,offset++) {
+			data.setUint8(offset,str.charCodeAt(i));
+		};
+	};
+	var write16=function(v){
+		data.setUint16(offset,v,true);
+		offset+=2;
+	};
+	var write32=function(v){
+		data.setUint32(offset,v,true);
+		offset+=4;
+	};
+	
+	/* RIFF identifier */
+	writeString('RIFF');
+	/* RIFF chunk length */
+	write32(36+dataLength);
+	/* RIFF type */
+	writeString('WAVE');
+	/* format chunk identifier */
+	writeString('fmt ');
+	/* format chunk length */
+	write32(16);
+	/* sample format (raw) */
+	write16(1);
+	/* channel count */
+	write16(1);
+	/* sample rate */
+	write32(Ctx.sampleRate);
+	/* byte rate (sample rate * block align) */
+	write32(Ctx.sampleRate*(16/8));
+	/* block align (channel count * bytes per sample) */
+	write16(16/8);
+	/* bits per sample */
+	write16(16);
+	/* data chunk identifier */
+	writeString('data');
+	/* data chunk length */
+	write32(dataLength);
+	for (var i=0;i<recSize;i++,offset+=2){
+		data.setInt16(offset,res[i],true);
+	};
+	
+	var blob=new Blob([data],{type:"audio/wav"});
+	return blob;
+};
+
+var rawMp3="data:audio/mp3;base64,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";
+
+})();
+</script>
+</body>
+</html>
