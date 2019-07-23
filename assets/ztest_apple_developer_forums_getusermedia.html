@@ -106,6 +106,9 @@ function log(msg, err){
 	div.innerHTML='<div style="color:'+(err?"red":"")+'">'+(new Date().toLocaleTimeString())+' '+msg+'</div>'
 	reclogs.prepend(div);
 };
+window.onerror=function(msg){
+	log(msg,1);
+};
 
 
 
@@ -120,7 +123,7 @@ var Ctx,Stream;
 //request permission, get stream
 window.recOpen=function(){
 	if(!Ctx){
-		Ctx=new (AudioContext||webkitAudioContext)();
+		Ctx=new (window.AudioContext||webkitAudioContext)();
 	};
 	recClose();
 	
