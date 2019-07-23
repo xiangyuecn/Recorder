@@ -19,55 +19,7 @@ html,body{
 
 /*user interface*/
 document.body.innerHTML=`
-<pre style="white-space: pre-wrap;">
-issue[2019-7-23 23:29]: https://forums.developer.apple.com/message/373108
-if there is no result in 7 days, I will try to send bug report or email.
--------
-
-Known problems:
-	- iOS or macOS Safari: Call the 'MediaStream' object obtained by 'MediaDevices.getUserMedia({audio:true})', 'MediaStream' first use is no problem, but if 'MediaStream' second use will be a problem. If you call 'MediaDevices.getUserMedia({audio:true})' again to get 'MediaStream', there will be no problem.
-	- iOS: if any audio has been played before calling 'MediaDevices.getUserMedia({audio:true})', recording will not be possible at all. If the getUserMedia is called first and then the audio is played, there is no problem.
-	- chrome and firefox don't have any of the above problems.
-
-Test flow:
-	1. use 【iOS】 or 【macOS】 Safari:
-		step:
-			1. reload page
-			2. click 'Open Stream', grant permission
-			
-			//first recording
-			3. click 'rec start'
-			4. recording for a period of time, click 'rec stop'
-			
-			//keep stream, second recording
-			5. click 'rec start'
-			6. recording for a period of time, click 'rec stop'
-			
-			//new stream, third recording
-			7. click 'Close Stream'
-			8. click 'Open Stream', grant permission
-			9. click 'rec start'
-			10. recording for a period of time, click 'rec stop'
-		problem:
-			- first recording and third recording was right. but, second recording was wrong, the data transmitted by the browser seems to be fake.
-	
-	2. use 【iOS】 Safari:
-		step:
-			1. reload page
-			2. click 'Play mp3'
-			3. click 'Open Stream', grant permission
-			4. click 'rec start'
-			5. recording for a period of time, click 'rec stop'
-		problem:
-			- time varies abnormally slowly(onaudioprocess callback).
-			- almost no animation on the recording volume. 
-			- playing record discovery: recorded data is wrong.
-		
-	3. use 【chrome】 or 【firefox】
-		Retry '1.' and '2.' above. no problem at all.
-</pre>
 <hr>
-
 <input type="button" onclick="playMp3()" value="Play mp3"/>
 <hr>
 <audio id="recaudio" style="width:100%"></audio>
@@ -89,7 +41,61 @@ Test flow:
 	</div>
 </div>
 
-<div id="reclogs" style="padding-bottom:300px"></div>
+<div id="reclogs"></div>
+
+<hr>
+
+<pre style="white-space: pre-wrap;">
+Known problems:
+  - iOS or macOS Safari: Call the 'MediaStream' object obtained by 'MediaDevices.getUserMedia({audio:true})', 'MediaStream' first use is no problem, but if 'MediaStream' second use will be a problem. If you call 'MediaDevices.getUserMedia({audio:true})' again to get 'MediaStream', there will be no problem.
+  - iOS: if any audio has been played before calling 'MediaDevices.getUserMedia({audio:true})', recording will not be possible at all. If the getUserMedia is called first and then the audio is played, there is no problem.
+  - chrome and firefox don't have any of the above problems.
+
+Test flow:
+  1. use 【iOS】 or 【macOS】 Safari:
+    step:
+      1. reload page
+      2. click 'Open Stream', grant permission
+      
+      //first recording
+      3. click 'rec start'
+      4. recording for a period of time, click 'rec stop'
+      
+      //keep stream, second recording
+      5. click 'rec start'
+      6. recording for a period of time, click 'rec stop'
+      
+      //new stream, third recording
+      7. click 'Close Stream'
+      8. click 'Open Stream', grant permission
+      9. click 'rec start'
+      10. recording for a period of time, click 'rec stop'
+    problem:
+      - first recording and third recording was right. but, second recording was wrong, the data transmitted by the browser seems to be fake.
+  
+  2. use 【iOS】 Safari:
+    step:
+      1. reload page
+      2. click 'Play mp3'
+      3. click 'Open Stream', grant permission
+      4. click 'rec start'
+      5. recording for a period of time, click 'rec stop'
+    problem:
+      - time varies abnormally slowly(onaudioprocess callback).
+      - almost no animation on the recording volume. 
+      - playing record discovery: recorded data is wrong.
+    
+  3. use 【chrome】 or 【firefox】
+    Retry '1.' and '2.' above. no problem at all.
+</pre>
+<hr>
+<div>
+issue[2019-7-23 23:29]: <a href="https://forums.developer.apple.com/message/373108" target="_blank">https://forums.developer.apple.com/message/373108</a>
+<br>
+if there is no result in 7 days, I will try to send bug report or email.
+</div>
+
+<div style="padding-bottom:300px"></div>
 `;
 if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
 	document.body.innerHTML="Need for new browser!";
