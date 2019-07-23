@@ -20,6 +20,10 @@ html,body{
 /*user interface*/
 document.body.innerHTML=`
 <pre style="white-space: pre-wrap;">
+issue[2019-7-23 23:29]: https://forums.developer.apple.com/message/373108
+if there is no result in 7 days, I will try to send bug report or email.
+-------
+
 Known problems:
 	- iOS or macOS Safari: Call the 'MediaStream' object obtained by 'MediaDevices.getUserMedia({audio:true})', 'MediaStream' first use is no problem, but if 'MediaStream' second use will be a problem. If you call 'MediaDevices.getUserMedia({audio:true})' again to get 'MediaStream', there will be no problem.
 	- iOS: if any audio has been played before calling 'MediaDevices.getUserMedia({audio:true})', recording will not be possible at all. If the getUserMedia is called first and then the audio is played, there is no problem.
