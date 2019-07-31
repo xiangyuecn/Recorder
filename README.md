@@ -73,7 +73,7 @@ IOS其他浏览器||
 <script src="src/engine/mp3.js"></script> <!--相应格式支持文件-->
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
 ```
-> 可自行用 `AMD/CommonJS` 写法把 `Recorder` 函数（把格式支持文件合并过来）进行导出；或者尝试直接 `import/require` `recorder.mp3.min.js`，应该可以通过全局`window.Recorder`访问，简单粗暴。vue?! angular?!可用??!!。
+> 可自行用 `AMD/CommonJS` 写法把 `Recorder` 函数（把格式支持文件合并过来）进行导出；或者尝试直接 `import/require` `recorder.mp3.min.js`，应该可以通过全局`window.Recorder`访问，简单粗暴。vue?! angular?!可用??!!，[webpack使用](https://github.com/xiangyuecn/Recorder/issues/38)。
 
 ## 【2】调用录音
 然后使用，假设立即运行，只录3秒
