@@ -63,7 +63,7 @@ IOS其他浏览器||
 # :open_book:快速使用
 
 ## 【1】加载框架
-在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可 （**注意：需要在https等安全环境下才能进行录音**）
+在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可 （**注意：[需要在https等安全环境下才能进行录音](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)**）
 ``` html
 <script src="recorder.mp3.min.js"></script>
 ```
