@@ -4,60 +4,10 @@
 
 录音默认输出mp3格式，另外可选wav格式（raw pcm format此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
-mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）；本库期待的使用场景是简短的语音录制，因此音质只要不比高品质的感觉差太多就行；1分钟的语音进行编码是很快的，但如果录制超长的录音，比如10分钟以上，编码会花费比较长的时间，因为并未采用边录边转码的worker方案。另外未找到双声道语音录制存在的意义（翻倍录音数据大小，并且拉低音质），因此特意仅对单声道进行支持。
+mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）；主要用于简短语音录制，1分钟的语音进行编码是很快的，超长语音编码会花费比较长时间（wav格式几乎不受时长影响）。双声道语音没有意义，特意仅对单声道进行支持。
 
 mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
-浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
-
-**特别注**：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，IOS上其他浏览器均不支持，参考下面的已知问题。
-
-**特别注**：大部分国产手机厂商的浏览器（系统浏览器，都用的UC内核？）虽然支持`getUserMedia`方法，但并不能使用，表现为直接返回拒绝或者干脆没有任何回调；UC系列目测全部阵亡（含支付宝）。
-
-**特别注**：如果在`iframe`里面调用的录音功能，并且和上层的网页是不同的域（跨域了），如果未设置相应策略，权限永远是被拒绝的，[参考此处](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)。另外如果要在`非跨域的iframe`里面使用，最佳实践应该是让window.top去加载Recorder（异步加载js），iframe里面使用top.Recorder，免得各种莫名其妙（比如微信里面的各种渣渣功能，搞多了就习惯了）。
-
-> 如果需要最大限度的兼容IOS（仅增加微信支持），可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
-
-支持|Recorder|[RecordApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)
--:|:-:|:-:
-PC浏览器|√|√
-Android Chrome Firefox|√|√
-Android微信(含小程序)|√|√
-Android Hybrid App|√|√
-Android其他浏览器|未知|未知
-IOS Safari|√|√
-IOS微信(含小程序)||√
-IOS Hybrid App||√
-IOS其他浏览器||
-开发难度|简单|复杂
-第三方依赖|无|依赖微信公众号
-
-
-## 案例演示
-
-### 【Demo】
-[<img src="assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
-
-> `2019-3-27` 在QQ和微信打开时，发现这个网址被屏蔽了，尝试申诉了一下。`2019-4-7`晚上又发现被屏蔽了，小米浏览器也一样报危险网站，尝试打开一下别人的`github.io`发现全是这样，看来是`github.io`的问题，被波及了，不过第二天又自己好了。
-
-#### 【祝福贺卡助手】
-使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
-
-#### 【注】
-如果你的项目用到了这个库也想展示到这里，可以发个isuse，注明使用介绍和访问方式，我们收录在这里。
-
-
-
-# :open_book:已知问题
-*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
-
-*2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
-
-*2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
-
-*2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版（支付宝）：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
-
-*2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题。问题二：IOS上如果录音之前先播放了任何Audio，录音过程将会变得很诡异，但如果先录音，就不存在此问题。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。
 
 
 # :open_book:快速使用
@@ -188,6 +138,75 @@ $.ajax({
 - 提交Issue，热心网友帮你解答。
 
 
+
+
+## 案例演示
+
+### 【Demo】
+[<img src="assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
+
+> `2019-3-27` 在QQ和微信打开时，发现这个网址被屏蔽了，尝试申诉了一下。`2019-4-7`晚上又发现被屏蔽了，小米浏览器也一样报危险网站，尝试打开一下别人的`github.io`发现全是这样，看来是`github.io`的问题，被波及了，不过第二天又自己好了。
+
+#### 【祝福贺卡助手】
+使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
+
+#### 【注】
+如果你的项目用到了这个库也想展示到这里，可以发个isuse，注明使用介绍和访问方式，我们收录在这里。
+
+
+
+
+
+# :open_book:知识库
+
+本库期待的使用场景是简短的语音录制，因此音质只要不比高品质的感觉差太多就行；1分钟的语音进行编码是很快的，但如果录制超长的录音，比如10分钟以上，编码会花费比较长的时间，因为并未采用边录边转码的worker方案。另外未找到双声道语音录制存在的意义（翻倍录音数据大小，并且拉低音质），因此特意仅对单声道进行支持。
+
+
+浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
+
+**特别注**：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，IOS上其他浏览器均不支持，参考下面的已知问题。
+
+**特别注**：大部分国产手机厂商的浏览器（系统浏览器，都用的UC内核？）虽然支持`getUserMedia`方法，但并不能使用，表现为直接返回拒绝或者干脆没有任何回调；UC系列目测全部阵亡（含支付宝）。
+
+**特别注**：如果在`iframe`里面调用的录音功能，并且和上层的网页是不同的域（跨域了），如果未设置相应策略，权限永远是被拒绝的，[参考此处](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)。另外如果要在`非跨域的iframe`里面使用，最佳实践应该是让window.top去加载Recorder（异步加载js），iframe里面使用top.Recorder，免得各种莫名其妙（比如微信里面的各种渣渣功能，搞多了就习惯了）。
+
+> 如果需要最大限度的兼容IOS（仅增加微信支持），可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
+
+支持|Recorder|[RecordApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)
+-:|:-:|:-:
+PC浏览器|√|√
+Android Chrome Firefox|√|√
+Android微信(含小程序)|√|√
+Android Hybrid App|√|√
+Android其他浏览器|未知|未知
+IOS Safari|√|√
+IOS微信(含小程序)||√
+IOS Hybrid App||√
+IOS其他浏览器||
+开发难度|简单|复杂
+第三方依赖|无|依赖微信公众号
+
+
+
+
+
+# :open_book:已知问题
+*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
+
+*2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
+
+*2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
+
+*2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版（支付宝）：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
+
+*2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题。问题二：IOS上如果录音之前先播放了任何Audio，录音过程将会变得很诡异，但如果先录音，就不存在此问题。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。
+
+
+
+
+
+
+
 # :open_book:方法文档
 
 ### 【构造】rec=Recorder(set)
@@ -298,7 +317,7 @@ npm start
 ```
 
 # :open_book:关于现有编码器
-如果你有其他格式的编码器并且想贡献出来，可以提交新增格式文件的pull（文件放到/src/engine中），我们升级它。
+如果你有其他格式的编码器并且想贡献出来，可以提交新增格式文件的PR（文件放到/src/engine中），我们升级它。
 
 ## wav (raw pcm format)
 wav格式编码器时参考网上资料写的，会发现代码和别人家的差不多。源码2kb大小。
