@@ -8,12 +8,14 @@ mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如�
 
 mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
+*IOS上的使用限制等问题和兼容请参阅下面的知识库部分。*
+
 
 
 # :open_book:快速使用
 
 ## 【1】加载框架
-在需要录音功能的页面引入压缩好的recorder.***.min.js文件即可 （**注意：[需要在https等安全环境下才能进行录音](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)**）
+在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件即可 （**注意：[需要在https等安全环境下才能进行录音](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)**）
 ``` html
 <script src="recorder.mp3.min.js"></script>
 ```
