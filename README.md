@@ -8,7 +8,7 @@ mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如�
 
 mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
-*IOS上的使用限制等问题和兼容请参阅下面的知识库部分。*
+*IOS、国产系统浏览器上的使用限制等问题和兼容请参阅下面的知识库部分。*
 
 
 
@@ -192,7 +192,7 @@ IOS其他浏览器||
 
 
 
-# :open_book:已知问题
+## 已知问题
 *2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
 
 *2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
