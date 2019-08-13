@@ -2,12 +2,20 @@
 
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
-## 在线测试
+## IOS Hybrid App测试
+
+待编写
+
+## Android Hybrid App测试
+
+待编写
+
+## 微信H5测试
 [<img src="../assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
 此demo页面为代理页面，受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
 
-## 小程序web-view测试
+## 微信小程序WebView测试
 [<img src="../assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
 
 1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
@@ -18,23 +26,11 @@
 
 ## 仅为兼容IOS而生
 
-如果忽略`Native`支持，可以说是仅为兼容IOS上的微信而生。
+由于IOS上除了`Safari`可以H5录音外，[其他浏览器、WebView](https://forums.developer.apple.com/thread/88052)均不能进行H5录音，Android和PC上情况好很多；可以说是仅为兼容IOS上的微信而生。
 
-据[艾瑞移动设备指数](https://index.iresearch.com.cn/device)2019年4月1-7日上数据：
+据[艾瑞移动设备指数](https://index.iresearch.com.cn/device)2019年7月29日数据：苹果占比`23.29%`位居第一，华为以`19.74%`排名第二。不得不向大厂低头，于是就有了此最大限度的兼容方案；由于有些开发者比较关心此问题，于是就开源了。
 
-排名|厂商品牌|占比
-:-:|:-:|:-:
-1|苹果|22.64%
-2|华为|18.61%
-3|OPPO|16.03%
-4|vivo|14.54%
-5|小米|11.58%
-6|三星|3.68%
-
-
-`IOS 12`上`getUserMedia`功能表现特异，如果是都不支持也就无话可说了，但`Safari`又支持，[那是谁的问题](https://forums.developer.apple.com/thread/88052)！但不得不向大厂低头，于是就有了此最大限度的兼容方案（能兼容一点是一点，枪打微信出头鸟）；由于有些开发者比较关心此问题，于是就开源了。
-
-当`IOS`哪天开始支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
+当`IOS`哪天开始全面支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
 
 
 > `RecordApp`单纯点来讲就是为了兼容IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
@@ -66,25 +62,24 @@ IOS其他浏览器||
 ## 支持功能
 
 - 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用下面选项。
-- 默认开启`IOS-Weixin`支持，用于支持IOS的微信`浏览器`、`小程序web-view`的录音功能，需在[app.js](../src/app-support/app.js)中配置`IOS-Weixin`使用到的两个后端接口。
-- 可选手动开启`Native`支持，用于支持IOS上的Hybrid App录音，如需使用需在[app.js](../src/app-support/app.js)中开启`Native`支持选项，并且实现[app-native-support.js](../src/app-support/app-native-support.js)中的`JsBridge`方法调用。
+- 默认开启`IOS-Weixin`支持，用于支持IOS的微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
+- 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用。
 
 
 ## 限制功能
 
 - `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
 - `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
-- 如果开启了`Native`支持，并且环境支持App原生录音，`Recorder`对象将不可用，因为不会加载`Recorder`库。
+- MP3编码器lamejs在过气Android版本上可能编码出的结果长度为0，Android 5.0模拟器测的没有问题。
 
 
 
 # :open_book:快速使用
 
-本处提供`IOS-Weixin`支持的开启配置，`Native`的由于不确定性太多，请自行查阅源码。
-
 ## 【1】加载框架
 ``` html
-<!-- 可选的独立配置文件，提供此文件时无需修改app.js源码，不然需要修改。注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
+<!-- 可选的独立配置文件，提供这些文件时无需修改app.js源码。注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
+<script src="app-support-sample/native-config.js"></script>
 <script src="app-support-sample/ios-weixin-config.js"></script>
 
 <!-- 在需要录音功能的页面引入`app-support/app.js`文件（src内的为源码、dist内的为压缩后的）即可 （**注意：需要在https等安全环境下才能进行录音**） -->
@@ -92,7 +87,7 @@ IOS其他浏览器||
 ```
 
 ## 【2】调用录音
-然后使用，假设立即运行，只录3秒
+然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
 ``` javascript
 //请求录音权限
 RecordApp.RequestPermission(function(){
@@ -121,6 +116,13 @@ RecordApp.OnProcess=function(pcmData,powerLevel,duration,sampleRate){
 
 ## 【附】录音立即播放、上传示例
 参考[Recorder](https://github.com/xiangyuecn/Recorder)中的示例。
+
+
+## 【QQ群】交流与支持
+
+欢迎加QQ群：781036591，纯小写口令：`recorder`
+
+<img src="../assets/qq_group_781036591.png" width="220px">
 
 
 
@@ -196,8 +198,8 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 `powerLevel,duration,sampleRate` 和`RecordApp.OnProcess`参数意义相同
 
 
-## 【全局方法】window.top.NativeRecordReceivePCM(pcmData,duration,sampleRate)
-开启了`Native`支持时，会有这个方法，用于原生App实时返还pcm数据。里面其实是封装了对`RecordApp.ReceivePCM`的调用，参数除了`powerLevel`外和它相同。
+## 【全局方法】window.top.NativeRecordReceivePCM(pcmDataBase64,sampleRate)
+开启了`Native`支持时，会有这个方法，用于原生App实时返还pcm数据。里面其实是封装了对`RecordApp.ReceivePCM`的调用。
 
 
 ## 【静态属性】RecordApp.Current
@@ -216,7 +218,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 
 ## 统一实现
-每个底层平台都实现了三个方法，`Native`在[app-native-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-native-support.js)中实现了（其实是空的函数，需要自己来写），`IOS-Weixin`在[app-ios-weixin-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-ios-weixin-support.js)中实现了，`Default`在[app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)中实现了。
+每个底层平台都实现了三个方法，`Native`在[app-native-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-native-support.js)中实现了，`IOS-Weixin`在[app-ios-weixin-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-ios-weixin-support.js)中实现了，`Default`在[app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)中实现了。
 
 ### platform.RequestPermission(success,fail)
 本底层具体的权限请求实现，参数和`RecordApp.RequestPermission`相同。
@@ -225,18 +227,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 本底层具体的开始录音实现，参数和`RecordApp.Start`相同。
 
 ### platform.Stop(success,fail)
-本底层具体的开始录音实现。
-
-`success`: `fn(obj)` 结束录音时回调返回数据
-``` javascript
-    obj={
-        mime:"audio/mp3" //录音数据格式，注意：不一定要和start传入的set.type相同，可能为其他值
-        ,duration:123 //音频持续时间
-        ,data:"base64" //音频数据，base64编码后的纯文本格式
-    }
-```
-
-`fail`: `fn(errMsg)` 录音失败回调
+本底层具体的开始录音实现，参数和`RecordApp.Stop`相同。
 
 
 ## 配置
@@ -248,11 +239,16 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 ### 【Event】window.OnRecordAppInstalled()
 可提供一个回调函数用来配置`RecordApp`，在`app.js`内代码执行完毕时回调，免得`RecordAppBaseFolder`要在`app.js`之前定义，其他配置又要在之后定义的麻烦。使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。
 
-### 【配置】RecordApp.Platforms.Native.Config
-需要自行实现`Native`的三个统一方法，具体实现的时候才知道需要什么实际的配置。
 
 ### 【配置】RecordApp.Platforms.Default.Config
 无需手动配置。
+
+
+### 【配置】RecordApp.Platforms.Native.Config
+可以参考[app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)中的演示有效的配置。
+
+需提供`IsApp`、`JsBridgeRequestPermission`、`JsBridgeStart`、`JsBridgeStop`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
+
 
 ### 【配置】RecordApp.Platforms.Weixin(IOS-Weixin).Config
 可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置。
@@ -264,14 +260,6 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 以上两个方法都是公众(订阅)号开发范畴，需要注册开通相应的微信服务账号。
 
-
-
-# :open_book:关于RecordApp
-[2018]由于微信IOS上不支持原生JS录音，Android上又支持，为了兼容而去兼容的事情我是拒绝的（而且是仅仅为了兼容IOS上面的微信），其实也算不上去兼容，因为微信JsSDK中的接口完全算是另外一种东西，接入的话对整个录音流程都会产生完全不一样的变化，还不如没有进入录音流程之前就进行分支判断处理。
-
-[2019]大动干戈，仅为兼容IOS而生，不得不向大厂低头，我还是为兼容而去兼容了IOS微信，对不支持录音的IOS微信`浏览器`、`小程序web-view`进行了兼容，使用微信JsSDK来录音，并以前未开源的兼容代码基础上重写了`RecordApp`，源码在`app-support-sample`、`src/app-support`内。
-
-最后：如果要兼容IOS，可以自行接入JsSDK或使用`RecordApp`（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
 
 
 # :star:捐赠

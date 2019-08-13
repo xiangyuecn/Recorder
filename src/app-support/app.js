@@ -1,11 +1,11 @@
 /*
-录音 RecordApp： app统一录音接口支持，用于兼容原生应用、ios上的微信 等，需要和app-ios-weixin-support.js（支持IOS上的微信）、app-native-support.js（支持原生应用）配合使用。
+录音 RecordApp： app统一录音接口支持，用于兼容原生应用、ios上的微信 等，需要和app-ios-weixin-support.js（支持IOS上的微信）、app-native-support.js（支持原生应用）配合使用，注：这几个support源码文件会自动加载，dist目录内已自动压缩合并到本文件中。
 
 特别注明：使用本功能虽然可以最大限度的兼容Android和IOS，但需ios-weixin需要后端提供支持，native需要app端提供支持，具体情况查看相应的文件。
 
 本功能独立于recorder-core.js，可以仅使用RecordApp作为入口，可以不关心recorder-core中的方法，因为RecordApp已经对他进行了一次封装，并且屏蔽了非通用的功能。
 
-注意：此文件并非拿来就能用的，需要改动【需实现】标注的地方，或者使用另外的初始化配置文件来进行配置，可参考app-support-sample目录内的配置文件。
+注意：此文件并非拿来就能用的，需要改动【需实现】标注的地方；也可以不改动此文件，使用另外的初始化配置文件来进行配置，可参考app-support-sample目录内的配置文件。
 
 https://github.com/xiangyuecn/Recorder
 */
@@ -34,9 +34,46 @@ var Config_SupportPlatforms=[
 	{
 		Key:"Native"
 		,Support:function(call){
-			call(false);//如需打开原生App支持，此处应该改成判断：1. 判断app是否是在环境中 2. app支持录音
+			if(!App.AlwaysAppUseJS){
+				Native.Config.IsApp(call);
+				return;
+			};
+			//不支持app原生录音
+			call(false);
 		}
-		,Config:{}
+		,Config:{
+			IsApp:function(call){
+				//如需打开原生App支持，此方法【需实现】，此方法用来判断：1. 判断app是否是在环境中 2. app支持录音
+				call(false);//默认实现不支持app原生录音
+			}
+			,JsBridgeRequestPermission:function(success,fail){
+				/*如需打开原生App支持，此方法【需实现】
+					success:fn() 有权限时回调
+					fail:fn(errMsg,isUserNotAllow) 出错回调
+				*/
+				fail("JsBridgeRequestPermission未实现");
+			}
+			,JsBridgeStart:function(set,success,fail){
+				/*如需打开原生App支持，此方法【需实现】，app打开录音后原生层需定时回调ReceivePCM或这个方法的已封装好的方法。建议JsBridge增加一个Alive接口，为录音时定时心跳请求，如果网页超过10秒未调用此接口，app原生层自动停止录音，防止stop不能调用导致的资源泄露。
+					set:RecordApp.Start的set参数
+					success:fn() 打开录音时回调
+					fail:fn(errMsg) 开启录音出错时回调
+				*/
+				fail("JsBridgeStart未实现");
+			}
+			,JsBridgeStop:function(success,fail){
+				/*如需打开原生App支持，此方法【需实现】
+					success:fn() 结束录音时回调
+					fail:fn(errMsg) 结束录音出错时回调
+				*/
+				fail("JsBridgeStop未实现");
+			}
+			
+			,paths:[//当在app中使用此实现时，会自动把这些js全部加载
+				{url:BaseFolder+"app-support/app-native-support.js",check:function(){return !Native.IsInit}}
+			]
+		}
+		,ExtendDefault:true //初始化时自动加载Recorder
 	}
 	,{
 		Key:"IOS-Weixin"
@@ -80,16 +117,19 @@ var Config_SupportPlatforms=[
 				*/
 				fail("下载素材接口DownWxMedia未实现");
 			}
-			//amr解码引擎文件，因为微信临时素材接口返回的音频为amr格式，刚好有amr解码器，省去了服务器端的复杂性
-			,AMREngine:[
-				{url:BaseFolder+"engine/beta-amr.js",check:function(){return !Recorder.prototype.amr}}
+			
+			,paths:[//当在微信中使用此实现时，会自动把这些js全部加载
+				{url:BaseFolder+"app-support/app-ios-weixin-support.js",check:function(){return !Weixin.IsInit}}
+				
+				//amr解码引擎文件，因为微信临时素材接口返回的音频为amr格式，刚好有amr解码器，省去了服务器端的复杂性
+				,{url:BaseFolder+"engine/beta-amr.js",check:function(){return !Recorder.prototype.amr}}
 				/*=:=*/
 					,{url:BaseFolder+"engine/beta-amr-engine.js",check:function(){return !Recorder.AMR}}
 					,{url:BaseFolder+"engine/wav.js",check:function(){return !Recorder.prototype.wav}}
 				/*<@ @>*/
 			]
 		}
-		,ExtendDefault:true
+		,ExtendDefault:true //初始化时自动加载Recorder
 	}
 	,{
 		Key:"Default"
@@ -98,7 +138,7 @@ var Config_SupportPlatforms=[
 			call(true);
 		}
 		,Config:{
-			paths:[//当使用默认实现时，会自动把这些js全部加载，如果core和编码器已手动加载，可以把此数组清空
+			paths:[//当使用默认实现时，会自动把这些js全部加载，如果core和编码器已手动加载，可以把此数组清空；另外需要其他编码格式的时候，直接把编码引擎加在后面（不需要mp3格式就删掉），会自动加载
 				{url:BaseFolder+"recorder-core.js",check:function(){return !window.Recorder}}
 				,{url:BaseFolder+"engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 				/*=:=*/ ,{url:BaseFolder+"engine/mp3-engine.js",check:function(){return !Recorder.lamejs}} /*<@ @>*/ //编译指令：压缩后mp3-engine已包含在了mp3.js中
@@ -154,7 +194,7 @@ Default.Stop=function(success,fail){
 	};
 	var end=function(){
 		appRec.close();
-		//把配置写回去
+		//把可能变更的配置写回去
 		for(var k in appRec.set){
 			appRec.appSet[k]=appRec.set[k];
 		};
@@ -162,7 +202,7 @@ Default.Stop=function(success,fail){
 	};
 	appRec.stop(function(blob,duration){
 		end();
-		App.BlobRead(blob,duration,success);
+		success(blob,duration);
 	},function(msg){
 		end();
 		fail(msg);
@@ -186,6 +226,7 @@ LM:"2019-4-23 14:51:14"
 ,IsWx:IsWx
 ,BaseFolder:BaseFolder
 ,AlwaysUseWeixinJS:false //测试用的，微信里面总是使用微信的接口，方便Android上调试
+,AlwaysAppUseJS:false //测试用的，App里面总是使用网页版录音，用于测试App里面的网页兼容性
 ,Platforms:{
 	Native:Native
 	,Weixin:Weixin
@@ -219,22 +260,11 @@ LM:"2019-4-23 14:51:14"
 	};
 	load(0);
 }
-,BlobRead:function(blob,duration,call){
-	var reader=new FileReader();
-	reader.onloadend=function(){
-		call({
-			mime:blob.type
-			,duration:duration
-			,data:(/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result)||[])[1]
-		});
-	};
-	reader.readAsDataURL(blob);
-}
 
 
 /*
 此方法由底层实现来调用，在开始录音后，底层如果能实时返还pcm数据，则会调用此方法
-pcmData:int[] 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
+pcmData:Int16[] 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
 powerLevel,duration,sampleRate 和Recorder的onProcess相同
 */
 ,ReceivePCM:function(pcmData,powerLevel,duration,sampleRate){
@@ -284,10 +314,9 @@ fail: fn(msg) 初始化失败
 			return;
 		};
 		var config=platform.Config;
-		var paths=config.paths||[{url:BaseFolder+"app-support/app-"+platform.Key.toLowerCase()+"-support.js",check:function(){}}];
 		
 		//加载需要的支持js文件
-		App.Js(paths,function(){
+		App.Js(config.paths,function(){
 			platform.IsInit=true;
 			end();
 		},function(msg){
@@ -396,13 +425,6 @@ success:fn(blob,duration)	结束录音时回调
 	blob:Blob 录音数据audio/mp3|wav...格式
 	duration:123 //音频持续时间
 	
-	注意：个个平台统一实现时，这个回调格式是这样的：
-		fn(obj) 平台结束录音时回调，obj={
-			mime:"audio/mp3" //录音数据格式，注意：不一定和start传入的set.type相同，可能为其他值
-			,duration:123 //音频持续时间
-			,data:"base64" //音频数据，base64编码后的纯文本格式
-		}
-	
 fail:fn(errMsg) 录音出错时回调
 */
 ,Stop:function(success,fail){
@@ -412,15 +434,9 @@ fail:fn(errMsg) 录音出错时回调
 		return;
 	};
 	
-	cur.Stop(function(obj){
-		var bstr=atob(obj.data),n=bstr.length,u8arr=new Uint8Array(n);
-		while(n--){
-			u8arr[n]=bstr.charCodeAt(n);
-		};
-		var blob=new Blob([u8arr], {type:obj.mime});
-		
-		console.log("结束录音"+blob.size+"b "+obj.duration+"ms",blob);
-		success(blob, obj.duration);
+	cur.Stop(function(blob,duration){
+		console.log("结束录音"+blob.size+"b "+duration+"ms",blob);
+		success(blob, duration);
 	},function(msg){
 		console.log("结束录音失败："+msg);
 		fail(msg);

@@ -5,7 +5,7 @@
 
 本文件诞生的原因是因为IOS端WKWebView(UIWebView)中未开放getUserMedia功能来录音，对应的微信内也不能用H5录音，只能寻求其他解决方案。Android端没有此问题。当以后IOS任何地方的网页都能录音时，本文件就可以删除了。
 
-本文件源码可以不用改动，因为需要改动的地方已放到了app.js的IOS-Weixin.Config中了。
+本文件源码可以不用改动，因为需要改动的地方已放到了app.js的IOS-Weixin.Config中了；最终实际实现可参考app-support-sample目录内的配置文件。
 
 https://github.com/xiangyuecn/Recorder
 */
@@ -91,9 +91,16 @@ platform.Stop=function(success,failx){
 	//格式转换 音质差是跟微信服务器返回的amr本来就音质差，转其他格式几乎无损音质，和微信本地播放音质有区别
 	var transform=function(){
 		var list=dwxData.list;
-		if(list[0].duration){
+		var list0=list[0];
+		if(list0.duration){
 			//服务器端已经转码了，就直接返回
-			success(list[0]);
+			var bstr=atob(list0.data),n=bstr.length,u8arr=new Uint8Array(n);
+			while(n--){
+				u8arr[n]=bstr.charCodeAt(n);
+			};
+			var blob=new Blob([u8arr], {type:list0.mime});
+			
+			success(blob,list0.duration);
 			return;
 		};
 		
@@ -113,11 +120,11 @@ platform.Stop=function(success,failx){
 			rec.stop(function(blob,duration){
 				dwxData.encodeTime=Date.now()-enTime;
 				
-				//把配置写回去
+				//把可能变更的配置写回去
 				for(var k in rec.set){
 					set[k]=rec.set[k];
 				};
-				App.BlobRead(blob,duration,success);
+				success(blob,duration);
 			},fail);
 		};
 		
@@ -151,14 +158,7 @@ platform.Stop=function(success,failx){
 		if(Recorder.AMR){
 			decode();
 		}else{
-			console.log("加载AMR转换引擎");
-			var amreTime=Date.now();
-			App.Js(config.AMREngine,function(){
-				dwxData.amrEngineLoadTime=Date.now()-amreTime;
-				decode();
-			},function(){
-				fail("加载AMR转换引擎失败");
-			});
+			fail("未加载AMR转换引擎");
 		};
 	};
 	

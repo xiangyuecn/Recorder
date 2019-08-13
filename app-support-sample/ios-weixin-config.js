@@ -1,6 +1,8 @@
 /*
 app-support/app.js中IOS-Weixin配置例子，用于支持ios的微信中使用微信JsSDK来录音
 
+本文件的作用为：实现app.js内IOS-Weixin中Config的两个标注为需实现的接口（这几个接口是app-ios-weixin-support.js需要的）。
+
 此文件需要在app.js之前进行加载
 
 https://github.com/xiangyuecn/Recorder
@@ -16,8 +18,10 @@ var MyWxApi="https://jiebian.life/api/weixin/git_record";
 
 
 //在RecordApp准备好时自行这些代码
-var OnRecordAppInstalled=function(){
-
+var oldOnRecordAppInstalled=window.OnRecordAppInstalled;
+window.OnRecordAppInstalled=function(){
+console.log("ios-weixin-config install");
+oldOnRecordAppInstalled&&oldOnRecordAppInstalled();//native-config.js也需要初始化
 
 var App=RecordApp;
 var platform=App.Platforms.Weixin;

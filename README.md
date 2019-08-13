@@ -8,6 +8,8 @@ mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如�
 
 mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
 
+如需在Hybrid App内使用（支持IOS、Android），请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
+
 *IOS、国产系统浏览器上的使用限制等问题和兼容请参阅下面的知识库部分。*
 
 
@@ -139,6 +141,13 @@ $.ajax({
 - 检查上面第1步是否把框架加载到位，在[Demo页面](https://xiangyuecn.github.io/Recorder/)有应该加载哪些js的提示。
 - 提交Issue，热心网友帮你解答。
 
+
+
+## 【QQ群】交流与支持
+
+欢迎加QQ群：781036591，纯小写口令：`recorder`
+
+<img src="assets/qq_group_781036591.png" width="220px">
 
 
 

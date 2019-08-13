@@ -28,6 +28,10 @@ document.body.appendChild=function(s){
 
 <!-- 加载独立配置文件，免得修改app.js -->
 <script
+	DEF="/*=:=*/" src="../app-support-sample/native-config.js"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/app-support-sample/native-config.js' @>*/"
+></script>
+<script
 	DEF="/*=:=*/" src="../app-support-sample/ios-weixin-config.js"
 	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/app-support-sample/ios-weixin-config.js' @>*/"
 ></script>
@@ -80,7 +84,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-4-18 09:31:26";
+var PageLM="2019-8-13 13:45:36";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -129,7 +133,7 @@ RandomKey.idx=0;
 	
 	<a class="navItem slc" href="https://jiebian.life/web/h5/github/recordapp.aspx">
 		<div class="navTitle">RecordApp测试</div>
-		<div class="navDesc">RecordApp除Recorder支持的外，IOS上支持微信网页和小程序web-view，但需要后端提供接口</div>
+		<div class="navDesc">RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view</div>
 	</a>
 </div>
 
@@ -138,11 +142,9 @@ RandomKey.idx=0;
 <!-- begin 开始copy源码 -->
 <div>
 	<div class="pd">
-		<span style="font-size:18px;color:#ef6ea8">大动干戈，仅为兼容IOS而生，不得不向大厂低头</span>
-		在未开启原生App支持(Platforms.Native)的情况下，RecordApp会加载Recorder，因此算是完全兼容Recorder，Native没法网页测试，请自行研究。
+		<span style="font-size:18px;color:#ef6ea8">似乎仅为仅为兼容IOS而生</span>
+		RecordApp会加载Recorder，因此算是完全兼容Recorder。在开启了原生App支持(Platforms.Native)的情况下，Hybrid App内会走App原生录音；在开启IOS微信支持(Platforms.IOS-Weixin)的情况下，在IOS微信内会走微信JsSDK录音；其他情况走Recorder。
 		
-		<br>
-		本测试页面重点兼容测试应放在IOS的微信（浏览器、小程序web-view）内。因为其他环境会走Recorder。
 	</div>
 	<div class="pd">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample">https://github.com/xiangyuecn/Recorder/ => app-support-sample</a>
@@ -159,13 +161,16 @@ RandomKey.idx=0;
 		提示：<span class="typeTips">-</span>
 	</div>
 	<div class="pd">
-		比特率: <input type="text" class="bit" value="16"> kbps，越大音质越好
+		比特率: <input type="text" class="bit" value="16" style="width:60px"> kbps，越大音质越好
 	</div>
 	<div class="pd">
-		采样率: <input type="text" class="sample" value="16000"> hz，越大细节越丰富
+		采样率: <input type="text" class="sample" value="16000" style="width:60px"> hz，越大细节越丰富
 	</div>
 	<div class="pd">
 		JsSDK: <label><input type="checkbox" class="alwaysUseWeixinJS">Android微信内也用JsSDK</label>
+	</div>
+	<div class="pd">
+		AppUseJS: <label><input type="checkbox" class="alwaysAppUseJS">App里面总是使用Recorder H5录音</label>
 	</div>
 	<div class="pd btns">
 		<button onclick="recreq()">请求权限测试</button>
@@ -195,6 +200,7 @@ RandomKey.idx=0;
 浏览器环境情况:
 <pre>
 IsWx:{fn:!!RecordApp.IsWx}
+IsApp:{isApp}
 Platforms:{fn:RecordApp.Current.Key}
 
 AudioContext:{fn:!!window.AudioContext}
@@ -236,6 +242,14 @@ function baseSet(){
 		RecordApp.alwaysUseWeixinJSPrev=alwaysUseWeixinJS;
 	};
 	RecordApp.AlwaysUseWeixinJS=alwaysUseWeixinJS;
+	
+	var alwaysAppUseJS=$(".alwaysAppUseJS")[0].checked;
+	if(!!RecordApp.alwaysAppUseJSPrev!=alwaysAppUseJS){
+		reclog("AppUseJS选项变更，已重置RecordApp，请先进行权限测试");
+		RecordApp.Current=null;
+		RecordApp.alwaysAppUseJSPrev=alwaysAppUseJS;
+	};
+	RecordApp.AlwaysAppUseJS=alwaysAppUseJS;
 };
 function recreq(){
 	baseSet();
@@ -295,7 +309,9 @@ function recstart(){
 	};
 	if(RecordApp.Current==RecordApp.Platforms.Weixin){
 		reclog("正在使用微信JsSDK，录音过程中不会有任何回调，不要惊慌");
-	};
+	}else if(RecordApp.Current==RecordApp.Platforms.Native){
+		reclog("正在使用Native录音");
+	}
 	
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
@@ -447,7 +463,7 @@ if(window.top!=window){
 		isSelf=true;
 	}catch(e){};
 	
-	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略权限永远是拒绝的")+"</span>");
+	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略H5录音权限永远是拒绝的")+"</span>");
 };
 </script>
 
@@ -473,7 +489,7 @@ if(window.top!=window){
 <hr>
 <div>
 <h3>移动端js运行简易控制台</h3>
-<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">"AlwaysUseWeixinJS: "+RecordApp.AlwaysUseWeixinJS</textarea>
+<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">"AlwaysUseWeixinJS: "+RecordApp.AlwaysUseWeixinJS+"\nAlwaysAppUseJS: "+RecordApp.AlwaysAppUseJS</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
 <textarea id="cmdExecVal" style="width:300px;height:160px;" placeholder="运行结果"></textarea>
 <script>
@@ -644,7 +660,10 @@ function loadEngine(input){
 function onInstall(){
 	loadEngine($(".initType"));
 	
-	$(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
+	var isApp;
+	RecordApp.Platforms.Native.Config.IsApp(function(v){isApp=v;});
+	
+	$(".recinfo").html(BuildHtml($(".tp_recinfo").html(),{isApp:isApp}));
 	if(!/:\/\/[^\/]*jiebian.life(\/|$)/.test(location.href)){
 		reclog("<span style='color:red'>当前域名不在微信JsSDK绑定的域名中，无法使用JsSDK相关功能</span>");
 	}else{
