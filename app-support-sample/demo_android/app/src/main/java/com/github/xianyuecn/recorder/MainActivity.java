@@ -76,16 +76,39 @@ public class MainActivity extends Activity {
         public void i(String tag, String msg) {
             android.util.Log.i(tag, msg);
 
-            logs.append("\n\n["+time()+"][i]["+tag+"]"+msg);
+            print("[i]["+tag+"]"+msg);
         }
 
         @Override
         public void e(String tag, String msg) {
             android.util.Log.e(tag, msg);
 
-            logs.append("\n\n["+time()+"][e]["+tag+"]"+msg);
+            print("[e]["+tag+"]"+msg);
         }
 
+
+        StringBuffer msgs=new StringBuffer();
+        int waitInt=0;
+        private void print(String msg){
+            msgs.append("\n\n[").append(time()).append("]").append(msg);
+
+            //延迟在主线程更新日志文本框
+            if(waitInt==0) {
+                waitInt = RecordAppJsBridge.ThreadX.SetTimeout(500, new Runnable() {
+                    @Override
+                    public void run() {
+                        waitInt=0;
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                logs.setText(msgs);
+                                logs.setSelection(msgs.length(),msgs.length());
+                            }
+                        });
+                    }
+                });
+            }
+        }
         private String time(){
             SimpleDateFormat formatter=new SimpleDateFormat   ("HH:mm:ss", Locale.CHINA);
             return formatter.format(new Date());
