@@ -108,6 +108,7 @@ config.IsApp=function(call){
 	/*识别为app环境*/
 	if(window[JsBridgeName]||((window.webkit||{}).messageHandlers||{})[JsBridgeName+"IsSet"]){
 		call(true);
+		return;
 	};
 	call(false);//非app
 };
@@ -150,7 +151,7 @@ config.JsBridgeStop=function(success,fail){
 	clearInterval(aliveInt);//关掉定时心跳
 	
 	//异步接口，结束录音
-	AppJsBridgeRequest("recordStart",{},function(json){
+	AppJsBridgeRequest("recordStop",{},function(json){
 		if(json.status!="success"){
 			fail(json.message);
 			return;
