@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器）。快捷方式: [查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia) , [【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) 。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器）。快捷方式: [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx)，[Android App Demo](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)，[IOS App Demo](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia) , [【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) 。
 
 录音默认输出mp3格式，另外可选wav格式（raw pcm format此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -450,7 +450,7 @@ public void onPermissionRequest(PermissionRequest request) {
 如果不出意外，App内显示的网页就能正常录音了。
 
 ### 附带测试项目
-`assets/android_test`目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，位于`assets/android_test/app-debug-xxx.apk`）。提供了`系统自带WebView`、和`腾讯X5内核`两个测试界面。
+[app-support-sample/demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，文件名为`app-debug-xxx.apk.zip`，自行去掉.zip后缀）。
 
 
 

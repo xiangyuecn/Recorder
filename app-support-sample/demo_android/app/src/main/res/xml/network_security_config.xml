@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/> <!-- 没意思 比这个薄弱的地方多了去了 -->
+        </trust-anchors>
+    </base-config>
+</network-security-config>

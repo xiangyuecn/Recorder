@@ -70,6 +70,7 @@ var isInstall=false;
 <style>
 body{
 	word-wrap: break-word;
+	background:#fff;
 }
 pre{
 	white-space:pre-wrap;
@@ -310,8 +311,10 @@ function recstart(){
 	if(RecordApp.Current==RecordApp.Platforms.Weixin){
 		reclog("正在使用微信JsSDK，录音过程中不会有任何回调，不要惊慌");
 	}else if(RecordApp.Current==RecordApp.Platforms.Native){
-		reclog("正在使用Native录音");
-	}
+		reclog("正在使用Native录音，底层由App原生层提供支持");
+	}else{
+		reclog("正在使用H5录音，底层由Recorder直接提供支持");
+	};
 	
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
