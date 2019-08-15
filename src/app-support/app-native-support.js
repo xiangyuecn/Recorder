@@ -30,6 +30,11 @@ pcmDataBase64: base64<Int16[]>字符串 当前单声道录音缓冲PCM片段，�
 sampleRate：123456 录制音频实际的采样率
 */
 var onRecFn=window.NativeRecordReceivePCM=window.top.NativeRecordReceivePCM=function(pcmDataBase64,sampleRate){//无视iframe
+	if(!onRecFn.pcm){
+		console.error("未开始录音，但收到Native PCM数据");
+		return;
+	};
+	
 	var bstr=atob(pcmDataBase64),n=bstr.length;
 	var arr=new Int16Array(n/2);
 	var power=0;

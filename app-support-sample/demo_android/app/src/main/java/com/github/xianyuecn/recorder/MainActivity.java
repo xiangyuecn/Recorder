@@ -3,12 +3,12 @@ package com.github.xianyuecn.recorder;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.webkit.ConsoleMessage;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -101,8 +101,15 @@ public class MainActivity extends Activity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                logs.setText(msgs);
-                                logs.setSelection(msgs.length(),msgs.length());
+                                CharSequence txt=logs.getText();
+                                if(txt.length()>250*1024){
+                                    txt=txt.subSequence(txt.length()-200*1024, txt.length());
+                                }
+                                txt=txt+msgs.toString();
+                                msgs.setLength(0);
+
+                                logs.setText(txt);
+                                logs.setSelection(txt.length(),txt.length());
                             }
                         });
                     }
@@ -168,6 +175,18 @@ public class MainActivity extends Activity {
                 }
                 return super.shouldOverrideUrlLoading(view, url);
             }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+                Log.i(LogTag, "打开网页："+url);
+            }
+
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                Log.e(LogTag, "打开网页失败："+description+" url:"+failingUrl);
+            }
         });
 
         //网页权限请求处理
@@ -177,7 +196,6 @@ public class MainActivity extends Activity {
 
         String url="https://xiangyuecn.github.io/Recorder/app-support-sample/";
         webView.loadUrl(url);
-        Log.i(LogTag, "打开页面:"+url);
     }
 
 
@@ -225,13 +243,12 @@ public class MainActivity extends Activity {
 
         @Override
         public boolean onConsoleMessage(ConsoleMessage msg) {
-            String str=msg.sourceId()+":"+msg.lineNumber()+"\n"+msg.message();
             switch (msg.messageLevel()){
                 case ERROR:
-                    Log.e("Console", str);
+                    Log.e("Console", msg.sourceId()+":"+msg.lineNumber()+"\n"+msg.message());
                     break;
                 default:
-                    Log.i("Console", str);
+                    Log.i("Console", msg.message());
             }
 
             return super.onConsoleMessage(msg);

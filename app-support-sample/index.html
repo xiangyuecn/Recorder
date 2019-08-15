@@ -255,6 +255,9 @@ function baseSet(){
 function recreq(){
 	baseSet();
 	reclog("开始请求授权...");
+	if(!isInstall){
+		reclog("<span style='color:#f60'>还在初始化环境加载js库，可能比较慢，初始化完成后将调用请求授权</span>");
+	};
 	
 	
 	dialogInt=setTimeout(function(){//定时8秒后打开弹窗，主要用于监测浏览器没有发起权限请求的情况，在RequestPermission前放置定时器利于收到了回调能及时取消（不管open是同步还是异步回调的）
