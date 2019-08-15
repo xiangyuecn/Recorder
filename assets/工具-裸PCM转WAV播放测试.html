@@ -30,7 +30,7 @@ html,body{
 
 <div id="mockTransformDiv" style="display:none;width:98%; border:4px solid #0B1;margin:20px 0;">
 	<div id="mockTransformMsg"></div>
-	<iframe id="mockTransformIframe" style="width:100%;height:400px;"></iframe>
+	<iframe class="mockTransformIframe" style="width:100%;height:400px;"></iframe>
 </div>
 
 <script>
@@ -50,11 +50,11 @@ function choiceFile(elem){
 };
 function readFile(files){
 	var div=document.createElement("div");
-	list.prepend(div);
-	div.append(new Date().toLocaleTimeString()+" ");
+	list.prepend?list.prepend(div):list.appendChild(div);
+	div.appendChild(document.createTextNode(new Date().toLocaleTimeString()+" "));
 	
 	if(files.length!=1){
-		div.append("请只拖入一个文件");
+		div.appendChild(document.createTextNode("请只拖入一个文件"));
 		return;
 	}
 	var fileObj = files[0];
@@ -84,7 +84,7 @@ var createWav=function(arr,div,fileObj){
 		subA=+RegExp.$5||0;
 	};
 	if(sampleRate<6000||sampleRateNew<6000){
-		div.append("乱填采样率："+sampleRate+" "+sampleRateNew);
+		div.appendChild(document.createTextNode("乱填采样率："+sampleRate+" "+sampleRateNew));
 		return;
 	};
 	
@@ -212,9 +212,9 @@ var createWav=function(arr,div,fileObj){
 	};
 	
 	
-	var blob=new Blob([data],{type:"audio/wav"});
+	var blob=new Blob([data.buffer],{type:"audio/wav"});
 	var name=fileObj.name+"-"+duration+"ms"+"-"+bitRate+"bit-"+sampleRate+"hz.wav";
-	var url=URL.createObjectURL(blob);
+	var url=(window.URL||webkitURL).createObjectURL(blob);
 	
 	var id=++rnd;
 	pcms[id]={
@@ -265,11 +265,12 @@ function mockTransform(id){
 		mockTransformMsg.innerHTML='<span style="color:red">因为转码需要写配置输入界面，就拿测试页面来用了（懒），所以需要在http环境下才能加载同域页面</span>';
 		return;
 	};
+	var iframe=document.querySelector(".mockTransformIframe");
 	
 	if(isSetIframe){
 		var msg="";
 		try{
-			var win=mockTransformIframe.contentWindow;
+			var win=iframe.contentWindow;
 			if(win.Recorder){
 				var wav=pcms[id];
 				
@@ -287,8 +288,8 @@ function mockTransform(id){
 	}else{
 		isSetIframe=true;
 		
-		mockTransformIframe.src="../index.html?ispcm=1";
-		mockTransformIframe.onload=function(){
+		iframe.src="../index.html?ispcm=1";
+		iframe.onload=function(){
 			mockTransform(id);
 		};
 		mockTransformMsg.innerHTML="请稍后，正在加载页面...";

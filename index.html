@@ -384,7 +384,7 @@ function recplay(key){
 			return;
 		};
 		var end=function(blob){
-			audio.src=URL.createObjectURL(blob);
+			audio.src=(window.URL||webkitURL).createObjectURL(blob);
 			audio.play();
 		};
 		var wav=Recorder[o.set.type+"2wav"];
@@ -425,7 +425,7 @@ function recdown(key){
 		
 		var downA=document.createElement("A");
 		downA.innerHTML="下载 "+name;
-		downA.href=URL.createObjectURL(o.blob);
+		downA.href=(window.URL||webkitURL).createObjectURL(o.blob);
 		downA.download=name;
 		$("."+cls).prepend(downA);
 		downA.click();

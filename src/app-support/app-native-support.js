@@ -94,7 +94,7 @@ platform.Stop=function(success,fail){
 			};
 		};
 		
-		console.log("rec encode start: rec:"+pcm.length+" src:"+onRecFn.sampleRate+" set:"+JSON.stringify(onRecFn.param));
+		console.log("rec encode start: rec:"+arr.length+" src:"+onRecFn.sampleRate+" set:"+JSON.stringify(onRecFn.param));
 		
 		var appRec=Recorder(onRecFn.param).mock(arr,onRecFn.sampleRate);
 		var end=function(){

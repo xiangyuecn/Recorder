@@ -70,7 +70,6 @@ IOS其他浏览器||
 
 - `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
 - `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
-- MP3编码器lamejs在过气Android版本上可能编码出的结果长度为0，Android 5.0模拟器测的没有问题。
 
 
 
@@ -94,7 +93,7 @@ RecordApp.RequestPermission(function(){
     RecordApp.Start({},function(){//使用默认配置开始录音，mp3格式
         setTimeout(function(){
             RecordApp.Stop(function(blob,duration){//到达指定条件停止录音
-                console.log(URL.createObjectURL(blob),"时长:"+duration+"ms");
+                console.log((window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
                 
                 //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
             },function(msg){

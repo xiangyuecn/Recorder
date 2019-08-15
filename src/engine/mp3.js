@@ -29,14 +29,14 @@ Recorder.prototype.mp3=function(res,True,False){
 			if(idx<size){
 				var buf=mp3.encodeBuffer(res.subarray(idx,idx+blockSize));
 				if(buf.length>0){
-					data.push(buf);
+					data.push(buf.buffer);
 				};
 				idx+=blockSize;
 				setTimeout(run);//Worker? 复杂了
 			}else{
 				var buf=mp3.flush();
 				if(buf.length>0){
-					data.push(buf);
+					data.push(buf.buffer);
 				};
 				
 				True(new Blob(data,{type:"audio/mp3"}));

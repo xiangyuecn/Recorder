@@ -41,7 +41,7 @@ rec.open(function(){//打开麦克风授权获得相关资源
     
     setTimeout(function(){
         rec.stop(function(blob,duration){//到达指定条件停止录音
-            console.log(URL.createObjectURL(blob),"时长:"+duration+"ms");
+            console.log((window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
             rec.close();//释放录音资源
             //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
             
@@ -50,7 +50,7 @@ rec.open(function(){//打开麦克风授权获得相关资源
             audio.controls=true;
             document.body.appendChild(audio);
             //简单的一哔
-            audio.src=URL.createObjectURL(blob);
+            audio.src=(window.URL||webkitURL).createObjectURL(blob);
             audio.play();
             
         },function(msg){
@@ -363,7 +363,7 @@ Recorder.prototype.aac=function(pcmData,successCall,failCall){
     ... pcmData->aacData
     
     //返回数据
-    successCall(new Blob(aacData,{type:"audio/aac"}));
+    successCall(new Blob([aacData.buffer],{type:"audio/aac"}));
 }
 
 //调用

@@ -79,6 +79,6 @@ Recorder.prototype.wav=function(res,True,False){
 		};
 		
 		
-		True(new Blob([data],{type:"audio/wav"}));
+		True(new Blob([data.buffer],{type:"audio/wav"}));
 	}
 })();

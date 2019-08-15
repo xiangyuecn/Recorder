@@ -98,7 +98,7 @@ platform.Stop=function(success,failx){
 			while(n--){
 				u8arr[n]=bstr.charCodeAt(n);
 			};
-			var blob=new Blob([u8arr], {type:list0.mime});
+			var blob=new Blob([u8arr.buffer], {type:list0.mime});
 			
 			success(blob,list0.duration);
 			return;

@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.webkit.ConsoleMessage;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
@@ -19,6 +21,8 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
     static private final String LogTag="MainActivity";
@@ -34,15 +38,55 @@ public class MainActivity extends Activity {
 
         webView = findViewById(R.id.main_webview);
         logs=findViewById(R.id.main_logs);
-        logs.append("日志输出已开启");
 
         //******调用核心方法*********************
         //注入JsBridge, 实现api接口，简单demo无视4.2以下版本
         jsBridge=new RecordAppJsBridge(this, webView, permissionReq, Log);
         //*******以下内容无关紧要*****************
 
+        final String cmds="支持命令(首行输入，不含引号)：\n`:url:网址::`导航到此地址\n`:reload:::`重新加载当前页面\n`:js:js代码::`执行js";
+        logs.append("日志输出已开启\n"+cmds);
+
         //设置基本信息，如开启js、storage、权限处理
         initWebSet();
+
+        logs.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if(count>0 && s.charAt(0)==':'){
+                    String txt="\n\n命令已执行，"+cmds+"\n\n";
+                    Pattern exp=Pattern.compile("^:(.+?):(.*)::");
+                    Matcher m=exp.matcher(logs.getText());
+                    if(m.find()){
+                        switch(m.group(1)){
+                            case "url":
+                                webView.loadUrl(m.group(2));
+                                break;
+                            case "reload":
+                                webView.reload();
+                                break;
+                            case "js":
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                                    webView.evaluateJavascript(m.group(2), null);
+                                }else{
+                                    webView.loadUrl("javascript:"+m.group(2));
+                                }
+                                break;
+                            default:
+                                txt+="，未知命令"+m.group(1);
+                                break;
+                        }
+
+                        txt+="\n"+logs.getText();
+                        logs.setText(txt);
+                    }
+                }
+            }
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
     }
 
 
@@ -170,10 +214,7 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient(){
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if(url.startsWith("http")){
-                    return false;
-                }
-                return super.shouldOverrideUrlLoading(view, url);
+                return !url.startsWith("http");
             }
 
             @Override
