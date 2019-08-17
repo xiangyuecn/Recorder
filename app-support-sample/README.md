@@ -175,7 +175,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 
 ## 【Event】RecordApp.OnProcess(pcmDatas,powerLevel,duration,sampleRate)
-录音实时数据回调，如果底层会实时调用`RecordApp.ReceivePCM`返回数据，就会触发执行此方法，在需回调的地方绑定一个函数即可，注意：新函数会覆盖旧的函数。这个方法和`Recorder.set.onProcess`完全相同。
+录音实时数据回调，如果底层会实时调用`RecordApp.ReceivePCM`返回数据，就一定会触发执行此方法，否则一定不会回调；在需回调的地方绑定一个函数即可，注意：新函数会覆盖旧的函数。这个方法和`Recorder.set.onProcess`基本完全相同。
 
 `pcmDatas`: [[Int16,...]] 当前单声道录音缓冲PCM片段（数组的第一维长度始终为1，是为了和`Recorder`兼容）
 
@@ -186,6 +186,8 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 `sampleRate`：缓冲使用的采样率
 
 如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的`powerLevel`可以实现音量大小的直观展示，使用`pcmDatas`可以达到更高级效果。
+
+注意：pcmDatas数据的采样率`sampleRate`和设置的`set.sampleRate`不一定相同，如需强一致，请在OnProcess中自行连续调用采样率转换函数`Recorder.SampleData()`。
 
 
 

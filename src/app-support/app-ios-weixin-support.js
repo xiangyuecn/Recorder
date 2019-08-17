@@ -35,20 +35,53 @@ platform.RequestPermission=function(success,fail){
 		success();
 	});
 };
+var isWaitStart,isStart;
+var stopNow=function(call){
+	isStart=0;
+	isWaitStart=0;
+	WXRecordData.wx.stopRecord({
+		success:function(){
+			call();
+		},fail:function(o){
+			call("无法结束："+o.errMsg);
+		}
+	});
+};
 platform.Start=function(set,success,fail){
 	var wx=WXRecordData.wx;
 	if(!wx){
 		fail("请先调用RequestPermission");
 		return;
 	};
+	if(isStart){
+		console.log("正在录音，正在结束后重试");
+		stopNow(function(){
+			platform.Start(set,success,fail);
+		});
+		return;
+	};
+	if(isWaitStart){
+		console.log("等待上次wx.startRecord回调后重试");
+		setTimeout(function(){
+			platform.Start(set,success,fail);
+		},600);
+		return;
+	};
+	
+	isStart=0;
+	isWaitStart=1;
 	wx.startRecord({
 		success:function(){
+			isStart=1;
+			isWaitStart=0;
 			WXRecordData.startTime=Date.now();
 			WXRecordData.start=set;
 			success();
 		}
 		,fail:function(o){
+			isWaitStart=0;
 			fail("无法录音："+o.errMsg);
+			stopNow();
 		}
 	});
 	
@@ -249,11 +282,12 @@ platform.Stop=function(success,failx){
 	};
 	if(timeouts.length){
 		if(Date.now()-timeouts[timeouts.length-1].time<900){
-			WXRecordData.wx.stopRecord();//丢弃结尾的渣渣
+			stopNow();//丢弃结尾的渣渣
 			stopFn();
 			return;
 		};
 	};
+	isStart=0;
 	WXRecordData.wx.stopRecord({
 		fail:fail
 		,success:function(res){

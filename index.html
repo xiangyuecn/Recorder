@@ -34,7 +34,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-7-17 20:21:42";
+var PageLM="2019-8-17 12:12:22";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -137,6 +137,10 @@ RandomKey.idx=0;
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
 		<input type="checkbox" class="recwaveSet" checked>
 	</div>
+	<div class="pd">
+		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输</label>
+		，间隔<input type="text" class="realTimeSend" value="1000" style="width:60px">ms
+	</div>
 	
 	<hr>
 	<audio class="recPlay" style="width:100%"></audio>
@@ -210,7 +214,13 @@ function recopen(){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
+	
 	var wave,waveSet=$(".recwaveSet")[0].checked;
+	
+	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
+	var realTimeSendTime=+$(".realTimeSend").val();
+	realTimeSendTryTime=0;
+	
 	rec=Recorder({
 		type:type
 		,bitRate:bit
@@ -220,6 +230,10 @@ function recopen(){
 			$(".recpowert").html(time+"/"+level);
 			
 			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
+			
+			if(realTimeSendSet){
+				realTimeSendTry(realTimeSendTime,buffers,sampleRate);
+			};
 		}
 	});
 	
@@ -295,20 +309,29 @@ function recresume(){
 	};
 };
 var recblob={};
-function recstop(batCall){
+function recstop(){
+	recstopFn(true,function(){
+		setTimeout(function(){
+			realTimeSendTryStop();
+		});
+	});
+};
+function recstopFn(isClick,endCall,rec){
+	rec=rec||window.rec;
 	if(rec){
-		if(!batCall){
+		if(isClick){
 			reclog("正在编码"+rec.set.type+"...");
 		};
 		var t1=Date.now();
 		rec.stop(function(blob,time){
+			var tag=endCall("",blob,time);
+			
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
-			reclog("已录制:"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
-			batCall&&batCall();
+			reclog((tag||"已录制")+":"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 		},function(s){
 			reclog("失败："+s);
-			batCall&&batCall();
+			endCall(s);
 		});
 	};
 };
@@ -318,7 +341,7 @@ var intp=function(s,len){
 	return ("_______"+s).substr(-len);
 };
 function recstop2(){
-	if(!rec||!rec.buffer){
+	if(!rec||!rec.buffers){
 		reclog("需先录个音");
 		return;
 	};
@@ -355,7 +378,9 @@ function recstop2(){
 		};
 		rec.set.bitRate=list[i];
 		rec.state=1;
-		recstop(run);
+		recstopFn(0,function(){
+			setTimeout(run);
+		});
 	};
 	run();
 };
@@ -461,6 +486,70 @@ if(window.top!=window){
 	}catch(e){};
 	
 	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略权限永远是拒绝的")+"</span>");
+};
+
+
+
+
+//实时传输数据模拟
+var realTimeSendTryTime=0;
+var realTimeSendTryChunk;
+var realTimeSendTryChunks;
+var realTimeSendTryChunkSampleRate;
+var realTimeSendTry=function(interval,pcmDatas,sampleRate){
+	var t1=Date.now(),endT=0;
+	if(realTimeSendTryTime==0){
+		realTimeSendTryTime=t1;
+		realTimeSendTryChunk=null;
+		realTimeSendTryChunks=[];
+		
+		if(rec.set.type=="wav"){
+			reclog("<span style='color:#0b1'>实时编码wav格式很快，无需任何优化</span>");
+		}else if(rec[rec.set.type+"_start"]){
+			reclog("<span style='color:#0b1'>实时编码"+rec.set.type+"格式支持边录边转码(Worker)</span>");
+		}else{
+			reclog("<span style='color:#f60'>实时编码"+rec.set.type+"格式采用UI线程转码，将会有明显卡顿</span>");
+		};
+	};
+	if(t1-realTimeSendTryTime<interval){
+		return;
+	};
+	realTimeSendTryTime=t1;
+	
+	//借用SampleData函数进行数据的连续处理，采样率转换是次要的
+	var chunk=Recorder.SampleData(pcmDatas,sampleRate,rec.set.sampleRate,realTimeSendTryChunk);
+	realTimeSendTryChunk=chunk;
+	realTimeSendTryChunks.push(chunk.data);
+	realTimeSendTryChunkSampleRate=chunk.sampleRate;
+	
+	var recMock=Recorder($.extend({},rec.set));
+	recMock.mock(chunk.data,chunk.sampleRate);
+	
+	if(rec[rec.set.type+"_start"]){
+		endT=Date.now();
+	};
+	recstopFn(0,function(err,blob,duration){
+		//此处应伪装成发送blob数据
+		//emmmm....
+		
+		var ms=(endT||Date.now())-t1;
+		var max=rec[rec.set.type+"_start"]?99999:1000*pcmDatas[0].length/sampleRate-10;//录音回调1帧时长
+		return realTimeSendTryChunks.length+"实时编码占用<span style='color:"+(ms>max?"red":"")+"'>"+ms+"ms</span>";
+	},recMock);
+};
+var realTimeSendTryStop=function(){
+	if(!realTimeSendTryTime){
+		return;
+	}
+	
+	//借用SampleData函数把二维数据转成一维，采样率转换是次要的
+	var chunk=Recorder.SampleData(realTimeSendTryChunks,realTimeSendTryChunkSampleRate,realTimeSendTryChunkSampleRate);
+	
+	var recMock=Recorder($.extend({},rec.set));
+	recMock.mock(chunk.data,chunk.sampleRate);
+	recstopFn(0,function(err,blob,time){
+		return "实时编码汇总结果";
+	},recMock);
 };
 </script>
 
@@ -630,7 +719,7 @@ function loadEngine(input){
 		var engines=input.attr("engine").split(",");
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
-			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，"+enc.testmsg];
+			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"+(type=="wav"?"#0b1'>wav转码超快":Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)":"red'>仅支持标准UI线程转码")+"</span>，"+enc.testmsg];
 			tips.push('<div style="color:green">');
 			tips.push("【使用"+type+"录音需要加载的js文件】：");
 			tips.push("src/recorder-core.js, src/engine/");

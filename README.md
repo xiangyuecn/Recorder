@@ -1,14 +1,14 @@
 # :open_book:Recorder用于html5录音
 
-[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器）。快捷方式: [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx)，[Android App Demo](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)，[IOS App Demo](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia) , [【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) 。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器）。快捷方式: [【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
 
 录音默认输出mp3格式，另外可选wav格式（raw pcm format此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
-mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）；主要用于简短语音录制，1分钟的语音进行编码是很快的，超长语音编码会花费比较长时间（wav格式几乎不受时长影响）。双声道语音没有意义，特意仅对单声道进行支持。
+mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）。主要用于语音录制，双声道语音没有意义，特意仅对单声道进行支持。mp3和wav格式支持边录边转码，录音结束时转码速度极快（支持实时转码成小片段文件和实时传输）；其他格式录音结束时可能需要花费比较长的时间进行转码。
 
-mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，源码不足300行，压缩后的recorder.wav.min.js不足4kb。
+mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，压缩后的recorder.wav.min.js不足5kb。
 
-如需在Hybrid App内使用（支持IOS、Android），请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
+如需在Hybrid App内使用（支持IOS、Android），或提供IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
 
 *IOS、国产系统浏览器上的使用限制等问题和兼容请参阅下面的知识库部分。*
 
@@ -170,7 +170,7 @@ $.ajax({
 
 # :open_book:知识库
 
-本库期待的使用场景是简短的语音录制，因此音质只要不比高品质的感觉差太多就行；1分钟的语音进行编码是很快的，但如果录制超长的录音，比如10分钟以上，编码会花费比较长的时间，因为并未采用边录边转码的worker方案。另外未找到双声道语音录制存在的意义（翻倍录音数据大小，并且拉低音质），因此特意仅对单声道进行支持。
+本库期待的使用场景是语音录制，因此音质只要不比高品质的感觉差太多就行；1分钟的语音进行编码是很快的，但如果录制超长的录音，比如10分钟以上，不同类型的编码可能会花费比较长的时间，因为只有边录边转码(Worker)支持的类型才能进行极速转码。另外未找到双声道语音录制存在的意义（翻倍录音数据大小，并且拉低音质），因此特意仅对单声道进行支持。
 
 
 浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码。
@@ -206,7 +206,7 @@ IOS其他浏览器||
 
 *2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
 
-*2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。
+*2019-03-09* 在Android上QQ、微信里，请求授权使用麦克风的提示，经过长时间观察发现，他们的表现很随机、很奇特。可能每次在调用`getUserMedia`时候都会弹选择，也可能选择一次就不会再弹提示，也可能重启App后又会弹。如果用户拒绝了，可能第二天又会弹，或者永远都不弹了，要么重置(装)App。使用腾讯X5内核的App测试也是一样奇特表现，拒绝权限后可能必须要重置(装)。这个问题貌似跟X5内核自动升级的版本有关。QQ浏览器更加惨不忍睹，2019-08-16测试发现卸载重装、拒绝权限后永远无法弹出授权，通过浏览器设置-清理-清理地理位置授权才能恢复，重启、重装、清理系统垃圾、删除根目录文件夹（腾讯那个大文件不敢删，毒瘤）垃圾均无效，奇葩。
 
 *2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版（支付宝）：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
 
@@ -237,9 +237,10 @@ set={
                 //取值256, 512, 1024, 2048, 4096, 8192, or 16384
                 //注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
     
-    ,onProcess:NOOP //接收到录音数据时的回调函数：fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) 
-                //buffer=[[Int16,...],...]：缓冲PCM数据，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
-                //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffer可以达到更高级效果
+    ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate) 
+                //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
+                //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
+                //注意，此回调可能会在buffers里面添加了多段数据才回调一次，在使用buffers应留意此问题；另外buffers数据的采样率为浏览器提供的原始采样率，和set.sampleRate不一定相同，如需强一致，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输
 }
 ```
 
@@ -272,7 +273,7 @@ set={
 
 `fail(errMsg)`：录音出错回调
 
-提示：stop时会进行音频编码，音频编码可能会很慢，10几秒录音花费2秒左右算是正常，编码并未使用Worker方案(文件多)，内部采取的是分段编码+setTimeout来处理，界面卡顿不明显。
+提示：stop时会进行音频编码，根据类型的不同音频编码花费的时间也不相同。对于支持边录边转码(Worker)的类型，将极速完成编码并回调；对于不支持的10几秒录音花费2秒左右算是正常，但内部采用了分段编码+setTimeout来处理，界面卡顿不明显。
 
 
 ### 【方法】rec.pause()
@@ -309,11 +310,38 @@ function transformOgg(pcmData){
 };
 ```
 
+提示：在录音实时回调中配合`Recorder.SampleData()`方法使用效果更佳，可实时生成小片段语音文件。
+
+
 ### 【静态方法】Recorder.Support()
 判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
 
 ### 【静态方法】Recorder.IsOpen()
 由于Recorder持有的录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了录音功能。
+
+### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo)
+对pcm数据的采样率进行转换
+
+`pcmDatas`: [[Int16,...]] pcm片段列表
+
+`pcmSampleRate`:48000 pcm数据的采样率
+
+`newSampleRate`:16000 需要转换成的采样率，newSampleRate>=pcmSampleRate时不会进行任何处理，小于时会进行重新采样
+
+`prevChunkInfo`:{} 可选，上次调用时的返回值，用于连续转换，本次调用将从上次结束位置开始进行处理。或可自行定义一个ChunkInfo从pcmDatas指定的位置开始进行转换
+
+返回值ChunkInfo
+``` javascript
+{
+    //可定义，从指定位置开始转换到结尾
+    index:0 pcmDatas已处理到的索引
+    offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置
+    
+    //仅作为返回值
+    sampleRate:16000 结果的采样率，<=newSampleRate
+    data:[Int16,...] 结果
+}
+```
 
 
 # :open_book:压缩合并一个自己需要的js文件
@@ -355,7 +383,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 
 # :open_book:其他音频格式支持办法
 ``` javascript
-//比如增加aac格式支持 (可参考/src/engine/mp3.js实现)
+//比如增加aac格式支持 (可参考/src/engine/wav.js实现)
 
 //新增一个aac.js，编写以下格式代码即可实现这个类型
 Recorder.prototype.aac=function(pcmData,successCall,failCall){
@@ -450,7 +478,7 @@ public void onPermissionRequest(PermissionRequest request) {
 如果不出意外，App内显示的网页就能正常录音了。
 
 ### 附带测试项目
-[app-support-sample/demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，文件名为`app-debug-xxx.apk.zip`，自行去掉.zip后缀）。
+[app-support-sample/demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，文件名为`app-debug.apk.zip`，自行去掉.zip后缀）。
 
 
 

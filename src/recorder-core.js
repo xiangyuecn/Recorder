@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2019-4-23 15:23:07";
+window.RecorderLM="2019-8-17 12:12:03";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
@@ -49,6 +49,71 @@ Recorder.Support=function(){
 	};
 	return true;
 };
+/*对pcm数据的采样率进行转换
+pcmDatas: [[Int16,...]] pcm片段列表
+pcmSampleRate:48000 pcm数据的采样率
+newSampleRate:16000 需要转换成的采样率，newSampleRate>=pcmSampleRate时不会进行任何处理，小于时会进行重新采样
+prevChunkInfo:{} 可选，上次调用时的返回值，用于连续转换，本次调用将从上次结束位置开始进行处理。或可自行定义一个ChunkInfo从pcmDatas指定的位置开始进行转换
+
+返回ChunkInfo:{
+	//可定义，从指定位置开始转换到结尾
+	index:0 pcmDatas已处理到的索引
+	offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置
+	
+	//仅作为返回值
+	sampleRate:16000 结果的采样率，<=newSampleRate
+	data:[Int16,...] 结果
+}
+*/
+Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo){
+	prevChunkInfo||(prevChunkInfo={});
+	var index=prevChunkInfo.index||0;
+	var offset=prevChunkInfo.offset||0;
+	
+	var size=0;
+	for(var i=index;i<pcmDatas.length;i++){
+		size+=pcmDatas[i].length;
+	};
+	size=Math.max(0,size-Math.floor(offset));
+	
+	//采样 https://www.cnblogs.com/blqw/p/3782420.html
+	var step=pcmSampleRate/newSampleRate;
+	if(step>1){//新采样高于录音采样不处理，省去了插值处理，直接抽样
+		size=Math.floor(size/step);
+	}else{
+		step=1;
+		newSampleRate=pcmSampleRate;
+	};
+	//准备数据
+	var res=new Int16Array(size);
+	var idx=0;
+	for (var nl=pcmDatas.length;index<nl;index++) {
+		var o=pcmDatas[index];
+		var i=offset,il=o.length;
+		while(i<il){
+			//res[idx]=o[Math.round(i)]; 直接简单抽样
+			
+			//https://www.cnblogs.com/xiaoqi/p/6993912.html
+			//当前点=当前点+到后面一个点之间的增量，音质比直接简单抽样好些
+			var before = Math.floor(i);
+			var after = Math.ceil(i);
+			var atPoint = i - before;
+			res[idx]=o[before]+(o[after]-o[before])*atPoint;
+			
+			idx++;
+			i+=step;//抽样
+		};
+		offset=i-il;
+	};
+	
+	return {
+		index:index
+		,offset:offset
+		
+		,sampleRate:newSampleRate
+		,data:res
+	};
+};
 function initFn(set){
 	var o={
 		type:"mp3" //输出类型：mp3,wav，wav输出文件尺寸超大不推荐使用，但mp3编码支持会导致js文件超大，如果不需支持mp3可以使js文件大幅减小
@@ -61,7 +126,7 @@ function initFn(set){
 		,bufferSize:4096//AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
 				//取值256, 512, 1024, 2048, 4096, 8192, or 16384
 				//注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
-		,onProcess:NOOP //fn(this.buffer,powerLevel,bufferDuration,bufferSampleRate) buffer=[缓冲PCM数据,...]，powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率
+		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
 	};
 	
 	for(var k in set){
@@ -129,8 +194,8 @@ Recorder.prototype=initFn.prototype={
 	
 	//开始录音，需先调用open；不支持、错误，不会有任何提示，stop时自然能得到错误
 	,start:function(){
-		var This=this,ctx=Recorder.Ctx;
-		var buffer=This.buffer=[];//数据缓冲
+		var This=this,set=This.set,ctx=Recorder.Ctx;
+		This.buffers=[];//数据缓冲
 		This.recSize=0;//数据大小
 		This._stop();
 		
@@ -139,8 +204,16 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		console.log("["+Date.now()+"]Start");
+		set.sampleRate=Math.min(ctx.sampleRate,set.sampleRate);
 		This.srcSampleRate=ctx.sampleRate;
 		This.isMock=0;
+		This.engineCtx=0;
+		//此类型有边录边转码(Worker)支持
+		if(This[set.type+"_start"]){
+			var engineCtx=This.engineCtx=This[set.type+"_start"](set);
+			engineCtx.pcmDatas=[];
+			engineCtx.pcmSize=0;
+		};
 		
 		if(ctx.state=="suspended"){
 			ctx.resume().then(function(){
@@ -152,12 +225,12 @@ Recorder.prototype=initFn.prototype={
 		};
 	}
 	,_start:function(){
-		var This=this,set=This.set,buffer=This.buffer;
+		var This=this,set=This.set;
+		var engineCtx=This.engineCtx;
 		var ctx=Recorder.Ctx;
 		var media=This.media=ctx.createMediaStreamSource(Recorder.Stream);
 		var process=This.process=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,set.bufferSize,1,1);//单声道，省的数据处理复杂
 		
-		var onInt;
 		process.onaudioprocess=function(e){
 			if(This.state!=1){
 				return;
@@ -165,17 +238,17 @@ Recorder.prototype=initFn.prototype={
 			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
 			var size=o.length;
 			This.recSize+=size;
+			var buffers=This.buffers;
 			
 			var res=new Int16Array(size);
 			var power=0;
 			for(var j=0;j<size;j++){//floatTo16BitPCM 
-				//var s=Math.max(-1,Math.min(1,o[j]*8));//PCM 音量直接放大8倍，失真还能接受
 				var s=Math.max(-1,Math.min(1,o[j]));
 				s=s<0?s*0x8000:s*0x7FFF;
 				res[j]=s;
 				power+=Math.abs(s);
 			};
-			buffer.push(res);
+			buffers.push(res);
 			
 			/*https://blog.csdn.net/jody1989/article/details/73480259
 			更高灵敏度算法:
@@ -194,24 +267,42 @@ Recorder.prototype=initFn.prototype={
 			}
 			
 			var bufferSampleRate=This.srcSampleRate;
-			var duration=Math.round(This.recSize/bufferSampleRate*1000);
+			var bufferSize=This.recSize;
 			
-			clearTimeout(onInt);
-			onInt=setTimeout(function(){
-				set.onProcess(buffer,powerLevel,duration,bufferSampleRate);
-			});
+			//此类型有边录边转码(Worker)支持，开启实时转码
+			if(engineCtx){
+				//转换成set的采样率
+				var chunkInfo=Recorder.SampleData(buffers,bufferSampleRate,set.sampleRate,engineCtx.chunkInfo);
+				engineCtx.chunkInfo=chunkInfo;
+				
+				engineCtx.pcmSize+=chunkInfo.data.length;
+				bufferSize=engineCtx.pcmSize;
+				buffers=engineCtx.pcmDatas;
+				buffers.push(chunkInfo.data);
+				bufferSampleRate=chunkInfo.sampleRate;
+				
+				//推入后台转码
+				This[set.type+"_encode"](engineCtx,chunkInfo.data);
+			};
+			
+			var duration=Math.round(bufferSize/bufferSampleRate*1000);
+			set.onProcess(buffers,powerLevel,duration,bufferSampleRate);
 		};
 		
 		media.connect(process);
 		process.connect(ctx.destination);
 		This.state=1;
 	}
-	,_stop:function(){
-		var This=this;
+	,_stop:function(keepEngine){
+		var This=this,set=This.set;
 		if(This.state){
 			This.state=0;
 			This.media.disconnect();
 			This.process.disconnect();
+		};
+		if(!keepEngine && This[set.type+"_stop"]){
+			This[set.type+"_stop"](This.engineCtx);
+			This.engineCtx=0;
 		};
 	}
 	/*暂停录音*/
@@ -228,8 +319,10 @@ Recorder.prototype=initFn.prototype={
 	/*模拟一段录音数据，后面可以调用stop进行编码，需提供pcm数据[1,2,3...]，pcm的采样率*/
 	,mock:function(pcmData,pcmSampleRate){
 		var This=this;
+		This._stop();//清理掉已有的资源
+		
 		This.isMock=1;
-		This.buffer=[pcmData];
+		This.buffers=[pcmData];
 		This.recSize=pcmData.length;
 		This.srcSampleRate=pcmSampleRate;
 		return This;
@@ -242,72 +335,67 @@ Recorder.prototype=initFn.prototype={
 	*/
 	,stop:function(True,False){
 		console.log("["+Date.now()+"]Stop");
-		True=True||NOOP;
-		False=False||NOOP;
-		var This=this,set=This.set;
+		var This=this,set=This.set,t1;
 		
-		if(!This.isMock){
-			if(!This.state){
-				False("未开始录音");
+		var err=function(msg){
+			False&&False(msg);
+			This._stop();//彻底关掉engineCtx
+		};
+		var ok=function(blob,duration){
+			console.log("["+Date.now()+"]End",duration,"编码耗时:"+(Date.now()-t1),blob);
+			if(blob.size<500){
+				err("生成的"+set.type+"无效");
 				return;
 			};
+			True&&True(blob,duration);
 			This._stop();
+		};
+		if(!This.isMock){
+			if(!This.state){
+				err("未开始录音");
+				return;
+			};
+			This._stop(true);
 		};
 		var size=This.recSize;
 		if(!size){
-			False("未采集到录音");
+			err("未采集到录音");
 			return;
 		};
 		if(!This[set.type]){
-			False("未加载"+set.type+"编码器");
+			err("未加载"+set.type+"编码器");
 			return;
 		};
 		
-		var sampleRate=set.sampleRate
-			,srcSampleRate=This.srcSampleRate;
-		//采样 https://www.cnblogs.com/blqw/p/3782420.html
-		var step=srcSampleRate/sampleRate;
-		if(step>1){//新采样高于录音采样不处理，省去了插值处理，直接抽样
-			size=Math.floor(size/step);
-		}else{
-			step=1;
-			sampleRate=srcSampleRate;
-			set.sampleRate=sampleRate;
+		//此类型有边录边转码(Worker)支持
+		var engineCtx=This.engineCtx;
+		if(This[set.type+"_complete"]&&engineCtx){
+			var pcmDatas=engineCtx.pcmDatas;
+			var duration=Math.round(engineCtx.pcmSize/set.sampleRate*1000);//采用后的数据长度和buffers的长度可能微小的不一致，是采样率连续转换的精度问题
+			
+			t1=Date.now();
+			This[set.type+"_complete"](engineCtx,function(blob){
+				ok(blob,duration);
+			},err);
+			return;
 		};
-		//准备数据
-		var res=new Int16Array(size);
-		var last=0,idx=0;
-		for (var n=0,nl=This.buffer.length;n<nl;n++) {
-			var o=This.buffer[n];
-			var i=last,il=o.length;
-			while(i<il){
-				//res[idx]=o[Math.round(i)]; 直接简单抽样
-				
-				//https://www.cnblogs.com/xiaoqi/p/6993912.html
-				//当前点=当前点+到后面一个点之间的增量，音质比直接简单抽样好些
-				var before = Math.floor(i);
-				var after = Math.ceil(i);
-				var atPoint = i - before;
-				res[idx]=o[before]+(o[after]-o[before])*atPoint;
-				
-				idx++;
-				i+=step;//抽样
-			};
-			last=i-il;
-		};
-		var duration=Math.round(size/sampleRate*1000);
+		
+		//标准UI线程转码，调整采样率
+		t1=Date.now();
+		var chunk=Recorder.SampleData(This.buffers,This.srcSampleRate,set.sampleRate);
+		
+		set.sampleRate=chunk.sampleRate;
+		var res=chunk.data;
+		var duration=Math.round(res.length/set.sampleRate*1000);
+		
+		console.log("采样"+size+"->"+res.length+" 花:"+(Date.now()-t1)+"ms");
 		
 		setTimeout(function(){
-			var t1=Date.now();
+			t1=Date.now();
 			This[set.type](res,function(blob){
-				console.log("["+Date.now()+"]End",duration,"编码耗时:"+(Date.now()-t1),blob);
-				if(blob.size<500){
-					False("生成的"+set.type+"无效");
-					return;
-				};
-				True(blob,duration);
+				ok(blob,duration);
 			},function(msg){
-				False(msg);
+				err(msg);
 			});
 		});
 	}

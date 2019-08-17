@@ -630,7 +630,7 @@ function loadEngine(input){
 		var engines=input.attr("engine").split(",");
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
-			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，"+enc.testmsg];
+			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"+(type=="wav"?"#0b1'>wav转码超快":Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)":"red'>仅支持标准UI线程转码")+"</span>，"+enc.testmsg];
 			tips.push('<div style="color:green">');
 			tips.push("【使用"+type+"录音需要在app.js Platforms.Default内注册】：");
 			tips.push("src/recorder-core.js, src/engine/");
