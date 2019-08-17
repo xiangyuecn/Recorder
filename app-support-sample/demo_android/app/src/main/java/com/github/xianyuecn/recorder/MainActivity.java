@@ -161,7 +161,7 @@ public class MainActivity extends Activity {
             }
         }
         private String time(){
-            SimpleDateFormat formatter=new SimpleDateFormat   ("HH:mm:ss", Locale.CHINA);
+            SimpleDateFormat formatter=new SimpleDateFormat("HH:mm:ss", Locale.CHINA);
             return formatter.format(new Date());
         }
     };

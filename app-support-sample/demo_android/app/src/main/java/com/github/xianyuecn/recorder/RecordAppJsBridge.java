@@ -22,9 +22,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class RecordAppJsBridge implements Closeable {
+    //js中定义的名称
     static private final String JsBridgeName="RecordAppJsBridge";
     static private final String JsRequestName="AppJsBridgeRequest";
 
+    //默认会把录音数据额外存储到app外部存储的cache目录中，仅供分析调试之用
     static private final boolean SavePCM_ToLogFile=true;
 
     static private final String LogTag="RecordAppJsBridge";
@@ -117,6 +119,10 @@ public class RecordAppJsBridge implements Closeable {
 
 
 
+
+
+
+    //**********工具类****************************
     public interface UsesPermission {
         /**
          * 请求用户权限，如果keys全部有权限，回调True，任何一个没有权限回调False
@@ -126,6 +132,9 @@ public class RecordAppJsBridge implements Closeable {
     public interface ILog {
         void i(String tag, String msg);
         void e(String tag, String msg);
+    }
+    public interface Callback<T,V> {
+        T Call(V result, Exception hasError);
     }
     static private void JSONSet(JSONObject json, String key, Object val){
         try{
@@ -311,9 +320,6 @@ public class RecordAppJsBridge implements Closeable {
     //*****RecordApis.java*****************************************
     static public class RecordApis {
         static private final String LogTag="RecordApis";
-        public interface Callback<T,V> {
-            T Call(V result, Exception hasError);
-        }
 
         static public void Async_recordPermission(final Request req) {
             checkPermission(req, new Callback<Object, Object>() {
@@ -565,6 +571,7 @@ public class RecordAppJsBridge implements Closeable {
                     byte[] fullArr=logStreamFull.toByteArray();
                     savePcmLogFile("record-full.pcm", fullArr);
 
+                    lostBytes=new byte[0];
                     savePcmLogFile("record-full2.pcm", sampleData(fullArr, fullArr.length, sampleRateReq, rec.getSampleRate()));
 
                     savePcmLogFile("record-val.pcm", logStreamVal.toByteArray());
@@ -603,7 +610,7 @@ public class RecordAppJsBridge implements Closeable {
             bufferLen+=bufferLen%2;//保证16位
             byte[] buffer=new byte[bufferLen];
 
-            boolean fistLog=false;
+            boolean firstLog=false;
 
             while (isRec && !Thread.currentThread().isInterrupted()){
                 int count=rec.read(buffer, 0, buffer.length);
@@ -640,15 +647,18 @@ public class RecordAppJsBridge implements Closeable {
                 sendCount++;
                 main.runScript(JsRequestName+".Record(\""+ Base64.encodeToString(data, Base64.NO_WRAP)+"\","+sampleRate+")");
 
-                if(!fistLog){
+                if(!firstLog){
                     main.Log.i(LogTag, "获取到了第一段录音数据：len:"+data.length+" lenSrc:"+count+" bufferLen:"+bufferLen+" sampleRateReq:"+sampleRateReq+" sampleRateSrc:"+sampleRateSrc+" sampleRateCallback:"+sampleRate);
-                    fistLog=true;
+                    firstLog=true;
                 }
             }
         }
 
 
         private byte[] lostBytes=new byte[0];
+        /**
+         * 对采样率进行转换
+         */
         private byte[] sampleData(byte[] data, int count, int newSampleRate, int oldSampleRate){
             //先把字节转成Int16Array（注意是有符号n<<16>>16），省的拼接的麻烦还绕
             int arrLen=(lostBytes.length+count)/2;
