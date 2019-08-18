@@ -56,7 +56,9 @@ platform.Start=function(set,success,fail){
 	if(isStart){
 		console.log("正在录音，正在结束后重试");
 		stopNow(function(){
-			platform.Start(set,success,fail);
+			setTimeout(function(){
+				platform.Start(set,success,fail);
+			},300);
 		});
 		return;
 	};

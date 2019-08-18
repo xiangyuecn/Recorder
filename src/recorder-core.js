@@ -211,8 +211,10 @@ Recorder.prototype=initFn.prototype={
 		//此类型有边录边转码(Worker)支持
 		if(This[set.type+"_start"]){
 			var engineCtx=This.engineCtx=This[set.type+"_start"](set);
-			engineCtx.pcmDatas=[];
-			engineCtx.pcmSize=0;
+			if(engineCtx){
+				engineCtx.pcmDatas=[];
+				engineCtx.pcmSize=0;
+			};
 		};
 		
 		if(ctx.state=="suspended"){
