@@ -133,7 +133,7 @@ RandomKey.idx=0;
 		</div>
 	</div>
 	<div class="pd">
-		<button onclick="recstop2()">批量编码</button>
+		<button onclick="recstop2()" class="batEnc">批量编码</button>
 		<input type="text" class="bits" value="8 to 96 step 8">kbps 测试音质用的，除比特率外其他参数可调整
 	</div>
 	<div class="pd waveBox">
@@ -756,7 +756,7 @@ function loadEngine(input){
 			
 			$(".typeTips").html(tips.join(""));
 		};
-		if(loadEngineState[type]!==minjs){
+		if(!Recorder.prototype[type] || loadEngineState[type]!==minjs){
 			reclog("<span style='color:#f60'>正在加载"+type+"编码器"+(minjs?"压缩版":"源码版")+"，请勿操作...</span>");
 			var i=-1;
 			var load=function(){
@@ -791,6 +791,11 @@ var WaveViewBak=Recorder.WaveView;
 	minjs[0].checked=localStorage["loadMinJs"]!="0";
 	minjs.bind("change",function(){
 		localStorage["loadMinJs"]=minjs[0].checked?"1":"0";
+	});
+	$(".batEnc").bind("click",function(){
+		if(minjs[0].checked){
+			reclog("<span style='color:#f60'>当前为压缩版模式，由于不同录音格式之间存在Recorder对象覆盖行为，切换类型将导致不能编码，关掉请求压缩版后无此限制</span>");
+		};
 	});
 	
 	loadEngine($(".initType"));
