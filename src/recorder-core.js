@@ -192,21 +192,29 @@ Recorder.prototype=initFn.prototype={
 	}
 	
 	
-	//开始录音，需先调用open；不支持、错误，不会有任何提示，stop时自然能得到错误
-	,start:function(){
-		var This=this,set=This.set,ctx=Recorder.Ctx;
+	
+	
+	
+	/*模拟一段录音数据，后面可以调用stop进行编码，需提供pcm数据[1,2,3...]，pcm的采样率*/
+	,mock:function(pcmData,pcmSampleRate){
+		var This=this;
+		This._stop();//清理掉已有的资源
+		
+		This.isMock=1;
+		This.buffers=[pcmData];
+		This.recSize=pcmData.length;
+		This.srcSampleRate=pcmSampleRate;
+		return This;
+	}
+	,envStart:function(mockEnv,sampleRate){//和平台环境无关的start调用
+		var This=this,set=This.set;
+		This.isMock=mockEnv?1:0;//非H5环境需要启用mock
 		This.buffers=[];//数据缓冲
 		This.recSize=0;//数据大小
-		This._stop();
 		
-		This.state=0;
-		if(!Recorder.IsOpen()){
-			return;
-		};
-		console.log("["+Date.now()+"]Start");
-		set.sampleRate=Math.min(ctx.sampleRate,set.sampleRate);
-		This.srcSampleRate=ctx.sampleRate;
-		This.isMock=0;
+		set.sampleRate=Math.min(sampleRate,set.sampleRate);//engineCtx需要提前确定最终的采样率
+		This.srcSampleRate=sampleRate;
+		
 		This.engineCtx=0;
 		//此类型有边录边转码(Worker)支持
 		if(This[set.type+"_start"]){
@@ -216,6 +224,74 @@ Recorder.prototype=initFn.prototype={
 				engineCtx.pcmSize=0;
 			};
 		};
+	}
+	,envIn:function(pcm,sum){//和平台环境无关的pcm[Int16]输入
+		var This=this,set=This.set,engineCtx=This.engineCtx;
+		var size=pcm.length;
+		This.recSize+=size;
+		
+		var buffers=This.buffers;
+		buffers.push(pcm);
+		
+		/*计算音量 https://blog.csdn.net/jody1989/article/details/73480259
+		更高灵敏度算法:
+			限定最大感应值10000
+				线性曲线：低音量不友好
+					power/10000*100 
+				对数曲线：低音量友好，但需限定最低感应值
+					(1+Math.log10(power/10000))*100
+		*/
+		var power=sum/size;
+		var powerLevel;
+		if(power<1251){//1250的结果10%，更小的音量采用线性取值
+			powerLevel=Math.round(power/1250*10);
+		}else{
+			powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
+		}
+		
+		var bufferSampleRate=This.srcSampleRate;
+		var bufferSize=This.recSize;
+		
+		//此类型有边录边转码(Worker)支持，开启实时转码
+		if(engineCtx){
+			//转换成set的采样率
+			var chunkInfo=Recorder.SampleData(buffers,bufferSampleRate,set.sampleRate,engineCtx.chunkInfo);
+			engineCtx.chunkInfo=chunkInfo;
+			
+			engineCtx.pcmSize+=chunkInfo.data.length;
+			bufferSize=engineCtx.pcmSize;
+			buffers=engineCtx.pcmDatas;
+			buffers.push(chunkInfo.data);
+			bufferSampleRate=chunkInfo.sampleRate;
+			
+			//推入后台转码
+			This[set.type+"_encode"](engineCtx,chunkInfo.data);
+		};
+		
+		var duration=Math.round(bufferSize/bufferSampleRate*1000);
+		return {
+			bf:buffers
+			,pl:powerLevel
+			,dt:duration
+			,sr:bufferSampleRate
+		};
+	}
+	
+	
+	
+	
+	//开始录音，需先调用open；不支持、错误，不会有任何提示，stop时自然能得到错误
+	,start:function(){
+		if(!Recorder.IsOpen()){
+			console.error("未open");
+			return;
+		};
+		console.log("["+Date.now()+"]Start");
+		
+		var This=this,set=This.set,ctx=Recorder.Ctx;
+		This._stop();
+		This.state=0;
+		This.envStart(0,ctx.sampleRate);
 		
 		if(ctx.state=="suspended"){
 			ctx.resume().then(function(){
@@ -239,73 +315,24 @@ Recorder.prototype=initFn.prototype={
 			};
 			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
 			var size=o.length;
-			This.recSize+=size;
-			var buffers=This.buffers;
 			
-			var res=new Int16Array(size);
-			var power=0;
+			var pcm=new Int16Array(size);
+			var sum=0;
 			for(var j=0;j<size;j++){//floatTo16BitPCM 
 				var s=Math.max(-1,Math.min(1,o[j]));
 				s=s<0?s*0x8000:s*0x7FFF;
-				res[j]=s;
-				power+=Math.abs(s);
-			};
-			buffers.push(res);
-			
-			/*https://blog.csdn.net/jody1989/article/details/73480259
-			更高灵敏度算法:
-				限定最大感应值10000
-					线性曲线：低音量不友好
-						power/10000*100 
-					对数曲线：低音量友好，但需限定最低感应值
-						(1+Math.log10(power/10000))*100
-			*/
-			power/=size;
-			var powerLevel;
-			if(power<1251){//1250的结果10%，更小的音量采用线性取值
-				powerLevel=Math.round(power/1250*10);
-			}else{
-				powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
-			}
-			
-			var bufferSampleRate=This.srcSampleRate;
-			var bufferSize=This.recSize;
-			
-			//此类型有边录边转码(Worker)支持，开启实时转码
-			if(engineCtx){
-				//转换成set的采样率
-				var chunkInfo=Recorder.SampleData(buffers,bufferSampleRate,set.sampleRate,engineCtx.chunkInfo);
-				engineCtx.chunkInfo=chunkInfo;
-				
-				engineCtx.pcmSize+=chunkInfo.data.length;
-				bufferSize=engineCtx.pcmSize;
-				buffers=engineCtx.pcmDatas;
-				buffers.push(chunkInfo.data);
-				bufferSampleRate=chunkInfo.sampleRate;
-				
-				//推入后台转码
-				This[set.type+"_encode"](engineCtx,chunkInfo.data);
+				pcm[j]=s;
+				sum+=Math.abs(s);
 			};
 			
-			var duration=Math.round(bufferSize/bufferSampleRate*1000);
-			set.onProcess(buffers,powerLevel,duration,bufferSampleRate);
+			var res=This.envIn(pcm,sum);
+			//res为{ bf:buffers ,pl:powerLevel ,dt:duration ,sr:bufferSampleRate }
+			set.onProcess(res.bf,res.pl,res.dt,res.sr);
 		};
 		
 		media.connect(process);
 		process.connect(ctx.destination);
 		This.state=1;
-	}
-	,_stop:function(keepEngine){
-		var This=this,set=This.set;
-		if(This.state){
-			This.state=0;
-			This.media.disconnect();
-			This.process.disconnect();
-		};
-		if(!keepEngine && This[set.type+"_stop"]){
-			This[set.type+"_stop"](This.engineCtx);
-			This.engineCtx=0;
-		};
 	}
 	/*暂停录音*/
 	,pause:function(_resume){
@@ -318,16 +345,21 @@ Recorder.prototype=initFn.prototype={
 	,resume:function(){
 		this.pause(1);
 	}
-	/*模拟一段录音数据，后面可以调用stop进行编码，需提供pcm数据[1,2,3...]，pcm的采样率*/
-	,mock:function(pcmData,pcmSampleRate){
-		var This=this;
-		This._stop();//清理掉已有的资源
-		
-		This.isMock=1;
-		This.buffers=[pcmData];
-		This.recSize=pcmData.length;
-		This.srcSampleRate=pcmSampleRate;
-		return This;
+	
+	
+	
+	
+	,_stop:function(keepEngine){
+		var This=this,set=This.set;
+		if(This.state){
+			This.state=0;
+			This.media.disconnect();
+			This.process.disconnect();
+		};
+		if(!keepEngine && This[set.type+"_stop"]){
+			This[set.type+"_stop"](This.engineCtx);
+			This.engineCtx=0;
+		};
 	}
 	/*
 	结束录音并返回录音数据blob对象

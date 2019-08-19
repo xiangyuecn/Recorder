@@ -68,8 +68,8 @@ Recorder.prototype.wav=function(res,True,False){
 		// 写入采样数据
 		if(bitRate==8) {
 			for(var i=0;i<size;i++,offset++) {
-				var val=res[i];
-				val=parseInt(255/(65535/(val+32768)));
+				//16转8据说是雷霄骅的 https://blog.csdn.net/sevennight1989/article/details/85376149 细节比blqw的按比例的算法清晰点，虽然都有明显杂音
+				var val=(res[i]>>8)+128;
 				data.setInt8(offset,val,true);
 			};
 		}else{

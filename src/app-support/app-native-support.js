@@ -30,36 +30,28 @@ pcmDataBase64: base64<Int16[]>字符串 当前单声道录音缓冲PCM片段，�
 sampleRate：123456 录制音频实际的采样率
 */
 var onRecFn=window.NativeRecordReceivePCM=window.top.NativeRecordReceivePCM=function(pcmDataBase64,sampleRate){//无视iframe
-	if(!onRecFn.pcm){
+	var rec=onRecFn.rec;
+	if(!rec){
 		console.error("未开始录音，但收到Native PCM数据");
 		return;
 	};
+	if(!rec._appStart){
+		rec.envStart(1,sampleRate);
+	};
+	rec._appStart=1;
 	
 	var bstr=atob(pcmDataBase64),n=bstr.length;
-	var arr=new Int16Array(n/2);
-	var power=0;
+	var pcm=new Int16Array(n/2);
+	var sum=0;
 	for(var idx=0,s,i=0;i+2<=n;idx++,i+=2){
 		s=((bstr.charCodeAt(i)|(bstr.charCodeAt(i+1)<<8))<<16)>>16;
-		arr[idx]=s;
-		power+=Math.abs(s);
+		pcm[idx]=s;
+		sum+=Math.abs(s);
 	};
 	
-	onRecFn.sampleRate=sampleRate;
-	onRecFn.pcm.push(arr);
-	onRecFn.recSize+=arr.length;
-	
-	//本算法来自recorder.js，如果需要改动，两个地方一块改，另外log10用log来兼容超低版本
-	power/=arr.length;
-	var powerLevel;
-	if(power<1251){//1250的结果10%，更小的音量采用线性取值
-		powerLevel=Math.round(power/1250*10);
-	}else{
-		powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
-	}
-	
-	var duration=Math.round(onRecFn.recSize/sampleRate*1000);
-	
-	App.ReceivePCM(arr,powerLevel,duration,sampleRate);
+	var res=rec.envIn(pcm,sum);
+	//res为{ bf:buffers ,pl:powerLevel ,dt:duration ,sr:bufferSampleRate }
+	App.ReceivePCM(res.bf[res.bf.length-1],res.pl,res.dt,res.sr);
 };
 
 
@@ -70,40 +62,29 @@ platform.RequestPermission=function(success,fail){
 };
 platform.Start=function(set,success,fail){
 	onRecFn.param=set;
-	onRecFn.pcm=[];
-	onRecFn.recSize=0;
+	onRecFn.rec=Recorder(set);//等待第一个数据到来再调用rec.start
 	
 	config.JsBridgeStart(set,success,fail);
 };
 platform.Stop=function(success,fail){
 	config.JsBridgeStop(function(){
-		var pcm=onRecFn.pcm;
-		onRecFn.pcm=null;
+		var rec=onRecFn.rec;
+		onRecFn.rec=null;
 		
-		if(!pcm){
+		if(!rec){
 			fail("未开始录音");
 			return;
 		};
 		
-		var arr=new Int16Array(onRecFn.recSize);
-		var idx=0;
-		for(var i=0;i<pcm.length;i++){
-			var itm=pcm[i];
-			for(var j=0;j<itm.length;j++){
-				arr[idx++]=itm[j];
-			};
-		};
+		console.log("rec encode start: pcm:"+rec.recSize+" src:"+rec.srcSampleRate+" set:"+JSON.stringify(onRecFn.param));
 		
-		console.log("rec encode start: rec:"+arr.length+" src:"+onRecFn.sampleRate+" set:"+JSON.stringify(onRecFn.param));
-		
-		var appRec=Recorder(onRecFn.param).mock(arr,onRecFn.sampleRate);
 		var end=function(){
 			//把可能变更的配置写回去
-			for(var k in appRec.set){
-				onRecFn.param[k]=appRec.set[k];
+			for(var k in rec.set){
+				onRecFn.param[k]=rec.set[k];
 			};
 		};
-		appRec.stop(function(blob,duration){
+		rec.stop(function(blob,duration){
 			console.log("rec encode end")
 			end();
 			success(blob,duration);
