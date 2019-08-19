@@ -93,7 +93,10 @@ function RandomKey(){
 };
 RandomKey.idx=0;
 </script>
-<script src="https://cdn.bootcss.com/jquery/1.9.1/jquery.min.js"></script>
+<script
+	DEF="/*=:=*/" src="../assets/ztest-jquery.min-1.9.1.js"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/assets/ztest-jquery.min-1.9.1.js' @>*/"
+></script>
 
 
 <div>
@@ -224,7 +227,11 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 
 <script>
 function reclog(s){
-	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	$(".reclog").prepend('<div>['+t+']'+s+'</div>');
 };
 window.onerror=function(message, url, lineNo, columnNo, error){
 	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
@@ -640,12 +647,12 @@ function loadEngine(input){
 			$(".typeTips").html(tips.join(""));
 		};
 		if(!Recorder.prototype[type]){
-			reclog("正在加载"+type+"编码器...");
+			reclog("<span style='color:#f60'>正在加载"+type+"编码器，请勿操作...</span>");
 			var i=-1;
 			var load=function(){
 				i++;
 				if(i>=engines.length){
-					reclog(type+"编码器已准备好");
+					reclog("<span style='color:#0b1'>"+type+"编码器已加载，可以录音了</span>");
 					end();
 					return;
 				}

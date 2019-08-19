@@ -42,7 +42,7 @@ function RandomKey(){
 };
 RandomKey.idx=0;
 </script>
-<script src="https://cdn.bootcss.com/jquery/1.9.1/jquery.min.js"></script>
+<script src="assets/ztest-jquery.min-1.9.1.js"></script>
 
 
 <div class="demoHead">
@@ -95,13 +95,15 @@ RandomKey.idx=0;
 	<div class="pd gitUrl">
 		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a>
 	</div>
-	<div class="pd types">
-		类型:
-		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" class="initType" checked>mp3</label>
-		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
-		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine">ogg(beta)</label>
-		<label><input type="radio" name="type" value="webm" engine="beta-webm">webm(beta)</label>
-		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine,wav">amr(beta)</label>
+	<div class="pd">
+		类型:<span class="types">
+		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" min="/recorder.mp3.min" class="initType" checked>mp3</label>
+		<label><input type="radio" name="type" value="wav" engine="wav" min="/recorder.wav.min">wav</label>
+		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine" min=",beta-ogg">ogg(beta)</label>
+		<label><input type="radio" name="type" value="webm" engine="beta-webm" min=",beta-webm">webm(beta)</label>
+		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine,wav" min=",beta-amr">amr(beta)</label>
+		</span>
+		<label><input type="checkbox" class="loadMinJs">请求压缩版</label>
 	</div>
 	<div class="pd">
 		提示：<span class="typeTips">-</span>
@@ -199,7 +201,11 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 
 <script>
 function reclog(s){
-	$(".reclog").prepend('<div>['+new Date().toLocaleTimeString()+']'+s+'</div>');
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	$(".reclog").prepend('<div>['+t+']'+s+'</div>');
 };
 $(window).bind("error",function(e){
 	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
@@ -707,8 +713,10 @@ $(function(){
 		if(input[0].nodeName=="LABEL"){
 			input=$(input).find("input");
 		};
-		if(prev!=input[0]){
+		var minjs=$(".loadMinJs")[0].checked;
+		if(prev!=input[0]||prev.minjs!==minjs){
 			prev=input[0];
+			prev.minjs=minjs;
 			loadEngine($(input));
 		};
 	});
@@ -716,31 +724,53 @@ $(function(){
 function loadEngine(input){
 	if(input.length&&input[0].nodeName=="INPUT"){
 		var type=input.val();
-		var engines=input.attr("engine").split(",");
+		var srcs=input.attr("engine").split(",");
+		var mins=input.attr("min").split(",");
+		for(var i=0;i<srcs.length;i++){
+			srcs[i]="src/engine/"+srcs[i]+".js";
+		};
+		for(var i=0;i<mins.length;i++){
+			var v=mins[i];
+			if(!v){
+				v="/dist/recorder-core";
+			};
+			if(v.substr(0,1)=="/"){
+				v=v.substr(1);
+			}else{
+				v="dist/engine/"+v;
+			};
+			mins[i]=v+".js";
+		};
+		
+		var minjs=$(".loadMinJs")[0].checked;
+		var engines=minjs?mins:srcs;
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
 			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"+(type=="wav"?"#0b1'>wav转码超快":Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)":"red'>仅支持标准UI线程转码")+"</span>，"+enc.testmsg];
-			tips.push('<div style="color:green">');
-			tips.push("【使用"+type+"录音需要加载的js文件】：");
-			tips.push("src/recorder-core.js, src/engine/");
-			tips.push(engines.join(".js, src/engine/"));
-			tips.push(".js</div>");
+			tips.push('<div style="color:green;padding-left:50px">');
+			tips.push("使用"+type+"录音需要加载的js：");
+			tips.push("<br>【压缩版】："+mins.join("，"))
+			tips.push("<br>【源文件】：src/recorder-core.js, "+srcs.join(", "));
+			tips.push("</div>");
 			
 			$(".typeTips").html(tips.join(""));
 		};
-		if(!Recorder.prototype[type]){
-			reclog("正在加载"+type+"编码器...");
+		if(loadEngineState[type]!==minjs){
+			reclog("<span style='color:#f60'>正在加载"+type+"编码器"+(minjs?"压缩版":"源码版")+"，请勿操作...</span>");
 			var i=-1;
 			var load=function(){
 				i++;
 				if(i>=engines.length){
-					reclog(type+"编码器已准备好");
+					loadEngineState[type]=minjs;
+					Recorder.WaveView=WaveViewBak;
+					
+					reclog("<span style='color:#0b1'>"+type+"编码器"+(minjs?"压缩版":"源码版")+"已加载，可以录音了</span>");
 					end();
 					return;
 				}
 				var elem=document.createElement("script");
 				elem.setAttribute("type","text/javascript");
-				elem.setAttribute("src","src/engine/"+engines[i]+".js");
+				elem.setAttribute("src",engines[i]);
 				elem.onload=function(){
 					load();
 				};
@@ -752,12 +782,23 @@ function loadEngine(input){
 		};
 	};
 };
-loadEngine($(".initType"));
+loadEngineState={};
+var WaveViewBak=Recorder.WaveView;
+
+(function(){try{
+	var minjs=$(".loadMinJs");
+	minjs[0].checked=localStorage["loadMinJs"]!="0";
+	minjs.bind("change",function(){
+		localStorage["loadMinJs"]=minjs[0].checked?"1":"0";
+	});
+	
+	loadEngine($(".initType"));
 
 //pcm测试页面来的
 if(/ispcm=1/.test(location.href)){
 	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox").hide();
 };
+}catch(e){console.error(e)}})();
 </script>
 
 </body>
