@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2019-8-17 12:12:03";
+window.RecorderLM="2019-8-19 23:13:37";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
@@ -169,7 +169,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		var pro=Recorder.Scope.getUserMedia({audio:true},f1,f2);
 		if(pro&&pro.then){
-			pro.then(f1)["catch"](f2);
+			pro.then(f1)[True&&"catch"](f2); //fix 关键字，保证catch压缩时保持字符串形式
 		};
 	}
 	//关闭释放录音资源
