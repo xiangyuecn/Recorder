@@ -84,9 +84,9 @@ Recorder.prototype.mp3_start=function(set){//如果返回null代表不支持
 				break;
 			};
 		};
-		var jsCode=";lamejs();var encObj=new lamejs.Mp3Encoder(1,"+set.sampleRate+","+set.bitRate+"),encArr=[];self.onmessage="+onmsg;
+		var jsCode=");lameFn();var encObj=new lameFn.Mp3Encoder(1,"+set.sampleRate+","+set.bitRate+"),encArr=[];self.onmessage="+onmsg;
 		
-		var worker=new Worker((window.URL||webkitURL).createObjectURL(new Blob([Recorder.lamejs.toString()+jsCode], {type:"text/javascript"})));
+		var worker=new Worker((window.URL||webkitURL).createObjectURL(new Blob(["var lameFn=("+Recorder.lamejs.toString()+jsCode], {type:"text/javascript"})));
 		worker.onmessage=function(e){
 			ctx.call&&ctx.call(e.data);
 			ctx.call=null;
