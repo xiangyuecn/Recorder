@@ -11,18 +11,19 @@
 
 [demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+。
 
-## 【微信】H5测试
+## 【IOS微信】H5测试
 [<img src="../assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
 此demo页面为代理页面（[源](https://xiangyuecn.github.io/Recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
 
-## 【微信】小程序WebView测试
+## 【IOS微信】小程序WebView测试
 [<img src="../assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
 
 1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
 2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
 3. 不出意外就进入了上面这个在线测试页面，开始愉快的测试吧。
 
+> Android微信H5、WebView支持录音，无需特殊兼容，因此上面特意针对IOS微信。
 
 
 # :open_book:仅为兼容IOS而生
