@@ -2,20 +2,25 @@
 
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
-## IOS Hybrid App测试
+## 【IOS】Hybrid App测试
 
-待编写
+[demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和[核心文件RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift)；clone后用`xcode`打开后编译运行（没有`Mac OS`？[装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742)）。
 
-## Android Hybrid App测试
+本demo为swift代码，IOS 9.0+。
 
-待编写
 
-## 微信H5测试
+## 【Android】Hybrid App测试
+
+[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和[核心文件RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java)；目录内[app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip)为打包好的debug包（40kb，删掉.zip后缀，github老发邮件提醒有apk文件），或者clone后自行用`Android Studio`编译打包。
+
+本demo为java代码，API Level 15+。
+
+## 【微信】H5测试
 [<img src="../assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
 此demo页面为代理页面，受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
 
-## 微信小程序WebView测试
+## 【微信】小程序WebView测试
 [<img src="../assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
 
 1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
@@ -24,7 +29,7 @@
 
 
 
-## 仅为兼容IOS而生
+# :open_book:仅为兼容IOS而生
 
 由于IOS上除了`Safari`可以H5录音外，[其他浏览器、WebView](https://forums.developer.apple.com/thread/88052)均不能进行H5录音，Android和PC上情况好很多；可以说是仅为兼容IOS上的微信而生。
 
@@ -61,16 +66,17 @@ IOS其他浏览器||
 
 ## 支持功能
 
-- 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用下面选项。
-- 默认开启`IOS-Weixin`支持，用于支持IOS的微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
-- 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用。
+- 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用`IOS-Weixin`选项。
+- 默认开启`IOS-Weixin`支持，用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
+- 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用；本方式优先级最高。
 
 
 ## 限制功能
 
 - `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
 - `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
-
+- `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
+- `Android WebView`本身是支持录音的(古董版本就算啦)，仅需处理网页授权即可，但Android里面使用网页的录音权限问题可能比原生的权限机制要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多，因此就有了Android版的Hybrid App Demo。
 
 
 # :open_book:快速使用
@@ -78,7 +84,9 @@ IOS其他浏览器||
 ## 【1】加载框架
 ``` html
 <!-- 可选的独立配置文件，提供这些文件时无需修改app.js源码。注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
+<!-- 可选native支持 -->
 <script src="app-support-sample/native-config.js"></script>
+<!-- 可选ios weixin支持 -->
 <script src="app-support-sample/ios-weixin-config.js"></script>
 
 <!-- 在需要录音功能的页面引入`app-support/app.js`文件（src内的为源码、dist内的为压缩后的）即可 （**注意：需要在https等安全环境下才能进行录音**） -->
@@ -88,8 +96,11 @@ IOS其他浏览器||
 ## 【2】调用录音
 然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
 ``` javascript
+//var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于权限请求前执行，因为回调不确定是同步还是异步的
 //请求录音权限
 RecordApp.RequestPermission(function(){
+    //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
+    
     RecordApp.Start({},function(){//使用默认配置开始录音，mp3格式
         setTimeout(function(){
             RecordApp.Stop(function(blob,duration){//到达指定条件停止录音
@@ -104,13 +115,32 @@ RecordApp.RequestPermission(function(){
         console.log("开始录音失败："+msg);
     });
 },function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+    //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
+    
     console.log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg);
 });
 
 
-RecordApp.OnProcess=function(pcmData,powerLevel,duration,sampleRate){
+RecordApp.OnProcess=function(pcmDatas,powerLevel,duration,sampleRate){
     //console.log("PCM实时回调",powerLevel,duration,sampleRate);
 };
+
+//我们可以选择性的弹一个对话框：为了防止当移动端浏览器使用Recorder H5录音时存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
+/*伪代码：
+function createDelayDialog(){
+    if(Is Mobile){//只针对移动端
+        return new Alert Dialog Component
+            .Message("录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~")
+            .Button("忽略")
+            .OnClick(function(){//明确是用户点击的按钮，此时代表浏览器没有发起任何权限请求
+                //此处执行fail逻辑
+                console.log("无法录音：权限请求被忽略");
+            })
+            .OnCancel(NOOP)//自动取消的对话框不需要任何处理
+            .Delay(8000); //延迟8秒显示，这么久还没有操作基本可以判定浏览器有毛病
+    };
+};
+*/
 ```
 
 ## 【附】录音立即播放、上传示例
@@ -123,6 +153,11 @@ RecordApp.OnProcess=function(pcmData,powerLevel,duration,sampleRate){
 
 <img src="../assets/qq_group_781036591.png" width="220px">
 
+
+## 【截图】运行效果图
+
+<img src="../assets/use_native_ios.gif" width="360px">
+ <img src="../assets/use_native_android.gif" width="360px">
 
 
 
@@ -192,7 +227,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 
 ## 【静态方法】RecordApp.ReceivePCM(pcmData,powerLevel,duration,sampleRate)
-此方法由底层实现来调用，在开始录音后，底层如果能实时返还pcm数据，则会调用此方法。
+此方法由底层实现来调用，在开始录音后，底层如果能实时返还pcm数据，则需要调用此方法传递数据给js。
 
 `pcmData`: `Int16[]` 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
 
@@ -210,7 +245,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 支持的平台列表，目前有三个：
 1. `Native`: 原生App平台支持，底层由实际的`JsBridge`提供，此平台默认未开启
 2. `IOS-Weixin`: IOS微信`浏览器`、`小程序web-view`支持，底层使用的`微信JsSDK` `+` `Recorder`，此平台默认开启
-3. `Default`: H5原生支持，底层使用的`Recorder`，此平台默认开启且不允许关闭
+3. `Default`: H5原生支持，底层使用的`Recorder H5`，此平台默认开启且不允许关闭
 
 
 
