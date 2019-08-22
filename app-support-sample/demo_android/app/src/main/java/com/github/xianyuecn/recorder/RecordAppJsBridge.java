@@ -21,6 +21,17 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/* 录音Hybrid App核心支持文件 https://github.com/xiangyuecn/Recorder
+
+ 【使用】
+     1. copy本文件即可使用，其他文件都是多余的
+     2. 在manifest中配置麦克风的权限声明：RECORD_AUDIO、MODIFY_AUDIO_SETTINGS
+     3. 把WebView传进来进行对象注入；实现一个录音权限请求接口；实现一个Log接口，简单内部调用一下android.util.Log.i|e即可
+     4. 调用close进行清理资源和销毁对象
+
+ 【为什么不用UserAgent来识别App环境】
+    通过修改WebView的UA来让H5、服务器判断是不是在App里面运行的，此方法非常简单而且实用。但有一个致命缺陷，当UA数据很敏感的场景下，虽然方便了我方H5、服务器来识别这个App，但也同时也暴露给了任何在此WebView中发起的请求，不可避免的会将我们的标识信息随请求而发送给第三方（虽然可通过额外编程把信息抹掉，但代价太大了）。IOS不动UA基本上别人的服务器几乎不太可能识别出我们的App，Android神一样的把包名添加到了X-Requested-With请求头中，还能不能讲理了。
+*/
 public class RecordAppJsBridge implements Closeable {
     //js中定义的名称
     static private final String JsBridgeName="RecordAppJsBridge";

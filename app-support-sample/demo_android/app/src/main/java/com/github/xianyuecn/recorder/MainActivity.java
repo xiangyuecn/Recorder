@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/* 录音Hybrid App Demo界面 https://github.com/xiangyuecn/Recorder
+ 没什么有用的东西 */
 public class MainActivity extends Activity {
     static private final String LogTag="MainActivity";
 
