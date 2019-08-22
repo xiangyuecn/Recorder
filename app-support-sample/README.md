@@ -4,21 +4,17 @@
 
 ## 【IOS】Hybrid App测试
 
-[demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和[核心文件RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift)；clone后用`xcode`打开后编译运行（没有`Mac OS`？[装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742)）。
-
-本demo为swift代码，IOS 9.0+。
+[demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+。
 
 
 ## 【Android】Hybrid App测试
 
-[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和[核心文件RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java)；目录内[app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip)为打包好的debug包（40kb，删掉.zip后缀，github老发邮件提醒有apk文件），或者clone后自行用`Android Studio`编译打包。
-
-本demo为java代码，API Level 15+。
+[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+。
 
 ## 【微信】H5测试
 [<img src="../assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
-此demo页面为代理页面，受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
+此demo页面为代理页面（[源](https://xiangyuecn.github.io/Recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
 
 ## 【微信】小程序WebView测试
 [<img src="../assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
@@ -156,8 +152,7 @@ function createDelayDialog(){
 
 ## 【截图】运行效果图
 
-<img src="../assets/use_native_ios.gif" width="360px">
- <img src="../assets/use_native_android.gif" width="360px">
+<img src="../assets/use_native_ios.gif" width="360px"> <img src="../assets/use_native_android.gif" width="360px">
 
 
 
