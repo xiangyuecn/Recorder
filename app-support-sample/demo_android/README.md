@@ -10,7 +10,7 @@
 
 
 ## 【截图】
-![](../../assets/use_native_android.gif")
+![](../../assets/use_native_android.gif)
 
 
 ## 【限制】
