@@ -133,19 +133,18 @@ RandomKey.idx=0;
 		}
 	</style>
 	<a class="navItem" href="https://xiangyuecn.github.io/Recorder/">
-		<div class="navTitle">Recorder测试</div>
-		<div class="navDesc">Recorder库使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
+		<div class="navTitle">Recorder H5</div>
+		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
 	</a>
 	
 	<a class="navItem slc" href="https://jiebian.life/web/h5/github/recordapp.aspx">
-		<div class="navTitle">RecordApp测试</div>
+		<div class="navTitle">RecordApp</div>
 		<div class="navDesc">RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view</div>
 	</a>
 </div>
 
 
 
-<!-- begin 开始copy源码 -->
 <div>
 	<div class="pd">
 		<span style="font-size:18px;color:#ef6ea8">似乎仅为仅为兼容IOS而生</span>
@@ -199,6 +198,15 @@ RandomKey.idx=0;
 	<hr>
 	<audio class="recPlay" style="width:100%"></audio>
 	<div class="reclog"></div>
+	
+	<hr>
+	<div class="pd">
+		【测试App】
+		IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
+		
+		，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+	</div>
+	
 	<div class="recinfo"></div>
 </div>
 <script type="text/template" class="tp_recinfo">
@@ -612,7 +620,6 @@ console.log("ConsoleX引擎已开启");
 </script>
 </div>
 <div style="padding:100px;"></div>
-<!-- end 结束copy源码 -->
 
 
 
@@ -684,6 +691,8 @@ function onInstall(){
 	}else{
 		reclog("此页面由服务器代理，源网址<a href='https://xiangyuecn.github.io/Recorder/app-support-sample/'>https://xiangyuecn.github.io/Recorder/app-support-sample/</a>");
 	};
+	
+	reclog("<span style='color:#0b1'>已识别环境："+RecordApp.Current.Key+"</span>");
 };
 if(isInstall){
 	onInstall();

@@ -78,12 +78,12 @@ RandomKey.idx=0;
 		}
 	</style>
 	<a class="navItem slc" href="https://xiangyuecn.github.io/Recorder/">
-		<div class="navTitle">Recorder测试</div>
-		<div class="navDesc">Recorder库使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
+		<div class="navTitle">Recorder H5</div>
+		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
 	</a>
 	
 	<a class="navItem" href="https://jiebian.life/web/h5/github/recordapp.aspx">
-		<div class="navTitle">RecordApp测试</div>
+		<div class="navTitle">RecordApp</div>
 		<div class="navDesc">RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view</div>
 	</a>
 </div>
@@ -151,6 +151,14 @@ RandomKey.idx=0;
 	
 	<hr>
 	<div class="pd">
+		【测试App】
+		IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
+		
+		，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+	</div>
+	
+	<hr>
+	<div class="pd">
 		<button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
 		测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，跨域时未设置相应策略权限永远是拒绝的
 	</div>
@@ -191,7 +199,7 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 </pre>
 <div>
 <hr>
-注：录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
+<span style="color:#f60;font-size:16px;font-weight:bold;">问题自检：</span>录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
 </div>
 <div style="padding-top:20px">
 如果浏览器不能正常录音，并且不确定是不是这个库的问题，可以到 <a href="https://xiangyuecn.github.io/Recorder/assets/ztext_collab-project_videojs-record.html">assets/ztext_collab-project_videojs-record.html</a> 试一下。
