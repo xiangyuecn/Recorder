@@ -32,7 +32,7 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 ## 【2】调用录音
 然后使用，假设立即运行，只录3秒
 ``` javascript
-var rec=Recorder();//使用默认配置，mp3格式
+var rec=Recorder({type:"mp3",sampleRate:16000});//mp3格式，指定采样率，其他参数使用默认配置；注意是数字的参数必须提供数字，不要用字符串
 
 //var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于open执行，因为回调不确定是同步还是异步的
 rec.open(function(){//打开麦克风授权获得相关资源
@@ -228,9 +228,9 @@ IOS其他浏览器||
 ``` javascript
 set={
     type:"mp3" //输出类型：mp3,wav等，使用一个类型前需要先引入对应的编码引擎
-    ,bitRate:16 //比特率 wav(位):16、8，MP3(单位kbps)：8kbps时文件大小1k/s，16kbps 2k/s，录音文件很小
+    ,bitRate:16 //比特率，必须是数字 wav(位):16、8，MP3(单位kbps)：8kbps时文件大小1k/s，16kbps 2k/s，录音文件很小
     
-    ,sampleRate:16000 //采样率，wav格式文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
+    ,sampleRate:16000 //采样率，必须是数字，wav格式（8位）文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
                 //wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
     
     ,bufferSize:4096 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
@@ -320,7 +320,7 @@ function transformOgg(pcmData){
 由于Recorder持有的录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了录音功能。
 
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo)
-对pcm数据的采样率进行转换
+对pcm数据的采样率进行转换，配合mock方法使用效果更佳，比如实时转换成小片段语音文件。
 
 `pcmDatas`: [[Int16,...]] pcm片段列表
 
@@ -453,6 +453,8 @@ set={
 对于支持录音的浏览器能够正常录音并返回录音数据；对于不支持的浏览器，引入js和执行相关方法都不会产生异常，并且进入相关的fail回调。一般在open的时候就能检测到是否支持或者被用户拒绝，可在用户开始录音之前提示浏览器不支持录音或授权。
 
 
+
+
 # :open_book:Android Hybrid App中录音示例
 在Android Hybrid App中使用本库来录音，需要在App源码中实现以下两步分：
 
@@ -479,6 +481,14 @@ public void onPermissionRequest(PermissionRequest request) {
 
 ### 附带测试项目
 [app-support-sample/demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，文件名为`app-debug.apk.zip`，自行去掉.zip后缀）。
+
+
+
+
+# :open_book:IOS Hybrid App中录音示例
+纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecorApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，有IOS App源码。
+
+
 
 
 
