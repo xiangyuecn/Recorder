@@ -32,7 +32,7 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 ## 【2】调用录音
 然后使用，假设立即运行，只录3秒
 ``` javascript
-var rec=Recorder({type:"mp3",sampleRate:16000});//mp3格式，指定采样率，其他参数使用默认配置；注意是数字的参数必须提供数字，不要用字符串
+var rec=Recorder({type:"mp3",sampleRate:16000});//mp3格式，指定采样率，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
 
 //var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于open执行，因为回调不确定是同步还是异步的
 rec.open(function(){//打开麦克风授权获得相关资源
@@ -486,7 +486,7 @@ public void onPermissionRequest(PermissionRequest request) {
 
 
 # :open_book:IOS Hybrid App中录音示例
-纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecorApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，有IOS App源码。
+纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含IOS App源码。
 
 
 
