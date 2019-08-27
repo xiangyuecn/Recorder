@@ -141,8 +141,27 @@ RandomKey.idx=0;
 		<input type="checkbox" class="recwaveSet" checked>
 	</div>
 	<div class="pd">
-		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输</label>
-		，间隔<input type="text" class="realTimeSend" value="1000" style="width:60px">ms
+		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音聊天）</label>
+		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
+		<div class="webrtcSend" style="display:none;border:1px solid #ddd">
+			<div style="color:#06c">（可选）开启H5语音聊天（局域网WebRTC P2P）：</div>
+			<div>
+				接收端播放模式：
+				<label><input type="radio" name="webrtcPlayMode" class="webrtcPlayModeDecode" value="decode" checked>解码播放</label>
+				<label><input type="radio" name="webrtcPlayMode" value="audio">Audio连续播放</label>
+			</div>
+			<div>
+				本机信息：<textarea class="webrtcLocal" readonly style="width:160px;height:60px"></textarea>
+				<input type="button" onclick="webrtcCreate()" value="新建连接">
+			</div>
+			<div>
+				远程信息：<textarea class="webrtcRemote" style="width:160px;height:60px"></textarea>
+				<input type="button" onclick="webrtcConnect()" value="确定连接">
+			</div>
+			<audio class="webrtcPlay1"></audio>
+			<audio class="webrtcPlay2"></audio>
+			<div class="webrtcStatus"></div>
+		</div>
 	</div>
 	
 	<hr>
@@ -209,12 +228,12 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 
 
 <script>
-function reclog(s){
+function reclog(s,e){
 	var now=new Date();
 	var t=("0"+now.getHours()).substr(-2)
 		+":"+("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2);
-	$(".reclog").prepend('<div>['+t+']'+s+'</div>');
+	$(".reclog").prepend('<div style="color:'+(e?"red":"")+'">['+t+']'+s+'</div>');
 };
 $(window).bind("error",function(e){
 	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
@@ -340,6 +359,9 @@ function recstopFn(isClick,endCall,rec){
 		var t1=Date.now();
 		rec.stop(function(blob,time){
 			var tag=endCall("",blob,time);
+			if(tag==-1){
+				return;
+			};
 			
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
@@ -482,7 +504,15 @@ function recdown64(key, cls){
 	};
 	reader.readAsDataURL(o.blob);
 };
+
 $(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
+
+if(window.isSecureContext===false){
+	reclog("当前网页不是安全环境（HTTPS），将无法获取录音权限，<a href='https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security'>MDN Privacy and security</a>",1);
+}else if(window.isSecureContext){
+	reclog("<span style='color:#0b1'>当前网页处在安全环境中</span>(<a href='https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security'>https、file:///等</a>)");
+};
+
 reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");
 reclog("WaveView Extensions已启用");
 
@@ -545,7 +575,14 @@ var realTimeSendTry=function(interval,pcmDatas,sampleRate){
 	};
 	recstopFn(0,function(err,blob,duration){
 		//此处应伪装成发送blob数据
-		//emmmm....
+		//emmmm.... 发送给语音聊天webrtc
+		if(blob&&window.webrtcSend){
+			webrtcSend(blob,{
+				duration:duration
+				,interval:interval
+			});
+			return -1;
+		};
 		
 		var ms=(endT||Date.now())-t1;
 		var max=rec[rec.set.type+"_start"]?99999:1000*pcmDatas[0].length/sampleRate-10;//录音回调1帧时长
@@ -566,6 +603,24 @@ var realTimeSendTryStop=function(){
 		return "实时编码汇总结果";
 	},recMock);
 };
+
+$(".realTimeSendSet").bind("change",function(e){
+	var open=e.target.checked;
+	$(".webrtcSend")[open?"show":"hide"]();
+	if(open && !window.webrtcCreate){
+		var file="zdemo.index.webrtc.js";
+		reclog("正在加载"+file);
+		
+		var elem=document.createElement("script");
+		elem.setAttribute("type","text/javascript");
+		elem.setAttribute("src","assets/"+file);
+		elem.onload=function(){
+			reclog("已加载"+file);
+			reclog("<span style='color:#f60'>实时编码除wav格式外发送间隔尽量不要低于编码速度速度</span>");
+		};
+		$("head")[0].appendChild(elem);
+	};
+});
 </script>
 
 
@@ -799,6 +854,7 @@ var WaveViewBak=Recorder.WaveView;
 	minjs[0].checked=localStorage["loadMinJs"]!="0";
 	minjs.bind("change",function(){
 		localStorage["loadMinJs"]=minjs[0].checked?"1":"0";
+		location.reload();
 	});
 	$(".batEnc").bind("click",function(){
 		if(minjs[0].checked){
