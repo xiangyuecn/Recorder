@@ -1,4 +1,8 @@
-//index.html 中的 webrtc 局域网点对点传输
+/*index.html 中的 webrtc 局域网点对点传输
+参考https://blog.csdn.net/zhhaogen/article/details/54908455
+	https://blog.csdn.net/caoshangpa/article/details/53306992
+*/
+Recorder.Support();//激活Recorder.Ctx
 
 (function(){
 	var i=0;
