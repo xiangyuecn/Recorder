@@ -140,7 +140,7 @@ RandomKey.idx=0;
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
 		<input type="checkbox" class="recwaveSet" checked>
 	</div>
-	<div class="pd">
+	<div class="pd webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
 		<div class="webrtcSend" style="display:none;border:1px solid #ddd">
@@ -414,7 +414,7 @@ function recstop2(){
 			return;
 		};
 		rec.set.bitRate=list[i];
-		rec.state=1;
+		rec.isMock=1;
 		recstopFn(0,function(){
 			setTimeout(run);
 		});
@@ -866,7 +866,7 @@ var WaveViewBak=Recorder.WaveView;
 
 //pcm测试页面来的
 if(/ispcm=1/.test(location.href)){
-	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox").hide();
+	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox,.webrtcBox").hide();
 };
 }catch(e){console.error(e)}})();
 </script>
