@@ -79,12 +79,30 @@ function webrtcOpen(){
 	if($(".realTimeSend").val()=="996"){
 		$(".realTimeSend").val(500);
 	};
+	rtcStatusView();
+};
+function webrtcClose(){
+	rtcStatusView();
+};
+function webrtcCloseClick(){
+	if(rtcConn){
+		rtcConn.close();
+	};
 };
 
 
 var rtcStatusView=function(){
-	rtcStatus.html('<div>发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片</div>"
-	+'<div>接收：'+rtcRecMime+" "+rtcRecLen+"b "+rtcRecCount+"片 共"+rtcBitF(rtcRecSize)+" Skip:"+rtcRecSkip+"片 PlayMode:"+rtcPlayMode+"</div>");
+	var html=[];
+	if(rtcChannelOpen){
+		html.push('<div><input type="button" onclick="webrtcCloseClick()" value="关闭连接"></div>');
+	}else{
+		html.push("连接已关闭，停止数据收发");
+	};
+	
+	html.push('<div>发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片</div>");
+	html.push('<div>接收：'+rtcRecMime+" "+rtcRecLen+"b "+rtcRecCount+"片 共"+rtcBitF(rtcRecSize)+" Skip:"+rtcRecSkip+"片 PlayMode:"+rtcPlayMode+"</div>");
+	
+	rtcStatus.html(html.join("\n"));
 };
 var rtcBitF=function(size){
 	if(size<1024*900){
@@ -105,7 +123,7 @@ var rtcStatus=$(".webrtcStatus");
 //*****语音流播放*****
 var rtcPlayBuffer=[];
 var rtcPlayModeDecode=$(".webrtcPlayModeDecode")[0];
-var rtcPlayMode="";
+var rtcPlayMode="-";
 var rtcPlay=function(){
 	if(rtcPlayModeDecode.checked){
 		rtcPlayMode="decode";
@@ -161,12 +179,12 @@ var rtcDecodePlay=function(decode){
 		var pd=itm.duration;
 		var duration=sd;
 		var arr=pcm;
-		if(pd<sd){//数据变多了
+		if(pd<sd){//数据变多了，原因在于编码器并不一定精确时间的编码，mp3首尾有静默但长度未知
 			duration=pd;
 			//分别去掉首尾，（尾并未真实去掉，方便衔接）
 			arr=pcm.slice(Math.floor((sd-pd)/1000*raw.sampleRate/2),pcm.length);
 		}else{
-			arr=pcm;
+			//数据少了不管
 		};
 		
 		var buffer=ctx.createBuffer(1,arr.length,raw.sampleRate);
@@ -178,7 +196,8 @@ var rtcDecodePlay=function(decode){
 		source.connect(ctx.destination);
 		source.start();
 		
-		rtcDecPlaySource&&rtcDecPlaySource.stop();
+		//不关闭上一个，让它继续播放完结尾，衔接起来好些
+		//rtcDecPlaySource&&rtcDecPlaySource.stop();
 		rtcDecPlaySource=source;
 		
 		rtcDecPlayTimeSkips.splice(0,0,Date.now()-rtcDecPlayTime);
@@ -205,6 +224,8 @@ var rtcDecodePlay=function(decode){
 var rtcAudioPlay1;
 var rtcAudioPlay2;
 var rtcAudioPlayCur,rtcAudioPlayPrev;
+var rtcAudioPlayItm;
+var rtcAudioPlayNextTime;
 var rtcAudioPlayID=0;
 var rtcAudioPlayTime=0;
 var rtcAudioPlayTimeSkips=[0,0,0];
@@ -222,15 +243,15 @@ var rtcAuidoPlay=function(){
 			if(audio.rtcPlayID!=rtcAudioPlayID){
 				return;
 			};
-			var t=(audio.duration*1000-(Date.now()-rtcAudioPlayTime));
-			if(t<=rtcAudioPlayTimeSkip+3){
+			if(rtcAudioPlayNextTime<=Date.now()+3){
 				audio.rtcPlayID=-1;
 				rtcAuidoPlay();
 			};
 		},6);
 		//计算从开始播放到发出声音的延迟
 		rtcAudioPlay1.onplaying=rtcAudioPlay2.onplaying=function(e){
-			e.target.rtcPlayID=rtcAudioPlayID;
+			var audio=e.target;
+			audio.rtcPlayID=rtcAudioPlayID;
 			rtcAudioPlayTimeSkips.splice(0,0,Date.now()-rtcAudioPlayTime);
 			rtcAudioPlayTime=Date.now();
 			
@@ -240,7 +261,20 @@ var rtcAuidoPlay=function(){
 			
 			rtcAudioPlayTimeSkip=(rtcAudioPlayTimeSkips[0]+rtcAudioPlayTimeSkips[1]+rtcAudioPlayTimeSkips[2])/3;
 			
-			rtcAudioPlayPrev&&rtcAudioPlayPrev.pause();
+			//不关闭上一个，让它继续播放完结尾，衔接起来好些
+			//rtcAudioPlayPrev&&rtcAudioPlayPrev.pause();
+			
+			var sd=audio.duration*1000;
+			var pd=rtcAudioPlayItm.duration;
+			var duration=sd;
+			var skip=0;
+			if(pd<sd){//编码器并不一定精确时间的编码，mp3首尾有静默但长度未知
+				duration=pd;
+				//分别跳过首尾（其实保留尾）
+				skip=(sd-pd)/2;
+			};
+			
+			rtcAudioPlayNextTime=Date.now()+duration-skip-rtcAudioPlayTimeSkip;
 		};
 	};
 	
@@ -260,6 +294,7 @@ var rtcAuidoPlay=function(){
 	
 	rtcAudioPlayTime=Date.now();
 	var itm=rtcPlayBuffer.pop();
+	rtcAudioPlayItm=itm;
 	rtcAudioPlayCur.src="data:"+itm.mime+";base64,"+itm.data;
 	rtcAudioPlayCur.play();
 };
@@ -283,33 +318,32 @@ function webrtcInitTry(){
 		return;
 	};
 	rtcConn=new RTC(null,null);
-	
+};
+function webrtcInfoCreate(fn,msg){
+	rtcConn.oniceconnectionstatechange=function(){
+		var state=rtcConn.iceConnectionState;
+		reclog("WebRTC Connect State: "+state);
+		if(state=="disconnected"){
+			rtcConn.close();
+		};
+	};
 	rtcConn.onicecandidate=function(e){
 		var v=e.candidate;
 		if(v){
-			var info=$(".webrtcLocal");
-			var obj=info.val()&&JSON.parse(info.val())||{};
-			(obj.iceList||(obj.iceList=[])).push(v);
-			info.val(JSON.stringify(obj));
-			console.log("candidate",v.candidate,[v]);
-		}else{
-			console.log("null candidate",e);
+			//等待为null时结束
+			console.log("ICE",v.candidate,[v]);
+			return;
 		};
+		$(".webrtcLocal").val(JSON.stringify(rtcConn.localDescription));
+		reclog(msg);
 	};
-};
-function webrtcInfoCreate(fn,key,msg){
+	
 	var r=0;
 	var t=function(v){
-		if(!v||r) return; r=1;
+		if(!v||r) return; r=1;//防止callback和then重入
 		rtcConn.setLocalDescription(v);
 		
-		var info=$(".webrtcLocal");
-		var obj=info.val()&&JSON.parse(info.val())||{};
-		obj[key]=v;
-		info.val(JSON.stringify(obj));
-		
-		reclog(msg);
-		console.log(key,v);
+		console.log(fn,v);
 	};
 	var f=function(e){
 		reclog("出错啦:"+e,1);
@@ -324,8 +358,9 @@ function webrtcCreate(){
 		return;
 	};
 	rtcConn.onnegotiationneeded=function(){
-		webrtcInfoCreate("createOffer","offer",'已新建连接，请将本机信息复制到另外一个设备的"远程信息"输入框中，并点击确定连接');
+		webrtcInfoCreate("createOffer",'已新建连接，请将本机信息复制到另外一个设备的"远程信息"输入框中，并点击确定连接');
 	};
+	reclog("创建连接中...");
 	rtcChannel=rtcConn.createDataChannel("REC RTC");
 };
 function webrtcConnect(){
@@ -349,8 +384,15 @@ function webrtcConnect(){
 			webrtcOpen();
 		};
 		rtcChannel.onclose=function(){
+			rtcChannelOpen=0;
+			rtcConn=null;
+			rtcChannel=null;
+			$(".webrtcLocal").val("");
+			$(".webrtcRemote").val("");
+			
 			console.log("连接已关闭");
 			reclog("连接已关闭");
+			webrtcClose();
 		};
 		rtcChannel.onmessage=function(e){
 			webrtcReceive(e.data);
@@ -363,28 +405,25 @@ function webrtcConnect(){
 	
 	if(isLocal){
 		//对方已确认连接
-		if(!remote.answer){
+		if(remote.type!="answer"){
 			reclog("远程信息不是通过确定连接创建的");
 			return;
 		};
 		bind();
-		rtcConn.setRemoteDescription(new RTCSessionDescription(remote.answer));
+		rtcConn.setRemoteDescription(new RTCSessionDescription(remote));
 	}else{
 		//新创建远程连接
-		if(!remote.offer){
+		if(remote.type!="offer"){
 			reclog("远程信息不是通过新建连接创建的");
 			return;
 		};
-		rtcConn.setRemoteDescription(new RTCSessionDescription(remote.offer));
+		rtcConn.setRemoteDescription(new RTCSessionDescription(remote));
 		
 		rtcConn.ondatachannel=function(e){
 			rtcChannel=e.channel;
 			bind();
 		};
-		webrtcInfoCreate("createAnswer","answer",'已连接，请将本机信息复制到上一个设备的"远程信息"输入框中，并点击确定连接');
-	};
-	
-	for(var i=0,len=remote.iceList.length;i<len;i++){
-		rtcConn.addIceCandidate(new RTCIceCandidate(remote.iceList[i]));
+		reclog("远程连接中...");
+		webrtcInfoCreate("createAnswer",'已连接，请将本机信息复制到上一个设备的"远程信息"输入框中，并点击确定连接');
 	};
 };

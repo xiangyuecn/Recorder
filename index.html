@@ -576,7 +576,7 @@ var realTimeSendTry=function(interval,pcmDatas,sampleRate){
 	recstopFn(0,function(err,blob,duration){
 		//此处应伪装成发送blob数据
 		//emmmm.... 发送给语音聊天webrtc
-		if(blob&&window.webrtcSend){
+		if(blob&&window.rtcChannelOpen){
 			webrtcSend(blob,{
 				duration:duration
 				,interval:interval
