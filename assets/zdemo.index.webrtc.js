@@ -16,7 +16,7 @@ Recorder.Support();//激活Recorder.Ctx
 	,(++i)+'. 复制设备B"本机信息"到设备A的"远程信息"中，设备A中点击确定连接'
 	,(++i)+'. 连接已建立，任何一方都可随时开始录音，并且数据都会发送给另外一方'
 	,''
-	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式对wav都是支持的很好的；MP3解码播放会更好些，Audio播放延迟严重。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量'
+	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式的音质wav算是可以的，MP3次之。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量'
 	,''
 	,'<span style="color:red">本demo仅支持局域网</span>（无需服务器支持），采用WebRTC P2P传输数据，如果要支持公网访问会异常复杂，实际使用时用WebSocket来进行数据传输数据会简单很多'
 	,''
@@ -181,8 +181,9 @@ var rtcDecodePlay=function(decode){
 		var arr=pcm;
 		if(pd<sd){//数据变多了，原因在于编码器并不一定精确时间的编码，mp3首尾有静默但长度未知
 			duration=pd;
-			//分别去掉首尾，（尾并未真实去掉，方便衔接）
-			arr=pcm.slice(Math.floor((sd-pd)/1000*raw.sampleRate/2),pcm.length);
+			//分别去掉首尾，（尾并保留一点，方便衔接）
+			var skip=Math.floor((sd-pd)/1000*raw.sampleRate/2);
+			arr=pcm.slice(skip,pcm.length-skip/2);
 		}else{
 			//数据少了不管
 		};
