@@ -87,7 +87,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-8-13 13:45:36";
+var PageLM="2019-8-29 11:20:24";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -194,6 +194,11 @@ RandomKey.idx=0;
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
 		<input type="checkbox" class="recwaveSet" checked>
 	</div>
+	<div class="pd webrtcBox">
+		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
+		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
+		<div class="webrtcView" style="display:none;"></div>
+	</div>
 	
 	<hr>
 	<audio class="recPlay" style="width:100%"></audio>
@@ -236,12 +241,12 @@ Recorder库修改时间（有可能修改了忘改）:{fn:RecorderLM}
 
 
 <script>
-function reclog(s){
+function reclog(s,e){
 	var now=new Date();
 	var t=("0"+now.getHours()).substr(-2)
 		+":"+("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2);
-	$(".reclog").prepend('<div>['+t+']'+s+'</div>');
+	$(".reclog").prepend('<div style="color:'+(e?"red":"")+'">['+t+']'+s+'</div>');
 };
 window.onerror=function(message, url, lineNo, columnNo, error){
 	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
@@ -340,10 +345,29 @@ function recstart(){
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
 	var wave,waveSet=$(".recwaveSet")[0].checked;
+	
+	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
+	var realTimeSendTime=+$(".realTimeSend").val();
+	window.realTimeSendTryReset&&realTimeSendTryReset();
+	if(realTimeSendSet&&!RecordApp.Current.CanProcess()){
+		reclog("当前环境"+RecordApp.Current.Key+"不支持实时回调，不能模拟实时编码传输",1);
+	};
+	
+	
 	var set={
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
+		,onProcess:function(buffers,level,time,sampleRate){
+			$(".recpowerx").css("width",level+"%");
+			$(".recpowert").html(time+"/"+level);
+			
+			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
+			
+			if(realTimeSendSet&&window.realTimeSendTry){
+				realTimeSendTry(set,realTimeSendTime,buffers,sampleRate);
+			};
+		}
 	};
 	curSet=null;
 	RecordApp.Start(set,function(){
@@ -354,15 +378,39 @@ function recstart(){
 	},function(err){
 		reclog(RecordApp.Current.Key+"打开失败："+err);
 	});
-	RecordApp.OnProcess=function(buffers,level,time,sampleRate){
-		$(".recpowerx").css("width",level+"%");
-		$(".recpowert").html(time+"/"+level);
-		
-		waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
-	};
 };
 var recblob={};
-function recstop(batCall){
+function recstop(){
+	recstopFn(true,function(){
+		setTimeout(function(){
+			window.realTimeSendTryStop&&realTimeSendTryStop(curSet);
+		});
+	});
+};
+function recstopFn(isClick,endCall,rec){
+	var t1=Date.now();
+	
+	var add=function(time,tag,blob,set){
+		var id=RandomKey(16);
+		recblob[id]={blob:blob,set:$.extend({},set),time:time};
+		reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+	};
+	
+	if(!isClick){
+		rec.stop(function(blob,time){
+			var tag=endCall("",blob,time);
+			if(tag==-1){
+				return;
+			};
+			
+			add(time,tag||"已录制",blob,rec.set);
+		},function(s){
+			reclog("失败："+s);
+			endCall(s);
+		});
+		return;
+	};
+	
 	if(!curSet){
 		reclog("请先开始录音");
 		return;
@@ -371,13 +419,8 @@ function recstop(batCall){
 	curSet=null;
 	
 	reclog(RecordApp.Current.Key+"正在结束"+setData.type+"...");
-	var t1=Date.now();
 	RecordApp.Stop(function(blob,time){
-		var add=function(tag,blob,set){
-			var id=RandomKey(16);
-			recblob[id]={blob:blob,set:$.extend({},set),time:time};
-			reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
-		};
+		endCall("",blob,time);
 		
 		var wxData=setData.DownWxMediaData;//微信JsSDK 下载到的音频源文件
 		if(wxData){
@@ -389,7 +432,6 @@ function recstop(batCall){
 				reclog("<span style='color:#fb0'>播放需要上面点击换到amr类型，加载amr解码器，目前未加载<span>");
 			};
 			
-			var timex=time;
 			var t1x=t1;
 			t1=Date.now();
 			for(var i=0;i<list.length;i++){
@@ -399,15 +441,14 @@ function recstop(batCall){
 					u8arr[n]=bstr.charCodeAt(n);
 				};
 				var blob2=new Blob([u8arr.buffer], {type:obj.mime});
-				time=obj.duration;
-				add("<span style='color:#0b1'>微信源片段"+(i+1)+"</span>",blob2,{type:/\/(\w+)/.exec(obj.mime)[1]});
+				add(obj.duration,"<span style='color:#0b1'>微信源片段"+(i+1)+"</span>",blob2,{type:/\/(\w+)/.exec(obj.mime)[1]});
 			};
 			t1=t1x;
-			time=timex;
 		};
-		add("已录制",blob,setData);
+		add(time,"已录制",blob,setData);
 	},function(s){
 		reclog("失败："+s);
+		endCall(s);
 	});
 };
 var intp=function(s,len){
@@ -488,6 +529,24 @@ if(window.top!=window){
 	
 	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略H5录音权限永远是拒绝的")+"</span>");
 };
+
+
+
+
+//实时传输数据模拟开关
+$(".realTimeSendSet").bind("change",function(e){
+	var open=e.target.checked;
+	$(".webrtcView")[open?"show":"hide"]();
+	if(open && !window.webrtcCreate){
+		var file="zdemo.index.webrtc.js";
+		reclog("正在加载"+file+" ...");
+		
+		var elem=document.createElement("script");
+		elem.setAttribute("type","text/javascript");
+		elem.setAttribute("src","../assets/"+file);
+		$("head")[0].appendChild(elem);
+	};
+});
 </script>
 
 

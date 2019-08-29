@@ -165,8 +165,12 @@ config.JsBridgeStop=function(success,fail){
 };
 
 
-if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href))
+if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href)
+	&& !localStorage["DisableAppSampleAlert"])
+	&& !window.AppSampleAlert){
+	window.AppSampleAlert=1;
 	alert("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
+}
 
 
 if(window.RecordApp){

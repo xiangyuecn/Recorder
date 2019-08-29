@@ -4,10 +4,14 @@
 */
 Recorder.Support();//激活Recorder.Ctx
 
+
+/*********注入界面******************/
 (function(){
+	reclog("<span style='color:#f60'>实时编码除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>");
+	
 	var i=0;
-	reclog([
-	'<div style="color:#06c">**************'
+	reclog(['已开启实时编码传输模拟'
+	,'<div style="color:#06c">**************'
 	,'如果需要模拟语音通话聊天，开启步骤：'
 	,(++i)+'. 准备局域网内两台设备(设备A、设备B)用最新版本浏览器(demo未适配低版本)分别打开本页面（也可以是同一台设备打开两个网页）'
 	,(++i)+'. 在设备A上点击"新建连接"'
@@ -16,17 +20,125 @@ Recorder.Support();//激活Recorder.Ctx
 	,(++i)+'. 复制设备B"本机信息"到设备A的"远程信息"中，设备A中点击确定连接'
 	,(++i)+'. 连接已建立，任何一方都可随时开始录音，并且数据都会发送给另外一方'
 	,''
-	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式的音质wav算是可以的，MP3次之。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量'
+	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式的音质wav算是勉强最好，MP3差点。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外MP3编码出来的音频的播放时间比PCM原始数据要长一些，这个地方需要注意。'
 	,''
 	,'<span style="color:red">本demo仅支持局域网</span>（无需服务器支持），采用WebRTC P2P传输数据，如果要支持公网访问会异常复杂，实际使用时用WebSocket来进行数据传输数据会简单很多'
 	,''
 	,'IOS就不要用了，12.3.1 Safari还要到设置里面打开WebRTC ICE试验性功能'
 	,''
+	,'PC（设备A）和Android Hybrid App（设备B）进行测试正常，但手机如果作为Peer A未能连接成功。'
+	,''
 	,'本功能主要目的在于验证H5录音实时转码、传输的可行性，并验证实时转码mp3格式小片段文件接收后的可播放性。结果：单纯的接收播放移动端和pc端并无太大差异，如果同时录音和同时播放，移动端性能低下设备卡顿明显，原因在于播放方法中有个6毫秒的暴力定时器（最开始1毫秒卡的动都动不了），换合理的播放方法应该可以做到比较完美。'
 	,'**************</div>'
 	].join("<br>"));
+	
+	$(".webrtcView").html([""
+,'<div class="webrtcSend" style="border:1px solid #ddd">'
+,'	<div style="color:#06c">（可选）开启H5语音通话聊天（局域网WebRTC P2P）：</div>'
+,'	<div>'
+,'		接收端播放模式：'
+,'		<label><input type="radio" name="webrtcPlayMode" class="webrtcPlayModeDecode" value="decode" checked>解码播放</label>'
+,'		<label><input type="radio" name="webrtcPlayMode" value="audio">Audio连续播放</label>'
+,'	</div>'
+,'	<div>'
+,'		本机信息：<textarea class="webrtcLocal" readonly style="width:160px;height:60px"></textarea>'
+,'		<input type="button" onclick="webrtcCreate()" value="新建连接">'
+,'	</div>'
+,'	<div>'
+,'		远程信息：<textarea class="webrtcRemote" style="width:160px;height:60px"></textarea>'
+,'		<input type="button" onclick="webrtcConnect()" value="确定连接">'
+,'	</div>'
+,'	<audio class="webrtcPlay1"></audio>'
+,'	<audio class="webrtcPlay2"></audio>'
+,'	<div class="webrtcStatus"></div>'
+,'</div>'
+	].join("\n"));
 })();
 
+
+
+var realTimeSendTryTime=0;
+var realTimeSendTryChunk;
+var realTimeSendTryChunks;
+var realTimeSendTryChunkSampleRate;
+var realTimeSendTryReset=function(){
+	realTimeSendTryTime=0;
+};
+var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
+	var t1=Date.now(),endT=0,recImpl=Recorder.prototype;
+	if(realTimeSendTryTime==0){
+		realTimeSendTryTime=t1;
+		realTimeSendTryChunk=null;
+		realTimeSendTryChunks=[];
+		
+		if(recSet.type=="wav"){
+			reclog("<span style='color:#0b1'>实时编码wav格式很快，无需任何优化</span>");
+		}else if(recImpl[recSet.type+"_start"]){
+			reclog("<span style='color:#0b1'>实时编码"+recSet.type+"格式支持边录边转码(Worker)</span>");
+		}else{
+			reclog("<span style='color:#f60'>实时编码"+recSet.type+"格式采用UI线程转码，将会有明显卡顿</span>");
+		};
+	};
+	if(t1-realTimeSendTryTime<interval){
+		return;
+	};
+	realTimeSendTryTime=t1;
+	
+	//借用SampleData函数进行数据的连续处理，采样率转换是次要的
+	var chunk=Recorder.SampleData(pcmDatas,sampleRate,recSet.sampleRate,realTimeSendTryChunk);
+	realTimeSendTryChunk=chunk;
+	realTimeSendTryChunks.push(chunk.data);
+	realTimeSendTryChunkSampleRate=chunk.sampleRate;
+	
+	var recMock=Recorder($.extend({},recSet));
+	recMock.mock(chunk.data,chunk.sampleRate);
+	
+	if(recImpl[recSet.type+"_start"]){
+		endT=Date.now();
+	};
+	recstopFn(0,function(err,blob,duration){
+		//此处应伪装成发送blob数据
+		//emmmm.... 发送给语音聊天webrtc
+		if(blob&&window.rtcChannelOpen){
+			webrtcSend(blob,{
+				duration:duration
+				,interval:interval
+			});
+			return -1;
+		};
+		
+		var ms=(endT||Date.now())-t1;
+		var max=recImpl[recSet.type+"_start"]?99999:1000*pcmDatas[0].length/sampleRate-10;//录音回调1帧时长
+		return realTimeSendTryChunks.length+"实时编码占用<span style='color:"+(ms>max?"red":"")+"'>"+ms+"ms</span>";
+	},recMock);
+};
+var realTimeSendTryStop=function(recSet){
+	if(!realTimeSendTryTime){
+		return;
+	}
+	
+	//借用SampleData函数把二维数据转成一维，采样率转换是次要的
+	var chunk=Recorder.SampleData(realTimeSendTryChunks,realTimeSendTryChunkSampleRate,realTimeSendTryChunkSampleRate);
+	
+	var recMock=Recorder($.extend({},recSet));
+	recMock.mock(chunk.data,chunk.sampleRate);
+	recstopFn(0,function(err,blob,time){
+		return "实时编码汇总结果";
+	},recMock);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+/*********接口********************/
 function webrtcSend(blob,info){
 	if(!rtcChannelOpen){
 		return;

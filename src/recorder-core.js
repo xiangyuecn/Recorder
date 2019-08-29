@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2019-8-19 23:13:37";
+window.RecorderLM="2019-8-29 11:19:34";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
@@ -269,12 +269,8 @@ Recorder.prototype=initFn.prototype={
 		};
 		
 		var duration=Math.round(bufferSize/bufferSampleRate*1000);
-		return {
-			bf:buffers
-			,pl:powerLevel
-			,dt:duration
-			,sr:bufferSampleRate
-		};
+		
+		set.onProcess(buffers,powerLevel,duration,bufferSampleRate);
 	}
 	
 	
@@ -325,9 +321,7 @@ Recorder.prototype=initFn.prototype={
 				sum+=Math.abs(s);
 			};
 			
-			var res=This.envIn(pcm,sum);
-			//res为{ bf:buffers ,pl:powerLevel ,dt:duration ,sr:bufferSampleRate }
-			set.onProcess(res.bf,res.pl,res.dt,res.sr);
+			This.envIn(pcm,sum);
 		};
 		
 		media.connect(process);

@@ -49,9 +49,7 @@ var onRecFn=window.NativeRecordReceivePCM=window.top.NativeRecordReceivePCM=func
 		sum+=Math.abs(s);
 	};
 	
-	var res=rec.envIn(pcm,sum);
-	//res为{ bf:buffers ,pl:powerLevel ,dt:duration ,sr:bufferSampleRate }
-	App.ReceivePCM(res.bf[res.bf.length-1],res.pl,res.dt,res.sr);
+	rec.envIn(pcm,sum);
 };
 
 

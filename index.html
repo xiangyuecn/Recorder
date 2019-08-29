@@ -35,7 +35,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-8-27 23:43:57";
+var PageLM="2019-8-29 11:20:33";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -143,25 +143,7 @@ RandomKey.idx=0;
 	<div class="pd webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
-		<div class="webrtcSend" style="display:none;border:1px solid #ddd">
-			<div style="color:#06c">（可选）开启H5语音通话聊天（局域网WebRTC P2P）：</div>
-			<div>
-				接收端播放模式：
-				<label><input type="radio" name="webrtcPlayMode" class="webrtcPlayModeDecode" value="decode" checked>解码播放</label>
-				<label><input type="radio" name="webrtcPlayMode" value="audio">Audio连续播放</label>
-			</div>
-			<div>
-				本机信息：<textarea class="webrtcLocal" readonly style="width:160px;height:60px"></textarea>
-				<input type="button" onclick="webrtcCreate()" value="新建连接">
-			</div>
-			<div>
-				远程信息：<textarea class="webrtcRemote" style="width:160px;height:60px"></textarea>
-				<input type="button" onclick="webrtcConnect()" value="确定连接">
-			</div>
-			<audio class="webrtcPlay1"></audio>
-			<audio class="webrtcPlay2"></audio>
-			<div class="webrtcStatus"></div>
-		</div>
+		<div class="webrtcView" style="display:none;"></div>
 	</div>
 	
 	<hr>
@@ -253,7 +235,7 @@ function recopen(){
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
-	realTimeSendTryTime=0;
+	window.realTimeSendTryReset&&realTimeSendTryReset();
 	
 	rec=Recorder({
 		type:type
@@ -265,8 +247,8 @@ function recopen(){
 			
 			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
 			
-			if(realTimeSendSet){
-				realTimeSendTry(realTimeSendTime,buffers,sampleRate);
+			if(realTimeSendSet&&window.realTimeSendTry){
+				realTimeSendTry(rec.set,realTimeSendTime,buffers,sampleRate);
 			};
 		}
 	});
@@ -346,7 +328,7 @@ var recblob={};
 function recstop(){
 	recstopFn(true,function(){
 		setTimeout(function(){
-			realTimeSendTryStop();
+			window.realTimeSendTryStop&&realTimeSendTryStop(rec.set);
 		});
 	});
 };
@@ -536,88 +518,17 @@ if(window.top!=window){
 
 
 
-//实时传输数据模拟
-var realTimeSendTryTime=0;
-var realTimeSendTryChunk;
-var realTimeSendTryChunks;
-var realTimeSendTryChunkSampleRate;
-var realTimeSendTry=function(interval,pcmDatas,sampleRate){
-	var t1=Date.now(),endT=0;
-	if(realTimeSendTryTime==0){
-		realTimeSendTryTime=t1;
-		realTimeSendTryChunk=null;
-		realTimeSendTryChunks=[];
-		
-		if(rec.set.type=="wav"){
-			reclog("<span style='color:#0b1'>实时编码wav格式很快，无需任何优化</span>");
-		}else if(rec[rec.set.type+"_start"]){
-			reclog("<span style='color:#0b1'>实时编码"+rec.set.type+"格式支持边录边转码(Worker)</span>");
-		}else{
-			reclog("<span style='color:#f60'>实时编码"+rec.set.type+"格式采用UI线程转码，将会有明显卡顿</span>");
-		};
-	};
-	if(t1-realTimeSendTryTime<interval){
-		return;
-	};
-	realTimeSendTryTime=t1;
-	
-	//借用SampleData函数进行数据的连续处理，采样率转换是次要的
-	var chunk=Recorder.SampleData(pcmDatas,sampleRate,rec.set.sampleRate,realTimeSendTryChunk);
-	realTimeSendTryChunk=chunk;
-	realTimeSendTryChunks.push(chunk.data);
-	realTimeSendTryChunkSampleRate=chunk.sampleRate;
-	
-	var recMock=Recorder($.extend({},rec.set));
-	recMock.mock(chunk.data,chunk.sampleRate);
-	
-	if(rec[rec.set.type+"_start"]){
-		endT=Date.now();
-	};
-	recstopFn(0,function(err,blob,duration){
-		//此处应伪装成发送blob数据
-		//emmmm.... 发送给语音聊天webrtc
-		if(blob&&window.rtcChannelOpen){
-			webrtcSend(blob,{
-				duration:duration
-				,interval:interval
-			});
-			return -1;
-		};
-		
-		var ms=(endT||Date.now())-t1;
-		var max=rec[rec.set.type+"_start"]?99999:1000*pcmDatas[0].length/sampleRate-10;//录音回调1帧时长
-		return realTimeSendTryChunks.length+"实时编码占用<span style='color:"+(ms>max?"red":"")+"'>"+ms+"ms</span>";
-	},recMock);
-};
-var realTimeSendTryStop=function(){
-	if(!realTimeSendTryTime){
-		return;
-	}
-	
-	//借用SampleData函数把二维数据转成一维，采样率转换是次要的
-	var chunk=Recorder.SampleData(realTimeSendTryChunks,realTimeSendTryChunkSampleRate,realTimeSendTryChunkSampleRate);
-	
-	var recMock=Recorder($.extend({},rec.set));
-	recMock.mock(chunk.data,chunk.sampleRate);
-	recstopFn(0,function(err,blob,time){
-		return "实时编码汇总结果";
-	},recMock);
-};
-
+//实时传输数据模拟开关
 $(".realTimeSendSet").bind("change",function(e){
 	var open=e.target.checked;
-	$(".webrtcSend")[open?"show":"hide"]();
+	$(".webrtcView")[open?"show":"hide"]();
 	if(open && !window.webrtcCreate){
 		var file="zdemo.index.webrtc.js";
-		reclog("正在加载"+file);
+		reclog("正在加载"+file+" ...");
 		
 		var elem=document.createElement("script");
 		elem.setAttribute("type","text/javascript");
-		elem.setAttribute("src","assets/"+file);
-		elem.onload=function(){
-			reclog("已加载"+file);
-			reclog("<span style='color:#f60'>实时编码除wav格式外发送间隔尽量不要低于编码速度速度</span>");
-		};
+		elem.setAttribute("src",window.webrtcJSPath||("assets/"+file));
 		$("head")[0].appendChild(elem);
 	};
 });

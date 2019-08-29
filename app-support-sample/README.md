@@ -63,6 +63,7 @@ IOS其他浏览器||
 
 ## 支持功能
 
+- 会自动加载`Recorder`，因此`Recorder`支持的功能，`RecordApp`基本上都能支持，包括语音通话聊天。
 - 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用`IOS-Weixin`选项。
 - 默认开启`IOS-Weixin`支持，用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
 - 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用；本方式优先级最高。
@@ -70,7 +71,7 @@ IOS其他浏览器||
 
 ## 限制功能
 
-- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
+- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
 - `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
 - `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
 - `Android WebView`本身是支持录音的(古董版本就算啦)，仅需处理网页授权即可，但Android里面使用网页的录音权限问题可能比原生的权限机制要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo。
@@ -98,7 +99,7 @@ IOS其他浏览器||
 RecordApp.RequestPermission(function(){
     //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
     
-    RecordApp.Start({},function(){//使用默认配置开始录音，mp3格式
+    RecordApp.Start({type:"mp3",sampleRate:16000},function(){//mp3格式，指定采样率，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把支持文件到Platforms.Default内注册
         setTimeout(function(){
             RecordApp.Stop(function(blob,duration){//到达指定条件停止录音
                 console.log((window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
@@ -117,10 +118,6 @@ RecordApp.RequestPermission(function(){
     console.log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg);
 });
 
-
-RecordApp.OnProcess=function(pcmDatas,powerLevel,duration,sampleRate){
-    //console.log("PCM实时回调",powerLevel,duration,sampleRate);
-};
 
 //我们可以选择性的弹一个对话框：为了防止当移动端浏览器使用Recorder H5录音时存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
 /*伪代码：
@@ -170,7 +167,7 @@ function createDelayDialog(){
 ## 【静态方法】RecordApp.Start(set,success,fail)
 开始录音，需先调用`RecordApp.RequestPermission`。
 
-注：开始录音后如果底层支持实时返还数据，将会回调`RecordApp.OnProcess`事件方法，只需要给他赋一个值。
+注：开始录音后如果底层支持实时返回PCM数据，将会回调`set.onProcess`事件方法，并非所有平台都支持实时回调，可以通过`RecordApp.Current.CanProcess()`方法来检测。
 
 ``` javascript
 set配置默认值：
@@ -178,6 +175,8 @@ set配置默认值：
     type:"mp3"//最佳输出格式，如果底层实现能够支持就应当优先返回此格式
     sampleRate:16000//最佳采样率hz
     bitRate:16//最佳比特率kbps
+	
+	onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate)，此回调和Recorder的回调行为完全一致
 }
 注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
 
@@ -205,37 +204,24 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 `fail`: `fn(errMsg)` 初始化失败回调
 
 
-## 【Event】RecordApp.OnProcess(pcmDatas,powerLevel,duration,sampleRate)
-录音实时数据回调，如果底层会实时调用`RecordApp.ReceivePCM`返回数据，就一定会触发执行此方法，否则一定不会回调；在需回调的地方绑定一个函数即可，注意：新函数会覆盖旧的函数。这个方法和`Recorder.set.onProcess`基本完全相同。
-
-`pcmDatas`: [[Int16,...]] 当前单声道录音缓冲PCM片段（数组的第一维长度始终为1，是为了和`Recorder`兼容）
-
-`powerLevel`：当前缓冲的音量级别0-100
-
-`bufferDuration`：录音持续总时长
-
-`sampleRate`：缓冲使用的采样率
-
-如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的`powerLevel`可以实现音量大小的直观展示，使用`pcmDatas`可以达到更高级效果。
-
-注意：pcmDatas数据的采样率`sampleRate`和设置的`set.sampleRate`不一定相同，如需强一致，请在OnProcess中自行连续调用采样率转换函数`Recorder.SampleData()`。
-
-
-
-## 【静态方法】RecordApp.ReceivePCM(pcmData,powerLevel,duration,sampleRate)
-此方法由底层实现来调用，在开始录音后，底层如果能实时返还pcm数据，则需要调用此方法传递数据给js。
-
-`pcmData`: `Int16[]` 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据
-
-`powerLevel,duration,sampleRate` 和`RecordApp.OnProcess`参数意义相同
 
 
 ## 【全局方法】window.top.NativeRecordReceivePCM(pcmDataBase64,sampleRate)
-开启了`Native`支持时，会有这个方法，用于原生App实时返还pcm数据。里面其实是封装了对`RecordApp.ReceivePCM`的调用。
+开启了`Native`支持时，会有这个方法，用于原生App实时返回pcm数据。
+
+此方法由Native Platform底层实现来调用，在开始录音后，需调用此方法传递数据给js。
+
+`pcmDataBase64`: `Int16[] Base64` 当前单声道录音缓冲PCM片段Base64编码，正常情况下为上次回调本接口开始到现在的录音数据
+
+`sampleRate` 缓冲PCM的采样率
+
 
 
 ## 【静态属性】RecordApp.Current
 为`RecordApp.Install`初始化后识别到的底层平台，取值为`RecordApp.Platforms`之一。
+
+## 【静态方法】RecordApp.Current.CanProcess()
+识别的底层平台是否支持实时返回PCM数据，如果返回值为true，`set.onProcess`将可以被实时回调。
 
 ## 【静态属性】RecordApp.Platforms
 支持的平台列表，目前有三个：
