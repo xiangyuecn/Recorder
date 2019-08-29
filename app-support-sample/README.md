@@ -175,8 +175,8 @@ set配置默认值：
     type:"mp3"//最佳输出格式，如果底层实现能够支持就应当优先返回此格式
     sampleRate:16000//最佳采样率hz
     bitRate:16//最佳比特率kbps
-	
-	onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate)，此回调和Recorder的回调行为完全一致
+    
+    onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate)，此回调和Recorder的回调行为完全一致
 }
 注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
 
