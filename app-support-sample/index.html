@@ -543,7 +543,7 @@ $(".realTimeSendSet").bind("change",function(e){
 		
 		var elem=document.createElement("script");
 		elem.setAttribute("type","text/javascript");
-		elem.setAttribute("src","../assets/"+file);
+		elem.setAttribute("src",PageSet_RecordAppBaseFolder.replace(/src\/$/,"assets/")+file);
 		$("head")[0].appendChild(elem);
 	};
 });
