@@ -31,8 +31,34 @@ platform.RequestPermission=function(success,fail){
 		};
 		WXRecordData.wx=wx;
 		
-		//微信不能提前发起授权请求，需要等到开始录音时才会调起授权
-		success();
+		//可能已经在录音了，关掉再说
+		if(isStart){
+			killStart(function(){
+				platform.RequestPermission(success,fail);
+			});
+			return;
+		};
+		
+		//微信不能提前发起授权请求，需要开始录音时才会调起授权，并且授权一次后管很久，因此开始录音然后关闭就能检测出权限
+		wx.startRecord({
+			success:function(){
+				setTimeout(function(){
+					stopNow(function(e){
+						if(e){
+							fail("清理资源出错："+e);
+						}else{
+							success();
+						};
+					});
+				},100);
+			}
+			,fail:function(o){
+				fail("无法录音："+o.errMsg);
+			}
+			,cancel:function(o){
+				fail("用户不允许录音："+o.errMsg,true);
+			}
+		});
 	});
 };
 var isWaitStart,isStart;
@@ -41,10 +67,16 @@ var stopNow=function(call){
 	isWaitStart=0;
 	WXRecordData.wx.stopRecord({
 		success:function(){
-			call();
+			call&&call();
 		},fail:function(o){
-			call("无法结束："+o.errMsg);
+			call&&call("无法结束录音："+o.errMsg);
 		}
+	});
+};
+var killStart=function(call){
+	console.warn("录音中，正在kill重试");
+	stopNow(function(){
+		setTimeout(call,300);
 	});
 };
 platform.Start=function(set,success,fail){
@@ -54,11 +86,8 @@ platform.Start=function(set,success,fail){
 		return;
 	};
 	if(isStart){
-		console.log("正在录音，正在结束后重试");
-		stopNow(function(){
-			setTimeout(function(){
-				platform.Start(set,success,fail);
-			},300);
+		killStart(function(){
+			platform.Start(set,success,fail);
 		});
 		return;
 	};
@@ -72,6 +101,11 @@ platform.Start=function(set,success,fail){
 	
 	isStart=0;
 	isWaitStart=1;
+	var startFail=function(o){
+		isWaitStart=0;
+		fail("无法录音："+o.errMsg);
+		stopNow();
+	};
 	wx.startRecord({
 		success:function(){
 			isStart=1;
@@ -80,11 +114,8 @@ platform.Start=function(set,success,fail){
 			WXRecordData.start=set;
 			success();
 		}
-		,fail:function(o){
-			isWaitStart=0;
-			fail("无法录音："+o.errMsg);
-			stopNow();
-		}
+		,fail:startFail
+		,cancel:startFail
 	});
 	
 	//监听超时自动停止后接续录音
