@@ -2,6 +2,8 @@
 
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
+[在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
+
 ## 【IOS】Hybrid App测试
 
 [demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+，已测试IOS 12.3。
@@ -26,68 +28,23 @@
 > Android微信H5、WebView支持录音，无需特殊兼容，因此上面特意针对IOS微信。
 
 
-# :open_book:仅为兼容IOS而生
-
-由于IOS上除了`Safari`可以H5录音外，[其他浏览器、WebView](https://forums.developer.apple.com/thread/88052)均不能进行H5录音，Android和PC上情况好很多；可以说是仅为兼容IOS上的微信而生。
-
-据[艾瑞移动设备指数](https://index.iresearch.com.cn/device)2019年7月29日数据：苹果占比`23.29%`位居第一，华为以`19.74%`排名第二。不得不向大厂低头，于是就有了此最大限度的兼容方案；由于有些开发者比较关心此问题，于是就开源了。
-
-当`IOS`哪天开始全面支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
-
-
-> `RecordApp`单纯点来讲就是为了兼容IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
-
-支持|[Recorder](https://github.com/xiangyuecn/Recorder/)|RecordApp
--:|:-:|:-:
-PC浏览器|√|√
-Android Chrome Firefox|√|√
-Android微信(含小程序)|√|√
-Android Hybrid App|√|√
-Android其他浏览器|未知|未知
-IOS Safari|√|√
-IOS微信(含小程序)||√
-IOS Hybrid App||√
-IOS其他浏览器||
-开发难度|简单|复杂
-第三方依赖|无|依赖微信公众号
-
-
-## 使用重要前提
-
-本功能并非拿来就能用的，需要对源码进行调整配置，可参考[app-support-sample](../app-support-sample)目录内的配置文件。
-
-使用本功能虽然可以最大限度的兼容`Android`和`IOS`，但使用[app-ios-weixin-support.js](../src/app-support/app-ios-weixin-support.js)需要后端提供支持，如果使用[app-native-support.js](../src/app-support/app-native-support.js)需要App端提供支持，具体情况查看这两个文件内的注释。
-
-如果不能得到上面相应的支持，并且坚决要使用相关功能，那将会很困难。
-
-
-## 支持功能
-
-- 会自动加载`Recorder`，因此`Recorder`支持的功能，`RecordApp`基本上都能支持，包括语音通话聊天。
-- 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用`IOS-Weixin`选项。
-- 默认开启`IOS-Weixin`支持，用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
-- 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用；本方式优先级最高。
-
-
-## 限制功能
-
-- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
-- `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
-- `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
-- `Android WebView`本身是支持录音的(古董版本就算啦)，仅需处理网页授权即可，但Android里面使用网页的录音权限问题可能比原生的权限机制要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo。
 
 
 # :open_book:快速使用
 
 ## 【1】加载框架
 ``` html
-<!-- 可选的独立配置文件，提供这些文件时无需修改app.js源码。注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
-<!-- 可选native支持 -->
+<!-- 可选的独立配置文件，提供这些文件时可免去修改app.js源码。
+    注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
+<!-- 可选开启native支持的相关配置 -->
 <script src="app-support-sample/native-config.js"></script>
-<!-- 可选ios weixin支持 -->
+<!-- 可选开启ios weixin支持的相关配置 -->
 <script src="app-support-sample/ios-weixin-config.js"></script>
 
-<!-- 在需要录音功能的页面引入`app-support/app.js`文件（src内的为源码、dist内的为压缩后的）即可 （**注意：需要在https等安全环境下才能进行录音**） -->
+<!-- 在需要录音功能的页面引入`app-support/app.js`文件（src内的为源码、dist内的为压缩后的）即可。
+    app.js会自动加载Recorder和编码引擎文件，应确保app.js内BaseFolder目录的正确性。
+    （压缩时可以把所有支持文件压缩到一起，会检测到组件已自动加载）
+    （**注意：需要在https等安全环境下才能进行录音**） -->
 <script src="src/app-support/app.js"></script>
 ```
 
@@ -151,6 +108,60 @@ function createDelayDialog(){
 ## 【截图】运行效果图
 
 <img src="../assets/use_native_ios.gif" width="360px"> <img src="../assets/use_native_android.gif" width="360px">
+
+
+
+
+
+# :open_book:仅为兼容IOS而生
+
+由于IOS上除了`Safari`可以H5录音外，[其他浏览器、WebView](https://forums.developer.apple.com/thread/88052)均不能进行H5录音，Android和PC上情况好很多；可以说是仅为兼容IOS上的微信而生。
+
+据[艾瑞移动设备指数](https://index.iresearch.com.cn/device)2019年7月29日数据：苹果占比`23.29%`位居第一，华为以`19.74%`排名第二。不得不向大厂低头，于是就有了此最大限度的兼容方案；由于有些开发者比较关心此问题，于是就开源了。
+
+当`IOS`哪天开始全面支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
+
+
+> `RecordApp`单纯点来讲就是为了兼容IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
+
+支持|[Recorder](https://github.com/xiangyuecn/Recorder/)|RecordApp
+-:|:-:|:-:
+PC浏览器|√|√
+Android Chrome Firefox|√|√
+Android微信(含小程序)|√|√
+Android Hybrid App|√|√
+Android其他浏览器|未知|未知
+IOS Safari|√|√
+IOS微信(含小程序)||√
+IOS Hybrid App||√
+IOS其他浏览器||
+开发难度|简单|复杂
+第三方依赖|无|依赖微信公众号
+
+
+## 使用重要前提
+
+本功能并非拿来就能用的，需要对源码进行调整配置，可参考[app-support-sample](../app-support-sample)目录内的配置文件。
+
+使用本功能虽然可以最大限度的兼容`Android`和`IOS`，但使用[app-ios-weixin-support.js](../src/app-support/app-ios-weixin-support.js)需要后端提供支持，如果使用[app-native-support.js](../src/app-support/app-native-support.js)需要App端提供支持，具体情况查看这两个文件内的注释。
+
+如果不能得到上面相应的支持，并且坚决要使用相关功能，那将会很困难。
+
+
+## 支持功能
+
+- 会自动加载`Recorder`，因此`Recorder`支持的功能，`RecordApp`基本上都能支持，包括语音通话聊天。
+- 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用`IOS-Weixin`选项。
+- 默认开启`IOS-Weixin`支持，用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
+- 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用；本方式优先级最高。
+
+
+## 限制功能
+
+- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
+- `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
+- `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
+- `Android WebView`本身是支持录音的(古董版本就算啦)，仅需处理网页授权即可，但Android里面使用网页的录音权限问题可能比原生的权限机制要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo。
 
 
 

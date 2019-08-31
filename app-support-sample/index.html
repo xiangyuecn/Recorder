@@ -288,10 +288,10 @@ function recreq(){
 	
 	RecordApp.RequestPermission(function(){
 		dialogCancel();
-		reclog(RecordApp.Current.Key+"已授权");
+		reclog("<span style='color:#0b1'>"+RecordApp.Current.Key+"已授权</span>");
 	},function(err,isUserNotAllow){
 		dialogCancel();
-		reclog(RecordApp.Current.Key+(isUserNotAllow?" UserNotAllow，":"")+" 授权失败："+err);
+		reclog(RecordApp.Current.Key+(isUserNotAllow?" UserNotAllow，":"")+" 授权失败："+err,1);
 	});
 	
 	window.waitDialogClick=function(){
@@ -751,8 +751,9 @@ function onInstall(){
 		reclog("此页面由服务器代理，源网址<a href='https://xiangyuecn.github.io/Recorder/app-support-sample/'>https://xiangyuecn.github.io/Recorder/app-support-sample/</a>");
 	};
 	
-	reclog("<span style='color:#0b1'>已识别环境："+RecordApp.Current.Key+"</span>");
+	reclog("<span style='color:#0b1'>Install成功，环境："+RecordApp.Current.Key+"，可以录音了</span>");
 };
+reclog("<span style='color:#f60'>正在执行Install，请勿操作...</span>");
 if(isInstall){
 	onInstall();
 };
