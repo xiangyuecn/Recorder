@@ -304,12 +304,21 @@ function recclose(){
 		rec.close(function(){
 			reclog("已关闭");
 		});
-	}
+	}else{
+		reclog("未打开录音",1);
+	};
 };
-function recstart(){
+function recstart(call){
+	call||(call=function(msg){
+		msg&&reclog(msg,1);
+	});
 	if(rec){
 		rec.start();
-		reclog("录制中...");
+		var set=rec.set;
+		reclog("录制中："+set.type+" "+set.sampleRate+"hz "+set.bitRate+"kbps");
+		call();
+	}else{
+		call("未打开录音");
 	};
 };
 function recpause(){
@@ -325,14 +334,17 @@ function recresume(){
 	};
 };
 var recblob={};
-function recstop(){
-	recstopFn(true,function(){
+function recstop(call){
+	recstopFn(call,true,function(){
 		setTimeout(function(){
 			window.realTimeSendTryStop&&realTimeSendTryStop(rec.set);
 		});
 	});
 };
-function recstopFn(isClick,endCall,rec){
+function recstopFn(call,isClick,endCall,rec){
+	call||(call=function(msg){
+		msg&&reclog(msg,1);
+	});
 	rec=rec||window.rec;
 	if(rec){
 		if(isClick){
@@ -348,10 +360,14 @@ function recstopFn(isClick,endCall,rec){
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
 			reclog((tag||"已录制")+":"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+			
+			call(null,{data:blob,duration:time});
 		},function(s){
-			reclog("失败："+s);
 			endCall(s);
+			call("失败："+s);
 		});
+	}else{
+		call("未打开录音");
 	};
 };
 var intp=function(s,len){

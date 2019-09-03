@@ -33,8 +33,9 @@ Recorder.Support();//激活Recorder.Ctx
 	].join("<br>"));
 	
 	$(".webrtcView").html([""
-,'<div class="webrtcSend" style="border:1px solid #ddd">'
-,'	<div style="color:#06c">（可选）开启H5语音通话聊天（局域网WebRTC P2P）：</div>'
+,'<div class="webrtcSend">'
+,'<div style="display:inline-block;vertical-align: top;border:1px solid #ddd;margin-top:6px">'
+,'	<div style="color:#06c">（可选）开启H5语音通话（传输数据使用局域网WebRTC P2P）：</div>'
 ,'	<div>'
 ,'		接收端播放模式：'
 ,'		<label><input type="radio" name="webrtcPlayMode" class="webrtcPlayModeDecode" value="decode" checked>解码播放</label>'
@@ -52,6 +53,42 @@ Recorder.Support();//激活Recorder.Ctx
 ,'	<audio class="webrtcPlay2"></audio>'
 ,'	<div class="webrtcStatus"></div>'
 ,'</div>'
+
+,'<div style="display:inline-block;border:1px solid #ddd;margin-top:6px">'
+,'	<div style="color:#06c">（可选）语音和消息（简单演示）：</div>'
+,'	<div style="border:2px solid #0b1">'
+,'		<div style="border-bottom:2px solid #0b1; padding:3px;">'
+,'			<div class="webrtcVoiceBtn" style="display: inline-block;padding:12px 0;width:110px;text-align: center;background: #0b1;color: #fff;border-radius: 6px;">按住发语音</div>'
+,'			<textarea class="webrtcMsgInput" style="vertical-align: middle;width:130px;height:40px;padding:0"></textarea>'
+,'			<input type="button" value="发消息" onclick="webrtcMessageSend()">'
+,'		</div>'
+,'		<style>'
+,'			.webrtcMsgOut,.webrtcMsgIn{'
+,'				display: inline-block;'
+,'				clear: both;'
+,'				padding: 6px 10px;'
+,'				border-radius: 10px;'
+,'				word-break: break-all;'
+,'				'
+,'				float: right;'
+,'				background: #0b1;'
+,'				color: #fff;'
+,'				margin: 3px 8px 0 0;'
+,'			}'
+,'			.webrtcMsgIn{'
+,'				float: left;'
+,'				background: #fff;'
+,'				color: #000;'
+,'				margin: 3px 0 0 8px;'
+,'			}'
+,'		</style>'
+,'		<div style="min-height:100px;padding-bottom:10px;background: #f0f0f0;">'
+,'			<div onclick="$(\'.webrtcMsgBox\').html(\'\')" style="text-align: right;">清屏</div>'
+,'			<div class="webrtcMsgBox" style="overflow: hidden;"></div>'
+,'		</div>'
+,'	</div>'
+,'</div>'
+,'</div>'
 	].join("\n"));
 })();
 
@@ -65,6 +102,11 @@ var realTimeSendTryReset=function(){
 	realTimeSendTryTime=0;
 };
 var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
+	if(rtcVoiceStart){
+		realTimeSendTryReset();
+		return;
+	};
+	
 	var t1=Date.now(),endT=0,recImpl=Recorder.prototype;
 	if(realTimeSendTryTime==0){
 		realTimeSendTryTime=t1;
@@ -96,11 +138,11 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 	if(recImpl[recSet.type+"_start"]){
 		endT=Date.now();
 	};
-	recstopFn(0,function(err,blob,duration){
+	recstopFn(null,0,function(err,blob,duration){
 		//此处应伪装成发送blob数据
 		//emmmm.... 发送给语音聊天webrtc
 		if(blob&&window.rtcChannelOpen){
-			webrtcSend(blob,{
+			webrtcStreamSend(blob,{
 				duration:duration
 				,interval:interval
 			});
@@ -122,10 +164,65 @@ var realTimeSendTryStop=function(recSet){
 	
 	var recMock=Recorder($.extend({},recSet));
 	recMock.mock(chunk.data,chunk.sampleRate);
-	recstopFn(0,function(err,blob,time){
+	recstopFn(null,0,function(err,blob,time){
 		return "实时编码汇总结果";
 	},recMock);
 };
+
+
+//按住发语音
+var rtcVoiceStart,rtcVoiceDownHit;
+$("body").bind("mousedown touchstart",function(e){
+	var elem=$(".webrtcVoiceBtn");
+	if(e.target!=elem[0]){
+		return;
+	};
+	
+	$("body").css("user-select","none");//kill all 免得渣渣浏览器里面复制搜索各种弹
+	
+	rtcVoiceDownHit=setTimeout(function(){
+		rtcVoiceStart=true;
+		
+		//开始录音
+		recstart(function(err){
+			if(err){
+				rtcVoiceStart=false;
+				rtcMsgView("[错误]"+err,false);
+				return;
+			};
+			
+			if(rtcVoiceStart){//也许已经up了
+				elem.css("background","#f60").text("松开结束录音");
+			};
+		});
+	},300);
+}).bind("mouseup touchend",function(e){
+	if(rtcVoiceDownHit || rtcVoiceStart){
+		$("body").css("user-select","");
+		clearTimeout(rtcVoiceDownHit);
+		rtcVoiceDownHit=0;
+		
+		if(rtcVoiceStart){
+			rtcVoiceStart=false;
+			$(".webrtcVoiceBtn").css("background","#0b1").text("按住发语音");
+			
+			//结束录音
+			recstop(function(err,data){
+				if(err){
+					rtcMsgView("[错误]"+err,false);
+					return;
+				};
+				
+				webrtcVoiceSend(data);
+			});
+		};
+	};
+}).bind("mousemove touchmove",function(e){
+	if(rtcVoiceDownHit){
+		clearTimeout(rtcVoiceDownHit);
+		rtcVoiceDownHit=0;
+	};
+});
 
 
 
@@ -139,14 +236,13 @@ var realTimeSendTryStop=function(recSet){
 
 
 /*********接口********************/
-function webrtcSend(blob,info){
+function webrtcStreamSend(blob,info){
 	if(!rtcChannelOpen){
 		return;
 	};
 	
-	var reader = new FileReader();
-	reader.onloadend = function() {
-		var data=JSON.stringify(info)+"##"+reader.result;
+	var send=function(res){
+		var data="stream##"+JSON.stringify(info)+"##"+res;
 		if(rtcChannel.bufferedAmount>data.length*2){//发送队列阻塞了，丢弃当前的
 			rtcSendSkip++;
 			rtcStatusView();
@@ -160,19 +256,70 @@ function webrtcSend(blob,info){
 		rtcSendLen=data.length;
 		rtcStatusView();
 	};
+	
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		send(reader.result);
+	};
 	reader.readAsDataURL(blob);
 };
+
+function webrtcMessageSend(){
+	var input=$(".webrtcMsgInput");
+	var txt=input.val();
+	rtcMsgView(txt,false);
+	
+	if(rtcChannelOpen){
+		rtcChannel.send("message##{}##txt:"+txt);
+		input.val("");
+	}else{
+		rtcMsgView("[未发送]未连接到远程设备",true);
+	};
+};
+
+function webrtcVoiceSend(data){
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		var info={duration:data.duration};
+		rtcVoiceView(data,false);
+		
+		if(rtcChannelOpen){
+			rtcChannel.send("voice##"+JSON.stringify(info)+"##"+reader.result);
+		}else{
+			rtcMsgView("[未发送]未连接到远程设备",true);
+		};
+	};
+	reader.readAsDataURL(data.data);
+};
+
 function webrtcReceive(data){
-	var m=/(.+?)##.+?:(.+?);\s*base64\s*,\s*(.+)$/.exec(data);
+	var m=/^(.+?)##(.+?)##(?:txt:([\S\s]*)|data:(.+?);\s*base64\s*,\s*(.+))?$/.exec(data);
 	if(!m){
-		console.log("webrtc收到未知数据：",data);
+		console.warn("webrtc收到未知数据：",data);
 		return;
 	};
-	var info=JSON.parse(m[1]);
-	var mime=m[2];
+	var type=m[1];
+	var info=JSON.parse(m[2]);
+	var txt=m[3];
+	var mime=m[4];
+	var b64=m[5];
 	
+	if(type=="message"){
+		rtcMsgView(txt,true);
+		return;
+	}else if(type=="voice"){
+		var u8arr=rtcB64ToUInt8(b64);
+		info.data=new Blob([u8arr.buffer],{type:mime});
+		rtcVoiceView(info,true);
+		return;
+	};
 	
-	rtcPlayBuffer.splice(0,0,{mime:mime,data:m[3],duration:info.duration});
+	if(type!="stream"){
+		console.warn("未知数据类型"+type,data);
+		return;
+	};
+	
+	rtcPlayBuffer.splice(0,0,{mime:mime,data:b64,duration:info.duration});
 	var maxLen=Math.ceil(1000/info.interval);
 	if(rtcPlayBuffer.length>maxLen){//播放队列延迟太大，直接重置队列
 		rtcRecSkip+=rtcPlayBuffer.length-1;
@@ -187,6 +334,18 @@ function webrtcReceive(data){
 	rtcRecLen=data.length;
 	rtcStatusView();
 };
+var rtcB64ToUInt8=function(b64){
+	var bstr=atob(b64),n=bstr.length,u8arr=new Uint8Array(n);
+	while(n--){
+		u8arr[n]=bstr.charCodeAt(n);
+	};
+	return u8arr;
+};
+
+
+
+
+
 function webrtcOpen(){
 	if($(".realTimeSend").val()=="996"){
 		$(".realTimeSend").val(500);
@@ -203,15 +362,36 @@ function webrtcCloseClick(){
 };
 
 
+var rtcMsgView=function(msg,isIn){
+	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'">'+msg.replace(/[<>&]/g,function(a){return "&#"+a.charCodeAt(0)+";"}).replace(/ /g,"&nbsp;").replace(/[\r\n]/g,"<br>")+'</div>');
+};
+var rtcVoiceView=function(data,isIn){
+	var id=RandomKey(16);
+	rtcVoiceDatas[id]=data;
+	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'" onclick="rtcVoicePlay(\''+id+'\')"><span style="color:#06c">语音</span> '+(data.duration/1000).toFixed(2)+'s</div>');
+};
+var rtcVoiceDatas={};
+var rtcVoicePlay=function(id){
+	var audio=$(".recPlay")[0];
+	audio.controls=true;
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	audio.src=(window.URL||webkitURL).createObjectURL(rtcVoiceDatas[id].data);
+	audio.play();
+};
+
+
 var rtcStatusView=function(){
 	var html=[];
+	var ctrl;
 	if(rtcChannelOpen){
-		html.push('<div><input type="button" onclick="webrtcCloseClick()" value="关闭连接"></div>');
+		ctrl='<input type="button" onclick="webrtcCloseClick()" value="关闭连接">';
 	}else{
-		html.push("连接已关闭，停止数据收发");
+		ctrl="<span style='color:#f60'>连接已关闭，停止数据收发</span>";
 	};
 	
-	html.push('<div>发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片</div>");
+	html.push('<div>发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片 "+ctrl+"</div>");
 	html.push('<div>接收：'+rtcRecMime+" "+rtcRecLen+"b "+rtcRecCount+"片 共"+rtcBitF(rtcRecSize)+" Skip:"+rtcRecSkip+"片 PlayMode:"+rtcPlayMode+"</div>");
 	
 	rtcStatus.html(html.join("\n"));
@@ -278,10 +458,7 @@ var rtcDecodePlay=function(decode){
 	rtcDecPlayTime=Date.now();
 	
 	var itm=rtcPlayBuffer.pop();
-	var bstr=atob(itm.data),n=bstr.length,u8arr=new Uint8Array(n);
-	while(n--){
-		u8arr[n]=bstr.charCodeAt(n);
-	};
+	var u8arr=rtcB64ToUInt8(itm.data);
 	
 	var ctx=Recorder.Ctx;
 	ctx.decodeAudioData(u8arr.buffer,function(raw){
@@ -327,8 +504,9 @@ var rtcDecodePlay=function(decode){
 		rtcDecPlayNextTime=Date.now()+duration-rtcDecPlayTimeSkip;
 	},function(e){
 		rtcDecPlayIDCur=rtcDecPlayID;
+		rtcDecPlayNextTime=Date.now()+300;
 		
-		console.error("解码失败",itm,e);
+		console.error("解码失败:"+itm.mime+" "+e.message);
 		rtcRecSkip++;
 	});
 };

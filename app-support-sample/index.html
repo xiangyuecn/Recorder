@@ -327,10 +327,13 @@ var dialogCancel=function(){
 
 
 var curSet;
-function recstart(){
+function recstart(call){
+	call||(call=function(msg){
+		msg&&reclog(msg,1);
+	});
 	baseSet();
 	if(!RecordApp.Current){
-		reclog("需先调用RequestPermission");
+		call("需先调用RequestPermission");
 		return;
 	};
 	if(RecordApp.Current==RecordApp.Platforms.Weixin){
@@ -375,19 +378,23 @@ function recstart(){
 		reclog(RecordApp.Current.Key+"已打开:"+type+" "+bit+"kbps");
 		
 		wave=Recorder.WaveView({elem:".recwave"});
+		call();
 	},function(err){
-		reclog(RecordApp.Current.Key+"打开失败："+err);
+		call(RecordApp.Current.Key+"打开失败："+err);
 	});
 };
 var recblob={};
-function recstop(){
-	recstopFn(true,function(){
+function recstop(call){
+	recstopFn(call,true,function(){
 		setTimeout(function(){
 			window.realTimeSendTryStop&&realTimeSendTryStop(curSet);
 		});
 	});
 };
-function recstopFn(isClick,endCall,rec){
+function recstopFn(call,isClick,endCall,rec){
+	call||(call=function(msg){
+		msg&&reclog(msg,1);
+	});
 	var t1=Date.now();
 	
 	var add=function(time,tag,blob,set){
@@ -412,7 +419,7 @@ function recstopFn(isClick,endCall,rec){
 	};
 	
 	if(!curSet){
-		reclog("请先开始录音");
+		call("请先开始录音");
 		return;
 	};
 	var setData=curSet;
@@ -446,9 +453,10 @@ function recstopFn(isClick,endCall,rec){
 			t1=t1x;
 		};
 		add(time,"已录制",blob,setData);
+		call(null,{data:blob,duration:time});
 	},function(s){
-		reclog("失败："+s);
 		endCall(s);
+		call("失败："+s);
 	});
 };
 var intp=function(s,len){
