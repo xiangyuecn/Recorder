@@ -171,12 +171,13 @@ var realTimeSendTryStop=function(recSet){
 
 
 //按住发语音
-var rtcVoiceStart,rtcVoiceDownHit;
+var rtcVoiceStart,rtcVoiceDownEvent,rtcVoiceDownHit;
 $("body").bind("mousedown touchstart",function(e){
 	var elem=$(".webrtcVoiceBtn");
 	if(e.target!=elem[0]){
 		return;
 	};
+	rtcVoiceDownEvent=e;
 	
 	$("body").css("user-select","none");//kill all 免得渣渣浏览器里面复制搜索各种弹
 	
@@ -219,8 +220,13 @@ $("body").bind("mousedown touchstart",function(e){
 	};
 }).bind("mousemove touchmove",function(e){
 	if(rtcVoiceDownHit){
-		clearTimeout(rtcVoiceDownHit);
-		rtcVoiceDownHit=0;
+		var a=rtcVoiceDownEvent.originalEvent;
+		var b=e.originalEvent;
+		if(Math.abs(a.screenX-b.screenX)+Math.abs(a.screenY-b.screenY)>3*2){
+			$("body").css("user-select","");
+			clearTimeout(rtcVoiceDownHit);
+			rtcVoiceDownHit=0;
+		};
 	};
 });
 
