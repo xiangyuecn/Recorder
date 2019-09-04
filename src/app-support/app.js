@@ -167,16 +167,22 @@ var Weixin=Config_SupportPlatforms[1];
 var Default=Config_SupportPlatforms[2];
 //给Default实现统一接口
 Default.RequestPermission=function(success,fail){
+	var old=App.__Rec;
+	if(old){
+		old.close();
+		App.__Rec=null;
+	};
+	
 	var rec=Recorder();
 	rec.open(function(){
-		rec.close();
+		//rec.close(); keep stream Stop时再关，免得Start再次请求权限
 		success();
 	},fail);
 };
 Default.Start=function(set,success,fail){
 	var appRec=App.__Rec;
 	if(appRec!=null){
-		appRec.close();
+		appRec.close();//stream已经被使用过了，close更好
 	};
 	App.__Rec=appRec=Recorder({
 		type:set.type||"mp3"
@@ -196,6 +202,7 @@ Default.Start=function(set,success,fail){
 Default.Stop=function(success,fail){
 	var appRec=App.__Rec;
 	if(!appRec){
+		Recorder().close();//不管有没有，关闭
 		fail("未开始录音");
 		return;
 	};
@@ -363,14 +370,14 @@ fail:fn(errMsg,isUserNotAllow) 没有权限或者不能录音时回调，如果�
 		
 		cur.RequestPermission(function(){
 			console.log("录音权限请求成功");
-			success();
+			success&&success();
 		},function(errMsg,isUserNotAllow){
 			console.log("录音权限请求失败："+errMsg+",isUserNotAllow:"+isUserNotAllow);
-			fail(errMsg,isUserNotAllow);
+			fail&&fail(errMsg,isUserNotAllow);
 		});
 	},function(err){
 		console.log("Install失败",err);
-		fail(err);
+		fail&&fail(err);
 	});
 }
 /*
@@ -389,7 +396,7 @@ fail:fn(errMsg) 开启录音出错时回调
 ,Start:function(set,success,fail){
 	var cur=App.Current;
 	if(!cur){
-		fail("需先调用RequestPermission");
+		fail&&fail("需先调用RequestPermission");
 		return;
 	};
 	set||(set={});
@@ -404,10 +411,10 @@ fail:fn(errMsg) 开启录音出错时回调
 	};
 	cur.Start(set,function(){
 		console.log("开始录音",set);
-		success();
+		success&&success();
 	},function(msg){
 		console.log("开始录音失败："+msg);
-		fail(msg);
+		fail&&fail(msg);
 	});
 }
 /*
@@ -422,16 +429,16 @@ fail:fn(errMsg) 录音出错时回调
 ,Stop:function(success,fail){
 	var cur=App.Current;
 	if(!cur){
-		fail("需先调用RequestPermission");
+		fail&&fail("需先调用RequestPermission");
 		return;
 	};
 	
 	cur.Stop(function(blob,duration){
 		console.log("结束录音"+blob.size+"b "+duration+"ms",blob);
-		success(blob, duration);
+		success&&success(blob, duration);
 	},function(msg){
 		console.log("结束录音失败："+msg);
-		fail(msg);
+		fail&&fail(msg);
 	});
 }
 

@@ -418,14 +418,16 @@ function recstopFn(call,isClick,endCall,rec){
 		return;
 	};
 	
-	if(!curSet){
-		call("请先开始录音");
-		return;
-	};
 	var setData=curSet;
 	curSet=null;
 	
-	reclog(RecordApp.Current.Key+"正在结束"+setData.type+"...");
+	if(!setData){
+		//没有开始？不管，stop清理资源
+		setData={};
+	}else{
+		reclog(RecordApp.Current.Key+"正在结束"+setData.type+"...");
+	};
+	
 	RecordApp.Stop(function(blob,time){
 		endCall("",blob,time);
 		

@@ -168,7 +168,7 @@ IOS其他浏览器||
 # :open_book:方法文档
 
 ## 【静态方法】RecordApp.RequestPermission(success,fail)
-请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调，调用`RecordApp.Start`前需先至少调用一次此方法。
+请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法；请求权限后如果不使用了，至少要调用一次`Stop`来清理资源。
 
 `success`: `fn()` 有权限时回调
 
@@ -200,7 +200,7 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 
 ## 【静态方法】RecordApp.Stop(success,fail)
-结束录音。
+结束录音和清理资源。
 
 `success`: `fn(blob,duration)`    结束录音时回调，`blob:Blob` 录音数据`audio/mp3|wav...`格式，`duration`: `123` 音频持续时间。
 
