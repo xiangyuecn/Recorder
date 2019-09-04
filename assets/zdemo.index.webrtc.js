@@ -65,6 +65,7 @@ Recorder.Support();//激活Recorder.Ctx
 ,'		<style>'
 ,'			.webrtcMsgOut,.webrtcMsgIn{'
 ,'				display: inline-block;'
+,'				max-width: 220px;'
 ,'				clear: both;'
 ,'				padding: 6px 10px;'
 ,'				border-radius: 10px;'
@@ -179,7 +180,7 @@ $("body").bind("mousedown touchstart",function(e){
 	};
 	rtcVoiceDownEvent=e;
 	
-	$("body").css("user-select","none");//kill all 免得渣渣浏览器里面复制搜索各种弹
+	$("body").css("user-select","none");//kill all 免得渣渣浏览器里面复制搜索各种弹，这些浏览器单独给div设置是没有用的
 	
 	rtcVoiceDownHit=setTimeout(function(){
 		rtcVoiceStart=true;
@@ -270,9 +271,9 @@ function webrtcStreamSend(blob,info){
 	reader.readAsDataURL(blob);
 };
 
-function webrtcMessageSend(){
+function webrtcMessageSend(txt){
 	var input=$(".webrtcMsgInput");
-	var txt=input.val();
+	txt=txt||input.val();
 	rtcMsgView(txt,false);
 	
 	if(rtcChannelOpen){
@@ -397,7 +398,7 @@ var rtcStatusView=function(){
 		ctrl="<span style='color:#f60'>连接已关闭，停止数据收发</span>";
 	};
 	
-	html.push('<div>发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片 "+ctrl+"</div>");
+	html.push('<div style="padding-top:10px">发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片 "+ctrl+"</div>");
 	html.push('<div>接收：'+rtcRecMime+" "+rtcRecLen+"b "+rtcRecCount+"片 共"+rtcBitF(rtcRecSize)+" Skip:"+rtcRecSkip+"片 PlayMode:"+rtcPlayMode+"</div>");
 	
 	rtcStatus.html(html.join("\n"));
@@ -679,6 +680,14 @@ function webrtcConnect(){
 			console.log("连接已建立");
 			reclog("<span style='color:#0b1'>连接已建立，可以开始录音啦</span>");
 			webrtcOpen();
+			
+			if(isLocal){
+				setTimeout(function(){
+					webrtcMessageSend("# Hello \n - 你可以随时开始录音，会以通话形式实时传送给我 \n - 按住发语音可以发送一个语音消息");
+				},100);
+			}else{
+				webrtcMessageSend("Me too! 太长了就不copy了");
+			};
 		};
 		rtcChannel.onclose=function(){
 			rtcChannelOpen=0;
