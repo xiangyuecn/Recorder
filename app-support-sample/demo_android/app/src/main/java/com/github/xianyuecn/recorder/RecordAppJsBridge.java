@@ -333,7 +333,7 @@ public class RecordAppJsBridge implements Closeable {
         static private final String LogTag="RecordApis";
 
         static public void Async_recordPermission(final Request req) {
-            checkPermission(req, new Callback<Object, Object>() {
+            checkPermission(false, req, new Callback<Object, Object>() {
                 public Object Call(Object result, Exception hasError) {
                     if(result!=null){
                         req.callback(1, null);
@@ -344,10 +344,16 @@ public class RecordAppJsBridge implements Closeable {
                 }
             });
         }
-        static private void checkPermission(final Request req, final Callback<Object, Object> callback){
+        static private boolean hasPermission;//如果检测到已授权，就不要再继续检测了，Activity.requestPermissions调用会导致webview长按录音时无法触发touchend事件 https://github.com/xiangyuecn/Recorder/issues/46
+        static private void checkPermission(boolean useCache, final Request req, final Callback<Object, Object> callback){
+            if(useCache && hasPermission){
+                callback.Call("ok", null);
+                return;
+            }
             req.jsBridge.usesPermission.Request(new String[]{"android.permission.RECORD_AUDIO"}, new Runnable() {
                 @Override
                 public void run() {
+                    hasPermission=true;
                     callback.Call("ok", null);
                 }
             }, new Runnable() {
@@ -372,7 +378,7 @@ public class RecordAppJsBridge implements Closeable {
         static public void Async_recordStart(final Request req){
             DestroyCurrent();
 
-            checkPermission(req, new Callback<Object, Object>() {
+            checkPermission(true, req, new Callback<Object, Object>() {
                 public Object Call(Object result, Exception hasError) {
                     if(result==null){
                         req.callback(null, "没有录音权限");
