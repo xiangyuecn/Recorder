@@ -162,17 +162,22 @@ IOS其他浏览器||
 - `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
 - `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
 - `Android WebView`本身是支持录音的(古董版本就算啦)，仅需处理网页授权即可，但Android里面使用网页的录音权限问题可能比原生的权限机制要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo。
+- 已知 [#46](https://github.com/xiangyuecn/Recorder/issues/46) `Android WebView`内发起授权请求时（如：H5的getUserMedia方法调用、App的权限请求）会打断touch事件，表现为触发了`touchcancel`事件，`touchend`事件始终不会触发，在做按住录音功能时应留意此问题。如果你要使用按住录音功能，解决办法：在每次`按住录音按钮`被按之前都重新进行一次`RequestPermission`调用；或者Android Hybrid App中用RecordApp开启Native原生录音来避免此问题，因为App可以做到请求到权限后，后续录音不会再去进行权限请求。
 
 
 
 # :open_book:方法文档
 
 ## 【静态方法】RecordApp.RequestPermission(success,fail)
-请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法；请求权限后如果不使用了，至少要调用一次`Stop`来清理资源。
+请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法，用于准备好必要的环境；请求权限后如果不使用了，不管有没有调用`Start`，至少要调用一次`Stop`来清理可能持有的资源。
+
+主要用于在`Start`前让用户授予权限，因为未获得权限时可能会弹出授权弹框让用户好去处理；App和大部分浏览器只需授权一次，后续就不会再弹框了；因为`Start`中已隐式包含了授权请求逻辑，对于少部分每次都会弹授权请求的浏览器，不调用本方法也能获得权限。
 
 `success`: `fn()` 有权限时回调
 
 `fail`: `fn(errMsg,isUserNotAllow)` 没有权限或者不能录音时回调，如果是用户主动拒绝的录音权限，除了有错误消息外，`isUserNotAllow=true`，方便程序中做不同的提示，提升用户主动授权概率
+
+注：如果需要使用按住录音这种功能，参考上面的功能限制部分，请求权限可能会导致touch事件被打断，解决办法也参考上面。
 
 
 ## 【静态方法】RecordApp.Start(set,success,fail)

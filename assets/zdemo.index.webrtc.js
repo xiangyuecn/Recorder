@@ -172,7 +172,7 @@ var realTimeSendTryStop=function(recSet){
 
 
 //按住发语音
-var rtcVoiceStart,rtcVoiceDownEvent,rtcVoiceDownHit;
+var rtcVoiceStart,rtcVoiceDownEvent,rtcVoiceDownHit,rtcVoiceTipsV;
 $("body").bind("mousedown touchstart",function(e){
 	var elem=$(".webrtcVoiceBtn");
 	if(e.target!=elem[0]){
@@ -184,6 +184,11 @@ $("body").bind("mousedown touchstart",function(e){
 	
 	rtcVoiceDownHit=setTimeout(function(){
 		rtcVoiceStart=true;
+		
+		if(!rtcVoiceTipsV){
+			rtcVoiceTipsV=1;
+			reclog('<span style="color:#f60">已知`Android WebView`内发起授权请求时（如：H5的getUserMedia方法调用、App的权限请求）会打断touch事件，表现为触发了`touchcancel`事件，`touchend`事件始终不会触发，在做按住录音功能时应留意此问题。如果你要使用按住录音功能，解决办法：在每次`按住录音按钮`被按之前都重新进行一次权限请求方法的调用；或者Android Hybrid App中用RecordApp开启Native原生录音来避免此问题，因为App可以做到请求到权限后，后续录音不会再去进行权限请求。</span>');
+		};
 		
 		//开始录音
 		recstart(function(err){
@@ -198,7 +203,7 @@ $("body").bind("mousedown touchstart",function(e){
 			};
 		});
 	},300);
-}).bind("mouseup touchend",function(e){
+}).bind("mouseup touchend touchcancel",function(e){
 	if(rtcVoiceDownHit || rtcVoiceStart){
 		$("body").css("user-select","");
 		clearTimeout(rtcVoiceDownHit);
@@ -210,6 +215,10 @@ $("body").bind("mousedown touchstart",function(e){
 			
 			//结束录音
 			recstop(function(err,data){
+				if(e.type=="touchcancel"){
+					rtcMsgView("[中断]touch事件被中断",false);
+					return;
+				};
 				if(err){
 					rtcMsgView("[错误]"+err,false);
 					return;
