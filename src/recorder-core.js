@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2019-8-29 11:19:34";
+window.RecorderLM="2019-9-6 23:22:12";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
@@ -133,13 +133,41 @@ function initFn(set){
 		o[k]=set[k];
 	};
 	this.set=o;
+	
+	this._S=9;//stop同步锁，stop时阻止上次还未完成的start
 };
+//同步锁，控制对Stream的竞争；用于close时中断异步的open；一个对象open如果变化了都要阻止close，Stream的控制权交个新的对象
+Recorder.Sync={/*open*/O:9,/*close*/C:9};
+
 Recorder.prototype=initFn.prototype={
 	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
 	open:function(True,False){
+		var This=this;
 		True=True||NOOP;
 		False=False||NOOP;
 		
+		//同步锁
+		var Lock=Recorder.Sync;
+		var lockOpen=++Lock.O,lockClose=Lock.C;
+		This._O=lockOpen;//记住当前的open，如果变化了要阻止close，这里假定了新对象已取代当前对象并且不再使用
+		This._SO=This._S;//记住open时的stop，任何stop变化后都不能继续调用start
+		var lockFail=function(){
+			//允许多次open，但不允许任何一次close，或者自身已经调用了关闭
+			if(lockClose!=Lock.C || !This._O){
+				var err="open被取消";
+				if(lockOpen==Lock.O){
+					//无新的open，已经调用了close进行取消，此处应让上次的close明确生效
+					This.close();
+				}else{
+					err+="open被中断";
+				};
+				False(err);
+				return true;
+			};
+		};
+		
+		
+		//如果已打开就不要再打开了
 		if(Recorder.IsOpen()){
 			True();
 			return;
@@ -149,11 +177,16 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		
+		
+		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
 		var f1=function(stream){
 			Recorder.Stream=stream;
+			if(lockFail())return;
 			
 			//https://github.com/xiangyuecn/Recorder/issues/14 获取到的track.readyState!="live"，刚刚回调时可能是正常的，但过一下可能就被关掉了，原因不明。延迟一下保证真异步。对正常浏览器不影响
 			setTimeout(function(){
+				if(lockFail())return;
+				
 				if(Recorder.IsOpen()){
 					True();
 				}else{
@@ -178,6 +211,17 @@ Recorder.prototype=initFn.prototype={
 		
 		var This=this;
 		This._stop();
+		
+		var Lock=Recorder.Sync;
+		var _o=This._O;
+		This._O=0;
+		if(_o!=Lock.O){
+			//唯一资源Stream的控制权已交给新对象，这里不能关闭。此处在每次都弹权限的浏览器内可能存在泄漏，新对象被拒绝权限可能不会调用close，忽略这种不处理
+			_o&&console.warn("close被中断");
+			call();
+			return;
+		};
+		Lock.C++;//获得控制权
 		
 		var stream=Recorder.Stream;
 		if(stream){
@@ -300,6 +344,15 @@ Recorder.prototype=initFn.prototype={
 	}
 	,_start:function(){
 		var This=this,set=This.set;
+		
+		//检查stop同步锁状态
+		if(This._SO&&This._SO+1!=This._S){//start已调用过一次 _stop
+			//open未完成就调用了stop，此种情况终止start
+			console.warn("start被中断");
+			return;
+		};
+		This._SO=0;
+		
 		var engineCtx=This.engineCtx;
 		var ctx=Recorder.Ctx;
 		var media=This.media=ctx.createMediaStreamSource(Recorder.Stream);
@@ -345,6 +398,9 @@ Recorder.prototype=initFn.prototype={
 	
 	,_stop:function(keepEngine){
 		var This=this,set=This.set;
+		if(!This.isMock){
+			This._S++;
+		};
 		if(This.state){
 			This.state=0;
 			This.media.disconnect();
@@ -371,7 +427,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		var ok=function(blob,duration){
 			console.log("["+Date.now()+"]End",duration,"编码耗时:"+(Date.now()-t1),blob);
-			if(blob.size<500){
+			if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
 				err("生成的"+set.type+"无效");
 				return;
 			};

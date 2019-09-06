@@ -202,7 +202,12 @@ Default.Start=function(set,success,fail){
 Default.Stop=function(success,fail){
 	var appRec=App.__Rec;
 	if(!appRec){
-		Recorder().close();//不管有没有，关闭
+		if(Recorder.IsOpen()){
+			//释放检测权限时已打开的录音
+			appRec=Recorder();
+			appRec.open();
+			appRec.close();
+		};
 		fail("未开始录音");
 		return;
 	};
@@ -235,7 +240,7 @@ Default.Stop=function(success,fail){
 
 
 var App={
-LM:"2019-8-29 11:20:04"
+LM:"2019-9-6 23:22:12"
 ,Current:0
 ,IsWx:IsWx
 ,BaseFolder:BaseFolder
