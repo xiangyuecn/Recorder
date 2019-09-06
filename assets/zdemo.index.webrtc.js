@@ -373,8 +373,12 @@ function webrtcCloseClick(){
 };
 
 
+var rtcMsgTime=function(){
+	var d=new Date();
+	return '<span style="font-size:12px;background:rgba(0,53,255,0.2);">'+("0"+d.getMinutes()).substr(-2)+"′"+("0"+d.getSeconds()).substr(-2)+"</span>";
+};
 var rtcMsgView=function(msg,isIn){
-	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'">'+msg.replace(/[<>&]/g,function(a){return "&#"+a.charCodeAt(0)+";"}).replace(/ /g,"&nbsp;").replace(/[\r\n]/g,"<br>")+'</div>');
+	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'">'+rtcMsgTime()+msg.replace(/[<>&]/g,function(a){return "&#"+a.charCodeAt(0)+";"}).replace(/ /g,"&nbsp;").replace(/[\r\n]/g,"<br>")+'</div>');
 };
 var rtcVoiceView=function(data,isIn){
 	var id=RandomKey(16);
