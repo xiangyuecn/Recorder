@@ -212,8 +212,6 @@ IOS其他浏览器||
 
 *2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题。问题二：IOS上如果录音之前先播放了任何Audio，录音过程将会变得很诡异，但如果先录音，就不存在此问题。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。
 
-*2019-09-05* 已知 [#46](https://github.com/xiangyuecn/Recorder/issues/46) `Android WebView`内调用getUserMedia方法发起授权请求时会打断touch事件，表现为触发了`touchcancel`事件，`touchend`事件始终不会触发，在做按住录音功能时应留意此问题。虽然`open`后一直不调用`close`可以规避此问题，但不建议这样做，每次录音后调用`close`兼容性更好，也更加友好；可以在每次`按住录音按钮`被按之前都重新进行一次`open`调用；或者Android Hybrid App中用RecordApp开启Native原生录音来避免此问题，因为App可以做到请求到权限后，后续录音不会再去进行权限请求。
-
 
 
 
@@ -480,6 +478,9 @@ public void onPermissionRequest(PermissionRequest request) {
 > 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，他会自己弹框询问，如果被拒绝了就看X5脸色了（随着X5不停更新什么时候恢复弹框天知地知就是你不知），参考已知问题部分。
 
 如果不出意外，App内显示的网页就能正常录音了。
+
+### 备忘小插曲
+排查 [#46](https://github.com/xiangyuecn/Recorder/issues/46) `Android WebView`内长按录音不能收到`touchend`问题时，发现touch事件会被打断，反复折腾，最终发现是每次检测权限都会调用`Activity.requestPermissions`，而`requestPermissions`会造成WebView打断touch事件，进而产生H5、AppNative原生录都会产生此问题；最后老实把精简掉的`checkSelfPermission`加上检测一下是否已授权，就没有此问题了，囧。
 
 ### 附带测试项目
 [app-support-sample/demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，文件名为`app-debug.apk.zip`，自行去掉.zip后缀）。

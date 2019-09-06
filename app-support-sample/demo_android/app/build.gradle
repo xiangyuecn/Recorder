@@ -8,6 +8,8 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+
+        resValue "string","app_build_time",System.currentTimeMillis().toString()
     }
 }
 

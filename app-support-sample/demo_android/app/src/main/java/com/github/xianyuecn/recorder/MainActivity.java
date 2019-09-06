@@ -89,6 +89,10 @@ public class MainActivity extends Activity {
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        //app编译时间
+        SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        Log.i(LogTag, "App编译时间："+dateformat.format(Long.parseLong(getResources().getString(R.string.app_build_time))));
     }
 
 
@@ -98,6 +102,18 @@ public class MainActivity extends Activity {
         @Override
         public void Request(String[] keys, final Runnable True, final Runnable False) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                boolean has=true;
+                for(String k : keys){
+                    if( MainActivity.this.checkSelfPermission(k) != PackageManager.PERMISSION_GRANTED){
+                        has=false;
+                    }
+                }
+                if(has){
+                    //已授权，已知requestPermissions调用会导致webview长按录音时会打断touch事件，提早检测早退出
+                    True.run();
+                    return;
+                }
+
                 PermissionCall=new Runnable() {
                     @Override
                     public void run() {
@@ -163,7 +179,7 @@ public class MainActivity extends Activity {
             }
         }
         private String time(){
-            SimpleDateFormat formatter=new SimpleDateFormat("HH:mm:ss", Locale.CHINA);
+            SimpleDateFormat formatter=new SimpleDateFormat("HH:mm:ss", Locale.getDefault());
             return formatter.format(new Date());
         }
     };
