@@ -375,7 +375,7 @@ function webrtcCloseClick(){
 
 var rtcMsgTime=function(){
 	var d=new Date();
-	return '<span style="font-size:12px;background:rgba(0,53,255,0.2);">'+("0"+d.getMinutes()).substr(-2)+"′"+("0"+d.getSeconds()).substr(-2)+"</span>";
+	return '<span style="font-size:12px;background:rgba(0,53,255,0.2);">'+("0"+d.getMinutes()).substr(-2)+"′"+("0"+d.getSeconds()).substr(-2)+"</span> ";
 };
 var rtcMsgView=function(msg,isIn){
 	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'">'+rtcMsgTime()+msg.replace(/[<>&]/g,function(a){return "&#"+a.charCodeAt(0)+";"}).replace(/ /g,"&nbsp;").replace(/[\r\n]/g,"<br>")+'</div>');
@@ -383,7 +383,7 @@ var rtcMsgView=function(msg,isIn){
 var rtcVoiceView=function(data,isIn){
 	var id=RandomKey(16);
 	rtcVoiceDatas[id]=data;
-	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'" onclick="rtcVoicePlay(\''+id+'\')"><span style="color:#06c">语音</span> '+(data.duration/1000).toFixed(2)+'s</div>');
+	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'" onclick="rtcVoicePlay(\''+id+'\')">'+rtcMsgTime()+'<span style="color:#06c">语音</span> '+(data.duration/1000).toFixed(2)+'s</div>');
 };
 var rtcVoiceDatas={};
 var rtcVoicePlay=function(id){
