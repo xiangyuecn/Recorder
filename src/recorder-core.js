@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-window.RecorderLM="2019-9-6 23:22:12";
+Recorder.LM="2019-9-9 21:09:34";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
@@ -197,6 +197,10 @@ Recorder.prototype=initFn.prototype={
 		var f2=function(e){
 			var code=e.name||e.message||"";
 			console.error(e);
+			if(window.isSecureContext===false){
+				False("无录音权限(非https)");
+				return;
+			};
 			var notAllow=/Permission|Allow/i.test(code);
 			False(notAllow?"用户拒绝了录音权限":"无法录音："+code,notAllow);
 		};
@@ -416,14 +420,21 @@ Recorder.prototype=initFn.prototype={
 		True(blob,duration) blob：录音数据audio/mp3|wav格式
 							duration：录音时长，单位毫秒
 		False(msg)
+		autoClose:false 可选，是否自动调用close，默认为false
 	*/
-	,stop:function(True,False){
+	,stop:function(True,False,autoClose){
 		console.log("["+Date.now()+"]Stop");
 		var This=this,set=This.set,t1;
 		
+		var end=function(){
+			This._stop();//彻底关掉engineCtx
+			if(autoClose){
+				This.close();
+			};
+		};
 		var err=function(msg){
 			False&&False(msg);
-			This._stop();//彻底关掉engineCtx
+			end();
 		};
 		var ok=function(blob,duration){
 			console.log("["+Date.now()+"]End",duration,"编码耗时:"+(Date.now()-t1),blob);
@@ -432,7 +443,7 @@ Recorder.prototype=initFn.prototype={
 				return;
 			};
 			True&&True(blob,duration);
-			This._stop();
+			end();
 		};
 		if(!This.isMock){
 			if(!This.state){
