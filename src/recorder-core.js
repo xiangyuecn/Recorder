@@ -166,6 +166,13 @@ Recorder.prototype=initFn.prototype={
 			};
 		};
 		
+		var checkSecure=function(){
+			if(window.isSecureContext===false){
+				False("无权录音(需https)");
+				return 1;
+			};
+		};
+		
 		
 		//如果已打开就不要再打开了
 		if(Recorder.IsOpen()){
@@ -173,7 +180,7 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		if(!Recorder.Support()){
-			False("此浏览器不支持录音",false);
+			checkSecure() || False("此浏览器不支持录音");
 			return;
 		};
 		
@@ -197,12 +204,9 @@ Recorder.prototype=initFn.prototype={
 		var f2=function(e){
 			var code=e.name||e.message||"";
 			console.error(e);
-			if(window.isSecureContext===false){
-				False("无录音权限(非https)");
-				return;
-			};
 			var notAllow=/Permission|Allow/i.test(code);
-			False(notAllow?"用户拒绝了录音权限":"无法录音："+code,notAllow);
+			
+			checkSecure() || False(notAllow?"用户拒绝了录音权限":"无法录音："+code,notAllow);
 		};
 		var pro=Recorder.Scope.getUserMedia({audio:true},f1,f2);
 		if(pro&&pro.then){
