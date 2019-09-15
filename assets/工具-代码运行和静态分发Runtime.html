@@ -1,0 +1,809 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="icon.png">
+
+<title>Recorder代码运行和静态分发工具</title>
+
+<script src="../src/recorder-core.js"></script>
+<script src="../src/extensions/waveview.js"></script>
+
+<script src="ztest-jquery.min-1.9.1.js"></script>
+<script src="ztest-codemirror.min.5.48.4.js"></script>
+<script src="ztest-rsa.js"></script>
+<script>
+//受信任的Root公钥列表，最大程度确保自动运行本工具时执行的任意代码的作者身份未被篡改
+//添加root公钥需要额外验证签名SelfSign=SignSHA1(ID)，用于确保自身的手写正确性
+var TrustRSARoots=[
+	{Name:"官方G01签发的作者身份验证",ID:"G01" ,Public:"AQAB",Modulus:"2v+8JirVYBFVqh7AzeaPs5I84JrstgVMwv1qAoX7nZTfiiTS7M9jFgIOxtugveJQkuZsjNxzQ+p/iIfCEqtOwkhsx+DLhwJY5R60NXQwivU7u6ENhZgNrBoIxs35UyLsyTROd4i4cGRq49sETfwK1nBNMH87OWtwVmquQmWs8zk=",SelfSign:"D6onRGidDe668nWFs6N1qAFxDDO0ug0AwrezNHu9VguyLjhhF/Pkd0o6X7VajDvUo4RXxooRuDF0WvVk103I3xjbCz7pAlyKGcqVGdqRiIkXr6RsgxzbdQ9bGOFt3k6hioFPpJX4OBukPaIjCUVzohq/axKhXxgNk81oDTgUawE="}
+];
+//吊销列表 emmm...记录已签发公钥的hash即可完成吊销，用不到就不写了
+</script>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.mainBtn{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin-right:20px;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.mainBtn:active{
+	background: #f00;
+}
+</style>
+</head>
+
+<body>
+
+<div class="main">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#f60;">Recorder代码运行和静态分发工具</span>
+		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
+	</div>
+	
+	<div class="mainBox">
+		<div class="mainCodeEdit" style="border:1px solid #ddd">
+			<textarea class="codeEdit" style="width:98%;height:300px"></textarea>
+		</div>
+		
+		<div class="mainCodeBtn" style="padding-top:12px">
+			<button class="mainBtn" onclick="Runtime.CodeRunClick()" style="padding:0 40px">运行</button>
+			<button class="mainBtn" onclick="Runtime.CodePubClick()">分发源码</button>
+		</div>
+	</div>
+	
+	<div class="mainBox mainCtrl" style="display:none">
+		<div style="padding-bottom:12px">
+			<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block;vertical-align:bottom" class="ctrlProcessWave"></div>
+			<div style="height:40px;width:300px;display:inline-block;background:#999;position:relative;vertical-align:bottom">
+				<div class="ctrlProcessX" style="height:40px;background:#0B1;position:absolute;"></div>
+				<div class="ctrlProcessT" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			</div>
+		</div>
+		
+		<div class="ctrlBtns"></div>
+	</div>
+	
+	<div class="mainBox">
+		<audio class="LogAudioPlayer" style="width:100%"></audio>
+		<div class="mainLog"></div>
+	</div>
+	
+	<div class="mainBox">
+		<div><span style="font-size:22px; color:#f60">Demo 列表</span> 点击编辑和运行</div>
+		<div class="demoList"></div>
+	</div>
+</div>
+
+
+
+
+
+
+<script>
+(function(){
+var WaveViewBak=Recorder.WaveView;
+var ProcessWaveView;
+var LogAudios=[0];
+
+window.RootFolder="..";
+window.Runtime={
+	LogAudios:LogAudios
+	
+	/*注册显示的控制按钮*/
+	,Ctrls:function(ctrls){
+		this._ctrls=ctrls;
+		ctrls.push({name:"清除日志",click:"Runtime.LogClear"});
+		
+		var html=[];
+		for(var i=0;i<ctrls.length;i++){
+			var o=ctrls[i];
+			if(o.html){
+				html.push(o.html);
+			}else{
+				html.push('<button class="mainBtn" onclick="'+o.click+'()">'+o.name+'</button>');
+			};
+		};
+		$(".ctrlBtns").html(html.join("\n"));
+	}
+	
+	,Import:function(jsList,win){
+		win=win||window;
+		var doc=win.document;
+		var load=function(idx){
+			if(idx>=jsList.length){
+				Runtime.CodeRunClick(1);
+				return;
+			};
+			var itm=jsList[idx];
+			var url=itm.url;
+			if(itm.check()===false){
+				load(idx+1);
+				return;
+			};
+			
+			var elem=doc.createElement("script");
+			elem.setAttribute("type","text/javascript");
+			elem.setAttribute("src",url);
+			elem.onload=function(){
+				load(idx+1);
+			};
+			elem.onerror=function(e){
+				Runtime.Log("请求失败:"+(e.message||"-")+"，"+url,1);
+			};
+			doc.body.appendChild(elem);
+		};
+		setTimeout(function(){
+			load(0);
+		});
+		
+		Runtime.CodeRunImport();
+	}
+	
+	,Process:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+		Recorder.WaveView=WaveViewBak;
+		if(!ProcessWaveView){
+			ProcessWaveView=Recorder.WaveView({elem:".ctrlProcessWave"});
+		};
+		
+		$(".ctrlProcessX").css("width",powerLevel+"%");
+		$(".ctrlProcessT").html(bufferDuration+"/"+powerLevel);
+		
+		ProcessWaveView.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+	}
+	
+	/*显示日志内容，color:0默认，1红色，2绿色，其他指定颜色*/
+	,Log:function(msg,color){
+		var now=new Date();
+		var t=("0"+now.getHours()).substr(-2)
+			+":"+("0"+now.getMinutes()).substr(-2)
+			+":"+("0"+now.getSeconds()).substr(-2);
+		$(".mainLog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+msg+'</div>');
+	}
+	,LogAudio:function(blob,duration,rec,msg){
+		var set=rec&&rec.set||{};
+		var id=LogAudios.length;
+		LogAudios.push({blob:blob,set:$.extend({},set),duration:duration});
+		
+		Runtime.Log((msg||"已录制")+":"+set.bitRate+"kbps "+set.sampleRate+"hz "+blob.size+"b ["+set.type+"]"+duration+'ms <button onclick="Runtime.LogAudioDown(\''+id+'\')">下载</button> <button onclick="Runtime.LogAudioPlay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="LogAudio_'+id+'"></span>');
+	}
+	,LogClear:function(){
+		$(".mainLog").html("");
+	}
+};
+$(window).bind("error",function(e){
+	Runtime.Log('【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre>',1);
+});
+})();
+</script>
+
+
+
+
+
+<script>
+(function(){
+var codeRunCtrl;
+Runtime.CodeRunImport=function(){
+	if(codeRunCtrl==1){
+		codeRunCtrl=2;
+		throw new Error("kill");
+	};
+};
+Runtime.CodeRunClick=function(isImport){
+	$(".mainCtrl").show();
+	
+	if(!isImport){
+		codeRunCtrl=1;
+	};
+	if(codeRunCtrl==1){
+		Runtime.Log("代码开始运行，请勿操作...",1);
+	};
+	if(codeRunCtrl==3){
+		return;
+	};
+	if(codeRunCtrl==2){
+		codeRunCtrl=3;
+	};
+	
+	try{
+		var code=$(".codeEdit").val();
+		window.eval(code);
+		Runtime.Log("代码已运行",2);
+	}catch(e){
+		if(e.message.indexOf("kill")+1){
+			return;
+		};
+		Runtime.Log("运行出错:"+e.message+"<pre>"+e.stack+"</pre>",1);
+	};
+};
+
+
+
+Runtime.LogAudioPlay=function(id){
+	var audio=$(".LogAudioPlayer")[0];
+	audio.controls=true;
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	
+	var o=Runtime.LogAudios[id];
+	if(o){
+		o.play=(o.play||0)+1;
+		var logmsg=function(msg){
+			$(".LogAudio_"+id).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString()+" "+msg);
+		};
+		logmsg("");
+		audio.onerror=function(e){
+			console.log(arguments)
+			logmsg('<span style="color:red">播放失败</span>');
+		};
+		
+		var end=function(blob){
+			audio.src=(window.URL||webkitURL).createObjectURL(blob);
+			audio.play();
+		};
+		var wav=Recorder[o.set.type+"2wav"];
+		if(wav){
+			logmsg("正在转码成wav...");
+			wav(o.blob,function(blob){
+				end(blob);
+				logmsg("已转码成wav播放");
+			},function(msg){
+				logmsg("转码成wav失败："+msg);
+			});
+		}else{
+			end(o.blob);
+		};
+	};
+};
+var Rnd=0;
+Runtime.LogAudioDown=function(id){
+	var o=Runtime.LogAudios[id];
+	if(o){
+		var cls="LogAudioInfo"+(++Rnd);
+		var name="rec-"+o.duration+"ms-"+o.set.bitRate+"kbps-"+o.set.sampleRate+"hz."+o.set.type;
+		
+		o.down=(o.down||0)+1;
+		$(".LogAudio_"+id).html('<span style="color:red">'+o.down+'</span> <span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button onclick="Runtime.LogAudioDown64(\''+id+'\',\''+cls+'\')">生成Base64文本</button></span>');
+		
+		var downA=document.createElement("A");
+		downA.innerHTML="下载 "+name;
+		downA.href=(window.URL||webkitURL).createObjectURL(o.blob);
+		downA.download=name;
+		$("."+cls).prepend(downA);
+		downA.click();
+	};
+};
+Runtime.LogAudioDown64=function(key, cls){
+	var o=Runtime.LogAudios[key];
+	
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		var id="LogAudioInfoB64"+(++Rnd);
+		$("."+cls).append('<textarea class="'+id+'"></textarea>');
+		$("."+id).val(reader.result);
+	};
+	reader.readAsDataURL(o.blob);
+};
+
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+$(function(){
+	var elem=$(".codeEdit");
+	var w=elem.width();
+	var edit=CodeMirror.fromTextArea(elem[0],{
+			mode:"javascript"
+			,lineNumbers:true
+			,lineWrapping:true
+		});
+	Runtime.CodeEdit=edit;
+	edit.setSize(w+"px","auto");
+	edit.on("change",function(a){
+		clearTrustBGInt();
+		
+		var val=a.getValue();
+		if(/^https:\/\/xiangyuecn/.test(val)){
+			setVal("");
+			Runtime.Log("检测到输入了URL，正在解析此URL...");
+			setTimeout(function(){
+				viewUrlCode(val);
+			});
+			return;
+		};
+		elem.val(val);
+	});
+
+	var setVal=function(val){
+		edit.setValue(val);
+		
+		edit.refresh();
+	};
+	Runtime.UseDemoCode=function(id){
+		setVal(DemoCodeList[id].code);
+		Runtime.Log("已在编辑框内显示了《"+(id+1)+". "+DemoCodeList[id].name+"》Demo的源码，可运行查看效果");
+	};
+	
+	DemoCodeList.sort(function(a,b){return b.sort-a.sort});
+	var html=[];
+	for(var i=0;i<DemoCodeList.length;i++){
+		var o=DemoCodeList[i];
+		html.push('<div style="line-height:40px">'+(i+1)+'. <a href="?idf='+encodeURIComponent(o.idf)+'" onclick="Runtime.UseDemoCode('+i+');return false">'+o.name+'</a></div>');
+	};
+	$(".demoList").html(html.join("\n"));
+	
+	
+	var readMetas=function(txt){
+		var exp=/^\s*@(\w+) (```)?"([\S\s]*?)"\2|^\s*@[\u00ff-\uffff]+\((\w+)\)：(?:```"([\S\s]*?)"```|([^\s]*))/mg,m;
+		var headers={};
+		while(m=exp.exec(txt)){
+			if(m[1]){
+				headers[m[1]]=m[3]||"";
+			}else{
+				headers[m[4]]=m[6]||m[5]||"";
+			}
+		};
+		return headers;
+	};
+	var checkTrust=function(data){
+		//验证作者的公钥认证信息
+		var trust=JSON.parse(data.RSA_Trust);
+		var root;
+		for(var i=0;i<TrustRSARoots.length;i++){
+			if(TrustRSARoots[i].ID==trust.Root){
+				root=TrustRSARoots[i];
+			};
+		};
+		trust.root=root;
+		var ok=false;
+		if(root){
+			var txt=trust.Ver+"_"+trust.Time+"_"+trust.Root+"_"+trust.Name+"_"+data.RSA_Public_Exponent+"_"+data.RSA_Modulus;
+			
+			var rsa=RSA(root.Modulus,root.Public);
+			ok=rsa.verify(txt,trust.Trust,"SHA1");
+		};
+		return ok?trust:null;
+	};
+	var getMetaExp=function(){
+		return /\/\*@Runtime Meta@[\S\s]+?@Runtime@\*\//ig;
+	};
+	var keepMetaKeys;
+	Runtime.CodePubClick=function(){
+		var val=edit.getValue();
+		Runtime.Log("-----------");
+		var store=JSON.parse(localStorage["RuntimeEditorData"]||"{}");
+		
+		//从源码中恢复部分参数
+		var meta=(getMetaExp().exec(val)||[])[0];
+		var data=readMetas(meta);
+		store.Ver=data.Ver;
+		store.Title=data.Title;
+		store.Desc=data.Desc;
+		
+		store.Author=store.Author||data.Author;
+		store.RSA_Public_Exponent=store.RSA_Public_Exponent||data.RSA_Public_Exponent;
+		store.RSA_Modulus=store.RSA_Modulus||data.RSA_Modulus;
+		store.RSA_Trust=store.RSA_Trust||data.RSA_Trust;
+		
+		
+		var exp=/\/\*@Runtime Editor@[\S\s]+?@Runtime@\*\//ig;
+		var m=exp.exec(val);
+		if(!m){
+			keepMetaKeys=[];
+			var tmp=SignRuntimeEditor.replace(/\$\{(\w+)\}/g,function(a,b){
+				keepMetaKeys.push(b);
+				return store[b]||"";
+			});
+			setVal(val+"\n\n"+tmp);
+			Runtime.Log("请完善Runtime Editor中的代码和作者信息，然后再次点击分发按钮");
+			return;
+		};
+		exp.lastIndex=0;
+		val=val.replace(exp,"");
+		val=val.replace(getMetaExp(),"");
+		val=val.replace(/^\s+|\s+$/g,"");
+		
+		var data=readMetas(m[0]);
+		console.log("Runtime Editor",data);
+		
+		if(!data.RSA_Modulus||!data.RSA_Private_Exponent||!data.RSA_Public_Exponent){
+			Runtime.Log("请填写你的源码签名RSA私钥参数",1);
+			return;
+		};
+		if(data.RSA_Trust){
+			//验证作者的公钥认证信息
+			var trust=checkTrust(data);
+			if(!trust){
+				Runtime.Log("RSA_Trust信息无法通过验证，请检查认证信息的正确性",1);
+				return;
+			};
+			
+			//将作者改成验证的名称
+			data.Author=trust.Name;
+		}else{
+			Runtime.Log("没有RSA_Trust信息，此分发代码可能被识别为非原作者",1);
+		};
+		
+		var meta="/*@Runtime Meta@** 《"+data.Title+"》";
+		meta+="\n@源码标题(Title)："+data.Title;
+		meta+="\n@作者(Author)："+data.Author;
+		meta+="\n@版本(Ver)："+data.Ver;
+		meta+="\n@时间："+new Date().toLocaleString();
+		meta+="\n@描述(Desc)：```\""+data.Desc+"\"```";
+		meta+="\n-----------";
+		meta+="\n@公钥指数(RSA_Public_Exponent)："+data.RSA_Public_Exponent;
+		meta+="\n@模数(RSA_Modulus)："+data.RSA_Modulus;
+		meta+="\n@认证信息(RSA_Trust)：```\""+data.RSA_Trust+"\"```";
+		meta+="\n@签名(RSA_Sign)：";
+		meta+="\n**@Runtime@*/";
+		val=meta+"\n\n\n"+val;
+		
+		//签名
+		var rsa=RSA(data.RSA_Modulus,data.RSA_Public_Exponent,data.RSA_Private_Exponent);
+		var sign="";
+		try{
+			var st=rsa.sign(val,"SHA1");
+			if(rsa.verify(val,st,"SHA1")){
+				sign=st; 
+			};
+		}catch(e){}
+		if(!sign){
+			Runtime.Log("签名RSA私钥无效，请检查参数",1);
+			return;
+		};
+		val=val.replace(/@签名\(RSA_Sign\)：/,"@签名(RSA_Sign)："+sign);
+		
+		//生成url
+		var sha1=SHA1(val);
+		var urlb64=btoa(unescape(encodeURIComponent(val)))
+			.replace(/\+/g,"-")
+			.replace(/\//g,"_")
+			.replace(/=/g,".");
+		var url="https://xiangyuecn.github.io/Recorder/assets/"+encodeURIComponent("工具-代码运行和静态分发Runtime")+".html#sha1="+sha1+"&shareCode=v1_"+encodeURIComponent(urlb64);
+		
+		Runtime.Log('<textarea style="width:300px;height:80px">'+url+'</textarea>');
+		Runtime.Log("已分发，url大小"+url.length+"b，<a href='"+url+"' target='_blank'>地址</a>",2);
+		
+		//存储可存储备用的公开数据
+		localStorage["RuntimeEditorData"]=JSON.stringify({
+			Author:data.Author
+			,RSA_Public_Exponent:data.RSA_Public_Exponent
+			,RSA_Modulus:data.RSA_Modulus
+			,RSA_Trust:data.RSA_Trust
+		});
+	};
+	
+	
+	//显示代码
+	var viewUrlCode=function(href){
+		var idf=(/[?#&]idf=([^&#]+)/.exec(href)||[])[1];
+		var sha1=(/[?#&]sha1=([^&#]+)/.exec(href)||[])[1];
+		var shareCode=/[?#&]shareCode=v(\d+)_([^&#]+)/.exec(href);
+		if(!shareCode){
+			if(!idf){
+				//idf="self_base_demo";
+				Runtime.Log("初始化完成，可以编写代码，或者点击一个Demo来编辑",2);
+				return;
+			};
+			for(var i=0;i<DemoCodeList.length;i++){
+				if(DemoCodeList[i].idf==idf){
+					Runtime.UseDemoCode(i);
+				};
+			};
+			return;
+		};
+		var shareVer=shareCode[1];
+		var tips="请检查链接是否完整。因为太长的url可能会被浏览器截断导致代码不完整，可通过把完整的url粘贴到上面的代码编辑框内，程序将尝试解析还原出代码。";
+		try{
+			var code=decodeURIComponent(shareCode[2])
+				.replace(/\-/g,"+")
+				.replace(/\_/g,"/")
+				.replace(/\./g,"=");
+			try{
+				code=atob(code);
+			}catch(e){
+				Runtime.Log("分发的源码Base64解码失败，"+tips,1);
+				return;
+			};
+			code=decodeURIComponent(escape(code));
+			
+			if(sha1!=SHA1(code)){
+				Runtime.Log("分发的源码校验和不一致，"+tips,1);
+				return;
+			};
+		}catch(e){
+			Runtime.Log("分发的源码解码失败，"+tips+"<br><br>"+e.stack,1);
+			return;
+		};
+		
+		var meta=(getMetaExp().exec(code)||[])[0]||"";
+		var data=readMetas(meta);
+		if(!data.RSA_Modulus||!data.RSA_Public_Exponent||!data.RSA_Sign){
+			Runtime.Log("此分发的源码没有作者签名，请联系作者",1);
+			return;
+		};
+		
+		//验证签名
+		var code2=code.replace(/@签名\(RSA_Sign\)：[^\s]+/,"@签名(RSA_Sign)：");
+		var rsa=RSA(data.RSA_Modulus,data.RSA_Public_Exponent);
+		if(!rsa.verify(code2,data.RSA_Sign,"SHA1")){
+			Runtime.Log("此分发的源码的作者签名无效，请联系作者",1);
+			return;
+		};
+		
+		//验证认证信息
+		var isTrust=false,trust;
+		if(data.RSA_Trust){
+			//验证作者的公钥认证信息
+			trust=checkTrust(data);
+			if(!trust){
+				//完全被篡改
+				Runtime.Log("作者提供的认证签名信息无法通过验证，这往往代表着代码已被篡改",1);
+			}else{
+				isTrust=true;
+			};
+		};
+		
+		setVal(code);
+		
+		if(isTrust){
+			Runtime.Log("已加载《"+data.Title+"》作者:"+data.Author+"，作者身份已通过 \""+trust.root.Name+"\" 的确认",2);
+		}else{
+			Runtime.Log("已加载《"+data.Title+"》作者自称为:"+data.Author+"，未能进行鉴定，请自行分辨",1);
+			
+			var n=0;
+			var run=function(){
+				n++;
+				$("body").css("background",n%2?"red":"#f5f5f5");
+			};
+			run();
+			trustBGInt=setInterval(run,1000);
+		};
+	};
+	var trustBGInt;
+	function clearTrustBGInt(){
+		if(trustBGInt){
+			clearInterval(trustBGInt);
+			trustBGInt=0;
+			$("body").css("background","#f5f5f5");
+		};
+	};
+	
+	viewUrlCode(location.href);
+});
+
+
+
+var SignRuntimeEditor=(function(){
+/*@Runtime Editor@* 【代码分发信息和作者】
+----------------
+@Author "${Author}" 作者（如果填了RSA_Trust，此处会被覆盖），请填入引号中，下同
+@Ver "${Ver}" 版本号
+@Title "${Title}" 代码标题
+@Desc ```"${Desc}"``` 描述信息，可多行
+----------------
+源码签名RSA私钥参数（Base64），填入下面的引号中：
+@RSA_Private_Exponent "" 私钥指数 D
+@RSA_Public_Exponent "${RSA_Public_Exponent}" 公钥指数 E 一般为AQAB
+@RSA_Modulus "${RSA_Modulus}" 模数 N
+
+RSA私钥用于确保分发出去的代码是作者编写的未被篡改，如果你没有RSA私钥，可以用openssl生成一个，然后提取出上面这3个参数。
+
+或者在本页面控制台内输入 rsa=RSA(1024);console.log(rsa.getPrivate());console.log(rsa.getPublic());console.log(rsa.getModulus()) 即可获得。
+----------------
+作者应保管好私钥，否则将无法验证作者身份。正常情况下作者的身份是不被信任的，如果需要被信任，可申请本页面TrustRSARoots中的秘钥给你的公钥进行签名认证，然后将认证信息填入下面的引号中：
+@RSA_Trust ```"${RSA_Trust}"```
+----------------
+*@Runtime@*/}).toString().replace(/^function\s*\(\)\s*\{|\s*\}$/g,"");
+		
+var DemoCodeList=[];
+function AddDemoCode(sort,idf,name,fn){
+	DemoCodeList.push({sort:sort?sort:666-DemoCodeList.length,idf:idf,name:name,code:fn.toString().replace(/^function\s*\(\)\s*\{|\s*\}$/g,"")});
+};
+</script>
+
+
+
+
+
+
+
+
+
+<script>
+AddDemoCode(-999,"self_trust","【工具】TrustRSARoots作者公钥认证",function(){/******************
+《TrustRSARoots公钥认证》
+作者：高坚果
+时间：2019-9-12 21:59:19
+******************/
+Runtime.Log("开始认证...");
+(function(){
+	var info={
+		Name:"" //【填写】作者名称
+		,Modulus:"" //【填写】待认证模数
+		,Public:"AQAB" //【填写】待认证公钥指数
+	};
+
+	if(!info.Name || !info.Public || !info.Modulus){
+		Runtime.Log("info信息不全，请在代码中填写完整",1);
+		return;
+	};
+
+	var idx=0;
+	if(TrustRSARoots.length>1){
+		var roots=[];
+		for(var i=0;i<TrustRSARoots.length;i++){
+			var o=TrustRSARoots[i];
+			roots.push((i+1)+"："+o.Name);
+		};
+		var i=prompt("请选择Root秘钥序号：\n"+roots.join("\n"),1);
+		if(i==null){
+			Runtime.Log("已取消操作");
+			return;
+		};
+		idx=(+i)-1;
+	};
+	var item=TrustRSARoots[idx];
+	if(!item){
+		Runtime.Log("序号无效",1);
+		return;
+	};
+	
+	var d=prompt("请输入\""+item.Name+"\"的私钥Private Exponent Base64");
+	if(!d){
+		Runtime.Log("已取消操作");
+		return;
+	};
+	
+	var rsa=RSA(item.Modulus,item.Public,d);
+	
+	//验证秘钥是否正确
+	if(rsa.sign(item.ID)!=item.SelfSign){
+		Runtime.Log(item.Name+"私钥错误",1);
+		return;
+	};
+	if(!rsa.verify(item.ID,item.SelfSign)){
+		Runtime.Log(item.Name+"公钥似乎是错的",1);
+		return;
+	};
+	
+	var ver="1.0";
+	var time=""+Date.now();
+	var data=ver+"_"+time+"_"+item.ID+"_"+info.Name+"_"+info.Public+"_"+info.Modulus;
+	var sign=rsa.sign(data,"SHA1");
+	var rtv=JSON.stringify({
+		Ver:ver
+		,Time:time
+		,Root:item.ID
+		,Name:info.Name
+		,Trust:sign
+	});
+	
+	Runtime.Log('<textarea style="width:300px;height:80px">'+rtv+'</textarea>');
+	Runtime.Log("已签名",2);
+})();	
+});
+
+
+AddDemoCode(999,"self_base_demo","【教程】本工具使用示例，和Recorder基础用法",function(){/******************
+《本工具使用示例，和Recorder基础用法》
+作者：高坚果
+时间：2019-9-12 21:59:19
+
+工具编辑框内可用编辑代码然后运行，代码内可用：
+	RootFolder:"" 当前程序根目录，结尾不含/
+
+	Runtime.Import(jsList) 导入js列表，只能调用一次，jsList:[{url:"",check:fn()},...] check返回false跳过这条的导入
+
+	Runtime.Ctrls(ctrls) 在控制区显示按钮，只能调用一次，ctrls:[{html:"html代码"},{name:"按钮名称",click:"函数名称"},...]
+
+	Runtime.Log(msgHtml,color) 在日志区显示日志html，color:0默认，1红色，2绿色，其他指定颜色
+
+	Runtime.LogAudio(blob,duration,rec,msgHtml) 在日志区显示一个音频的日志信息
+
+	Runtime.Process(buffers,powerLevel,bufferDuration,bufferSampleRate) 接受Recorder的实时回调，驱动图形显示
+******************/
+
+//加载框架
+Runtime.Import([
+	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
+	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
+	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
+]);
+
+//显示控制按钮
+Runtime.Ctrls([
+	{name:"开始录音",click:"recStart"}
+	,{name:"结束录音",click:"recStop"}
+]);
+
+//调用录音
+var rec=Recorder({
+	type:"mp3"
+	,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+		Runtime.Process.apply(null,arguments);
+	}
+});
+function recStart(){
+	//var dialog=createDelayDialog(); 我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调，此处demo省略了弹窗的代码
+	var t=setTimeout(function(){
+		Runtime.Log("无法录音：权限请求被忽略（超时假装手动点击了确认对话框）",1);
+	},8000);
+	
+	rec.open(function(){//打开麦克风授权获得相关资源
+		clearTimeout(t);
+		rec.start();//开始录音
+	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+		clearTimeout(t);
+		Runtime.Log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg, 1);
+	});
+};
+function recStop(){
+	rec.stop(function(blob,duration){
+		rec.close();//释放录音资源
+		
+		Runtime.LogAudio(blob,duration,rec);
+	},function(msg){
+		Runtime.Log("录音失败:"+msg, 1);
+	});
+};
+});
+</script>
+
+</body>
+</html>

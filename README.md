@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip）。快捷方式: [【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip）。快捷方式: [【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
 
 录音默认输出mp3格式，另外可选wav格式（raw pcm format此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -30,7 +30,7 @@ mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开�
 > 可自行用 `AMD/CommonJS` 写法把 `Recorder` 函数（把格式支持文件合并过来）进行导出；或者尝试直接 `import/require` `recorder.mp3.min.js`，应该可以通过全局`window.Recorder`访问，简单粗暴。vue?! angular?!可用??!!，[webpack使用](https://github.com/xiangyuecn/Recorder/issues/38)。
 
 ## 【2】调用录音
-然后使用，假设立即运行，只录3秒
+然后使用，假设立即运行，只录3秒，[运行此代码>>](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)
 ``` javascript
 var rec=Recorder({type:"mp3",sampleRate:16000});//mp3格式，指定采样率，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
 
@@ -505,6 +505,14 @@ public void onPermissionRequest(PermissionRequest request) {
 另外除wav外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意。
 
 ![](assets/use_webrtc.png)
+
+
+# :open_book:工具：代码运行和静态分发Runtime
+[在线访问](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，本工具提供在线运行和测试代码的能力，本库的大部分小demo将由此工具来进行开发和承载。本工具提供代码片段的分发功能，代码存储在url中，因此简单可靠；额外提供了一套源码作者的身份认证机制。
+
+我们不传输、不存储数据，我们只是代码的可靠搬运工。看图：
+
+![](assets/use_runtime.gif)
 
 
 # :open_book:工具：裸(RAW、WAV)PCM转WAV播放测试和转码
