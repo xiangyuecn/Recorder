@@ -413,7 +413,7 @@ function recstop2(){
 		};
 		rec.set.bitRate=list[i];
 		rec.isMock=1;
-		recstopFn(0,function(){
+		recstopFn(null,0,function(){
 			setTimeout(run);
 		});
 	};
