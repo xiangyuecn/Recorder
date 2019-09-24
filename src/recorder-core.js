@@ -134,7 +134,7 @@ function initFn(set){
 	};
 	this.set=o;
 	
-	this._S=9;//stop同步锁，stop时阻止上次还未完成的start
+	this._S=9;//stop同步锁，stop可以阻止open过程中还未运行的start
 };
 //同步锁，控制对Stream的竞争；用于close时中断异步的open；一个对象open如果变化了都要阻止close，Stream的控制权交个新的对象
 Recorder.Sync={/*open*/O:9,/*close*/C:9};
@@ -146,11 +146,17 @@ Recorder.prototype=initFn.prototype={
 		True=True||NOOP;
 		False=False||NOOP;
 		
+		var ok=function(){
+			True();
+			
+			This._SO=0;//解除stop对open中的start调用的阻止
+		};
+		
 		//同步锁
 		var Lock=Recorder.Sync;
 		var lockOpen=++Lock.O,lockClose=Lock.C;
-		This._O=lockOpen;//记住当前的open，如果变化了要阻止close，这里假定了新对象已取代当前对象并且不再使用
-		This._SO=This._S;//记住open时的stop，任何stop变化后都不能继续调用start
+		This._O=This._O_=lockOpen;//记住当前的open，如果变化了要阻止close，这里假定了新对象已取代当前对象并且不再使用
+		This._SO=This._S;//记住open过程中的stop，中途任何stop调用后都不能继续open中的start
 		var lockFail=function(){
 			//允许多次open，但不允许任何一次close，或者自身已经调用了关闭
 			if(lockClose!=Lock.C || !This._O){
@@ -159,7 +165,7 @@ Recorder.prototype=initFn.prototype={
 					//无新的open，已经调用了close进行取消，此处应让上次的close明确生效
 					This.close();
 				}else{
-					err+="open被中断";
+					err="open被中断";
 				};
 				False(err);
 				return true;
@@ -176,7 +182,7 @@ Recorder.prototype=initFn.prototype={
 		
 		//如果已打开就不要再打开了
 		if(Recorder.IsOpen()){
-			True();
+			ok();
 			return;
 		};
 		if(!Recorder.Support()){
@@ -195,7 +201,7 @@ Recorder.prototype=initFn.prototype={
 				if(lockFail())return;
 				
 				if(Recorder.IsOpen()){
-					True();
+					ok();
 				}else{
 					False("录音功能无效：无音频流");
 				};
@@ -221,11 +227,10 @@ Recorder.prototype=initFn.prototype={
 		This._stop();
 		
 		var Lock=Recorder.Sync;
-		var _o=This._O;
 		This._O=0;
-		if(_o!=Lock.O){
+		if(This._O_!=Lock.O){
 			//唯一资源Stream的控制权已交给新对象，这里不能关闭。此处在每次都弹权限的浏览器内可能存在泄漏，新对象被拒绝权限可能不会调用close，忽略这种不处理
-			_o&&console.warn("close被中断");
+			console.warn("close被忽略");
 			call();
 			return;
 		};
@@ -328,7 +333,7 @@ Recorder.prototype=initFn.prototype={
 	
 	
 	
-	//开始录音，需先调用open；不支持、错误，不会有任何提示，stop时自然能得到错误
+	//开始录音，需先调用open；只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误
 	,start:function(){
 		if(!Recorder.IsOpen()){
 			console.error("未open");
@@ -341,6 +346,14 @@ Recorder.prototype=initFn.prototype={
 		This.state=0;
 		This.envStart(0,ctx.sampleRate);
 		
+		//检查open过程中stop是否已经调用过
+		if(This._SO&&This._SO+1!=This._S){//上面调用过一次 _stop
+			//open未完成就调用了stop，此种情况终止start。也应尽量避免出现此情况
+			console.warn("start被中断");
+			return;
+		};
+		This._SO=0;
+		
 		if(ctx.state=="suspended"){
 			ctx.resume().then(function(){
 				console.log("ctx resume");
@@ -352,14 +365,6 @@ Recorder.prototype=initFn.prototype={
 	}
 	,_start:function(){
 		var This=this,set=This.set;
-		
-		//检查stop同步锁状态
-		if(This._SO&&This._SO+1!=This._S){//start已调用过一次 _stop
-			//open未完成就调用了stop，此种情况终止start
-			console.warn("start被中断");
-			return;
-		};
-		This._SO=0;
 		
 		var engineCtx=This.engineCtx;
 		var ctx=Recorder.Ctx;
