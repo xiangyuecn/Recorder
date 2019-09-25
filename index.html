@@ -235,7 +235,6 @@ function recopen(){
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
-	window.realTimeSendTryReset&&realTimeSendTryReset();
 	
 	rec=Recorder({
 		type:type
@@ -313,6 +312,8 @@ function recstart(call){
 		msg&&reclog(msg,1);
 	});
 	if(rec){
+		window.realTimeSendTryReset&&realTimeSendTryReset();
+		
 		rec.start();
 		var set=rec.set;
 		reclog("录制中："+set.type+" "+set.sampleRate+"hz "+set.bitRate+"kbps");
