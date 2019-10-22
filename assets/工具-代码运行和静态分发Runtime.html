@@ -25,7 +25,8 @@ var TrustRSARoots=[
 <style>
 body{
 	word-wrap: break-word;
-	background:#f5f5f5;
+	background:#f5f5f5 center top no-repeat;
+    background-size: auto 680px;
 }
 pre{
 	white-space:pre-wrap;
@@ -114,7 +115,26 @@ a:hover{
 		<div><span style="font-size:22px; color:#f60">Demo 列表</span> 点击编辑和运行</div>
 		<div class="demoList"></div>
 	</div>
+	
+	<div class="mainBox">
+		<div>
+			如果你有蛮有意思的有价值代码片段，欢迎把代码放到assets/runtime-codes目录内提交PR，我们共同丰富这个Demo列表&#128540;
+		</div>
+		
+		<div style="font-size:12px;color:#999;margin-top:10px">
+			顶上背景图来自 diygod.me
+			<a href="#" class="hideBG"></a>
+		</div>
+	</div>
 </div>
+<script>
+var hideBG=function(hide){
+	localStorage["hideBG"]=hide?"1":"";
+	$("body").css("backgroundImage",hide?"":"url(https://diygod.me/images/header-leg.jpg)");
+	$(".hideBG").html(hide?"显示":"不再显示").attr("onclick","hideBG("+(hide?0:1)+")");
+};
+hideBG(localStorage["hideBG"]);
+</script>
 
 
 
@@ -414,9 +434,9 @@ $(function(){
 		var o=DemoCodeList[i];
 		var href='href="?';
 		if(o.idf){
-			href+="?idf="+encodeURIComponent(o.idf);
+			href+="idf="+encodeURIComponent(o.idf);
 		}else if(o.jsn){
-			href+="?jsname="+encodeURIComponent(o.jsn);
+			href+="jsname="+encodeURIComponent(o.jsn);
 		}else{
 			href="";
 		};
