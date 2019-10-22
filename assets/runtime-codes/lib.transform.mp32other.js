@@ -14,7 +14,7 @@ Recorder.Mp32Other(newSet,mp3Blob,True,False)
 //=====mp3转其他格式核心函数==========
 Recorder.Mp32Other=function(newSet,mp3Blob,True,False){
 	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
-		False("浏览器不支持mp3解码");
+		False&&False("浏览器不支持mp3解码");
 		return;
 	};
 	
@@ -37,7 +37,7 @@ Recorder.Mp32Other=function(newSet,mp3Blob,True,False){
 				True(blob,duration,rec);
 			},False);
 		},function(e){
-			False("mp3解码失败:"+e.message);
+			False&&False("mp3解码失败:"+e.message);
 		});
 	};
 	reader.readAsArrayBuffer(mp3Blob);
