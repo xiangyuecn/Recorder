@@ -374,16 +374,54 @@ $(function(){
 		
 		edit.refresh();
 	};
+	var loadDemoCode=function(key,name){
+		var path="runtime-codes/"+key+".js";
+		Runtime.Log("正在加载"+path+"...");
+		$.ajax({
+			url:path
+			,dataType:"text"
+			,success:function(data){
+				setVal(data);
+				
+				var rn=(/《(.+?)》/.exec(data)||[])[1]||"";
+				if(name){
+					if(name.indexOf(rn)==-1){
+						console.warn("demo js文件内名称和本页面内手写的名称不一致",rn,name);
+					};
+					Runtime.Log("已在编辑框内显示了《"+name+"》Demo的源码，可运行查看效果");
+				}else{
+					Runtime.Log("已加载《"+(rn||path)+"》源码，可运行查看效果",2);
+				};
+			}
+			,error:function(){
+				Runtime.Log("加载指定的"+path+'失败，请到<a href="https://github.com/xiangyuecn/Recorder/tree/master/assets/runtime-codes" target="_blank">/assets/runtime-codes</a>目录内查阅源码',1);
+			}
+		});
+	};
 	Runtime.UseDemoCode=function(id){
-		setVal(DemoCodeList[id].code);
-		Runtime.Log("已在编辑框内显示了《"+(id+1)+". "+DemoCodeList[id].name+"》Demo的源码，可运行查看效果");
+		var o=DemoCodeList[id];
+		if(o.code){
+			setVal(o.code);
+			Runtime.Log("已在编辑框内显示了《"+(id+1)+". "+DemoCodeList[id].name+"》Demo的源码，可运行查看效果");
+		}else{
+			loadDemoCode(o.jsn,(id+1)+". "+o.name);
+		};
 	};
 	
 	DemoCodeList.sort(function(a,b){return b.sort-a.sort});
 	var html=[];
 	for(var i=0;i<DemoCodeList.length;i++){
 		var o=DemoCodeList[i];
-		html.push('<div style="line-height:40px">'+(i+1)+'. <a href="?idf='+encodeURIComponent(o.idf)+'" onclick="Runtime.UseDemoCode('+i+');return false">'+o.name+'</a></div>');
+		var href='href="?';
+		if(o.idf){
+			href+="?idf="+encodeURIComponent(o.idf);
+		}else if(o.jsn){
+			href+="?jsname="+encodeURIComponent(o.jsn);
+		}else{
+			href="";
+		};
+		href&&(href+='"');
+		html.push('<div style="line-height:40px">'+(i+1)+'. <a '+href+' onclick="Runtime.UseDemoCode('+i+');return false">'+o.name+'</a></div>');
 	};
 	$(".demoList").html(html.join("\n"));
 	
@@ -531,24 +569,13 @@ $(function(){
 	
 	//显示代码
 	var viewUrlCode=function(href){
-		var idf=(/[?#&]idf=([^&#]+)/.exec(href)||[])[1];
-		var jsname=(/[?#&]jsname=([\w\-\.]+)/.exec(href)||[])[1];
+		var idf=decodeURIComponent((/[?#&]idf=([^&#]+)/.exec(href)||[])[1]||"");
+		var jsname=decodeURIComponent((/[?#&]jsname=([\w\-\.]+)/.exec(href)||[])[1]||"");
 		var sha1=(/[?#&]sha1=([^&#]+)/.exec(href)||[])[1];
 		var shareCode=/[?#&]shareCode=v(\d+)_([^&#]+)/.exec(href);
 		if(!shareCode){
 			if(jsname){
-				var path="runtime-codes/"+jsname+".js";
-				$.ajax({
-					url:path
-					,dataType:"text"
-					,success:function(data){
-						setVal(data);
-						Runtime.Log("已加载"+path+"源码，可运行查看效果",2);
-					}
-					,error:function(){
-						Runtime.Log("加载指定的"+path+"失败",1);
-					}
-				});
+				loadDemoCode(jsname);
 				return;
 			};
 			
@@ -671,8 +698,8 @@ RSA私钥用于确保分发出去的代码是作者编写的未被篡改，如�
 *@Runtime@*/}).toString().replace(/^function\s*\(\)\s*\{|\s*\}$/g,"");
 		
 var DemoCodeList=[];
-function AddDemoCode(sort,idf,name,fn){
-	DemoCodeList.push({sort:sort?sort:666-DemoCodeList.length,idf:idf,name:name,code:fn.toString().replace(/^function\s*\(\)\s*\{|\s*\}$/g,"")});
+function AddDemoCode(sort,idf,name,fn,jsn){
+	DemoCodeList.push({sort:sort?sort:666-DemoCodeList.length,idf:idf,name:name,code:fn&&fn.toString().replace(/^function\s*\(\)\s*\{|\s*\}$/g,""),jsn:jsn});
 };
 </script>
 
@@ -823,6 +850,29 @@ function recStop(){
 };
 });
 </script>
+
+
+<script>
+(function(){
+var demos=[
+
+{n:"【Demo库】【格式转换】-mp3格式转成其他格式",k:"lib.transform.mp32other"}
+,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
+
+];
+
+var markdown=[];
+for(var i=0;i<demos.length;i++){
+	var o=demos[i];
+	markdown.push((i+1)+'. ['+o.n+'](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
+	AddDemoCode(199-i,"",o.n,null,o.k);
+};
+
+console.log("以下链接copy到README.【Demo片段列表】中");
+console.log("\n\n\n"+markdown.join("\n")+"\n\n\n");
+})();
+</script>
+
 
 </body>
 </html>

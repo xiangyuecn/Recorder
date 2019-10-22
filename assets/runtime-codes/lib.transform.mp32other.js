@@ -1,79 +1,66 @@
 /******************
-《【Demo库】【格式转换】-wav格式转成其他格式》
+《【Demo库】【格式转换】-mp3格式转成其他格式》
 作者：高坚果
-时间：2019-10-22 13:48:35
+时间：2019-10-22 15:20:57
 
 文档：
-Recorder.Wav2Other(newSet,wavBlob,True,False)
+Recorder.Mp32Other(newSet,mp3Blob,True,False)
 		newSet：Recorder的set参数，用来生成新格式，注意：要先加载好新格式的编码引擎
-		wavBlob：wav二进制数据
+		mp3Blob：mp3二进制数据
 		True: fn(blob,duration,mockRec) 和Recorder的stop函数参数一致，mockRec为转码时用到的Recorder对象引用
 		False: fn(errMsg) 和Recorder的stop函数参数一致
 ******************/
 
-//=====wav转其他格式核心函数==========
-Recorder.Wav2Other=function(newSet,wavBlob,True,False){
+//=====mp3转其他格式核心函数==========
+Recorder.Mp32Other=function(newSet,mp3Blob,True,False){
+	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+		False("浏览器不支持mp3解码");
+		return;
+	};
+	
 	var reader=new FileReader();
 	reader.onloadend=function(){
-		//检测wav文件头
-		var wavView=new Uint8Array(reader.result);
-		var eq=function(p,s){
-			for(var i=0;i<s.length;i++){
-				if(wavView[p+i]!=s.charCodeAt(i)){
-					return false;
-				};
+		var ctx=Recorder.Ctx;
+		ctx.decodeAudioData(reader.result,function(raw){
+			var src=raw.getChannelData(0);
+			var sampleRate=raw.sampleRate;
+			
+			var pcm=new Int16Array(src.length);
+			for(var i=0;i<src.length;i++){//floatTo16BitPCM 
+				var s=Math.max(-1,Math.min(1,src[i]));
+				s=s<0?s*0x8000:s*0x7FFF;
+				pcm[i]=s;
 			};
-			return true;
-		};
-		var pcm;
-		if(eq(0,"RIFF")&&eq(8,"WAVEfmt ")){
-			if(wavView[20]==1 && wavView[22]==1){//raw pcm 单声道
-				var sampleRate=wavView[24]+(wavView[25]<<8)+(wavView[26]<<16)+(wavView[27]<<24);
-				var bitRate=wavView[34]+(wavView[35]<<8);
-				console.log("wav info",sampleRate,bitRate);
-				if(bitRate==16){
-					pcm=new Int16Array(wavView.slice(44).buffer);
-				}else if(bitRate==8){
-					pcm=new Int16Array(wavView.length-44);
-					//8位转成16位
-					for(var j=44,d=0;j<wavView.length;j++,d++){
-						var b=wavView[j];
-						pcm[d]=(b-128)<<8;
-					};
-				};
-			};
-		};
-		if(!pcm){
-			False&&False("非wav raw格式音频，无法转码");
-			return;
-		};
-		
-		var rec=Recorder(newSet).mock(pcm,sampleRate);
-		rec.stop(function(blob,duration){
-			True(blob,duration,rec);
-		},False);
+			
+			var rec=Recorder(newSet).mock(pcm,sampleRate);
+			rec.stop(function(blob,duration){
+				True(blob,duration,rec);
+			},False);
+		},function(e){
+			False("mp3解码失败:"+e.message);
+		});
 	};
-	reader.readAsArrayBuffer(wavBlob);
+	reader.readAsArrayBuffer(mp3Blob);
 };
 //=====END=========================
 
 
 
 //转换测试
-var test=function(wavBlob){
-	if(!wavBlob){
+var test=function(mp3Blob){
+	if(!mp3Blob){
 		Runtime.Log("无数据源，请先录音",1);
 		return;
 	};
 	var set={
-		type:"mp3"
+		type:"wav"
 		,sampleRate:48000
-		,bitRate:96
+		,bitRate:16
 	};
 	
 	//数据格式一 Blob
-	Recorder.Wav2Other(set,wavBlob,function(blob,duration,rec){
-		Runtime.Log("wav src blob 转换成 mp3...",2);
+	Recorder.Mp32Other(set,mp3Blob,function(blob,duration,rec){
+		Runtime.Log("mp3 src blob 转换成 wav...",2);
 		Runtime.LogAudio(blob,duration,rec);
 	},function(msg){
 		Runtime.Log(msg,1);
@@ -90,14 +77,14 @@ var test=function(wavBlob){
 			u8arr[n]=bstr.charCodeAt(n);
 		};
 		
-		Recorder.Wav2Other(set,new Blob([u8arr.buffer]),function(blob,duration,rec){
-			Runtime.Log("wav as base64 转换成 mp3...",2);
+		Recorder.Mp32Other(set,new Blob([u8arr.buffer]),function(blob,duration,rec){
+			Runtime.Log("mp3 as base64 转换成 wav...",2);
 			Runtime.LogAudio(blob,duration,rec);
 		},function(msg){
 			Runtime.Log(msg,1);
 		});
 	};
-	reader.readAsDataURL(wavBlob);
+	reader.readAsDataURL(mp3Blob);
 };
 
 
@@ -108,8 +95,7 @@ var test=function(wavBlob){
 //=====以下代码无关紧要，音频数据源，采集原始音频用的==================
 //显示控制按钮
 Runtime.Ctrls([
-	{name:"16位wav录音",click:"recStart16"}
-	,{name:"8位wav录音",click:"recStart8"}
+	{name:"开始mp3录音",click:"recStart"}
 	,{name:"结束录音并转换",click:"recStop"}
 ]);
 
@@ -124,16 +110,11 @@ Runtime.Import([
 
 //调用录音
 var rec;
-function recStart16(){
-	recStart(16);
-};
-function recStart8(){
-	recStart(8);
-};
-function recStart(bitRate){
+function recStart(){
 	rec=Recorder({
-		type:"wav"
-		,bitRate:bitRate
+		type:"mp3"
+		,sampleRate:32000
+		,bitRate:96
 		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
 			Runtime.Process.apply(null,arguments);
 		}
