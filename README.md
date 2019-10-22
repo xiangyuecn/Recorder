@@ -162,6 +162,7 @@ $.ajax({
 ### 【Demo片段列表】
 1. [【Demo库】【格式转换】-mp3格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
 2. [【Demo库】【格式转换】-wav格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
+3. [【教程】实时转码并上传](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
 
 
 
@@ -247,7 +248,7 @@ set={
     ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate) 
                 //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
-                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输
+                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输
 }
 ```
 
@@ -295,12 +296,16 @@ set={
 ### 【方法】rec.resume()
 恢复继续录音。
 
+
 ### 【属性】rec.buffers
 此数据为从开始录音到现在为止的所有已缓冲的PCM片段，`buffers` `=` `[[Int16,...],...]`，录音stop时会使用此完整数据进行转码成指定的格式。
 
-buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据。
+buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率`rec.srcSampleRate`；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据。
 
 如果你需要长时间实时录音（如长时间语音通话），并且不需要得到最终完整编码的音频文件，Recorder初始化时应当使用一个未知的类型进行初始化（如: type:"unknown"，仅仅用于初始化而已，实时转码可以手动转成有效格式，因为有效格式可能内部还有其他类型的缓冲），并且实时在`onProcess`中修改`rec.buffers`数组，只保留最后两个元素，其他元素设为null（代码：`rec.buffers[rec.buffers.length-3]=null`），以释放占用的内存，并且录音结束时不要调用`stop`（因为已录音的时间非常长时，stop操作会导致占用大量的内存，甚至不足），直接调用`close`丢弃所有数据即可。
+
+### 【属性】rec.srcSampleRate
+浏览器提供的原始采样率，只有start或mock调用后才会有值，此采样率就是rec.buffers数据的采样率。
 
 
 ### 【方法】rec.mock(pcmData,pcmSampleRate)
@@ -360,7 +365,7 @@ function transformOgg(pcmData){
     
     //仅作为返回值
     sampleRate:16000 结果的采样率，<=newSampleRate
-    data:[Int16,...] 结果
+    data:[Int16,...] 结果；如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 ```
 

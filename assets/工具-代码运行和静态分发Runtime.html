@@ -230,6 +230,7 @@ window.Runtime={
 	}
 	,LogClear:function(){
 		$(".mainLog").html("");
+		LogAudios.length=1;
 	}
 };
 $(window).bind("error",function(e){
@@ -878,6 +879,7 @@ var demos=[
 
 {n:"【Demo库】【格式转换】-mp3格式转成其他格式",k:"lib.transform.mp32other"}
 ,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
+,{n:"【教程】实时转码并上传",k:"teach.realtime.encode_transfer"}
 
 ];
 
