@@ -206,7 +206,7 @@ window.Runtime={
 		var id=LogAudios.length;
 		LogAudios.push({blob:blob,set:$.extend({},set),duration:duration});
 		
-		Runtime.Log((msg||"已录制")+":"+set.bitRate+"kbps "+set.sampleRate+"hz "+blob.size+"b ["+set.type+"]"+duration+'ms <button onclick="Runtime.LogAudioDown(\''+id+'\')">下载</button> <button onclick="Runtime.LogAudioPlay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="LogAudio_'+id+'"></span>');
+		Runtime.Log((msg||"已录制")+":"+(set.bitRate||"-")+"kbps "+(set.sampleRate||"-")+"hz "+blob.size+"b ["+(set.type||"-")+"]"+duration+'ms <button onclick="Runtime.LogAudioDown(\''+id+'\')">下载</button> <button onclick="Runtime.LogAudioPlay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="LogAudio_'+id+'"></span>');
 	}
 	,LogClear:function(){
 		$(".mainLog").html("");
@@ -532,19 +532,38 @@ $(function(){
 	//显示代码
 	var viewUrlCode=function(href){
 		var idf=(/[?#&]idf=([^&#]+)/.exec(href)||[])[1];
+		var jsname=(/[?#&]jsname=([\w\-\.]+)/.exec(href)||[])[1];
 		var sha1=(/[?#&]sha1=([^&#]+)/.exec(href)||[])[1];
 		var shareCode=/[?#&]shareCode=v(\d+)_([^&#]+)/.exec(href);
 		if(!shareCode){
-			if(!idf){
-				//idf="self_base_demo";
-				Runtime.Log("初始化完成，可以编写代码，或者点击一个Demo来编辑",2);
+			if(jsname){
+				var path="runtime-codes/"+jsname+".js";
+				$.ajax({
+					url:path
+					,dataType:"text"
+					,success:function(data){
+						setVal(data);
+						Runtime.Log("已加载"+path+"源码，可运行查看效果",2);
+					}
+					,error:function(){
+						Runtime.Log("加载指定的"+path+"失败",1);
+					}
+				});
 				return;
 			};
-			for(var i=0;i<DemoCodeList.length;i++){
-				if(DemoCodeList[i].idf==idf){
-					Runtime.UseDemoCode(i);
+			
+			if(idf){
+				for(var i=0;i<DemoCodeList.length;i++){
+					if(DemoCodeList[i].idf==idf){
+						Runtime.UseDemoCode(i);
+						return;
+					};
 				};
+				Runtime.Log("未知启动标识："+idf,1);
+				return;
 			};
+			
+			Runtime.Log("初始化完成，可以编写代码，或者点击一个Demo来编辑",2);
 			return;
 		};
 		var shareVer=shareCode[1];
