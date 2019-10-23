@@ -49,7 +49,7 @@ rec.open(function(){//打开麦克风授权获得相关资源
             var audio=document.createElement("audio");
             audio.controls=true;
             document.body.appendChild(audio);
-            //简单的一哔
+            //简单的一哔，注意不用了时需要revokeObjectURL，否则霸占内存
             audio.src=(window.URL||webkitURL).createObjectURL(blob);
             audio.play();
             

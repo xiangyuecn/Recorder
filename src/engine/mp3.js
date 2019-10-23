@@ -60,7 +60,7 @@ Recorder.prototype.mp3=function(res,True,False){
 
 //********边录边转码(Worker)支持函数，如果提供就代表可能支持，否则只支持标准转码*********
 
-var openList={id:0};
+var openList={id:0},lamejsCode;
 Recorder.prototype.mp3_start=function(set){//如果返回null代表不支持
 	try{
 		var onmsg=function(e){
@@ -85,8 +85,12 @@ Recorder.prototype.mp3_start=function(set){//如果返回null代表不支持
 			};
 		};
 		var jsCode=");lameFn();var encObj=new lameFn.Mp3Encoder(1,"+set.sampleRate+","+set.bitRate+"),encArr=[];self.onmessage="+onmsg;
+		lamejsCode||(lamejsCode=Recorder.lamejs.toString());
+		var url=(window.URL||webkitURL).createObjectURL(new Blob(["var lameFn=(",lamejsCode,jsCode], {type:"text/javascript"}));
 		
-		var worker=new Worker((window.URL||webkitURL).createObjectURL(new Blob(["var lameFn=("+Recorder.lamejs.toString()+jsCode], {type:"text/javascript"})));
+		var worker=new Worker(url);
+		(window.URL||webkitURL).revokeObjectURL(url);//必须要释放，不然每次调用内存都明显泄露内存
+		
 		worker.onmessage=function(e){
 			ctx.call&&ctx.call(e.data);
 			ctx.call=null;

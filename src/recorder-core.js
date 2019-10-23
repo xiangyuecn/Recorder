@@ -446,7 +446,7 @@ Recorder.prototype=initFn.prototype={
 			end();
 		};
 		var ok=function(blob,duration){
-			console.log("["+Date.now()+"]End",duration,"编码耗时:"+(Date.now()-t1),blob);
+			console.log("["+Date.now()+"]End "+duration+"ms 编码花:"+(Date.now()-t1)+"ms "+blob.size+"b");
 			if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
 				err("生成的"+set.type+"无效");
 				return;
