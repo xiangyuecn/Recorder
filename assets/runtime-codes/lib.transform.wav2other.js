@@ -32,7 +32,7 @@ Recorder.Wav2Other=function(newSet,wavBlob,True,False){
 				var bitRate=wavView[34]+(wavView[35]<<8);
 				console.log("wav info",sampleRate,bitRate);
 				if(bitRate==16){
-					pcm=new Int16Array(wavView.slice(44).buffer);
+					pcm=new Int16Array(wavView.buffer.slice(44));
 				}else if(bitRate==8){
 					pcm=new Int16Array(wavView.length-44);
 					//8位转成16位

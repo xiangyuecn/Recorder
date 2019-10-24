@@ -487,7 +487,7 @@ var rtcDecodePlay=function(decode){
 			duration=pd;
 			//分别去掉首尾，（尾并保留一点，方便衔接）
 			var skip=Math.floor((sd-pd)/1000*raw.sampleRate/2);
-			arr=pcm.slice(skip,pcm.length-skip/2);
+			arr=new Float32Array(pcm.subarray(skip,pcm.length-skip/2));//低版本没有slice
 		}else{
 			//数据少了不管
 		};

@@ -151,6 +151,17 @@ Recorder.prototype=initFn.prototype={
 			
 			This._SO=0;//解除stop对open中的start调用的阻止
 		};
+		var codeFail=function(code,msg){
+			if(/Permission|Allow/i.test(code)){
+				False("用户拒绝了录音权限",true);
+			}else if(window.isSecureContext===false){
+				False("无权录音(需https)");
+			}else if(/Found/i.test(code)){//可能是非安全环境导致的没有设备
+				False(msg+"，无可用麦克风");
+			}else{
+				False(msg);
+			};
+		};
 		
 		//同步锁
 		var Lock=Recorder.Sync;
@@ -172,13 +183,6 @@ Recorder.prototype=initFn.prototype={
 			};
 		};
 		
-		var checkSecure=function(){
-			if(window.isSecureContext===false){
-				False("无权录音(需https)");
-				return 1;
-			};
-		};
-		
 		
 		//如果已打开就不要再打开了
 		if(Recorder.IsOpen()){
@@ -186,7 +190,7 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		if(!Recorder.Support()){
-			checkSecure() || False("此浏览器不支持录音");
+			codeFail("","此浏览器不支持录音");
 			return;
 		};
 		
@@ -208,11 +212,10 @@ Recorder.prototype=initFn.prototype={
 			},100);
 		};
 		var f2=function(e){
-			var code=e.name||e.message||"";
+			var code=e.name||e.message||e.code+":"+e;
 			console.error(e);
-			var notAllow=/Permission|Allow/i.test(code);
 			
-			checkSecure() || False(notAllow?"用户拒绝了录音权限":"无法录音："+code,notAllow);
+			codeFail(code,"无法录音："+code);
 		};
 		var pro=Recorder.Scope.getUserMedia({audio:true},f1,f2);
 		if(pro&&pro.then){
