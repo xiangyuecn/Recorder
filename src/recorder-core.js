@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-Recorder.LM="2019-9-9 21:09:34";
+Recorder.LM="2019-10-26 11:23:58";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
 
@@ -127,6 +127,8 @@ function initFn(set){
 				//取值256, 512, 1024, 2048, 4096, 8192, or 16384
 				//注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
 		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
+		
+		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
 	};
 	
 	for(var k in set){
@@ -272,6 +274,11 @@ Recorder.prototype=initFn.prototype={
 		This.buffers=[];//数据缓冲
 		This.recSize=0;//数据大小
 		
+		This.envInLast=0;//envIn接收到最后录音内容的时间
+		This.envInFirst=0;//envIn接收到的首个录音内容的录制时间
+		This.envInFix=0;//补偿的总时间
+		This.envInFixTs=[];//补偿计数列表
+		
 		set.sampleRate=Math.min(sampleRate,set.sampleRate);//engineCtx需要提前确定最终的采样率
 		This.srcSampleRate=sampleRate;
 		
@@ -284,6 +291,10 @@ Recorder.prototype=initFn.prototype={
 				engineCtx.pcmSize=0;
 			};
 		};
+	}
+	,envResume:function(){//和平台环境无关的恢复录音
+		//重新开始计数
+		this.envInFixTs=[];
 	}
 	,envIn:function(pcm,sum){//和平台环境无关的pcm[Int16]输入
 		var This=this,set=This.set,engineCtx=This.engineCtx;
@@ -311,6 +322,51 @@ Recorder.prototype=initFn.prototype={
 		
 		var bufferSampleRate=This.srcSampleRate;
 		var bufferSize=This.recSize;
+		
+		
+		
+		//卡顿丢失补偿：因为设备很卡的时候导致H5接收到的数据量不够造成播放时候变速，结果比实际的时长要短，此处保证了不会变短，但不能修复丢失的音频数据造成音质变差。当前算法采用输入时间侦测下一帧是否需要添加补偿帧，需要(6次输入||超过1秒)以上才会开始侦测，如果滑动窗口内丢失超过1/3就会进行补偿
+		var now=Date.now();
+		var pcmTime=Math.round(size/bufferSampleRate*1000);
+		This.envInLast=now;
+		if(This.buffers.length==1){//记下首个录音数据的录制时间
+			This.envInFirst=now-pcmTime;
+		};
+		var envInFixTs=This.envInFixTs;
+		envInFixTs.splice(0,0,{t:now,d:pcmTime});
+		//保留3秒的计数滑动窗口
+		var tsInStart=now,tsPcm=0;
+		for(var i=0;i<envInFixTs.length;i++){
+			var o=envInFixTs[i];
+			if(now-o.t>3000){
+				envInFixTs.length=i;
+				break;
+			};
+			tsInStart=o.t;
+			tsPcm+=o.d;
+		};
+		//达到需要的数据量，开始侦测是否需要补偿
+		var tsInPrev=envInFixTs[1];
+		var tsIn=now-tsInStart;
+		var lost=tsIn-tsPcm;
+		if( lost>tsIn/3 && (tsInPrev&&tsIn>1000 || envInFixTs.length>=6) ){
+			//丢失过多，开始执行补偿
+			var addTime=now-tsInPrev.t-pcmTime;//距离上次输入丢失这么多ms
+			if(addTime>pcmTime/5){//丢失超过本帧的1/5
+				var fixOpen=!set.disableEnvInFix;
+				console.warn("["+now+"]"+(fixOpen?"":"未")+"补偿"+addTime+"ms");
+				This.envInFix+=addTime;
+				
+				//用静默进行补偿
+				if(fixOpen){
+					var addPcm=new Int16Array(addTime*bufferSampleRate/1000);
+					This.recSize+=addPcm.length;
+					buffers.push(addPcm);
+				};
+			};
+		};
+		
+		
 		
 		//此类型有边录边转码(Worker)支持，开启实时转码
 		if(engineCtx){
@@ -407,6 +463,7 @@ Recorder.prototype=initFn.prototype={
 	/*恢复录音*/
 	,resume:function(){
 		this.pause(1);
+		this.envResume();
 	}
 	
 	
@@ -435,8 +492,8 @@ Recorder.prototype=initFn.prototype={
 		autoClose:false 可选，是否自动调用close，默认为false
 	*/
 	,stop:function(True,False,autoClose){
-		console.log("["+Date.now()+"]Stop");
 		var This=this,set=This.set,t1;
+		console.log("["+Date.now()+"]Stop "+(This.envInLast?This.envInLast-This.envInFirst+"ms 补"+This.envInFix+"ms":"-"));
 		
 		var end=function(){
 			This._stop();//彻底关掉engineCtx
@@ -449,7 +506,7 @@ Recorder.prototype=initFn.prototype={
 			end();
 		};
 		var ok=function(blob,duration){
-			console.log("["+Date.now()+"]End "+duration+"ms 编码花:"+(Date.now()-t1)+"ms "+blob.size+"b");
+			console.log("["+Date.now()+"]结束 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
 			if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
 				err("生成的"+set.type+"无效");
 				return;
@@ -467,6 +524,10 @@ Recorder.prototype=initFn.prototype={
 		var size=This.recSize;
 		if(!size){
 			err("未采集到录音");
+			return;
+		};
+		if(!This.buffers[0]){
+			err("音频被释放");
 			return;
 		};
 		if(!This[set.type]){

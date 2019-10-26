@@ -60,7 +60,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-8-29 11:20:33";
+var PageLM="2019-10-26 13:47:12";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -177,6 +177,12 @@ RandomKey.idx=0;
 	
 	<hr>
 	<div class="pd">
+		<label><input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）</label>
+		<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
+	</div>
+	
+	<hr>
+	<div class="pd">
 		【测试App】
 		IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
 		
@@ -258,6 +264,11 @@ function recopen(){
 	
 	var wave,waveSet=$(".recwaveSet")[0].checked;
 	
+	var disableEnvInFixSet=$(".disableEnvInFixSet")[0].checked;
+	if(disableEnvInFixSet){
+		reclog("已禁用设备卡顿时音频输入丢失补偿，可以通过别的程序大量占用CPU来模拟设备卡顿，然后录音听听未补偿时的播放效果，然后再试试不禁用的效果");
+	};
+	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
 	
@@ -265,6 +276,7 @@ function recopen(){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
+		,disableEnvInFix:disableEnvInFixSet
 		,onProcess:function(buffers,level,time,sampleRate){
 			$(".recpowerx").css("width",level+"%");
 			$(".recpowert").html(time+"/"+level);

@@ -184,13 +184,7 @@ Default.Start=function(set,success,fail){
 	if(appRec!=null){
 		appRec.close();//stream已经被使用过了，close更好
 	};
-	App.__Rec=appRec=Recorder({
-		type:set.type||"mp3"
-		,sampleRate:set.sampleRate||16000
-		,bitRate:set.bitRate||16
-		
-		,onProcess:set.onProcess||function(){}
-	});
+	App.__Rec=appRec=Recorder(set);
 	appRec.appSet=set;
 	appRec.open(function(){
 		appRec.start();
@@ -217,14 +211,15 @@ Default.Stop=function(success,fail){
 		for(var k in appRec.set){
 			appRec.appSet[k]=appRec.set[k];
 		};
-		App.__Rec=null;
 	};
 	appRec.stop(function(blob,duration){
 		end();
 		success(blob,duration);
+		App.__Rec=null;
 	},function(msg){
 		end();
 		fail(msg);
+		App.__Rec=null;
 	});
 };
 
@@ -240,7 +235,7 @@ Default.Stop=function(success,fail){
 
 
 var App={
-LM:"2019-9-6 23:22:12"
+LM:"2019-10-26 11:23:48"
 ,Current:0
 ,IsWx:IsWx
 ,BaseFolder:BaseFolder
@@ -360,6 +355,16 @@ fail: fn(msg) 初始化失败
 	
 	
 	next(App.Current);
+}
+
+
+/*
+获取底层平台录音过程中会使用用来处理实时数据的Recorder对象实例rec，如果底层录音过程中不实用Recorder进行数据的实时处理，将返回null。除了微信平台外，其他平台均会返回rec，但Start调用前和Stop调用后均会返回null，只有Start后和Stop彻底完成前之间才会返回rec。
+
+rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如实时清理缓冲。
+*/
+,GetStartUsedRecOrNull:function(){
+	return App.__Rec||null;
 }
 
 

@@ -236,6 +236,11 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 ## 【静态方法】RecordApp.Current.CanProcess()
 识别的底层平台是否支持实时返回PCM数据，如果返回值为true，`set.onProcess`将可以被实时回调。
 
+## 【静态方法】RecordApp.GetStartUsedRecOrNull()
+获取底层平台录音过程中会使用用来处理实时数据的Recorder对象实例rec，如果底层录音过程中不实用Recorder进行数据的实时处理，将返回null。除了微信平台外，其他平台均会返回rec，但Start调用前和Stop调用后均会返回null，只有Start后和Stop彻底完成前之间才会返回rec。
+
+rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如：实时清理缓冲，当缓冲被清理，Stop时永远会走fail回调。
+
 ## 【静态属性】RecordApp.Platforms
 支持的平台列表，目前有三个：
 1. `Native`: 原生App平台支持，底层由实际的`JsBridge`提供，此平台默认未开启
