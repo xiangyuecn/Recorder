@@ -479,6 +479,9 @@ function recplay(key){
 			$(".p"+key).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString()+" "+msg);
 		};
 		logmsg("");
+		audio.onerror=function(e){
+			logmsg('<span style="color:red">播放失败['+audio.error.code+']'+audio.error.message+'</span>');
+		};
 		
 		var end=function(blob){
 			audio.src=(window.URL||webkitURL).createObjectURL(blob);

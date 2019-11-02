@@ -483,11 +483,12 @@ var rtcDecodePlay=function(decode){
 		var pd=itm.duration;
 		var duration=sd;
 		var arr=pcm;
-		if(pd<sd){//数据变多了，原因在于编码器并不一定精确时间的编码，mp3首尾有静默但长度未知
+		if(pd<sd){//数据变多了，原因在于编码器并不一定精确时间的编码，此处只针对lamejs的mp3进行优化，因为mp3每帧固定时长，结尾可能存在填充
 			duration=pd;
-			//分别去掉首尾，（尾并保留一点，方便衔接）
+			
+			//去掉多余的尾部
 			var skip=Math.floor((sd-pd)/1000*raw.sampleRate/2);
-			arr=new Float32Array(pcm.subarray(skip,pcm.length-skip/2));//低版本没有slice
+			arr=new Float32Array(pcm.subarray(0,pcm.length-skip));//低版本没有slice
 		}else{
 			//数据少了不管
 		};

@@ -472,8 +472,7 @@ function recplay(key){
 		};
 		logmsg("");
 		audio.onerror=function(e){
-			console.log(arguments)
-			logmsg('<span style="color:red">播放失败</span>');
+			logmsg('<span style="color:red">播放失败['+audio.error.code+']'+audio.error.message+'</span>');
 		};
 		
 		if(o.play2Name){

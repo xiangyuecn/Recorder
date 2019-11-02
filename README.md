@@ -2,11 +2,11 @@
 
 [在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）。快捷方式: [【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
 
-录音默认输出mp3格式，另外可选wav格式（raw pcm format此格式录音文件超大）；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
+录音默认输出mp3格式，另外可选wav格式；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
 mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）。主要用于语音录制，双声道语音没有意义，特意仅对单声道进行支持。mp3和wav格式支持边录边转码，录音结束时转码速度极快，支持实时转码成小片段文件和实时传输，demo中已实现一个语音通话聊天，下面有介绍；其他格式录音结束时可能需要花费比较长的时间进行转码。
 
-mp3使用lamejs编码，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav(raw pcm format)编码器，压缩后的recorder.wav.min.js不足5kb。
+mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器(raw pcm format录音文件超大)，压缩后的recorder.wav.min.js不足5kb。录音得到的mp3(CBR)、wav(RAW)，均可简单拼接小的二进制录音片段文件来生成长的音频文件，具体参考下面这两种编码器的详细介绍。
 
 如需在Hybrid App内使用（支持IOS、Android），或提供IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
 
@@ -222,6 +222,8 @@ IOS其他浏览器||
 
 *2019-10-26* 针对[#51](https://github.com/xiangyuecn/Recorder/issues/51)的问题研究后发现，如果录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。此问题能够稳定复现（使用别的程序大量占用CPU来模拟），目前已在`envIn`内部函数中进行了补偿处理，在浏览器两次传入PCM数据之间填充一段静默数据已弥补丢失的时长；最终编码得到的音频时长将和实际录音时长基本一致，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。
 
+*2019-11-03* lamejs原版编码器编码出来的mp3文件首尾存在填充数据并且会占据一定时长（这种数据播放时静默，记录的信息数据或者填充），同一录音mp3格式的时长会比wav格式的时长要长0-100ms左右，大部分情况下不会有影响，但如果涉及到实时转码并传输的话，这些数据将会造成多段mp3片段的总时长比实际录音要长，最终播放时会均匀的感觉到停顿，并且mp3片段越小越明显。本库已对lamejs编码出来的mp3文件进行了处理，去掉了头部的非音频数据，但由于编码出来的mp3每一帧数据都有固定时长，文件结尾最后一帧可能录音的时长不能刚好填满，就会产生填充数据；因此本库编码出来的mp3文件会比wav格式长0-30ms左右，多出来的时长在mp3的结尾处；mp3解码出来的pcm数据直接去掉结尾多出来的部分，就和wav中的pcm数据基本一致了。[参考wiki](https://github.com/xiangyuecn/Recorder/wiki/lamejs编码出来的mp3时长修正)。
+
 
 
 
@@ -347,6 +349,9 @@ function transformOgg(pcmData){
 ### 【静态方法】Recorder.IsOpen()
 由于Recorder持有的录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了录音功能。
 
+### 【静态方法】Recorder.Destroy()
+销毁已持有的所有全局资源（AudioContext、Worker），当要彻底移除Recorder时需要显式的调用此方法。大部分情况下不调用Destroy也不会造成问题。
+
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo)
 对pcm数据的采样率进行转换，配合mock方法使用效果更佳，比如实时转换成小片段语音文件。
 
@@ -392,10 +397,19 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 ### wav转pcm
 生成的wav文件内音频数据的编码为未压缩的pcm数据（raw pcm），只是在pcm数据前面加了一个44字节的wav头；因此直接去掉前面44字节就能得到原始的pcm数据，如：`blob.slice(44,blob.size,"audio/pcm")`;
 
-## mp3
-采用的是[lamejs](https://github.com/zhuker/lamejs)(LGPL License)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于修复发现的问题。LGPL协议涉及到的文件：`mp3-engine.js`；这些文件也采用LGPL授权，不适用MIT协议。源码518kb大小，压缩后150kb左右，开启gzip后50来k。[mp3转其他格式参考](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
+### 简单将多段小的wav片段合成长的wav文件
+由于RAW格式的wav内直接就是pcm数据，因此将小的wav片段文件去掉wav头后得到的原始pcm数据合并到一起，再加上新的wav头即可合并出长的wav文件；要求待合成的所有wav片段的采样率和位数需一致。
 
-## beta-ogg
+## mp3 (CBR)
+采用的是[lamejs](https://github.com/zhuker/lamejs)(LGPL License)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于精简代码和修复发现的问题。LGPL协议涉及到的文件：`mp3-engine.js`；这些文件也采用LGPL授权，不适用MIT协议。源码518kb大小，压缩后150kb左右，开启gzip后50来k。[mp3转其他格式参考](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
+
+### 简单将多段小的mp3片段合成长的mp3文件
+由于lamejs CBR编码出来的mp3二进制数据从头到尾全部是大小相同（±1）的数据帧，没有其他任何多余信息，通过文件长度可计算出mp3的时长`fileSize*8/bitRate`（[参考](https://blog.csdn.net/u010650845/article/details/53520426)），数据帧之间可以直接拼接。因此将小的mp3片段文件的二进制数据全部合并到一起即可得到长的mp3文件；要求待合成的所有mp3片段的采样率和比特率需一致。
+
+*注：CBR编码由于每帧数据的时长是固定的，mp3文件结尾最后这一帧的录音可能不能刚好填满，就会产生填充数据，多出来的这部分数据会导致mp3时长变长一点点，在实时转码传输时应当留意，解码成pcm后可直接去掉结尾的多余。首帧或前两帧可能是lame记录的信息帧，本库已去除，参考上面的已知问题。*
+
+
+## beta-ogg (Vorbis)
 采用的是[ogg-vorbis-encoder-js](https://github.com/higuma/ogg-vorbis-encoder-js)(MIT License)，`https://github.com/higuma/ogg-vorbis-encoder-js/blob/7a872423f416e330e925f5266d2eb66cff63c1b6/lib/OggVorbisEncoder.js`这个版本的文件代码。此编码器源码2.2M，超级大，压缩后1.6M，开启gzip后327K左右。对录音的压缩率比lamejs高出一倍, 但Vorbis in Ogg好像Safari不支持（[真的假的](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)）。
 
 ## beta-webm

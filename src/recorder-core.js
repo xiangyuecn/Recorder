@@ -6,11 +6,11 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-Recorder.LM="2019-10-26 11:23:58";
+var LM="2019-11-2 21:37:21";
 var NOOP=function(){};
-//end 兼容环境 ****从以下开始copy源码，到wav、mp3前面为止*****
+//end 兼容环境 ****从以下开始copy源码*****
 
-function Recorder(set){
+var Recorder=function(set){
 	return new initFn(set);
 };
 //是否已经打开了录音，所有工作都已经准备好了，就等接收音频数据了
@@ -23,6 +23,18 @@ Recorder.IsOpen=function(){
 		};
 	};
 	return false;
+};
+//销毁已持有的所有全局资源，当要彻底移除Recorder时需要显式的调用此方法
+Recorder.Destroy=function(){
+	console.log("Recorder Destroy");
+	for(var k in DestroyList){
+		DestroyList[k]();
+	};
+};
+var DestroyList={};
+//登记一个需要销毁全局资源的处理方法
+Recorder.BindDestroy=function(key,call){
+	DestroyList[key]=call;
 };
 //判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权，不会判断是否支持特定格式录音。
 Recorder.Support=function(){
@@ -46,6 +58,10 @@ Recorder.Support=function(){
 	if(!Recorder.Ctx||Recorder.Ctx.state=="closed"){
 		//不能反复构造，低版本number of hardware contexts reached maximum (6)
 		Recorder.Ctx=new AC();
+		
+		Recorder.BindDestroy("Ctx",function(){
+			Recorder.Ctx&&Recorder.Ctx.close();
+		});
 	};
 	return true;
 };
@@ -567,13 +583,15 @@ Recorder.prototype=initFn.prototype={
 			});
 		});
 	}
-//end ****copy源码结束，到wav、mp3前面为止*****
-
-
-
 
 };
 
+if(window.Recorder){
+	window.Recorder.Destroy();
+};
 window.Recorder=Recorder;
+
+//end ****copy源码结束*****
+Recorder.LM=LM;
 
 })(window);

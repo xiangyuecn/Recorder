@@ -8,8 +8,8 @@
 如果不需要获得最终结果，可实时清理缓冲数据，避免占用过多内存，想录多久就录多久。
 ******************/
 
-var SendInterval=50;//转码发送间隔（实际间隔比这个偏大点，取决于bufferSize）。这个值可以设置很大，但不能设置很低，毕竟转码和传输还是要花费一定时间的。太低会导致并行产生顺序不一致问题，另外设备性能低下可能还处理不过来。
-//mp3格式下一般大于500ms就能保证能够正常转码处理，wav大于100ms，剩下的问题就是传输速度了，此处故意设置的很小，方便观看产生的顺序问题；另外可以使用别的程序大量占用cpu模拟很卡的时候的情况，会更加壮观。
+var SendInterval=50;//转码发送间隔（实际间隔比这个变量值偏大点，取决于bufferSize）。这个值可以设置很大，但不能设置很低，毕竟转码和传输还是要花费一定时间的，设备性能低下可能还处理不过来。
+//mp3格式下一般大于500ms就能保证能够正常转码处理，wav大于100ms，剩下的问题就是传输速度了。由于转码操作都是串行的，录制过程中转码生成出来mp3顺序都是能够得到保证，但结束时最后几段数据可能产生顺序问题，需要留意。由于传输通道不一定稳定，后端接收到的顺序可能错乱，因此可以携带编号进行传输，完成后进行一次排序以纠正顺序错乱的问题。
 
 //重置环境
 var RealTimeSendTryReset=function(){
@@ -96,7 +96,7 @@ var TransferUpload=function(number,blobOrNull,duration,blobRec,isClose){
 		
 		//这里仅 console send 意思意思
 		var numberFail=number<transferUploadNumberMax?'<span style="color:red">顺序错乱的数据，如果要求不高可以直接丢弃，或者调大SendInterval试试</span>':"";
-		var logMsg="No."+("000"+number).substr(-3)+numberFail;
+		var logMsg="No."+(number<100?("000"+number).substr(-3):number)+numberFail;
 		
 		Runtime.LogAudio(blob,duration,blobRec,logMsg);
 		
@@ -106,7 +106,7 @@ var TransferUpload=function(number,blobOrNull,duration,blobRec,isClose){
 	};
 	
 	if(isClose){
-		Runtime.Log("No."+("000"+number).substr(-3)+":已停止传输");
+		Runtime.Log("No."+(number<100?("000"+number).substr(-3):number)+":已停止传输");
 	};
 };
 
