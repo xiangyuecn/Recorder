@@ -38,7 +38,7 @@ var RealTimeSendTry=function(rec,isClose){
 	
 	var newSampleRate=16000;
 	//借用SampleData函数进行数据的连续处理，采样率转换是顺带的
-	var chunk=Recorder.SampleData(rec.buffers,rec.srcSampleRate,newSampleRate,realTimeSendTryChunk,{frameType:isClose?"":rec.set.type});
+	var chunk=Recorder.SampleData(rec.buffers,rec.srcSampleRate,newSampleRate,realTimeSendTryChunk,{frameType:isClose?"":"mp3"});
 	
 	//清理已处理完的缓冲数据，释放内存以支持长时间录音，最后完成录音时不能调用stop，因为数据已经被清掉了
 	for(var i=realTimeSendTryChunk?realTimeSendTryChunk.index:0;i<chunk.index;i++){
