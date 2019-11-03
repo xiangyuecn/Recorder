@@ -324,7 +324,7 @@ Runtime.LogAudioDown=function(id){
 	var o=Runtime.LogAudios[id];
 	if(o){
 		var cls="LogAudioInfo"+(++Rnd);
-		var name="rec-"+o.duration+"ms-"+o.set.bitRate+"kbps-"+o.set.sampleRate+"hz."+o.set.type;
+		var name="rec-"+o.duration+"ms-"+(o.set.bitRate||"-")+"kbps-"+(o.set.sampleRate||"-")+"hz."+(o.set.type||(/\w+$/.exec(o.blob.type)||[])[0]||"unknown");
 		
 		o.down=(o.down||0)+1;
 		$(".LogAudio_"+id).html('<span style="color:red">'+o.down+'</span> <span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button onclick="Runtime.LogAudioDown64(\''+id+'\',\''+cls+'\')">生成Base64文本</button></span>');
@@ -821,7 +821,7 @@ AddDemoCode(999,"self_base_demo","【教程】本工具使用示例，和Recorde
 
 	Runtime.Log(msgHtml,color) 在日志区显示日志html，color:0默认，1红色，2绿色，其他指定颜色
 
-	Runtime.LogAudio(blob,duration,rec,msgHtml) 在日志区显示一个音频的日志信息
+	Runtime.LogAudio(blob,duration,rec,msgHtml) 在日志区显示一个音频的日志信息，rec只要对象内有set属性就行
 
 	Runtime.Process(buffers,powerLevel,bufferDuration,bufferSampleRate) 接受Recorder的实时回调，驱动图形显示
 ******************/
@@ -879,7 +879,11 @@ var demos=[
 
 {n:"【Demo库】【格式转换】-mp3格式转成其他格式",k:"lib.transform.mp32other"}
 ,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
+
 ,{n:"【教程】实时转码并上传",k:"teach.realtime.encode_transfer"}
+
+,{n:"【Demo库】【文件合并】-mp3多个片段文件合并",k:"lib.merge.mp3_merge"}
+,{n:"【Demo库】【文件合并】-wav多个片段文件合并",k:"lib.merge.wav_merge"}
 
 ];
 
