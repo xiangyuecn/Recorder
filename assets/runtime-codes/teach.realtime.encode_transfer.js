@@ -46,8 +46,8 @@ var RealTimeSendTry=function(rec,isClose){
 	};
 	realTimeSendTryChunk=chunk;
 	
-	//没有新数据，不能进行mock转码
-	if(chunk.data.length==0){
+	//没有新数据，或结束时的数据量太小，不能进行mock转码
+	if(chunk.data.length==0 || isClose&&chunk.data.length<2000){
 		TransferUpload(number,null,0,null,isClose);
 		return;
 	};
