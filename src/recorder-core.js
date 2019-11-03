@@ -70,6 +70,11 @@ pcmDatas: [[Int16,...]] pcm片段列表
 pcmSampleRate:48000 pcm数据的采样率
 newSampleRate:16000 需要转换成的采样率，newSampleRate>=pcmSampleRate时不会进行任何处理，小于时会进行重新采样
 prevChunkInfo:{} 可选，上次调用时的返回值，用于连续转换，本次调用将从上次结束位置开始进行处理。或可自行定义一个ChunkInfo从pcmDatas指定的位置开始进行转换
+option:{ 可选，配置项
+		frameSize:123456 帧大小，每帧的PCM Int16的数量，采样率转换后的pcm长度为frameSize的整数倍，用于连续转换。目前仅在mp3格式时才有用，frameSize取值为1152，这样编码出来的mp3时长和pcm的时长完全一致，否则会因为mp3最后一帧录音不够填满时添加填充数据导致mp3的时长变长。
+		frameType:"" 帧类型，一般为rec.set.type，提供此参数时无需提供frameSize，会自动使用最佳的值给frameSize赋值，目前仅支持mp3=1152(MPEG1 Layer3的每帧采采样数)，其他类型=1。
+			以上两个参数用于连续转换时使用，最多使用一个，不提供时不进行帧的特殊处理，提供时必须同时提供prevChunkInfo才有作用。最后一段数据处理时无需提供帧大小以便输出最后一丁点残留数据。
+	}
 
 返回ChunkInfo:{
 	//可定义，从指定位置开始转换到结尾
@@ -77,14 +82,22 @@ prevChunkInfo:{} 可选，上次调用时的返回值，用于连续转换，本
 	offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置
 	
 	//仅作为返回值
+	frameNext:null||[Int16,...] 下一帧的部分数据，frameSize设置了的时候才可能会有
 	sampleRate:16000 结果的采样率，<=newSampleRate
-	data:[Int16,...] 结果
+	data:[Int16,...] 转换后的PCM结果；如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 */
-Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo){
+Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option){
 	prevChunkInfo||(prevChunkInfo={});
 	var index=prevChunkInfo.index||0;
 	var offset=prevChunkInfo.offset||0;
+	
+	var frameNext=prevChunkInfo.frameNext||[];
+	option||(option={});
+	var frameSize=option.frameSize||1;
+	if(option.frameType){
+		frameSize=option.frameType=="mp3"?1152:1;
+	};
 	
 	var size=0;
 	for(var i=index;i<pcmDatas.length;i++){
@@ -100,9 +113,16 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo)
 		step=1;
 		newSampleRate=pcmSampleRate;
 	};
-	//准备数据
+	
+	size+=frameNext.length;
 	var res=new Int16Array(size);
 	var idx=0;
+	//添加上一次不够一帧的剩余数据
+	for(var i=0;i<frameNext.length;i++){
+		res[idx]=frameNext[i];
+		idx++;
+	};
+	//处理数据
 	for (var nl=pcmDatas.length;index<nl;index++) {
 		var o=pcmDatas[index];
 		var i=offset,il=o.length;
@@ -121,11 +141,20 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo)
 		};
 		offset=i-il;
 	};
+	//帧处理
+	frameNext=null;
+	var frameNextSize=res.length%frameSize;
+	if(frameNextSize>0){
+		var u8Pos=(res.length-frameNextSize)*2;
+		frameNext=new Int16Array(res.buffer.slice(u8Pos));
+		res=new Int16Array(res.buffer.slice(0,u8Pos));
+	};
 	
 	return {
 		index:index
 		,offset:offset
 		
+		,frameNext:frameNext
 		,sampleRate:newSampleRate
 		,data:res
 	};

@@ -841,7 +841,7 @@ Runtime.Ctrls([
 
 //调用录音
 var rec=Recorder({
-	type:"mp3"
+	type:"mp3",sampleRate:16000,bitRate:16
 	,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
 		Runtime.Process.apply(null,arguments);
 	}

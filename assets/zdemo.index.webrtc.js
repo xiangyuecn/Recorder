@@ -128,7 +128,7 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 	realTimeSendTryTime=t1;
 	
 	//借用SampleData函数进行数据的连续处理，采样率转换是次要的
-	var chunk=Recorder.SampleData(pcmDatas,sampleRate,recSet.sampleRate,realTimeSendTryChunk);
+	var chunk=Recorder.SampleData(pcmDatas,sampleRate,recSet.sampleRate,realTimeSendTryChunk,{frameType:recSet.type});
 	realTimeSendTryChunk=chunk;
 	realTimeSendTryChunks.push(chunk.data);
 	realTimeSendTryChunkSampleRate=chunk.sampleRate;
