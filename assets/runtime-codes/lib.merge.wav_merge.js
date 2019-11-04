@@ -15,6 +15,8 @@ Recorder.WavMerge(fileBytesList,True,False)
 				}
 		False: fn(errMsg) 出错回调
 	此函数可移植到后端使用
+	
+测试Tips：可先运行实时转码的demo代码，然后再运行本合并代码，免得人工不好控制片段大小
 ******************/
 
 //=====wav文件合并核心函数==========
@@ -99,7 +101,7 @@ var readWavInfo=function(bytes){
 
 
 
-//转换测试
+//合并测试
 var test=function(){
 	var audios=Runtime.LogAudios;
 	if(audios.length-1<1){
@@ -107,17 +109,22 @@ var test=function(){
 		return;
 	};
 	
-	var idx=-1 +1,files=[];
+	var idx=-1 +1,files=[],exclude=0;
 	var read=function(){
 		idx++;
 		if(idx>=audios.length){
 			Recorder.WavMerge(files,function(file,duration,info){
-				Runtime.Log("合并"+files.length+"个成功",2);
+				Runtime.Log("合并"+files.length+"个成功"+(exclude?"，排除"+exclude+"个非wav文件":""),2);
 				info.type="wav";
 				Runtime.LogAudio(new Blob([file.buffer],{type:"audio/wav"}),duration,{set:info});
 			},function(msg){
 				Runtime.Log(msg+"，请清除日志后重试",1);
 			});
+			return;
+		};
+		if(!/wav/.test(audios[idx].blob.type)){
+			exclude++;
+			read();
 			return;
 		};
 		var reader=new FileReader();

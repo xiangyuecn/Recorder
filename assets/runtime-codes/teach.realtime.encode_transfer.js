@@ -6,16 +6,23 @@
 通过onProcess回调可实现录音的实时处理；mp3和wav格式拥有极速转码特性，能做到边录音边转码；涉及Recorder两个核心方法：mock、SampleData。
 
 如果不需要获得最终结果，可实时清理缓冲数据，避免占用过多内存，想录多久就录多久。
+
+小技巧：测试结束后，可执行mp3、wav合并的demo代码，把所有片段拼接到一个文件
 ******************/
+var testOutputWavLog=false;//本测试如果是输出mp3，就顺带打一份wav的log，方便对比数据
+var testSampleRate=16000;
+var testBitRate=16;
 
 var SendInterval=50;//转码发送间隔（实际间隔比这个变量值偏大点，取决于bufferSize）。这个值可以设置很大，但不能设置很低，毕竟转码和传输还是要花费一定时间的，设备性能低下可能还处理不过来。
 //mp3格式下一般大于500ms就能保证能够正常转码处理，wav大于100ms，剩下的问题就是传输速度了。由于转码操作都是串行的，录制过程中转码生成出来mp3顺序都是能够得到保证，但结束时最后几段数据可能产生顺序问题，需要留意。由于传输通道不一定稳定，后端接收到的顺序可能错乱，因此可以携带编号进行传输，完成后进行一次排序以纠正顺序错乱的问题。
 
 //重置环境
-var RealTimeSendTryReset=function(){
+var RealTimeSendTryReset=function(type){
+	realTimeSendTryType=type;
 	realTimeSendTryTime=0;
 };
 
+var realTimeSendTryType;
 var realTimeSendTryTime=0;
 var realTimeSendTryNumber;
 var transferUploadNumberMax;
@@ -36,9 +43,8 @@ var RealTimeSendTry=function(rec,isClose){
 	realTimeSendTryTime=t1;
 	var number=++realTimeSendTryNumber;
 	
-	var newSampleRate=16000;
 	//借用SampleData函数进行数据的连续处理，采样率转换是顺带的
-	var chunk=Recorder.SampleData(rec.buffers,rec.srcSampleRate,newSampleRate,realTimeSendTryChunk,{frameType:isClose?"":"mp3"});
+	var chunk=Recorder.SampleData(rec.buffers,rec.srcSampleRate,testSampleRate,realTimeSendTryChunk,{frameType:isClose?"":realTimeSendTryType});
 	
 	//清理已处理完的缓冲数据，释放内存以支持长时间录音，最后完成录音时不能调用stop，因为数据已经被清掉了
 	for(var i=realTimeSendTryChunk?realTimeSendTryChunk.index:0;i<chunk.index;i++){
@@ -52,11 +58,11 @@ var RealTimeSendTry=function(rec,isClose){
 		return;
 	};
 	
-	//通过mock方法实时转码成mp3
+	//通过mock方法实时转码成mp3、wav
 	var recMock=Recorder({
-		type:"mp3"
-		,sampleRate:newSampleRate //采样率
-		,bitRate:16 //比特率
+		type:realTimeSendTryType
+		,sampleRate:testSampleRate //采样率
+		,bitRate:testBitRate //比特率
 	});
 	recMock.mock(chunk.data,chunk.sampleRate);
 	recMock.stop(function(blob,duration){
@@ -66,6 +72,20 @@ var RealTimeSendTry=function(rec,isClose){
 		//转码错误？没想到什么时候会产生错误！
 		Runtime.Log("不应该出现的错误:"+msg);
 	});
+	
+	if(testOutputWavLog&&realTimeSendTryType=="mp3"){
+		//测试输出一份wav，方便对比数据
+		var recMock2=Recorder({
+			type:"wav"
+			,sampleRate:testSampleRate
+			,bitRate:16
+		});
+		recMock2.mock(chunk.data,chunk.sampleRate);
+		recMock2.stop(function(blob,duration){
+			var logMsg="No."+(number<100?("000"+number).substr(-3):number);
+			Runtime.LogAudio(blob,duration,recMock2,logMsg);
+		});
+	};
 };
 
 //=====数据传输函数==========
@@ -115,7 +135,8 @@ var TransferUpload=function(number,blobOrNull,duration,blobRec,isClose){
 //=====以下代码无关紧要，音频数据源，采集原始音频用的==================
 //显示控制按钮
 Runtime.Ctrls([
-	{name:"开始录音和传输",click:"recStart"}
+	{name:"开始录音和传输mp3",click:"recStartMp3"}
+	,{name:"开始录音和传输wav",click:"recStartWav"}
 	,{name:"停止录音",click:"recStop"}
 ]);
 
@@ -124,12 +145,19 @@ Runtime.Import([
 	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
 	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
+	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
 ]);
 
 
 //调用录音
 var rec;
-function recStart(){
+function recStartMp3(){
+	recStart("mp3");
+};
+function recStartWav(){
+	recStart("wav");
+};
+function recStart(type){
 	if(rec){
 		rec.close();
 	};
@@ -150,7 +178,7 @@ function recStart(){
 		clearTimeout(t);
 		rec.start();//开始录音
 		
-		RealTimeSendTryReset();//重置
+		RealTimeSendTryReset(type);//重置
 	},function(msg,isUserNotAllow){
 		clearTimeout(t);
 		Runtime.Log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg, 1);
