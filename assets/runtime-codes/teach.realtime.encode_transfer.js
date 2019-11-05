@@ -59,6 +59,7 @@ var RealTimeSendTry=function(rec,isClose){
 	};
 	
 	//通过mock方法实时转码成mp3、wav
+	var encStartTime=Date.now();
 	var recMock=Recorder({
 		type:realTimeSendTryType
 		,sampleRate:testSampleRate //采样率
@@ -66,6 +67,7 @@ var RealTimeSendTry=function(rec,isClose){
 	});
 	recMock.mock(chunk.data,chunk.sampleRate);
 	recMock.stop(function(blob,duration){
+		blob.encTime=Date.now()-encStartTime;
 		//转码好就推入传输
 		TransferUpload(number,blob,duration,recMock,isClose);
 	},function(msg){
@@ -93,6 +95,7 @@ var TransferUpload=function(number,blobOrNull,duration,blobRec,isClose){
 	transferUploadNumberMax=Math.max(transferUploadNumberMax,number);
 	if(blobOrNull){
 		var blob=blobOrNull;
+		var encTime=blob.encTime;
 		
 		//*********Read As Base64***************
 		var reader=new FileReader();
@@ -118,7 +121,7 @@ var TransferUpload=function(number,blobOrNull,duration,blobRec,isClose){
 		var numberFail=number<transferUploadNumberMax?'<span style="color:red">顺序错乱的数据，如果要求不高可以直接丢弃，或者调大SendInterval试试</span>':"";
 		var logMsg="No."+(number<100?("000"+number).substr(-3):number)+numberFail;
 		
-		Runtime.LogAudio(blob,duration,blobRec,logMsg);
+		Runtime.LogAudio(blob,duration,blobRec,logMsg+"花"+("___"+encTime).substr(-3)+"ms");
 		
 		if(true && number%100==0){//emmm....
 			Runtime.LogClear();

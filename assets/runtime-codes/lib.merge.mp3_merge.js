@@ -102,17 +102,17 @@ var readMp3Info=function(bytes){
 //合并测试
 var test=function(){
 	var audios=Runtime.LogAudios;
-	if(audios.length-1<1){
-		Runtime.Log("至少需要录1段mp3",1);
-		return;
-	};
 	
 	var idx=-1 +1,files=[],exclude=0;
 	var read=function(){
 		idx++;
 		if(idx>=audios.length){
+			if(!files.length){
+				Runtime.Log("至少需要录1段mp3"+(exclude?"，已排除"+exclude+"个非mp3文件":""),1);
+				return;
+			};
 			Recorder.Mp3Merge(files,function(file,duration,info){
-				Runtime.Log("合并"+files.length+"个成功"+(exclude?"，排除"+exclude+"个非mp3文件":""),2);
+				Runtime.Log("合并"+files.length+"个成功"+(exclude?"，已排除"+exclude+"个非mp3文件":""),2);
 				info.type="mp3";
 				Runtime.LogAudio(new Blob([file.buffer],{type:"audio/mp3"}),duration,{set:info});
 			},function(msg){
@@ -146,7 +146,7 @@ Runtime.Ctrls([
 	{name:"mp3录音16khz",click:"recStart16"}
 	,{name:"mp3录音32khz",click:"recStart32"}
 	,{name:"结束录音",click:"recStop"}
-	,{name:"合并所有",click:"test"}
+	,{name:"合并日志中所有mp3",click:"test"}
 ]);
 
 

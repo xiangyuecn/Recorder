@@ -104,15 +104,15 @@ var readWavInfo=function(bytes){
 //合并测试
 var test=function(){
 	var audios=Runtime.LogAudios;
-	if(audios.length-1<1){
-		Runtime.Log("至少需要录1段wav",1);
-		return;
-	};
 	
 	var idx=-1 +1,files=[],exclude=0;
 	var read=function(){
 		idx++;
 		if(idx>=audios.length){
+			if(!files.length){
+				Runtime.Log("至少需要录1段wav"+(exclude?"，已排除"+exclude+"个非wav文件":""),1);
+				return;
+			};
 			Recorder.WavMerge(files,function(file,duration,info){
 				Runtime.Log("合并"+files.length+"个成功"+(exclude?"，排除"+exclude+"个非wav文件":""),2);
 				info.type="wav";
@@ -148,7 +148,7 @@ Runtime.Ctrls([
 	{name:"16位wav录音",click:"recStart16"}
 	,{name:"8位wav录音",click:"recStart8"}
 	,{name:"结束录音",click:"recStop"}
-	,{name:"合并所有",click:"test"}
+	,{name:"合并日志中所有wav",click:"test"}
 ]);
 
 
