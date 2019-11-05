@@ -55,7 +55,7 @@ Recorder.prototype.mp3=function(res,True,False){
 				
 				//去掉开头的标记信息帧
 				var meta=mp3TrimFix.fn(data,mp3Size,size,set.sampleRate);
-				mp3TrimFixLogMeta(meta,set);
+				mp3TrimFixSetMeta(meta,set);
 				
 				True(new Blob(data,{type:"audio/mp3"}));
 			};
@@ -202,7 +202,7 @@ Recorder.prototype.mp3_complete=function(startCtx,True,False,autoStop){
 	var This=this;
 	if(startCtx&&startCtx.worker){
 		startCtx.call=function(data){
-			mp3TrimFixLogMeta(data.meta,startCtx.set);
+			mp3TrimFixSetMeta(data.meta,startCtx.set);
 			True(data.blob);
 			
 			if(autoStop){
@@ -349,10 +349,12 @@ rm:Recorder.mp3ReadMeta
 	return meta;
 }
 };
-var mp3TrimFixLogMeta=function(meta,set){
+var mp3TrimFixSetMeta=function(meta,set){
 	var tag="MP3信息 ";
 	if(meta.sampleRate&&meta.sampleRate!=set.sampleRate || meta.bitRate&&meta.bitRate!=set.bitRate){
-		console.warn(tag+"和设置不匹配",set);
+		console.warn(tag+"和设置的不匹配set:"+set.bitRate+"kbps "+set.sampleRate+"hz，已更新set:"+meta.bitRate+"kbps "+meta.sampleRate+"hz",set);
+		set.sampleRate=meta.sampleRate;
+		set.bitRate=meta.bitRate;
 	};
 	
 	var trimFix=meta.trimFix;
