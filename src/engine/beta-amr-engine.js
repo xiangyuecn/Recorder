@@ -69,7 +69,11 @@ https://raw.githubusercontent.com/BenzLeung/benz-amr-recorder/462c6b91a67f7d9f42
 			
             var blockSize = this.SIZES[mode] + 1;
             var out = new Uint8Array(Math.ceil(pcm.length / this.PCM_BUFFER_COUNT * blockSize) + this.AMR_HEADER.length);
-            out.set((new TextEncoder("utf-8")).encode(this.AMR_HEADER));
+            //out.set((new TextEncoder("utf-8")).encode(this.AMR_HEADER));
+			//fix 低版本没有TextEncoder
+			for(var ih=0;ih<this.AMR_HEADER.length;ih++){
+				out[ih]=this.AMR_HEADER.charCodeAt(ih);
+			};
             var inOffset = 0;
             var outOffset = this.AMR_HEADER.length;
 			

@@ -17,9 +17,11 @@ var Recorder=function(set){
 Recorder.IsOpen=function(){
 	var stream=Recorder.Stream;
 	if(stream){
-		var tracks=stream.getTracks();
-		if(tracks.length>0){
-			return tracks[0].readyState=="live";
+		var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
+		var track=tracks[0];
+		if(track){
+			var state=track.readyState;
+			return state=="live"||state==track.LIVE;
 		};
 	};
 	return false;
@@ -60,7 +62,8 @@ Recorder.Support=function(){
 		Recorder.Ctx=new AC();
 		
 		Recorder.BindDestroy("Ctx",function(){
-			Recorder.Ctx&&Recorder.Ctx.close();
+			var ctx=Recorder.Ctx;
+			ctx&&ctx.close&&ctx.close();
 		});
 	};
 	return true;
@@ -288,10 +291,12 @@ Recorder.prototype=initFn.prototype={
 		
 		var stream=Recorder.Stream;
 		if(stream){
-			var tracks=stream.getTracks();
+			var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
 			for(var i=0;i<tracks.length;i++){
-				tracks[i].stop();
+				var track=tracks[i];
+				track.stop&&track.stop();
 			};
+			stream.stop&&stream.stop();
 		};
 		
 		Recorder.Stream=0;

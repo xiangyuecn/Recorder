@@ -52,7 +52,8 @@ var fn=function(set){
 	var height=set.height*scale;
 	
 	var thisElem=This.elem=document.createElement("div");
-	thisElem.innerHTML='<div style="width:'+set.width+'px;height:'+set.height+'px;overflow:hidden"><div style="width:'+width+'px;height:'+height+'px;transform-origin:0 0;transform:scale('+(1/1/scale)+')"><canvas/></div></div>';
+	var lowerCss=["","transform-origin:0 0;","transform:scale("+(1/scale)+");"];
+	thisElem.innerHTML='<div style="width:'+set.width+'px;height:'+set.height+'px;overflow:hidden"><div style="width:'+width+'px;height:'+height+'px;'+lowerCss.join("-webkit-")+lowerCss.join("-ms-")+lowerCss.join("-moz-")+lowerCss.join("")+'"><canvas/></div></div>';
 	
 	var canvas=This.canvas=thisElem.querySelector("canvas");
 	var ctx=This.ctx=canvas.getContext("2d");
