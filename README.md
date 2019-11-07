@@ -220,7 +220,7 @@ IOS其他浏览器||
 
 *2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版（支付宝）：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
 
-*2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题。问题二：IOS上如果录音之前先播放了任何Audio，录音过程可能会变得很诡异，但如果先录音，就不存在此问题（19-09-18 Evan:QQ1346751357反馈发现本问题并非必现，[功能页面](https://hft.bigdatahefei.com/LocateSearchService/sfc/index)，但本库的Demo内却必现，原因不明）。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。
+*2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题。问题二：IOS上如果录音之前先播放了任何Audio，录音过程可能会变得很诡异，但如果先录音，就不存在此问题（19-09-18 Evan:QQ1346751357反馈发现本问题并非必现，[功能页面](https://hft.bigdatahefei.com/LocateSearchService/sfc/index)，但本库的Demo内却必现，原因不明）。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。问题一目前已通过全局共享一个MediaStream连接来解决，原因在于Safari上MediaStream断开后就无法再次进行连接使用（表现为静音），改成了全局只连接一次就避免了此问题；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。
 
 *2019-10-26* 针对[#51](https://github.com/xiangyuecn/Recorder/issues/51)的问题研究后发现，如果录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。此问题能够稳定复现（使用别的程序大量占用CPU来模拟），目前已在`envIn`内部函数中进行了补偿处理，在浏览器两次传入PCM数据之间填充一段静默数据已弥补丢失的时长；最终编码得到的音频时长将和实际录音时长基本一致，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。
 
@@ -246,10 +246,6 @@ set={
     
     ,sampleRate:16000 //采样率，必须是数字，wav格式（8位）文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
                 //wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
-    
-    ,bufferSize:4096 //AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
-                //取值256, 512, 1024, 2048, 4096, 8192, or 16384
-                //注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
     
     ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate) 
                 //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段，每次回调可能增加0-n个不定量的pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
@@ -277,14 +273,14 @@ set={
 
 
 ### 【方法】rec.close(success)
-关闭释放录音资源，释放完成后会调用`success()`回调
+关闭释放录音资源，释放完成后会调用`success()`回调。如果正在录音或者stop调用未完成前调用了close将会强制终止当前录音。
 
 注意：如果创建了多个Recorder对象并且调用了open（应避免同时有多个对象进行了open），只有最后一个新建的才有权限进行实际的资源释放（和多个对象close调用顺序无关），浏览器或设备的系统才会不再显示正在录音的提示。
 
 ### 【方法】rec.start()
-开始录音，需先调用`open`；最佳实践为：每次调用`start`前都调用一次`open`以达到最佳的兼容性，录音`stop`后调用`close`进行关闭。
+开始录音，需先调用`open`；未close之前可以反复进行调用开始新的录音。
 
-只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误；另外open操作可能需要花费比较长时间，如果中途调用了stop，open完成时（同步）的任何start调用将会被自动阻止，也是不会有提示的。
+只要open成功后，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误；另外open操作可能需要花费比较长时间，如果中途调用了stop，open完成时（同步）的任何start调用将会被自动阻止，也是不会有提示的。
 
 ### 【方法】rec.stop(success,fail,autoClose)
 结束录音并返回录音数据`blob对象`，拿到blob对象就可以为所欲为了，不限于立即播放、上传
@@ -355,6 +351,15 @@ function transformOgg(pcmData){
 
 ### 【静态方法】Recorder.Destroy()
 销毁已持有的所有全局资源（AudioContext、Worker），当要彻底移除Recorder时需要显式的调用此方法。大部分情况下不调用Destroy也不会造成问题。
+
+### 【静态属性】Recorder.BufferSize
+录音时的AudioContext缓冲大小，默认值为4096。会影响H5录音时的onProcess调用速率，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
+
+取值256, 512, 1024, 2048, 4096, 8192, or 16384
+
+注意：取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题。一般无需调整，调整后需要先close掉已打开的录音，再open时才会生效。
+
+*这个属性在旧版Recorder中是放在已废弃的set.bufferSize中，后面因为兼容处理Safari上MediaStream断开后就无法再次进行连接使用的问题（表现为静音），把MediaStream连接也改成了全局只连接一次，因此set.bufferSize就移出来变成了Recorder的属性*
 
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option)
 对pcm数据的采样率进行转换，配合mock方法使用效果更佳，比如实时转换成小片段语音文件。
@@ -461,7 +466,7 @@ Recorder({type:"aac"})
 ## `WaveView`扩展
 `waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
 
-此扩展是在录音时`onProcess`回调中使用；`bufferSize`会影响绘制帧率，越小越流畅（但越消耗cpu），默认配置的大概12帧/s。基础使用方法：
+此扩展是在录音时`onProcess`回调中使用；`Recorder.BufferSize`会影响绘制帧率，越小越流畅（但越消耗cpu），默认配置的大概12帧/s。基础使用方法：
 ``` javascript
 var wave;
 var rec=Recorder({

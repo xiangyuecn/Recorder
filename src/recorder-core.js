@@ -6,7 +6,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2019-11-2 21:37:21";
+var LM="2019-11-7 21:47:48";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -26,6 +26,12 @@ Recorder.IsOpen=function(){
 	};
 	return false;
 };
+/*H5录音时的AudioContext缓冲大小。会影响H5录音时的onProcess调用速率，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
+	取值256, 512, 1024, 2048, 4096, 8192, or 16384
+	注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题。
+	一般无需调整，调整后需要先close掉已打开的录音，再open时才会生效。
+*/
+Recorder.BufferSize=4096;
 //销毁已持有的所有全局资源，当要彻底移除Recorder时需要显式的调用此方法
 Recorder.Destroy=function(){
 	console.log("Recorder Destroy");
@@ -68,6 +74,45 @@ Recorder.Support=function(){
 	};
 	return true;
 };
+/*初始化H5音频采集连接，因为Stream是全局的，Safari上断开后就无法再次进行连接使用，表现为静音，因此使用全部使用全局处理避免调用到disconnect；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。*/
+var Connect=function(){
+	var ctx=Recorder.Ctx,stream=Recorder.Stream;
+	var media=stream._m=ctx.createMediaStreamSource(stream);
+	var process=stream._p=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,Recorder.BufferSize,1,1);//单声道，省的数据处理复杂
+	
+	media.connect(process);
+	process.connect(ctx.destination);
+	
+	var calls=stream._call={};
+	process.onaudioprocess=function(e){
+		for(var k0 in calls){//has item
+			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
+			var size=o.length;
+			
+			var pcm=new Int16Array(size);
+			var sum=0;
+			for(var j=0;j<size;j++){//floatTo16BitPCM 
+				var s=Math.max(-1,Math.min(1,o[j]));
+				s=s<0?s*0x8000:s*0x7FFF;
+				pcm[j]=s;
+				sum+=Math.abs(s);
+			};
+			
+			for(var k in calls){
+				calls[k](pcm,sum);
+			};
+			
+			return;
+		};
+	};
+};
+var Disconnect=function(){
+	var stream=Recorder.Stream;
+	stream._m.disconnect();
+	stream._p.disconnect();
+	stream._p.onaudioprocess=stream._p=stream._m=null;
+};
+
 /*对pcm数据的采样率进行转换
 pcmDatas: [[Int16,...]] pcm片段列表
 pcmSampleRate:48000 pcm数据的采样率
@@ -162,7 +207,9 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		,data:res
 	};
 };
+var ID=0;
 function initFn(set){
+	this.id=++ID;
 	var o={
 		type:"mp3" //输出类型：mp3,wav，wav输出文件尺寸超大不推荐使用，但mp3编码支持会导致js文件超大，如果不需支持mp3可以使js文件大幅减小
 		,bitRate:16 //比特率 wav:16或8位，MP3：8kbps 1k/s，8kbps 2k/s 录音文件很小
@@ -171,9 +218,6 @@ function initFn(set){
 					//wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 					//采样率参考https://www.cnblogs.com/devin87/p/mp3-recorder.html
 		
-		,bufferSize:4096//AudioContext缓冲大小。会影响onProcess调用速度，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
-				//取值256, 512, 1024, 2048, 4096, 8192, or 16384
-				//注意，取值不能过低，2048开始不同浏览器可能回调速率跟不上造成音质问题（低端浏览器→说的就是腾讯X5）
 		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
 		
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
@@ -255,6 +299,7 @@ Recorder.prototype=initFn.prototype={
 				if(lockFail())return;
 				
 				if(Recorder.IsOpen()){
+					Connect();
 					ok();
 				}else{
 					False("录音功能无效：无音频流");
@@ -291,6 +336,8 @@ Recorder.prototype=initFn.prototype={
 		
 		var stream=Recorder.Stream;
 		if(stream){
+			Disconnect();
+			
 			var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
 			for(var i=0;i<tracks.length;i++){
 				var track=tracks[i];
@@ -463,57 +510,40 @@ Recorder.prototype=initFn.prototype={
 		};
 		This._SO=0;
 		
+		var end=function(){
+			This.state=1;
+			This.resume();
+		};
 		if(ctx.state=="suspended"){
 			ctx.resume().then(function(){
 				console.log("ctx resume");
-				This._start();
+				end();
 			});
 		}else{
-			This._start();
+			end();
 		};
-	}
-	,_start:function(){
-		var This=this,set=This.set;
-		
-		var engineCtx=This.engineCtx;
-		var ctx=Recorder.Ctx;
-		var media=This.media=ctx.createMediaStreamSource(Recorder.Stream);
-		var process=This.process=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,set.bufferSize,1,1);//单声道，省的数据处理复杂
-		
-		process.onaudioprocess=function(e){
-			if(This.state!=1){
-				return;
-			};
-			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
-			var size=o.length;
-			
-			var pcm=new Int16Array(size);
-			var sum=0;
-			for(var j=0;j<size;j++){//floatTo16BitPCM 
-				var s=Math.max(-1,Math.min(1,o[j]));
-				s=s<0?s*0x8000:s*0x7FFF;
-				pcm[j]=s;
-				sum+=Math.abs(s);
-			};
-			
-			This.envIn(pcm,sum);
-		};
-		
-		media.connect(process);
-		process.connect(ctx.destination);
-		This.state=1;
 	}
 	/*暂停录音*/
-	,pause:function(_resume){
+	,pause:function(){
 		var This=this;
 		if(This.state){
-			This.state=_resume||2;
+			This.state=2;
+			delete Recorder.Stream._call[This.id];
 		};
 	}
 	/*恢复录音*/
 	,resume:function(){
-		this.pause(1);
-		this.envResume();
+		var This=this;
+		if(This.state){
+			This.state=1;
+			This.envResume();
+			
+			Recorder.Stream._call[This.id]=function(pcm,sum){
+				if(This.state==1){
+					This.envIn(pcm,sum);
+				};
+			};
+		};
 	}
 	
 	
@@ -525,9 +555,8 @@ Recorder.prototype=initFn.prototype={
 			This._S++;
 		};
 		if(This.state){
+			This.pause();
 			This.state=0;
-			This.media.disconnect();
-			This.process.disconnect();
 		};
 		if(!keepEngine && This[set.type+"_stop"]){
 			This[set.type+"_stop"](This.engineCtx);
