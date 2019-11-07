@@ -169,7 +169,7 @@ $.ajax({
 
 
 #### 【祝福贺卡助手】
-使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
+使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
 
 #### 【注】
 如果你的项目用到了这个库也想展示到这里，可以发个isuse，注明使用介绍和访问方式，我们收录在这里。
