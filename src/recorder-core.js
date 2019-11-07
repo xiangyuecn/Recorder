@@ -108,9 +108,11 @@ var Connect=function(){
 };
 var Disconnect=function(){
 	var stream=Recorder.Stream;
-	stream._m.disconnect();
-	stream._p.disconnect();
-	stream._p.onaudioprocess=stream._p=stream._m=null;
+	if(stream._m){
+		stream._m.disconnect();
+		stream._p.disconnect();
+		stream._p.onaudioprocess=stream._p=stream._m=null;
+	};
 };
 
 /*对pcm数据的采样率进行转换
