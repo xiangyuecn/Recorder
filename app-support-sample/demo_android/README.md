@@ -10,7 +10,7 @@
 
 
 ## 【截图】
-![](../../assets/use_native_android.gif)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_android.gif)
 
 
 ## 【限制】

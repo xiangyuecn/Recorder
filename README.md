@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）。快捷方式: [【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[查看caniuse浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
+[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）。快捷方式: [【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[无用户操作测试](https://xiangyuecn.github.io/Recorder/assets/ztest_no_user_operation.html)，[【Can I Use】查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
 
 录音默认输出mp3格式，另外可选wav格式；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -147,14 +147,14 @@ $.ajax({
 
 欢迎加QQ群：781036591，纯小写口令：`recorder`
 
-<img src="assets/qq_group_781036591.png" width="220px">
+<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
 
 
 
 ## 案例演示
 
 ### 【在线Demo完整版】
-[<img src="assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
+[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo.png" width="100px">](https://xiangyuecn.github.io/Recorder/) https://xiangyuecn.github.io/Recorder/
 
 > `2019-3-27` 在QQ和微信打开时，发现这个网址被屏蔽了，尝试申诉了一下。`2019-4-7`晚上又发现被屏蔽了，小米浏览器也一样报危险网站，尝试打开一下别人的`github.io`发现全是这样，看来是`github.io`的问题，被波及了，不过第二天又自己好了。
 
@@ -476,7 +476,7 @@ rec.open(function(){
 });
 ```
 
-![](assets/use_wave.png)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.png)
 
 ### 【构造】wave=Recorder.WaveView(set)
 构造函数，`set`参数为配置对象，默认配置值如下：
@@ -556,7 +556,7 @@ public void onPermissionRequest(PermissionRequest request) {
 
 另外除wav外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意。
 
-![](assets/use_webrtc.png)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_webrtc.png)
 
 
 # :open_book:工具：代码运行和静态分发Runtime
@@ -564,13 +564,13 @@ public void onPermissionRequest(PermissionRequest request) {
 
 我们不传输、不存储数据，我们只是代码的可靠搬运工。看图：
 
-![](assets/use_runtime.gif)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_runtime.gif)
 
 
 # :open_book:工具：裸(RAW、WAV)PCM转WAV播放测试和转码
 [在线访问](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html)，本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。源码在`assets/工具-裸PCM转WAV播放测试.html`;
 
-![](assets/use_pcm_tool.png)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_pcm_tool.png)
 
 
 # :open_book:关于微信JsSDK和RecordApp
@@ -588,4 +588,4 @@ public void onPermissionRequest(PermissionRequest request) {
 
 你也可以选择使用支付宝或微信给我捐赠：
 
-![](assets/donate-alipay.png)  ![](assets/donate-weixin.png)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-alipay.png)  ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-weixin.png)

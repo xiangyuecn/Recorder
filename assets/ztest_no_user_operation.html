@@ -1,0 +1,200 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="icon.png">
+
+<title>Recorder无用户操作测试</title>
+
+<script src="../src/recorder-core.js"></script>
+<script src="../src/engine/mp3.js"></script>
+<script src="../src/engine/mp3-engine.js"></script>
+<script src="../src/extensions/waveview.js"></script>
+
+<script src="ztest-jquery.min-1.9.1.js"></script>
+</head>
+
+<body>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5 center top no-repeat;
+    background-size: auto 680px;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+</style>
+
+<div class="main">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#f60;">Recorder无用户操作测试</span>
+		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a> |
+		<a href="../">前往Demo页 >></a>
+	</div>
+	
+	<div class="mainBox mainCtrl">
+		<div style="padding-bottom:12px">
+			<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block;vertical-align:bottom" class="recwave"></div>
+			<div style="height:40px;width:300px;display:inline-block;background:#999;position:relative;">
+				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+				<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			</div>
+		</div>
+		
+		<div class="ctrlBtns"></div>
+	</div>
+	
+	<div class="mainBox">
+		<audio class="LogAudioPlayer" style="width:100%"></audio>
+		<div class="reclog"></div>
+	</div>
+</div>
+
+<script>
+function reclog(s,color){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	$(".reclog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>');
+};
+$(window).bind("error",function(e){
+	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
+});
+
+(function(){
+	var mk={};
+	var arr=["debug","log","info","warn","error"];
+	for(var i=0;i<arr.length;i++){
+		(function(k){
+			mk[k]=console[k];
+			console[k]=function(){
+				reclog("["+k+"]"+$.merge([],arguments).join(" "),k=="warn"||k=="error"?1:0);
+				mk[k].apply(console,arguments);
+			};
+		})(arr[i]);
+	};
+})();
+</script>
+
+
+<script>
+var Rec,LogAudios=[0];
+var LogAudioPlay=function(id){
+	var audio=$(".LogAudioPlayer")[0];
+	audio.controls=true;
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	
+	var o=LogAudios[id];
+	if(o){
+		o.play=(o.play||0)+1;
+		var logmsg=function(msg){
+			$(".LogAudio_"+id).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString()+" "+msg);
+		};
+		logmsg("");
+		audio.onerror=function(e){
+			console.log(arguments)
+			logmsg('<span style="color:red">播放失败:'+audio.error.message+'</span>');
+		};
+		
+		audio.src=(window.URL||webkitURL).createObjectURL(o.blob);
+		audio.play();
+	};
+};
+
+function run(){
+	var wave;
+	if(Rec){
+		Rec.close();
+	};
+	var rec=Recorder({
+		onProcess:function(buffers,level,time,sampleRate){
+			$(".recpowerx").css("width",level+"%");
+			$(".recpowert").html(time+"/"+level);
+			
+			wave.input(buffers[buffers.length-1],level,sampleRate);
+		}
+	});
+	Rec=rec;
+	
+	rec.open(function(){
+		wave=Recorder.WaveView({elem:".recwave"});
+		reclog("正在3秒录音...",2);
+		rec.start();
+		
+		setTimeout(function(){
+			if(Rec==rec){
+				rec.stop(function(blob,duration){
+					var set=rec.set;
+					var id=LogAudios.length;
+					LogAudios.push({blob:blob,set:$.extend({},set),duration:duration});
+					
+					reclog("已录制:"+(set.bitRate||"-")+"kbps "+(set.sampleRate||"-")+"hz "+blob.size+"b ["+(set.type||"-")+"]"+duration+'ms <button onclick="LogAudioPlay(\''+id+'\')">播放</button> <span class="LogAudio_'+id+'"></span>');
+					
+					LogAudioPlay(id);
+					setTimeout(function(){
+						var audio=$(".LogAudioPlayer")[0];
+						var msg="Audio Status：";
+						var add=function(k){
+							msg+=" <span style='color:"+(audio[k]===true?"red":"")+"'>"+k+":"+audio[k]+"</span>";
+						};
+						add("paused");
+						add("ended");
+						add("muted");
+						add("volume");
+						reclog(msg);
+					},1000);
+				},function(e){
+					reclog("失败："+e);
+				});
+			};
+		},3000);
+	},function(e,isUserNotAllow){
+		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
+	});
+};
+
+reclog("已立即运行录音，<span style='color:red'>请3秒以后再来进行鼠标或触摸操作</span>...");
+run();
+
+var isFire;
+$(window).bind("mousemove touchstart",function(){
+	if(isFire){
+		return;
+	};
+	isFire=1;
+	
+	reclog("检测到用户操作",2);
+	run();
+});
+</script>
+
+</body>
+</html>

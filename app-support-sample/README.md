@@ -14,12 +14,12 @@
 [demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
 
 ## 【IOS微信】H5测试
-[<img src="../assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
+[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
 此demo页面为代理页面（[源](https://xiangyuecn.github.io/Recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
 
 ## 【IOS微信】小程序WebView测试
-[<img src="../assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
+[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
 
 1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
 2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
@@ -102,12 +102,12 @@ function createDelayDialog(){
 
 欢迎加QQ群：781036591，纯小写口令：`recorder`
 
-<img src="../assets/qq_group_781036591.png" width="220px">
+<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
 
 
 ## 【截图】运行效果图
 
-<img src="../assets/use_native_ios.gif" width="360px"> <img src="../assets/use_native_android.gif" width="360px">
+<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_ios.gif" width="360px"> <img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_android.gif" width="360px">
 
 
 
@@ -303,4 +303,4 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 
 你也可以选择使用支付宝或微信给我捐赠：
 
-![](../assets/donate-alipay.png)  ![](../assets/donate-weixin.png)
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-alipay.png)  ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-weixin.png)
