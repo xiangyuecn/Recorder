@@ -670,7 +670,7 @@ Recorder.Traffic=function(){
 	var imgUrl=Recorder.TrafficImgUrl;
 	if(imgUrl){
 		var data=Recorder.Traffic;
-		var idf=location.href.replace(/#.+/,"");
+		var idf=location.href.replace(/#.*/,"");
 		if(!data[idf]){
 			data[idf]=1;
 			
