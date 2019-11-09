@@ -212,6 +212,11 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 var ID=0;
 function initFn(set){
 	this.id=++ID;
+	
+	//如果开启了流量统计，这里将发送一个图片请求
+	Recorder.Traffic&&Recorder.Traffic();
+	
+	
 	var o={
 		type:"mp3" //输出类型：mp3,wav，wav输出文件尺寸超大不推荐使用，但mp3编码支持会导致js文件超大，如果不需支持mp3可以使js文件大幅减小
 		,bitRate:16 //比特率 wav:16或8位，MP3：8kbps 1k/s，8kbps 2k/s 录音文件很小
@@ -658,5 +663,22 @@ window.Recorder=Recorder;
 
 //end ****copy源码结束*****
 Recorder.LM=LM;
+
+//流量统计用1像素图片地址，设置为空将不参与统计
+Recorder.TrafficImgUrl="//ia.51.la/go1?id=20469973&pvFlag=1";
+Recorder.Traffic=function(){
+	var imgUrl=Recorder.TrafficImgUrl;
+	if(imgUrl){
+		var data=Recorder.Traffic;
+		var idf=location.href.replace(/#.+/,"");
+		if(!data[idf]){
+			data[idf]=1;
+			
+			var img=new Image();
+			img.src=imgUrl;
+			console.log("Traffic Analysis Image: Recorder.TrafficImgUrl="+imgUrl);
+		};
+	};
+};
 
 })(window);
