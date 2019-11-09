@@ -96,6 +96,7 @@ Recorder.Support();//激活Recorder.Ctx
 
 
 var realTimeSendTryTime=0;
+var realTimeSendTryEncBusy;
 var realTimeSendTryChunk;
 var realTimeSendTryChunks;
 var realTimeSendTryChunkSampleRate;
@@ -111,6 +112,7 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 	var t1=Date.now(),endT=0,recImpl=Recorder.prototype;
 	if(realTimeSendTryTime==0){
 		realTimeSendTryTime=t1;
+		realTimeSendTryEncBusy=0;
 		realTimeSendTryChunk=null;
 		realTimeSendTryChunks=[];
 		
@@ -139,7 +141,21 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 	if(recImpl[recSet.type+"_start"]){
 		endT=Date.now();
 	};
+	
+	if(realTimeSendTryEncBusy>=2){
+		if(window.rtcChannelOpen){
+			rtcSendSkip++;
+			rtcStatusView();
+		}else{
+			reclog("编码队列阻塞，已丢弃一帧",1);
+		};
+		return;
+	};
+	realTimeSendTryEncBusy++;
+	
 	recstopFn(null,0,function(err,blob,duration){
+		realTimeSendTryEncBusy&&(realTimeSendTryEncBusy--);
+		
 		//此处应伪装成发送blob数据
 		//emmmm.... 发送给语音聊天webrtc
 		if(blob&&window.rtcChannelOpen){

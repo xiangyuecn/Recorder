@@ -15,6 +15,7 @@ var testBitRate=16;
 
 var SendInterval=50;//转码发送间隔（实际间隔比这个变量值偏大点，取决于bufferSize）。这个值可以设置很大，但不能设置很低，毕竟转码和传输还是要花费一定时间的，设备性能低下可能还处理不过来。
 //mp3格式下一般大于500ms就能保证能够正常转码处理，wav大于100ms，剩下的问题就是传输速度了。由于转码操作都是串行的，录制过程中转码生成出来mp3顺序都是能够得到保证，但结束时最后几段数据可能产生顺序问题，需要留意。由于传输通道不一定稳定，后端接收到的顺序可能错乱，因此可以携带编号进行传输，完成后进行一次排序以纠正顺序错乱的问题。
+//当出现性能问题时，可能音频编码不过来，将采取丢弃部分帧的策略。
 
 //重置环境
 var RealTimeSendTryReset=function(type){
@@ -23,6 +24,7 @@ var RealTimeSendTryReset=function(type){
 };
 
 var realTimeSendTryType;
+var realTimeSendTryEncBusy;
 var realTimeSendTryTime=0;
 var realTimeSendTryNumber;
 var transferUploadNumberMax;
@@ -33,6 +35,7 @@ var RealTimeSendTry=function(rec,isClose){
 	var t1=Date.now(),endT=0,recImpl=Recorder.prototype;
 	if(realTimeSendTryTime==0){
 		realTimeSendTryTime=t1;
+		realTimeSendTryEncBusy=0;
 		realTimeSendTryNumber=0;
 		transferUploadNumberMax=0;
 		realTimeSendTryChunk=null;
@@ -58,6 +61,15 @@ var RealTimeSendTry=function(rec,isClose){
 		return;
 	};
 	
+	//实时编码队列阻塞处理
+	if(!isClose){
+		if(realTimeSendTryEncBusy>=2){
+			Runtime.Log("编码队列阻塞，已丢弃一帧",1);
+			return;
+		};
+	};
+	realTimeSendTryEncBusy++;
+	
 	//通过mock方法实时转码成mp3、wav
 	var encStartTime=Date.now();
 	var recMock=Recorder({
@@ -67,12 +79,16 @@ var RealTimeSendTry=function(rec,isClose){
 	});
 	recMock.mock(chunk.data,chunk.sampleRate);
 	recMock.stop(function(blob,duration){
+		realTimeSendTryEncBusy&&(realTimeSendTryEncBusy--);
 		blob.encTime=Date.now()-encStartTime;
+		
 		//转码好就推入传输
 		TransferUpload(number,blob,duration,recMock,isClose);
 	},function(msg){
+		realTimeSendTryEncBusy&&(realTimeSendTryEncBusy--);
+		
 		//转码错误？没想到什么时候会产生错误！
-		Runtime.Log("不应该出现的错误:"+msg);
+		Runtime.Log("不应该出现的错误:"+msg,1);
 	});
 	
 	if(testOutputWavLog&&realTimeSendTryType=="mp3"){
