@@ -29,7 +29,7 @@ Recorder.WavMerge=function(fileBytesList,True,False){
 		var file=fileBytesList[i];
 		var info=readWavInfo(file);
 		if(!info){
-			False&&False("第"+(i+1)+"个文件不是wav raw格式音频，无法合并");
+			False&&False("第"+(i+1)+"个文件不是单声道wav raw pcm格式音频，无法合并");
 			return;
 		};
 		baseInfo||(baseInfo=info);

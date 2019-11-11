@@ -44,7 +44,7 @@ Recorder.Wav2Other=function(newSet,wavBlob,True,False){
 			};
 		};
 		if(!pcm){
-			False&&False("非wav raw格式音频，无法转码");
+			False&&False("非单声道wav raw pcm格式音频，无法转码");
 			return;
 		};
 		
