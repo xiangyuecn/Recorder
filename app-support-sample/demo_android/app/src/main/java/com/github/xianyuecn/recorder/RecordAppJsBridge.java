@@ -396,7 +396,7 @@ public class RecordAppJsBridge implements Closeable {
                 sampleRate=16000;
             }
 
-            new RecordApis(req.jsBridge, sampleRate, new Callback<Object, Object>() {
+            new RecordApis().init(req.jsBridge, sampleRate, new Callback<Object, Object>() {
                 public Object Call(Object result, Exception hasError) {
                     if(hasError!=null){
                         req.jsBridge.Log.e(LogTag, "开始录音失败"+hasError.toString());
@@ -447,7 +447,11 @@ public class RecordAppJsBridge implements Closeable {
         }
         static private RecordApis Current;
         static private final int SampleRate=44100;
-        private RecordApis(RecordAppJsBridge main_, int sampleRateReq, Callback<Object, Object> ready){
+
+
+
+
+        synchronized private void init(RecordAppJsBridge main_, int sampleRateReq, Callback<Object, Object> ready){
             Current=this;
             this.main=main_;
             this.logData= RecordAppJsBridge.SavePCM_ToLogFile;
@@ -490,13 +494,17 @@ public class RecordAppJsBridge implements Closeable {
             ThreadX.Run(new Runnable() {
                 @Override
                 public void run() {
-                    readThread=Thread.currentThread();
-                    try {
-                        readAsync();
-                    }catch (Exception e){
-                        main.Log.e(LogTag, "录音中途出现异常:"+e.toString());
+                    if(isRec) {//Sync Check
+                        readThread = Thread.currentThread();
+                        try {
+                            readAsync();
+                        } catch (Exception e) {
+                            if(main!=null) {//Sync Check
+                                main.Log.e(LogTag, "录音中途出现异常:" + e.toString());
+                            }
+                        }
+                        readThread = null;
                     }
-                    readThread=null;
                 }
             });
         }
@@ -512,7 +520,7 @@ public class RecordAppJsBridge implements Closeable {
         private ByteArrayOutputStream logStreamFull;
         private ByteArrayOutputStream logStreamVal;
 
-        private void destroy(){
+        synchronized private void destroy(){
             Current=null;
 
             isRec=false;
@@ -556,7 +564,9 @@ public class RecordAppJsBridge implements Closeable {
             aliveInt=ThreadX.SetTimeout(10 * 1000, new Runnable() {
                 @Override
                 public void run() {
-                    main.Log.e(LogTag, "录音超时自动停止：超过10秒未调用alive");
+                    if(main!=null) {//Sync Check
+                        main.Log.e(LogTag, "录音超时自动停止：超过10秒未调用alive");
+                    }
                     destroy();
                 }
             });
