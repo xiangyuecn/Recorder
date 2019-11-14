@@ -303,7 +303,13 @@ return [
         }
         static private var Current:RecordApis!;
         
+        private let Lock="";
         private init(_ main_:RecordAppJsBridge, _ sampleRateReq:Int, _ ready:@escaping (String?)->Void){
+            objc_sync_enter(Lock);
+            defer{
+                objc_sync_exit(Lock);
+            }
+            
             self.main=main_;
             sampleRate=sampleRateReq;
             logData=RecordAppJsBridge.SavePCM_ToLogFile;
@@ -369,6 +375,11 @@ return [
         private var logStreamFull:NSMutableData!;
         
         private func destroy(){
+            objc_sync_enter(Lock);
+            defer{
+                objc_sync_exit(Lock);
+            }
+            
             RecordApis.Current=nil;
             
             isRec=false;
@@ -386,7 +397,9 @@ return [
         private func alive(){
             ThreadX.ClearTimeout(aliveInt);
             aliveInt=ThreadX.SetTimeout(10 * 1000){
-                self.main.Log.e(RecordApis.LogTag, "录音超时自动停止：超过10秒未调用alive");
+                if self.main != nil {//Sync Check
+                    self.main.Log.e(RecordApis.LogTag, "录音超时自动停止：超过10秒未调用alive");
+                }
                 self.destroy();
             };
         }

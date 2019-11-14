@@ -366,7 +366,7 @@ function recstart(call){
 			$(".recpowerx").css("width",level+"%");
 			$(".recpowert").html(time+"/"+level);
 			
-			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
+			waveSet && wave && wave.input(buffers[buffers.length-1],level,sampleRate);
 			
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(set,realTimeSendTime,buffers,sampleRate);
