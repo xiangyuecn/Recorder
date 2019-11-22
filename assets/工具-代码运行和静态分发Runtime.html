@@ -162,7 +162,7 @@ window.Runtime={
 			if(o.html){
 				html.push(o.html);
 			}else{
-				html.push('<button class="mainBtn" onclick="'+o.click+'()">'+o.name+'</button>');
+				html.push('<button class="mainBtn '+o.cls+'" onclick="'+o.click+'()">'+o.name+'</button>');
 			};
 		};
 		$(".ctrlBtns").html(html.join("\n"));
@@ -812,12 +812,14 @@ AddDemoCode(999,"self_base_demo","【教程】本工具使用示例，和Recorde
 作者：高坚果
 时间：2019-9-12 21:59:19
 
-工具编辑框内可用编辑代码然后运行，代码内可用：
+工具的编辑框内可编写代码然后运行；代码内可调用本工具提供的Runtime的方法，使用了这些方法时，如果要copy代码到其他html内使用，需要把Runtime相关的调用删除或使用别的代码代替。
+
+可调用Runtime方法列表：
 	RootFolder:"" 当前程序根目录，结尾不含/
 
 	Runtime.Import(jsList) 导入js列表，只能调用一次，jsList:[{url:"",check:fn()},...] check返回false跳过这条的导入
 
-	Runtime.Ctrls(ctrls) 在控制区显示按钮，只能调用一次，ctrls:[{html:"html代码"},{name:"按钮名称",click:"函数名称"},...]
+	Runtime.Ctrls(ctrls) 在控制区显示按钮，只能调用一次，ctrls:[{html:"html代码"},{name:"按钮名称",click:"函数名称",cls:"class name"},...]
 
 	Runtime.Log(msgHtml,color) 在日志区显示日志html，color:0默认，1红色，2绿色，其他指定颜色
 
@@ -826,47 +828,65 @@ AddDemoCode(999,"self_base_demo","【教程】本工具使用示例，和Recorde
 	Runtime.Process(buffers,powerLevel,bufferDuration,bufferSampleRate) 接受Recorder的实时回调，驱动图形显示
 ******************/
 
-//加载框架
+/*****加载框架，把这几个js用script标签引入到html就可以进行mp3录音*****/
 Runtime.Import([
 	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
 	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
 ]);
 
-//显示控制按钮
+/*****显示控制按钮和界面控制，这几坨代码无关紧要*****/
 Runtime.Ctrls([
-	{name:"开始录音",click:"recStart"}
-	,{name:"结束录音",click:"recStop"}
+	{name:"打开录音，请求权限",click:"recOpen"}
+	,{name:"开始录音",click:"recStart"}
+	,{name:"结束录音，并释放资源",click:"recStop"}
 ]);
 
-//调用录音
-var rec=Recorder({
-	type:"mp3",sampleRate:16000,bitRate:16
-	,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
-		Runtime.Process.apply(null,arguments);
-	}
-});
-function recStart(){
+
+/*****录音核心代码*****/
+var rec;
+/**调用open打开录音请求好录音权限**/
+var recOpen=function(){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
+	rec=Recorder({
+		type:"mp3",sampleRate:16000,bitRate:16
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+			Runtime.Process.apply(null,arguments);
+		}
+	});
+	
 	//var dialog=createDelayDialog(); 我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调，此处demo省略了弹窗的代码
+	//if(Is Mobile)//只针对移动端，demo偷一下懒
 	var t=setTimeout(function(){
 		Runtime.Log("无法录音：权限请求被忽略（超时假装手动点击了确认对话框）",1);
 	},8000);
 	
-	rec.open(function(){//打开麦克风授权获得相关资源
+	Runtime.Log("正在打开录音，请求麦克风权限...");
+	rec.open(function(){
 		clearTimeout(t);
-		rec.start();//开始录音
+		
+		Runtime.Log("已打开录音，可以点击开始了",2);
+		
+		//rec.start() 此处可以立即开始录音，但不建议这样编写，因为open是一个延迟漫长的操作，通过两次用户操作来分别调用open和start是推荐的最佳流程
 	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
 		clearTimeout(t);
 		Runtime.Log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg, 1);
 	});
 };
+/**开始录音**/
+function recStart(){//打开了录音后才能进行start、stop调用，demo偷一下懒，按钮、判断啥都没有处理
+	rec.start();
+};
+/**结束录音**/
 function recStop(){
 	rec.stop(function(blob,duration){
-		rec.close();//释放录音资源
+		rec.close();//释放录音资源，当然可以不释放，后面可以连续调用start；但不释放时系统或浏览器会一直提示在录音，最佳操作是录完就close掉
 		
 		Runtime.LogAudio(blob,duration,rec);
+		rec=null;
 	},function(msg){
 		Runtime.Log("录音失败:"+msg, 1);
+		rec.close();//可以通过stop方法的第3个参数来自动调用close
+		rec=null;
 	});
 };
 });

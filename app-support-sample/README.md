@@ -58,10 +58,15 @@
 RecordApp.RequestPermission(function(){
     //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
     
-    RecordApp.Start({type:"mp3",sampleRate:16000},function(){//mp3格式，指定采样率，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把支持文件到Platforms.Default内注册
+    RecordApp.Start({
+        type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把支持文件到Platforms.Default内注册
+        ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+            //如果当前环境支持实时回调（RecordApp.Current.CanProcess()），收到录音数据时就会实时调用本回调方法
+        }
+    },function(){
         setTimeout(function(){
             RecordApp.Stop(function(blob,duration){//到达指定条件停止录音
-                console.log((window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
+                console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
                 
                 //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
             },function(msg){
