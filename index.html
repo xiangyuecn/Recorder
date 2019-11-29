@@ -610,16 +610,26 @@ $(".realTimeSendSet").bind("change",function(e){
 <hr>
 <div>
 <h3>移动端js运行简易控制台</h3>
-<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">(navigator.webkitGetUserMedia||navigator.getUserMedia).call(navigator,
-{audio:true}
-,function(){
-	JsVal.value+="\n支持录音";
+<textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">JsVal.value+="尝试请求录音权限...";
+var scope=navigator.mediaDevices||navigator;
+var True=function(){
+	JsVal.value+="\n已获得录音权限";
 	console.log(JsVal.value);
-},function(e){
-	JsVal.value+="\n"+(e.name||e.message)
+};
+var False=function(e){
+	JsVal.value+="\n"+(e.name||e.message||e)
 	console.error(e);
-});
-"wait..."</textarea>
+};
+var fn=scope.webkitGetUserMedia||scope.getUserMedia;
+if(fn){
+	var p=fn.call(scope,{audio:true},True,False);
+	p.then&&(p.then(True)["catch"](False));
+	"wait..."
+}else{
+	False("不支持getUserMedia");
+	"end"
+};
+</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
 <textarea id="cmdExecVal" style="width:300px;height:160px;" placeholder="运行结果"></textarea>
 <script>
