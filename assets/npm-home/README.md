@@ -80,4 +80,18 @@ npm install recorder-core
 1. 运行根目录/src：npm start，进行文件copy
 2. 进入assets/npm-home/npm-files目录，进行提交
 
+```
+//登录，注意一定要使用npmjs的源
+npm login
+
+//发布包
+npm publish
+
+//查询当前配置的源
+npm get registry
+//设置成淘宝源
+npm config set registry http://registry.npm.taobao.org/
+//换成原来的源
+npm config set registry https://registry.npmjs.org/
+```
 @@Remove End@@

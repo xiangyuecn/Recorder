@@ -1,5 +1,13 @@
 [Recorder](https://github.com/xiangyuecn/Recorder/) | RecordApp
 
+<p align="center">
+  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1" alt="Stars"></a>
+  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder" alt="Forks"></a>
+  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=f60" alt="Version"></a>
+  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dm/recorder-core" alt="Downloads"></a>
+  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/l/recorder-core" alt="License"></a>
+</p>
+
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
 [在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
