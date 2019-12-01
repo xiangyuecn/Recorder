@@ -1,10 +1,6 @@
 # Recorder：recorder-core 用于html5录音
 
-GitHub: [https://github.com/xiangyuecn/Recorder](https://github.com/xiangyuecn/Recorder)，详细使用方法和支持请参考Recorder的GitHub仓库。npm recorder这个名字已被使用，因此在Recorder基础上增加后缀-core，就命名为recorder-core，和Recorder核心文件同名。
-
-@@Ref 编辑提醒@@
-@@Ref 编辑提醒@@
-@@Ref 编辑提醒@@
+GitHub: [https://github.com/xiangyuecn/Recorder](https://github.com/xiangyuecn/Recorder)，详细使用方法和支持请参考Recorder的GitHub仓库。npm recorder这个名字已被使用，因此在Recorder基础上增加后缀-core，就命名为recorder-core，和Recorder核心文件同名。                                  @@Ref 编辑提醒@@                                  @@Ref 编辑提醒@@                   @@Ref 编辑提醒@@
 
 @@Ref README.Desc@@
 
