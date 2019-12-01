@@ -21,6 +21,7 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
   <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dm/recorder-core" alt="Downloads"></a>
   <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/l/recorder-core" alt="License"></a>
 </p>
+
 [​](?RefEnd)
 
 
