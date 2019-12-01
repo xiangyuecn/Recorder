@@ -130,6 +130,7 @@ function Run_npm(){
 	var npmREADME=fs.readFileSync(npmHome+"/README.md","utf-8");
 	var npmPackage=fs.readFileSync(npmHome+"/package.json","utf-8");
 	var hashHistory=fs.readFileSync(npmHome+"/hash-history.txt","utf-8");
+	var versionPatch=fs.existsSync(npmHome+"/version.patch.txt")&&fs.readFileSync(npmHome+"/version.patch.txt","utf-8")||"";
 		
 	var sha1Obj=crypto.createHash('sha1');
 	var writeHashFile=function(path,data){
@@ -161,16 +162,31 @@ function Run_npm(){
 	console.log("已生成"+npmFiles+"/README.md");
 
 	var npmVer=0;
+	var npmPatch=0;
 	npmPackage=npmPackage.replace(/"([\d\.]+)123456.9999"/g,function(s,a){
 		var d=new Date();
 		var v=(""+d.getFullYear()).substr(-2);
 		v+=("0"+d.getMonth()).substr(-2);
 		v+=("0"+d.getDate()).substr(-2);
-		v='"'+a+v+'"';
+		
+		var patch="00";
+		if(versionPatch){
+			var obj=JSON.parse(versionPatch);
+			var day=obj.date.replace(/-/g,"");
+			if(day.length!=8){
+				throw new Error("versionPatch.date无效");
+			};
+			if(day.substr(-6)==v){
+				patch=("0"+obj.patch).substr(-2);
+			};
+		};
+		
+		v='"'+a+v+patch+'"';
 		npmVer=v;
+		npmPatch=patch;
 		return npmVer;
 	});
-	console.log("package version:"+npmVer);
+	console.log("\x1B[32m%s\x1B[0m","package version:"+npmVer+" patch:"+npmPatch+'，如果需要修改patch，请新建version.patch.txt，格式{"date":"2010-01-01","patch":12}patch取值0-99当日有效');
 	fs.writeFileSync(npmFiles+"/package.json",npmPackage);
 	console.log("已生成"+npmFiles+"/package.json");
 	
@@ -179,6 +195,8 @@ function Run_npm(){
 		writeHashFile(dist, byts);
 		console.log("已复制"+dist);
 	};
+	copyFile("../recorder.mp3.min.js",npmFiles+"/recorder.mp3.min.js");
+	copyFile("../recorder.wav.min.js",npmFiles+"/recorder.wav.min.js");
 	copyFile("recorder-core.js",npmSrc+"/recorder-core.js");
 	srcDirs.forEach(function(dir){
 		var files=fs.readdirSync(dir);

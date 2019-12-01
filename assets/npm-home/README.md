@@ -27,11 +27,16 @@ npm install recorder-core
 
 这种方式和GitHub上的代码使用没有差别，请阅读[GitHub仓库](https://github.com/xiangyuecn/Recorder)获得更详细的使用文档。
 ``` html
-<script src="你项目中的路径/recorder-core.js"></script> <!--必须引入的录音核心-->
-<script src="你项目中的路径/engine/mp3.js"></script> <!--相应格式支持文件-->
-<script src="你项目中的路径/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
+<script src="你项目中的路径/src/recorder-core.js"></script> <!--必须引入的录音核心-->
+<script src="你项目中的路径/src/engine/mp3.js"></script> <!--相应格式支持文件-->
+<script src="你项目中的路径/src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
 
-<script src="你项目中的路径/extensions/waveview.js"></script>  <!--可选的扩展支持项-->
+<script src="你项目中的路径/src/extensions/waveview.js"></script>  <!--可选的扩展支持项-->
+```
+
+或者在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件减小代码体积
+``` html
+<script src="你项目中的路径/recorder.mp3.min.js"></script> <!--已包含recorder-core和mp3格式支持-->
 ```
 
 ## 【3】调用录音
@@ -61,7 +66,7 @@ npm install recorder-core
     app.js会自动加载Recorder和编码引擎文件，应确保app.js内BaseFolder目录的正确性。
     （压缩时可以把所有支持文件压缩到一起，会检测到组件已自动加载）
     （**注意：需要在https等安全环境下才能进行录音**） -->
-<script src="你项目中的路径/app-support/app.js"></script>
+<script src="你项目中的路径/src/app-support/app.js"></script>
 ```
 
 ### 调用录音

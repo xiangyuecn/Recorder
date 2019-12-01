@@ -54,6 +54,9 @@ import Recorder from 'recorder-core'
 import 'recorder-core/src/engine/mp3'
 import 'recorder-core/src/engine/mp3-engine'
 
+//以上三个也可以合并使用压缩好的recorder.xxx.min.js
+//比如 import Recorder from 'recorder-core/recorder.mp3.min' //已包含recorder-core和mp3格式支持
+
 //可选的扩展支持项
 import 'recorder-core/src/extensions/waveview'
 ```
