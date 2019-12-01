@@ -1,22 +1,12 @@
 # Recorder：recorder-core 用于html5录音
 
-GitHub: [https://github.com/xiangyuecn/Recorder](https://github.com/xiangyuecn/Recorder)，详细使用方法和支持请参考Recorder的GitHub仓库。
-
-npm recorder这个名字已被使用，因此在Recorder基础上增加后缀-core，就命名为recorder-core，和Recorder核心文件同名。
+GitHub: [https://github.com/xiangyuecn/Recorder](https://github.com/xiangyuecn/Recorder)，详细使用方法和支持请参考Recorder的GitHub仓库。npm recorder这个名字已被使用，因此在Recorder基础上增加后缀-core，就命名为recorder-core，和Recorder核心文件同名。
 
 @@Ref 编辑提醒@@
 @@Ref 编辑提醒@@
 @@Ref 编辑提醒@@
 
-<p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/icon.png" alt="Recorder logo"></a></p>
-
-<p align="center">
-  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1" alt="Stars"></a>
-  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder" alt="Forks"></a>
-  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=f60" alt="Version"></a>
-  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dm/recorder-core" alt="Downloads"></a>
-  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/l/recorder-core" alt="License"></a>
-</p>
+@@Ref README.Desc@@
 
 
 # 如何使用
