@@ -9,7 +9,18 @@
 
 https://github.com/xiangyuecn/Recorder
 */
-(function(){
+(function(factory){
+	factory(window);
+	//umd returnExports.js
+	if(typeof(define)=='function' && define.amd){
+		define(function(){
+			return RecordApp;
+		});
+	};
+	if(typeof(module)=='object' && module.exports){
+		module.exports=RecordApp;
+	};
+}(function(window){
 "use strict";
 var IsWx=/MicroMessenger/i.test(navigator.userAgent);
 
@@ -458,4 +469,4 @@ window.RecordApp=App;
 
 OnInstalled&&OnInstalled();
 
-})();
+}));

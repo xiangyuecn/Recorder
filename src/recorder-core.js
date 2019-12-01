@@ -2,7 +2,18 @@
 录音
 https://github.com/xiangyuecn/Recorder
 */
-(function(window){
+(function(factory){
+	factory(window);
+	//umd returnExports.js
+	if(typeof(define)=='function' && define.amd){
+		define(function(){
+			return Recorder;
+		});
+	};
+	if(typeof(module)=='object' && module.exports){
+		module.exports=Recorder;
+	};
+}(function(window){
 "use strict";
 
 //兼容环境
@@ -681,4 +692,4 @@ Recorder.Traffic=function(){
 	};
 };
 
-})(window);
+}));

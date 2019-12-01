@@ -17,7 +17,12 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 # :open_book:快速使用
 
 ## 【1】加载框架
-在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件即可 （**注意：[需要在https等安全环境下才能进行录音](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)**）
+
+注意：[需要在https等安全环境下才能进行录音](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)
+
+**方式一**：使用script标签引入
+
+在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件即可
 ``` html
 <script src="recorder.mp3.min.js"></script> <!--已包含recorder-core和mp3格式支持-->
 ```
@@ -26,11 +31,28 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 <script src="src/recorder-core.js"></script> <!--必须引入的录音核心-->
 <script src="src/engine/mp3.js"></script> <!--相应格式支持文件-->
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
+
+<script src="src/extensions/waveview.js"></script>  <!--可选的扩展支持项-->
 ```
-> 可自行用 `AMD/CommonJS` 写法把 `Recorder` 函数（把格式支持文件合并过来）进行导出；或者尝试直接 `import/require` `recorder.mp3.min.js`，应该可以通过全局`window.Recorder`访问，简单粗暴。vue?! angular?!可用??!!，[webpack使用](https://github.com/xiangyuecn/Recorder/issues/38)。
+
+**方式二**：通过import/require引入
+
+通过npm进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可 [​](?Ref=ImportCode&Start)
+``` javascript
+//必须引入的核心，换成require也是一样的。注意：recorder-core会自动往window下挂载名称为Recorder对象，全局可调用window.Recorder，也许可自行调整相关源码清除全局污染
+import Recorder from 'recorder-core'
+
+//需要使用到的音频格式编码引擎的js文件统统加载进来
+import 'recorder-core/src/engine/mp3'
+import 'recorder-core/src/engine/mp3-engine'
+
+//可选的扩展支持项
+import 'recorder-core/src/extensions/waveview'
+```
+[​](?RefEnd)
 
 ## 【2】调用录音
-然后使用，假设立即运行，只录3秒，[运行此代码>>](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)
+[​](?Ref=Codes&Start)然后使用，假设立即运行，只录3秒，[运行此代码>>](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)
 ``` javascript
 //简单控制台直接测试方法：在任意(无CSP限制)页面内加载Recorder，加载成功后再执行一次本代码立即会有效果，import("https://xiangyuecn.github.io/Recorder/recorder.mp3.min.js").then(function(s){console.log("import ok")}).catch(function(e){console.error("import fail",e)})
 
@@ -162,6 +184,7 @@ $.ajax({
 //-----↑↑↑以上才是主要代码↑↑↑-------
 },function(msg){console.log("录音失败:"+msg);});},3000);},function(msg){console.log("无法录音:"+msg);});
 ```
+[​](?RefEnd)
 
 ## 【附】问题排查
 - 打开[Demo页面](https://xiangyuecn.github.io/Recorder/)试试看，是不是也有同样的问题。
@@ -500,7 +523,7 @@ Recorder({type:"aac"})
 ## `WaveView`扩展
 `waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
 
-此扩展是在录音时`onProcess`回调中使用；`Recorder.BufferSize`会影响绘制帧率，越小越流畅（但越消耗cpu），默认配置的大概12帧/s。基础使用方法：
+此扩展是在录音时`onProcess`回调中使用；`Recorder.BufferSize`会影响绘制帧率，越小越流畅（但越消耗cpu），默认配置的大概12帧/s。基础使用方法：[​](?Ref=WaveView.Codes&Start)
 ``` javascript
 var wave;
 var rec=Recorder({
@@ -516,6 +539,7 @@ rec.open(function(){
 ```
 
 ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.png)
+[​](?RefEnd)
 
 ### 【构造】wave=Recorder.WaveView(set)
 构造函数，`set`参数为配置对象，默认配置值如下：

@@ -35,6 +35,9 @@
 # :open_book:快速使用
 
 ## 【1】加载框架
+
+**方式一**：使用script标签引入
+
 ``` html
 <!-- 可选的独立配置文件，提供这些文件时可免去修改app.js源码。
     注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
@@ -50,8 +53,41 @@
 <script src="src/app-support/app.js"></script>
 ```
 
+**方式二**：通过import/require引入
+
+通过npm进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可 [​](?Ref=ImportCode&Start)
+``` javascript
+/********先加载RecordApp需要用到的支持文件*********/
+//必须引入的app核心文件，换成require也是一样的。注意：app.js会自动往window下挂载名称为RecordApp对象，全局可调用window.RecordApp，也许可自行调整相关源码清除全局污染
+import RecordApp from 'recorder-core/src/app-support/app'
+//可选开启Native支持，需要引入此文件
+import 'recorder-core/src/app-support/app-native-support'
+//可选开启IOS上微信录音支持，需要引入此文件
+import 'recorder-core/src/app-support/app-ios-weixin-support'
+
+//这里放置可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置文件需要自己编写，参考https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample 目录内的这两个配置文件代码。
+        //import '你的配置文件目录/native-config.js' //可选开启native支持的相关配置
+        //import '你的配置文件目录/ios-weixin-config.js' //可选开启ios weixin支持的相关配置
+
+/*********然后加载Recorder需要的文件***********/
+//必须引入的核心。所有文件都需要自行引入，否则app.js会尝试用script来请求需要的这些文件，进而导致错误，引入后会检测到组件已自动加载，就不会去请求了
+import 'recorder-core'
+
+//需要使用到的音频格式编码引擎的js文件统统加载进来
+import 'recorder-core/src/engine/mp3'
+import 'recorder-core/src/engine/mp3-engine'
+
+//由于大部分情况下ios-weixin的支持需要用到amr解码器，应当把amr引擎也加载进来
+import 'recorder-core/src/engine/beta-amr'
+import 'recorder-core/src/engine/beta-amr-engine'
+
+//可选的扩展支持项
+import 'recorder-core/src/extensions/waveview'
+```
+[​](?RefEnd)
+
 ## 【2】调用录音
-然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
+[​](?Ref=Codes&Start)然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
 ``` javascript
 //var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于权限请求前执行，因为回调不确定是同步还是异步的
 //请求录音权限
@@ -100,6 +136,7 @@ function createDelayDialog(){
 };
 */
 ```
+[​](?RefEnd)
 
 ## 【附】录音立即播放、上传示例
 参考[Recorder](https://github.com/xiangyuecn/Recorder)中的示例。
