@@ -166,7 +166,7 @@ function Run_npm(){
 	npmPackage=npmPackage.replace(/"([\d\.]+)123456.9999"/g,function(s,a){
 		var d=new Date();
 		var v=(""+d.getFullYear()).substr(-2);
-		v+=("0"+d.getMonth()).substr(-2);
+		v+=("0"+(d.getMonth()+1)).substr(-2);
 		v+=("0"+d.getDate()).substr(-2);
 		
 		var patch="00";
