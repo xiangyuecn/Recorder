@@ -1,12 +1,12 @@
 [Recorder](https://github.com/xiangyuecn/Recorder/) | RecordApp
 
-  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1" alt="Stars"></a>
-  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder" alt="Forks"></a>
-  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=0b1" alt="npm Version"></a>
-  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dm/recorder-core?color=0b1&label=npm%20downloads" alt="npm Downloads"></a>
+  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1&logo=github" alt="Stars"></a>
+  <a href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder?color=0b1&logo=github" alt="Forks"></a>
+  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=f60&logo=npm" alt="npm Version"></a>
+  <a href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
   <a href="https://npm.taobao.org/package/recorder-core"><img src="https://npm.taobao.org/badge/v/recorder-core.svg" alt="cnpm Version"></a>
   <a href="https://npm.taobao.org/package/recorder-core"><img src="https://npm.taobao.org/badge/d/recorder-core.svg" alt="cnpm Downloads"></a>
-  <a href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder" alt="License"></a>
+  <a href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
 
 
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
