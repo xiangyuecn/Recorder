@@ -1,0 +1,23 @@
+{
+  "name": "recorder-vue-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --progress --mode production --config package.webpack.build.js"
+    ,"build-dev": "webpack --progress --mode development --config package.webpack.build.js"
+  },
+  "dependencies": {
+    "recorder-core": "*"
+
+    ,"vue": "2.6.10"
+    ,"webpack": "4.41.2"
+    ,"webpack-cli": "3.3.10"
+
+    ,"vue-loader": "15.7.2"
+    ,"vue-template-compiler": "2.6.10"
+    ,"style-loader": "1.0.1"
+    ,"css-loader": "3.2.0"
+    ,"babel-core": "6.26.3"
+    ,"babel-loader": "7.1.5"
+    ,"babel-preset-env": "1.7.0"
+  }
+}
