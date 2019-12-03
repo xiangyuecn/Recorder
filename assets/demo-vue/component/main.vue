@@ -1,52 +1,52 @@
 <style>
 body{
-	word-wrap: break-word;
-	background:#f5f5f5 center top no-repeat;
+    word-wrap: break-word;
+    background:#f5f5f5 center top no-repeat;
     background-size: auto 680px;
 }
 pre{
-	white-space:pre-wrap;
+    white-space:pre-wrap;
 }
 a{
-	text-decoration: none;
-	color:#06c;
+    text-decoration: none;
+    color:#06c;
 }
 a:hover{
-	color:#f00;
+    color:#f00;
 }
 
 .main{
-	max-width:700px;
-	margin:0 auto;
-	padding-bottom:80px
+    max-width:700px;
+    margin:0 auto;
+    padding-bottom:80px
 }
 
 .mainBox{
-	margin-top:12px;
-	padding: 12px;
-	border-radius: 6px;
-	background: #fff;
-	--border: 1px solid #0b1;
-	box-shadow: 2px 2px 3px #aaa;
+    margin-top:12px;
+    padding: 12px;
+    border-radius: 6px;
+    background: #fff;
+    --border: 1px solid #0b1;
+    box-shadow: 2px 2px 3px #aaa;
 }
 
 
 .mainBtn{
-	display: inline-block;
-	cursor: pointer;
-	border: none;
-	border-radius: 3px;
-	background: #0b1;
-	color:#fff;
-	padding: 0 15px;
-	margin-right:20px;
-	line-height: 36px;
-	height: 36px;
-	overflow: hidden;
-	vertical-align: middle;
+    display: inline-block;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    background: #0b1;
+    color:#fff;
+    padding: 0 15px;
+    margin-right:20px;
+    line-height: 36px;
+    height: 36px;
+    overflow: hidden;
+    vertical-align: middle;
 }
 .mainBtn:active{
-	background: #0a1;
+    background: #0a1;
 }
 .ctrlBtn{
     margin-top:10px;
@@ -83,9 +83,9 @@ a:hover{
     </div>
     
     <div class="mainBox">
-		<audio ref="LogAudioPlayer" style="width:100%"></audio>
+        <audio ref="LogAudioPlayer" style="width:100%"></audio>
 
-		<div class="mainLog">
+        <div class="mainLog">
             <div v-for="obj in logs" :key="obj.idx">
                 <div :style="{color:obj.color==1?'red':obj.color==2?'green':obj.color}">
                     <!-- <template v-once> 在v-for里存在的bug，参考：https://v2ex.com/t/625317 -->
@@ -112,7 +112,7 @@ a:hover{
                 </div>
             </div>
         </div>
-	</div>
+    </div>
 
     <div v-if="recOpenDialogShow" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">
         <div style="display:flex;height:100%;align-items:center;">
@@ -184,7 +184,7 @@ module.exports={
                 This.wave=Recorder.WaveView({elem:".ctrlProcessWave"});
             },function(msg,isUserNotAllow){
                 This.dialogCancel();
-		        This.reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+msg,1);
+                This.reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+msg,1);
             });
 
             This.waitDialogClickFn=function(){
@@ -261,7 +261,7 @@ module.exports={
                 logmsg('<span style="color:red">播放失败['+audio.error.code+']'+audio.error.message+'</span>');
             };
             audio.src=(window.URL||webkitURL).createObjectURL(o.res.blob);
-			audio.play();
+            audio.play();
         }
         ,recdown:function(idx){
             var This=this;
