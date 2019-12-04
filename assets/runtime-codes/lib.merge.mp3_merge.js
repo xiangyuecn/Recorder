@@ -14,9 +14,12 @@ Recorder.Mp3Merge(fileBytesList,True,False)
 					,bitRate:8 16 //比特率
 				}
 		False: fn(errMsg) 出错回调
-	此函数可移植到后端使用
 
 测试Tips：可先运行实时转码的demo代码，然后再运行本合并代码，免得人工不好控制片段大小
+
+mp3片段文件合并原理：mp3格式因为lamejs采用的CBR编码，因此将所有mp3文件片段，通过简单的二进制拼接就能得到完整的长mp3。
+
+Mp3Merge函数可移植到后端使用。
 ******************/
 
 //=====mp3文件合并核心函数==========
