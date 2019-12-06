@@ -4,8 +4,7 @@
   <a title="Forks" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder?color=0b1&logo=github" alt="Forks"></a>
   <a title="npm Version" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=f60&logo=npm" alt="npm Version"></a>
   <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
-  <a title="cnpm Version" href="https://npm.taobao.org/package/recorder-core"><img src="https://npm.taobao.org/badge/v/recorder-core.svg" alt="cnpm Version"></a>
-  <a title="cnpm Downloads" href="https://npm.taobao.org/package/recorder-core"><img src="https://npm.taobao.org/badge/d/recorder-core.svg" alt="cnpm Downloads"></a>
+  <a title="cnpm" href="https://npm.taobao.org/package/recorder-core"><img src="https://img.shields.io/badge/cnpm-available-0b1" alt="cnpm"></a>
   <a title="License" href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
 
 

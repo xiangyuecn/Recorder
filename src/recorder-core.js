@@ -94,7 +94,7 @@ var Connect=function(){
 	media.connect(process);
 	process.connect(ctx.destination);
 	
-	var calls=stream._call={};
+	var calls=stream._call;
 	process.onaudioprocess=function(e){
 		for(var k0 in calls){//has item
 			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
@@ -310,6 +310,7 @@ Recorder.prototype=initFn.prototype={
 		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
 		var f1=function(stream){
 			Recorder.Stream=stream;
+			stream._call={};//此时is open，但并未connect，是允许绑定接收数据的
 			if(lockFail())return;
 			
 			//https://github.com/xiangyuecn/Recorder/issues/14 获取到的track.readyState!="live"，刚刚回调时可能是正常的，但过一下可能就被关掉了，原因不明。延迟一下保证真异步。对正常浏览器不影响
@@ -449,7 +450,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		var envInFixTs=This.envInFixTs;
 		envInFixTs.splice(0,0,{t:now,d:pcmTime});
-		//保留3秒的计数滑动窗口
+		//保留3秒的计数滑动窗口，另外超过3秒的停顿不补偿
 		var tsInStart=now,tsPcm=0;
 		for(var i=0;i<envInFixTs.length;i++){
 			var o=envInFixTs[i];
