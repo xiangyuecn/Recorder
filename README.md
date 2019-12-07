@@ -32,15 +32,15 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 
 注意：[需要在https等安全环境下才能进行录音](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)
 
-**方式一**：使用script标签引入
+**方式一**：使用script标签引入，[JsDelivr CDN](https://www.jsdelivr.com/features)
 
 在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件即可
 ``` html
-<script src="recorder.mp3.min.js"></script> <!--已包含recorder-core和mp3格式支持-->
+<script src="recorder.mp3.min.js"></script> <!--已包含recorder-core和mp3格式支持, CDN: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/recorder.mp3.min.js-->
 ```
 或者直接使用源码（src内的为源码、dist内的为压缩后的），可以引用src目录中的recorder-core.js+相应类型的实现文件，比如要mp3录音：
 ``` html
-<script src="src/recorder-core.js"></script> <!--必须引入的录音核心-->
+<script src="src/recorder-core.js"></script> <!--必须引入的录音核心，CDN: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/recorder-core.js-->
 <script src="src/engine/mp3.js"></script> <!--相应格式支持文件-->
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
 
