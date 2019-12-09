@@ -12,7 +12,19 @@
     <div class="rootView"></div>
     <script src="dist/index.js"></script>
 
+	<!-- 控制台组件 -->
     <script src="https://cdn.bootcss.com/eruda/1.5.4/eruda.min.js"></script>
     <script>eruda.init();</script>
+	
+	<!-- 加载打赏挂件 -->
+	<script src="../zdemo.widget.donate.js"></script>
+	<script>
+	var donateView=document.createElement("div");
+	document.querySelector(".mainLog").appendChild(donateView);
+	DonateWidget({
+		log:function(msg){vue_main.reclog(msg)}
+		,mobElem:donateView
+	});
+	</script>
 </body>
 </html>

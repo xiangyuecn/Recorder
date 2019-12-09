@@ -59,5 +59,8 @@ logMeta(`UA`,navigator.userAgent);
 logMeta(`URL`,location.href.replace(/#.*/g,""));
 mainRef.reclog("点击打开录音，然后再点击开始录音",2);
 
+
+window.vue_root=root;
+window.vue_main=mainRef;
 console.log("Vue",Vue);
 console.log("Recorder",Import_Recorder);

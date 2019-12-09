@@ -773,5 +773,15 @@ if(isInstall){
 };
 </script>
 
+<!-- 加载打赏挂件 -->
+<script DEF="/*=:=*/" src="../assets/zdemo.widget.donate.js"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/assets/zdemo.widget.donate.js' @>*/"></script>
+<script>
+DonateWidget({
+	log:function(msg){reclog(msg)}
+	,mobElem:$(".reclog").append('<div class="DonateView"></div>').find(".DonateView")[0]
+});
+</script>
+
 </body>
 </html>

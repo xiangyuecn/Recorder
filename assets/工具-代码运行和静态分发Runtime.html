@@ -106,7 +106,7 @@ a:hover{
 		<div class="ctrlBtns"></div>
 	</div>
 	
-	<div class="mainBox">
+	<div class="mainBox mainLogBox">
 		<audio class="LogAudioPlayer" style="width:100%"></audio>
 		<div class="mainLog"></div>
 	</div>
@@ -442,7 +442,7 @@ $(function(){
 			href="";
 		};
 		href&&(href+='"');
-		html.push('<div style="line-height:40px">'+(i+1)+'. <a '+href+' onclick="Runtime.UseDemoCode('+i+');return false">'+o.name+'</a></div>');
+		html.push('<div style="padding:8px 0">'+(i+1)+'. <a '+href+' onclick="Runtime.UseDemoCode('+i+');return false">'+o.name+'</a></div>');
 	};
 	$(".demoList").html(html.join("\n"));
 	
@@ -917,6 +917,17 @@ for(var i=0;i<demos.length;i++){
 console.log("以下链接copy到README.【Demo片段列表】中");
 console.log("\n\n\n"+markdown.join("\n")+"\n\n\n");
 })();
+</script>
+
+
+
+<!-- 加载打赏挂件 -->
+<script src="zdemo.widget.donate.js"></script>
+<script>
+DonateWidget({
+	log:function(msg){Runtime.Log(msg)}
+	,mobElem:$(".mainLogBox").append('<div class="DonateView"></div>').find(".DonateView")[0]
+});
 </script>
 
 

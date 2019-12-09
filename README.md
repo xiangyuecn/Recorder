@@ -668,6 +668,6 @@ public void onPermissionRequest(PermissionRequest request) {
 # :star:捐赠
 如果这个库有帮助到您，请 Star 一下。
 
-你也可以选择使用支付宝或微信给我捐赠：
+您也可以使用支付宝或微信打赏作者：
 
 ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-alipay.png)  ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-weixin.png)

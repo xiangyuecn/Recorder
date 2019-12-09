@@ -3,14 +3,9 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="icon.png">
 
 <title>裸(RAW、WAV)PCM转WAV播放测试和转码</title>
-
-<style>
-html,body{
-	height:100%;
-}
-</style>
 </head>
 
 <body>
@@ -329,5 +324,18 @@ function mockTransform(id){
 	};
 };
 </script>
+
+<!-- 加载打赏挂件 -->
+<div class="DonateLogs"></div>
+<div class="DonateView"></div>
+<div style="padding-bottom:600px"></div>
+<script src="zdemo.widget.donate.js"></script>
+<script>
+DonateWidget({
+	log:function(msg){var div=document.createElement("div");div.innerHTML=msg;document.querySelector(".DonateLogs").appendChild(div)}
+	,mobElem:document.querySelector(".DonateView")
+});
+</script>
+
 </body>
 </html>

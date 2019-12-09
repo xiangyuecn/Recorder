@@ -33,7 +33,7 @@ process.stdin.on('data',function(input){
 
 function Run_minify(){
 	deleteFolder("../dist");
-	fs.mkdirSync("../dist");
+	!fs.existsSync("../dist")&&fs.mkdirSync("../dist");
 	fs.mkdirSync("../dist/engine");
 	fs.mkdirSync("../dist/extensions");
 	fs.mkdirSync("../dist/app-support");
@@ -94,18 +94,20 @@ src: ${srcs.join(",")}
 
 
 
-function deleteFolder(path){
+function deleteFolder(path,deep){
 	if(fs.existsSync(path)){
 		var files=fs.readdirSync(path);
 		files.forEach(function(file){
 			var p=path+"/"+file;
 			if(fs.statSync(p).isDirectory()){
-				deleteFolder(p);
+				deleteFolder(p,(deep||0)+1);
 			} else {
 				fs.unlinkSync(p);
 			}
 		});
-		fs.rmdirSync(path);
+		if(deep){
+			fs.rmdirSync(path);
+		};
 	};
 };
 
@@ -121,7 +123,7 @@ function Run_npm(){
 	var npmFiles=npmHome+"/npm-files";
 	var npmSrc=npmFiles+"/src";
 	deleteFolder(npmFiles);
-	fs.mkdirSync(npmFiles);
+	!fs.existsSync(npmFiles)&&fs.mkdirSync(npmFiles);
 	fs.mkdirSync(npmSrc);
 	var srcDirs=["engine","extensions","app-support"];
 
