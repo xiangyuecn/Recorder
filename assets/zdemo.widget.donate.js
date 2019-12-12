@@ -75,7 +75,7 @@ Fn.prototype=DonateWidget.prototype={
 		var fixedElem=document.createElement("div");
 		fixedElem.innerHTML='\
 <div class="DonateWidget_dialog'+(_f||"Box")+'" style="z-index:'+zIndex+';position: fixed;display:flex;align-items:center;justify-content:center;'+(_f?'top:20%;right:5px':'left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.3)')+'">\
-	<div onclick="DonateWidget.cur.close(1,\''+(_f||"Box")+'\')" style="position: absolute;font-size:32px;cursor: pointer;top: 0;right:8px;color:#fff;">×</div>\
+	<div onclick="DonateWidget.cur.close(1,\''+(_f||"Box")+'\')" style="position: absolute;font-size:32px;cursor: pointer;top: 0;right:8px;color:#fff;">'+(_f?'×':'')+'</div>\
 	<div class="DonateWidget_dialogRender"></div>\
 </div>';
 		document.body.appendChild(fixedElem);
@@ -101,7 +101,7 @@ Fn.prototype=DonateWidget.prototype={
 		<img src="'+ImgWeixin+'" style="width:'+(min?145:220)+'px">\
 	</div>\
 	<div style="padding-top:10px">\
-		<button onclick="DonateWidget.cur.click(0,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn" style="margin-right:'+(min?10:40)+'px">算了吧'+unescape("%uD83D%uDE36")+'</button>\
+		<button onclick="DonateWidget.cur.click(0,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn" style="margin-right:'+(min?10:40)+'px">'+(isDialog?"再看吧，关掉先":"算了吧")+unescape("%uD83D%uDE36")+'</button>\
 		<button onclick="DonateWidget.cur.click(1,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn">已打赏~ 壕气'+unescape("%uD83D%uDE18")+'</button>\
 	</div>\
 <style>\
