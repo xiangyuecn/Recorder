@@ -6,7 +6,7 @@
 
 mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）。主要用于语音录制，双声道语音没有意义，特意仅对单声道进行支持。mp3和wav格式支持边录边转码，录音结束时转码速度极快，支持实时转码成小片段文件和实时传输，demo中已实现一个语音通话聊天，下面有介绍；其他格式录音结束时可能需要花费比较长的时间进行转码。
 
-mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器(raw pcm format录音文件超大)，压缩后的recorder.wav.min.js不足5kb。录音得到的mp3(CBR)、wav(RAW)，均可简单拼接小的二进制录音片段文件来生成长的音频文件，具体参考下面这两种编码器的详细介绍。
+mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器(raw pcm format录音文件超大)，压缩后的recorder.wav.min.js不足5kb。录音得到的mp3(CBR)、wav(PCM)，均可简单拼接小的二进制录音片段文件来生成长的音频文件，具体参考下面这两种编码器的详细介绍。
 
 如需在Hybrid App内使用（支持IOS、Android），或提供IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
 
@@ -41,7 +41,8 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 或者直接使用源码（src内的为源码、dist内的为压缩后的），可以引用src目录中的recorder-core.js+相应类型的实现文件，比如要mp3录音：
 ``` html
 <script src="src/recorder-core.js"></script> <!--必须引入的录音核心，CDN: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/recorder-core.js-->
-<script src="src/engine/mp3.js"></script> <!--相应格式支持文件-->
+
+<script src="src/engine/mp3.js"></script> <!--相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可-->
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎的话，也要加上-->
 
 <script src="src/extensions/waveview.js"></script>  <!--可选的扩展支持项-->
@@ -49,7 +50,7 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 
 **方式二**：通过import/require引入
 
-通过npm进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可 [​](?Ref=ImportCode&Start)
+通过 npm/cnpm 进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可 [​](?Ref=ImportCode&Start)
 ``` javascript
 //必须引入的核心，换成require也是一样的。注意：recorder-core会自动往window下挂载名称为Recorder对象，全局可调用window.Recorder，也许可自行调整相关源码清除全局污染
 import Recorder from 'recorder-core'
@@ -67,7 +68,7 @@ import 'recorder-core/src/extensions/waveview'
 [​](?RefEnd)
 
 ## 【2】调用录音
-[​](?Ref=Codes&Start)然后使用，假设立即运行，只录3秒，[运行此代码>>](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)
+[​](?Ref=Codes&Start)这里假设只录3秒，录完后立即播放，[运行此代码>>](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)
 ``` javascript
 //简单控制台直接测试方法：在任意(无CSP限制)页面内加载Recorder，加载成功后再执行一次本代码立即会有效果，import("https://xiangyuecn.github.io/Recorder/recorder.mp3.min.js").then(function(s){console.log("import ok")}).catch(function(e){console.error("import fail",e)})
 
@@ -107,11 +108,11 @@ function recStop(){
         
         //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
         
-        /*立即播放例子*/
+        /*** 【立即播放例子】 ***/
         var audio=document.createElement("audio");
         audio.controls=true;
         document.body.appendChild(audio);
-        //简单的一哔，注意不用了时需要revokeObjectURL，否则霸占内存
+        //简单利用URL生成播放地址，注意不用了时需要revokeObjectURL，否则霸占内存
         audio.src=(window.URL||webkitURL).createObjectURL(blob);
         audio.play();
     },function(msg){
@@ -140,9 +141,9 @@ function createDelayDialog(){
 */
 
 
-//这里假设立即运行，只录3秒，控制台内可直接运行
+//这里假设立即运行，只录3秒，录完后立即播放，本段代码copy到控制台内可直接运行
 recOpen(function(){
-    rec.start();
+    recStart();
     setTimeout(recStop,3000);
 });
 ```
@@ -520,7 +521,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 
 # :open_book:其他音频格式支持办法
 ``` javascript
-//比如增加aac格式支持 (可参考/src/engine/wav.js实现)
+//比如增加aac格式支持 (可参考/src/engine/wav.js的简单实现；如果要实现边录边转码应该参考mp3的实现，需实现的接口比较多)
 
 //新增一个aac.js，编写以下格式代码即可实现这个类型
 Recorder.prototype.aac=function(pcmData,successCall,failCall){
@@ -571,14 +572,14 @@ set={
     
     //以上配置二选一
     
-    scale:2 //缩放系数，因为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
+    scale:2 //缩放系数，应为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
     ,speed:8 //移动速度系数，越大越快
     
-    ,lineWidth:2 //线条基础粗细
+    ,lineWidth:3 //线条基础粗细
             
     //渐变色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
-    ,linear1:[0,"rgba(150,97,236,1)",1,"rgba(54,197,252,1)"] //线条渐变色1，从左到右
-    ,linear2:[0,"rgba(209,130,253,0.6)",1,"rgba(54,197,252,0.6)"] //线条渐变色2，从左到右
+    ,linear1:[0,"rgba(150,96,238,1)",0.2,"rgba(170,79,249,1)",1,"rgba(53,199,253,1)"] //线条渐变色1，从左到右
+    ,linear2:[0,"rgba(209,130,255,0.6)",1,"rgba(53,199,255,0.6)"] //线条渐变色2，从左到右
     ,linearBg:[0,"rgba(255,255,255,0.2)",1,"rgba(54,197,252,0.2)"] //背景渐变色，从上到下
 }
 ```
