@@ -266,7 +266,7 @@ Recorder.mp3ReadMeta=function(mp3Buffers,length){
 	var frameDurationFloat=frame/sampleRate*1000;
 	var frameSize=Math.floor((frame*bitRate)/8/sampleRate*1000);
 	
-	//检测是否存在Layer3帧填充1字节，如果有一处padding，lamejs的后续全部为填充
+	//检测是否存在Layer3帧填充1字节。这里只获取第二帧的填充信息，首帧永远没有填充。其他帧可能隔一帧出现一个填充，或者隔很多帧出现一个填充；目测是取决于frameSize未舍入时的小数部分，因为有些采样率的frameSize会出现小数（11025、22050、44100 典型的除不尽），然后字节数无法表示这种小数，就通过一定步长来填充弥补小数部分丢失
 	var hasPadding=0,seek=0;
 	for(var i=0;i<mp3Buffers.length;i++){
 		//寻找第二帧
@@ -293,8 +293,8 @@ Recorder.mp3ReadMeta=function(mp3Buffers,length){
 		
 		,duration:duration //音频时长 ms
 		,size:length //总长度 byte
-		,hasPadding:hasPadding //每帧是否存在1字节填充，首帧永远没有
-		,frameSize:frameSize //每帧长度，含可能存在的1字节padding byte
+		,hasPadding:hasPadding //是否存在1字节填充，首帧永远没有，这个值其实代表的第二帧是否有填充，并不代表其他帧的
+		,frameSize:frameSize //每帧最大长度，含可能存在的1字节padding byte
 		,frameDurationFloat:frameDurationFloat //每帧时长，含小数 ms
 	};
 };
@@ -309,10 +309,10 @@ rm:Recorder.mp3ReadMeta
 	};
 	var pcmDuration=Math.round(pcmLength/pcmSampleRate*1000);
 	
-	//开头多出这么多帧，移除掉
+	//开头多出这么多帧，移除掉；正常情况下最多为2帧
 	var num=Math.floor((meta.duration-pcmDuration)/meta.frameDurationFloat);
 	if(num>0){
-		var size=num*meta.frameSize-(meta.hasPadding?1:0);
+		var size=num*meta.frameSize-(meta.hasPadding?1:0);//首帧没有填充，第二帧可能有填充，这里假设最多为2帧（测试并未出现3帧以上情况），其他帧不管，就算出现了并且导致了错误后面自动容错
 		length-=size;
 		var arr0=0,arrs=[];
 		for(var i=0;i<mp3Buffers.length;i++){
