@@ -374,7 +374,7 @@ set={
 
 
 ### 【属性】rec.buffers
-此数据为从开始录音到现在为止的所有已缓冲的PCM片段，`buffers` `=` `[[Int16,...],...]`，录音stop时会使用此完整数据进行转码成指定的格式。
+此数据为从开始录音到现在为止的所有已缓冲的PCM片段列表，`buffers` `=` `[[Int16,...],...]` 为二维数组，录音stop时会使用此完整数据进行转码成指定的格式。
 
 buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率`rec.srcSampleRate`；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据。
 
@@ -385,9 +385,13 @@ buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏�
 
 
 ### 【方法】rec.mock(pcmData,pcmSampleRate)
-模拟一段录音数据，后面可以调用stop进行编码。需提供pcm数据[Int16,...]，和pcm数据的采样率。
+模拟一段录音数据，后面可以调用stop进行编码。需提供pcm数据 `pcmData` `=` `[Int16,...]` 为一维数组，和pcm数据的采样率 `pcmSampleRate`。
 
-可用于将一个音频解码出来的pcm数据方便的转换成另外一个格式：
+提示：在录音实时回调中配合`Recorder.SampleData()`方法使用效果更佳，可实时生成小片段语音文件。
+
+**注意：pcmData为一维数组，如果提供二维数组将会产生不可预料的错误**；如果需要使用类似`onProcess`回调的`buffers`或者`rec.buffers`这种pcm列表（二维数组）时，可自行展开成一维，或者使用`Recorder.SampleData()`方法转换成一维。
+
+本方法可用于将一个音频解码出来的pcm数据方便的转换成另外一个格式：
 ``` javascript
 var amrBlob=...;//amr音频blob对象
 var amrSampleRate=8000;//amr音频采样率
@@ -412,7 +416,6 @@ function transformOgg(pcmData){
 };
 ```
 
-提示：在录音实时回调中配合`Recorder.SampleData()`方法使用效果更佳，可实时生成小片段语音文件。
 
 
 ### 【静态方法】Recorder.Support()
@@ -441,7 +444,7 @@ function transformOgg(pcmData){
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option)
 对pcm数据的采样率进行转换，配合mock方法使用效果更佳，比如实时转换成小片段语音文件。
 
-`pcmDatas`: [[Int16,...]] pcm片段列表
+`pcmDatas`: [[Int16,...]] pcm片段列表，二维数组
 
 `pcmSampleRate`:48000 pcm数据的采样率
 
@@ -468,7 +471,7 @@ function transformOgg(pcmData){
     //仅作为返回值
     frameNext:null||[Int16,...] 下一帧的部分数据，frameSize设置了的时候才可能会有
     sampleRate:16000 结果的采样率，<=newSampleRate
-    data:[Int16,...] 转换后的PCM结果；如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
+    data:[Int16,...] 转换后的PCM结果，为一维数组；如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 ```
 
@@ -500,7 +503,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 采用的是[lamejs](https://github.com/zhuker/lamejs)(LGPL License)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于精简代码和修复发现的问题。LGPL协议涉及到的文件：`mp3-engine.js`；这些文件也采用LGPL授权，不适用MIT协议。源码518kb大小，压缩后150kb左右，开启gzip后50来k。[mp3转其他格式参考和测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
 
 ### 简单将多段小的mp3片段合成长的mp3文件
-由于lamejs CBR编码出来的mp3二进制数据从头到尾全部是大小相同（±1）的数据帧，没有其他任何多余信息，通过文件长度可计算出mp3的时长`fileSize*8/bitRate`（[参考](https://blog.csdn.net/u010650845/article/details/53520426)），数据帧之间可以直接拼接。因此将小的mp3片段文件的二进制数据全部合并到一起即可得到长的mp3文件；要求待合成的所有mp3片段的采样率和比特率需一致。[mp3合并参考和测试+可移植源码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
+由于lamejs CBR编码出来的mp3二进制数据从头到尾全部是大小相同的数据帧（采样率44100等无法被8整除的部分帧可能存在额外多1字节填充），没有其他任何多余信息，通过文件长度可计算出mp3的时长`fileSize*8/bitRate`（[参考](https://blog.csdn.net/u010650845/article/details/53520426)），数据帧之间可以直接拼接。因此将小的mp3片段文件的二进制数据全部合并到一起即可得到长的mp3文件；要求待合成的所有mp3片段的采样率和比特率需一致。[mp3合并参考和测试+可移植源码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
 
 *注：CBR编码由于每帧数据的时长是固定的，mp3文件结尾最后这一帧的录音可能不能刚好填满，就会产生填充数据，多出来的这部分数据会导致mp3时长变长一点点，在实时转码传输时应当留意，解码成pcm后可直接去掉结尾的多余；另外可以通过调节待编码的pcm数据长度以达到刚好填满最后一帧来规避此问题，参考`Recorder.SampleData`方法提供的连续转码针对此问题的处理。首帧或前两帧可能是lame记录的信息帧，本库已去除，参考上面的已知问题。*
 
@@ -585,7 +588,7 @@ set={
 ```
 
 ### 【方法】wave.input(pcmData,powerLevel,sampleRate)
-输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData [Int16,...]为当前的录音数据片段，其他参数和`onProcess`回调相同。
+输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData `[Int16,...]` 一维数组，为当前的录音数据片段，其他参数和`onProcess`回调相同。
 
 
 # :open_book:兼容性
