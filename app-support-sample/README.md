@@ -16,7 +16,7 @@
 
 [demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+，已测试IOS 12.3。
 
-**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果工程师水准**
+**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果公司工程师水准**
 
 
 ## 【Android】Hybrid App测试
@@ -48,15 +48,15 @@
 
 ``` html
 <!-- 可选的独立配置文件，提供这些文件时可免去修改app.js源码。
-    注意：使用时应该使用自己编写的文件，而不是使用这个参考用的文件 -->
+    【注意】：使用时应该使用自己编写的文件，而不是直接使用这个参考用的文件 -->
 <!-- 可选开启native支持的相关配置 -->
 <script src="app-support-sample/native-config.js"></script>
 <!-- 可选开启ios weixin支持的相关配置 -->
 <script src="app-support-sample/ios-weixin-config.js"></script>
 
 <!-- 在需要录音功能的页面引入`app-support/app.js`文件（src内的为源码、dist内的为压缩后的）即可。
-    app.js会自动加载Recorder和编码引擎文件，应确保app.js内BaseFolder目录的正确性。
-    （压缩时可以把所有支持文件压缩到一起，会检测到组件已自动加载）
+    app.js会自动加载实现文件、Recorder核心、编码引擎，应确保app.js内BaseFolder目录的正确性(参阅RecordAppBaseFolder)。
+    （如何避免自动加载：使用时可以把所有支持文件全部手动引入，或者压缩时可以把所有支持文件压缩到一起，会检测到组件已加载，就不会再进行自动加载；会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置）
     （**注意：需要在https等安全环境下才能进行录音**） -->
 <script src="src/app-support/app.js"></script>
 ```
@@ -73,7 +73,7 @@ import 'recorder-core/src/app-support/app-native-support'
 //可选开启IOS上微信录音支持，需要引入此文件
 import 'recorder-core/src/app-support/app-ios-weixin-support'
 
-//这里放置可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置文件需要自己编写，参考https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample 目录内的这两个配置文件代码。
+//这里放置可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置文件需要自己编写，参考https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample 目录内的这两个测试用的配置文件代码。
         //import '你的配置文件目录/native-config.js' //可选开启native支持的相关配置
         //import '你的配置文件目录/ios-weixin-config.js' //可选开启ios weixin支持的相关配置
 
@@ -319,10 +319,10 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 
 
 ## 配置
-每个底层平台都有一个`platform.Config`配置，这个配置是根据平台的需要什么我们这里面就要给什么。另外还有一个全局配置`RecordAppBaseFolder`。
+每个底层平台都有一个`platform.Config`配置，这个配置是根据平台的需要什么我们这里面就要给什么；每个`platform.Config`内都有一个`paths`数组，里面包含了此平台初始化时需要加载的相关的实现文件、Recorder核心、编码引擎，可修改这些数组加载自己需要的格式编码引擎。另外还有一个全局配置`RecordAppBaseFolder`。
 
 ### 【全局变量】window.RecordAppBaseFolder
-文件基础目录，用来定位加载类库，此目录可以是`/src/`或者`/dist/`，目录内应该包含`recorder-core.js、engine`等。实际取值需自行根据自己的网站目录调整，或者加载`app.js`前，设置此全局变量。
+文件基础目录`BaseFolder`，用来定位加载类库，此目录可以是`/src/`或者`/dist/`，目录内应该包含`recorder-core.js、engine`等。实际取值需自行根据自己的网站目录调整，或者加载`app.js`前，设置此全局变量。
 
 ### 【Event】window.OnRecordAppInstalled()
 可提供一个回调函数用来配置`RecordApp`，在`app.js`内代码执行完毕时回调，免得`RecordAppBaseFolder`要在`app.js`之前定义，其他配置又要在之后定义的麻烦。使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。

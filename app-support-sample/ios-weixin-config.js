@@ -1,27 +1,34 @@
 /*
-app-support/app.js中IOS-Weixin配置例子，用于支持ios的微信中使用微信JsSDK来录音
+app-support/app.js中IOS-Weixin测试用的配置例子，用于支持ios的微信中使用微信JsSDK来录音
 
-本文件的作用为：实现app.js内IOS-Weixin中Config的两个标注为需实现的接口（这几个接口是app-ios-weixin-support.js需要的）。
+【本文件的作用】：实现app.js内IOS-Weixin中Config的两个标注为需实现的接口（这几个接口是app-ios-weixin-support.js需要的），提供本文件可免去修改app.js源码。
 
-此文件需要在app.js之前进行加载
+此文件需要在app.js之前进行加载，【注意】【本文件需要修改后才能用到你的网站】
 
 https://github.com/xiangyuecn/Recorder
 */
+(function(){
 "use strict";
 
-console.error("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
+/******简化后的使用配置修改项******/
+//可简单修改此处配置即可正常使用。当然参考本例子全部自己写是最佳选择，可能需要多花点时间。
 
-//请使用自己的js文件，不要用我的，github.io直接外链【超级】【不稳定】
-var RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
-//请使用自己的素材下载接口，不要用我的，微信【强制】要【绑安全域名】，别的站用不了
+/**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
+window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
+
+/**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式；后端相应实现请参考微信公众号的开放文档，下面也有相关文档链接。**/
 var MyWxApi="https://jiebian.life/api/weixin/git_record";
 
+/******END******/
 
-//在RecordApp准备好时自行这些代码
-var oldOnRecordAppInstalled=window.OnRecordAppInstalled;
-window.OnRecordAppInstalled=function(){
+
+
+//Install Begin：在RecordApp准备好时执行这些代码
+window.OnRecordAppInstalled=window.IOS_Weixin_RecordApp_Config=function(){
 console.log("ios-weixin-config install");
-oldOnRecordAppInstalled&&oldOnRecordAppInstalled();//native-config.js也需要初始化
+
+window.IOS_Weixin_RecordApp_Config=null;
+window.Native_RecordApp_Config&&Native_RecordApp_Config();//如果native-config.js也引入了的话，也需要初始化
 
 var App=RecordApp;
 var platform=App.Platforms.Weixin;
@@ -29,34 +36,8 @@ var config=platform.Config;
 
 var win=window.top;//微信JsSDK让顶层去加载，免得iframe各种麻烦
 
-//手撸一个ajax
-var ajax=function(url,data,True,False){
-	var xhr=new XMLHttpRequest();
-	xhr.timeout=20000;
-	xhr.open("POST",url);
-	xhr.onreadystatechange=function(){
-		if(xhr.readyState==4){
-			if(xhr.status==200){
-				var o=JSON.parse(xhr.responseText);
-				if(o.c){
-					False(o.m);
-					return;
-				};
-				True(o);
-			}else{
-				False("请求失败["+xhr.status+"]");
-			}
-		}
-	};
-	var arr=[];
-	for(var k in data){
-		arr.push(k+"="+encodeURIComponent(data[k]));
-	};
-	xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-	xhr.send(arr.join("&"));
-};
 
-/*********实现配置项*************/
+/*********实现app.js内IOS-Weixin中Config的接口*************/
 config.WxReady=function(call){
 	//此方法需要自行实现，需要在微信JsSDK wx.config好后调用call(wx,err)函数
 	if(!win.WxReady){
@@ -99,6 +80,39 @@ config.DownWxMedia=function(param,success,fail){
 	},function(msg){
 		fail("下载音频失败："+msg);
 	});
+};
+/*********接口实现END*************/
+
+
+
+
+
+
+//手撸一个ajax
+var ajax=function(url,data,True,False){
+	var xhr=new XMLHttpRequest();
+	xhr.timeout=20000;
+	xhr.open("POST",url);
+	xhr.onreadystatechange=function(){
+		if(xhr.readyState==4){
+			if(xhr.status==200){
+				var o=JSON.parse(xhr.responseText);
+				if(o.c){
+					False(o.m);
+					return;
+				};
+				True(o);
+			}else{
+				False("请求失败["+xhr.status+"]");
+			}
+		}
+	};
+	var arr=[];
+	for(var k in data){
+		arr.push(k+"="+encodeURIComponent(data[k]));
+	};
+	xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+	xhr.send(arr.join("&"));
 };
 
 
@@ -213,16 +227,24 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 
 
 };
+//Install End
 
 
+//如果已加载RecordApp，手动进行触发
+if(window.RecordApp){
+	OnRecordAppInstalled();
+};
+
+})();
+
+
+
+
+console.error("【注意】本网站正在使用RecordApp的ios-weixin-config.js测试用的配置例子，这个配置如果要使用到你的网站，需要自己重写或修改后才能使用");
+//别的站点引用弹窗醒目提示
 if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href)
 	&& !localStorage["DisableAppSampleAlert"]
 	&& !window.AppSampleAlert){
 	window.AppSampleAlert=1;
-	alert("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
-}
-
-
-if(window.RecordApp){
-	OnRecordAppInstalled();
+	alert("【注意】当前网站正在使用RecordApp测试用的配置例子*.config.js，需要自己重写或修改后才能使用");
 };

@@ -1,25 +1,28 @@
 /*
-app-support/app.js中Native配置例子，用于调用App的原生接口来录音
+app-support/app.js中Native测试用的配置例子，用于调用App的原生接口来录音
 
-本文件的作用为：实现app.js内Native中Config的四个标注为需实现的接口（这几个接口是app-native-support.js需要的）。
+【本文件的作用】：实现app.js内Native中Config的四个标注为需实现的接口（这几个接口是app-native-support.js需要的），提供本文件可免去修改app.js源码。
 
 本例子提供了一个JsBridge实现，并且本文件所在目录内还有Android和IOS的demo项目，app原生层已实现相应的接口，copy源码改改就能用。
 
-此文件需要在app.js之前进行加载
+此文件需要在app.js之前进行加载，【注意】【如果你App原生层实现不是用的demo中提供的接口文件，需自行重写本配置代码】
 
 https://github.com/xiangyuecn/Recorder
 */
+(function(){
 "use strict";
 
-console.error("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
-
-//请使用自己的js文件，不要用我的，github.io直接外链【超级】【不稳定】
-var RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
+/**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
+window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
 
 
-//在RecordApp准备好时自行这些代码
-window.OnRecordAppInstalled=function(){
+
+//Install Begin：在RecordApp准备好时执行这些代码
+window.OnRecordAppInstalled=window.Native_RecordApp_Config=function(){
 console.log("native-config install");
+
+window.Native_RecordApp_Config=null;
+window.IOS_Weixin_RecordApp_Config&&IOS_Weixin_RecordApp_Config();//如果ios-weixin-config.js也引入了的话，也需要初始化
 
 
 var App=RecordApp;
@@ -103,7 +106,7 @@ AppJsBridgeRequest.Record=function(pcmDataBase64,sampleRate){
 
 
 
-/*********实现配置项*************/
+/*********实现app.js内Native中Config的接口*************/
 config.IsApp=function(call){
 	/*识别为app环境*/
 	if(window[JsBridgeName]||((window.webkit||{}).messageHandlers||{})[JsBridgeName+"IsSet"]){
@@ -159,20 +162,27 @@ config.JsBridgeStop=function(success,fail){
 		success();
 	});
 };
+/*********接口实现END*************/
 
 
 
 };
+//Install End
 
 
+//如果已加载RecordApp，手动进行触发
+if(window.RecordApp){
+	OnRecordAppInstalled();
+};
+
+})();
+
+
+console.error("【注意】本网站正在使用RecordApp的native-config.js测试用的配置例子，这个配置如果要使用到你的网站，需要自己重写或修改后才能使用");
+//别的站点引用弹窗醒目提示
 if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href)
 	&& !localStorage["DisableAppSampleAlert"]
 	&& !window.AppSampleAlert){
 	window.AppSampleAlert=1;
-	alert("本网站正在使用RecordApp测试配置例子，正式使用时需要改动哦");
-}
-
-
-if(window.RecordApp){
-	OnRecordAppInstalled();
+	alert("【注意】当前网站正在使用RecordApp测试用的配置例子*.config.js，需要自己重写或修改后才能使用");
 };

@@ -59,8 +59,8 @@ npm install recorder-core
 <script src="你的配置文件目录/ios-weixin-config.js"></script>
 
 <!-- 在需要录音功能的页面引入`app-support/app.js`文件即可。
-    app.js会自动加载Recorder和编码引擎文件，应确保app.js内BaseFolder目录的正确性。
-    （压缩时可以把所有支持文件压缩到一起，会检测到组件已自动加载）
+    app.js会自动加载实现文件、Recorder核心、编码引擎，应确保app.js内BaseFolder目录的正确性(参阅RecordAppBaseFolder)。
+    （如何避免自动加载：使用时可以把所有支持文件全部手动引入，或者压缩时可以把所有支持文件压缩到一起，会检测到组件已加载，就不会再进行自动加载；会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置）
     （**注意：需要在https等安全环境下才能进行录音**） -->
 <script src="你项目中的路径/src/app-support/app.js"></script>
 ```
