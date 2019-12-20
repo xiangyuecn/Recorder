@@ -44,10 +44,10 @@ platform.RequestPermission=function(success,fail){
 			success:function(){
 				setTimeout(function(){
 					stopNow(function(e){
-						if(e){
-							fail("清理资源出错："+e);
-						}else{
+						if(!e || /short/i.test(e)){ //排除stopRecord:tooshort错误
 							success();
+						}else{
+							fail("清理资源出错："+e);
 						};
 					});
 				},100);
