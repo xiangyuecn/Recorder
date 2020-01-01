@@ -73,6 +73,7 @@ var test=function(wavBlob){
 	
 	//数据格式一 Blob
 	Recorder.Wav2Other(set,wavBlob,function(blob,duration,rec){
+		console.log(blob,(window.URL||webkitURL).createObjectURL(blob));
 		Runtime.Log("wav src blob 转换成 mp3...",2);
 		Runtime.LogAudio(blob,duration,rec);
 	},function(msg){
@@ -160,4 +161,39 @@ function recStop(){
 	},function(msg){
 		Runtime.Log("录音失败:"+msg, 1);
 	});
+};
+
+
+
+
+//*****拖拽或者选择文件******
+$(".choiceFileBox").remove();
+Runtime.Log('<div class="choiceFileBox">\
+	<div class="dropFile" onclick="$(\'.choiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; margin-top:30px; text-align:center;cursor: pointer;">\
+	拖拽wav到这里 / 点此选择，并转换\
+	</div>\
+	<input type="file" class="choiceFile" style="display:none" accept="audio/wav">\
+</div>');
+$(".dropFile").bind("dragover",function(e){
+	e.preventDefault();
+}).bind("drop",function(e){
+	e.preventDefault();
+	
+	readChoiceFile(e.originalEvent.dataTransfer.files);
+});
+$(".choiceFile").bind("change",function(e){
+	readChoiceFile(e.target.files);
+});
+function readChoiceFile(files){
+	if(!files.length){
+		return;
+	};
+	
+	var file = files[0];
+	Runtime.Log("发现"+files.length+"个文件，只转换第1个:"+file.name+"，开始转换...");
+	var reader = new FileReader();
+	reader.onload = function(e){
+		test(new Blob([e.target.result]));
+	}
+	reader.readAsArrayBuffer(file);
 };
