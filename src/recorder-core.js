@@ -220,6 +220,33 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		,data:res
 	};
 };
+
+
+/*计算音量百分比的一个方法
+pcmAbsSum: pcm Int16所有采样的绝对值的和
+pcmLength: pcm长度
+返回值：0-100，主要当做百分比用
+注意：这个不是分贝，因此没用volume当做名称*/
+Recorder.PowerLevel=function(pcmAbsSum,pcmLength){
+	/*计算音量 https://blog.csdn.net/jody1989/article/details/73480259
+	更高灵敏度算法:
+		限定最大感应值10000
+			线性曲线：低音量不友好
+				power/10000*100 
+			对数曲线：低音量友好，但需限定最低感应值
+				(1+Math.log10(power/10000))*100
+	*/
+	var power=(pcmAbsSum/pcmLength) || 0;//NaN
+	var level;
+	if(power<1251){//1250的结果10%，更小的音量采用线性取值
+		level=Math.round(power/1250*10);
+	}else{
+		level=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
+	};
+	return level;
+};
+
+
 var ID=0;
 function initFn(set){
 	this.id=++ID;
@@ -420,22 +447,7 @@ Recorder.prototype=initFn.prototype={
 		var buffers=This.buffers;
 		buffers.push(pcm);
 		
-		/*计算音量 https://blog.csdn.net/jody1989/article/details/73480259
-		更高灵敏度算法:
-			限定最大感应值10000
-				线性曲线：低音量不友好
-					power/10000*100 
-				对数曲线：低音量友好，但需限定最低感应值
-					(1+Math.log10(power/10000))*100
-		*/
-		var power=sum/size;
-		var powerLevel;
-		if(power<1251){//1250的结果10%，更小的音量采用线性取值
-			powerLevel=Math.round(power/1250*10);
-		}else{
-			powerLevel=Math.round(Math.min(100,Math.max(0,(1+Math.log(power/10000)/Math.log(10))*100)));
-		}
-		
+		var powerLevel=Recorder.PowerLevel(sum,size);
 		var bufferSampleRate=This.srcSampleRate;
 		var bufferSize=This.recSize;
 		
@@ -493,16 +505,19 @@ Recorder.prototype=initFn.prototype={
 			engineCtx.pcmSize+=chunkInfo.data.length;
 			bufferSize=engineCtx.pcmSize;
 			buffers=engineCtx.pcmDatas;
+			var bufferIdx=buffers.length;
 			buffers.push(chunkInfo.data);
 			bufferSampleRate=chunkInfo.sampleRate;
-			
-			//推入后台转码
-			This[set.type+"_encode"](engineCtx,chunkInfo.data);
 		};
 		
 		var duration=Math.round(bufferSize/bufferSampleRate*1000);
-		
+		//实时回调处理数据
 		set.onProcess(buffers,powerLevel,duration,bufferSampleRate);
+		
+		if(engineCtx){
+			//推入后台边录边转码
+			This[set.type+"_encode"](engineCtx,buffers[bufferIdx]);
+		};
 	}
 	
 	

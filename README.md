@@ -233,6 +233,7 @@ $.ajax({
 3. [【教程】实时转码并上传](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
 4. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
 5. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
+6. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
 
 
 
@@ -322,7 +323,7 @@ set={
     ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate) 
                 //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段，每次回调可能增加0-n个不定量的pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
-                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输
+                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers原始数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输；修改buffers内的数据将会改变最终生成的音频内容，比如简单有限的实现实时静音、降噪、混音等处理，详细参考下面的rec.buffers
 }
 ```
 
@@ -374,9 +375,9 @@ set={
 
 
 ### 【属性】rec.buffers
-此数据为从开始录音到现在为止的所有已缓冲的PCM片段列表，`buffers` `=` `[[Int16,...],...]` 为二维数组，录音stop时会使用此完整数据进行转码成指定的格式。
+此数据为从开始录音到现在为止的所有已缓冲的PCM片段列表，`buffers` `=` `[[Int16,...],...]` 为二维数组；在没有边录边转码的支持时（mock调用、非mp3等），录音stop时会使用此完整数据进行转码成指定的格式。
 
-buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率`rec.srcSampleRate`；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据。
+buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率`rec.srcSampleRate`；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据；修改`onProcess`回调中`buffers`参数可以改变最终生成的音频内容，但修改`rec.buffers`不一定会有效，因此你可以在`onProcess`中修改`buffers`参数里面的内容，注意不能改变数组的长度；以此可以简单有限的实现实时静音、降噪、混音等处理。
 
 如果你需要长时间实时录音（如长时间语音通话），并且不需要得到最终完整编码的音频文件，Recorder初始化时应当使用一个未知的类型进行初始化（如: type:"unknown"，仅仅用于初始化而已，实时转码可以手动转成有效格式，因为有效格式可能内部还有其他类型的缓冲），并且实时在`onProcess`中修改`rec.buffers`数组，只保留最后两个元素，其他元素设为null（代码：`rec.buffers[rec.buffers.length-3]=null`），以释放占用的内存，并且录音结束时可以不用调用`stop`，直接调用`close`丢弃所有数据即可。只要buffers[0]==null时调用`stop`永远会直接走fail回调。
 
@@ -474,6 +475,13 @@ function transformOgg(pcmData){
     data:[Int16,...] 转换后的PCM结果，为一维数组；如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 ```
+
+### 【静态方法】Recorder.PowerLevel(pcmAbsSum,pcmLength)
+计算音量百分比的一个方法，返回值：0-100，主要当做百分比用；注意：这个不是分贝，因此没用volume当做名称。
+
+`pcmAbsSum`: pcm Int16所有采样的绝对值的和
+
+`pcmLength`: pcm长度
 
 
 # :open_book:压缩合并一个自己需要的js文件
