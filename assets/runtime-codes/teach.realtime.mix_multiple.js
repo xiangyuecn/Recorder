@@ -24,9 +24,9 @@ var Mix=function(buffer,sampleRate,mute,bgm,posFloat,loop){
 			
 			//简单混音算法 https://blog.csdn.net/dancing_night/article/details/53080819
 			if(data1<0 && data2<0){
-				data_mix = data1+data2 - (data1 * data2 / -(Math.pow(2,16-1)-1));  
+				data_mix = data1+data2 - (data1 * data2 / -0x7FFF);  
 			}else{
-				data_mix = data1+data2 - (data1 * data2 / (Math.pow(2,16-1)-1));
+				data_mix = data1+data2 - (data1 * data2 / 0x7FFF);
 			};
 			
 			buffer[j]=data_mix;
@@ -100,7 +100,7 @@ var playBuffer=function(chunk,buffer,sampleRate){
 		var ctx=Recorder.Ctx;
 		var audio=ctx.createBuffer(1,size,sampleRate);
 		var channel=audio.getChannelData(0);
-		var sd=sampleRate/1000*2;//2ms的淡入淡出 大幅减弱爆音
+		var sd=sampleRate/1000*1;//1ms的淡入淡出 大幅减弱爆音
 		for(var j=0,idx=0;j<arr.length;j++){
 			var buf=arr[j];
 			for(var i=0,l=buf.length,buf_sd=l-sd;i<l;i++){
@@ -209,12 +209,14 @@ function recStart(){
 	rec.open(function(){//打开麦克风授权获得相关资源
 		clearTimeout(t);
 		rec.start();//开始录音
+		Runtime.Log("正在进行录音，随时猛击音效控制按钮添加音效...");
 	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
 		clearTimeout(t);
 		Runtime.Log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg, 1);
 	});
 };
 function recStop(){
+	Runtime.Log("正在进行编码...");
 	rec.stop(function(blob1,duration1){
 		//因为是mp3格式录音，buffers编码引擎内部的buffer，因此rec.buffers未被篡改
 		var pcm=Recorder.SampleData(rec.buffers,rec.srcSampleRate,rec.srcSampleRate);
@@ -282,7 +284,7 @@ function readChoiceFile(files){
 //*****加载和解码素材********
 var loadWait=0;
 var load=function(name,bgName,call){
-	Runtime.Log("开始加载混音音频素材"+name+"，请勿操作...");
+	Runtime.Log("开始加载混音音频素材"+name+"，<span style='color:red'>请勿操作...</span>");
 	loadWait++;
 	var xhr=new XMLHttpRequest();
 	xhr.onloadend=function(){
@@ -294,7 +296,7 @@ var load=function(name,bgName,call){
 		};
 	};
 	xhr.open("GET",RootFolder+"/assets/audio/"+name,true);
-	xhr.timeout=16000;
+	//xhr.timeout=16000;
 	xhr.responseType="arraybuffer";
 	xhr.send();
 };
