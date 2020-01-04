@@ -5,10 +5,43 @@
 
 通过onProcess回调可实现实时的多路音频混音处理，简单的将其他音频pcm叠加到当前buffers中实现混音；另外直接修改buffers将内容数据统统设置为0即可实现静音效果。
 ******************/
-var musics=[];//混音素材列表
-var musicPercent=1/5;//混音素材音量降低这么多，免得把主要的录音混的听不清
+var musics=[];//混音BGM素材列表
+var musicBGs={};//音效素材列表
+var musicPercent=1/3;//混音素材音量降低这么多，免得把主要的录音混的听不清
 
 //*****简单混音*******
+var Mix=function(buffer,sampleRate,mute,bgm,posFloat,loop){
+	var step=bgm.sampleRate/sampleRate;
+	var curInt=-1,sum=0;
+	for(var j=0;j<buffer.length;j++){		
+		if(mute){
+			buffer[j]=0;//置为0即为静音
+		};
+		
+		var cur=Math.floor(posFloat);
+		if(cur>curInt){
+			var data_mix,data1=buffer[j],data2=(bgm.pcm[cur]||0)*musicPercent;
+			
+			//简单混音算法 https://blog.csdn.net/dancing_night/article/details/53080819
+			if(data1<0 && data2<0){
+				data_mix = data1+data2 - (data1 * data2 / -(Math.pow(2,16-1)-1));  
+			}else{
+				data_mix = data1+data2 - (data1 * data2 / (Math.pow(2,16-1)-1));
+			};
+			
+			buffer[j]=data_mix;
+		};
+		curInt=cur;
+		posFloat+=step;
+		if(loop && posFloat>=bgm.pcm.length){
+			posFloat=0;
+			curInt=-1;//洗脑循环 直接回到开头可否 ????
+		};
+		
+		sum+=Math.abs(buffer[j]);
+	};
+	return {pos:posFloat,sum:sum};
+};
 var mixProcess=function(buffers,sampleRate,chunk){
 	var idx=chunk.idx||0;
 	for(;idx<buffers.length;idx++){
@@ -23,59 +56,86 @@ var mixProcessWork=function(buffer,sampleRate,chunk){
 		return;
 	};
 	
+	//新建一个空白音轨
+	var bgmBuffer=new Int16Array(buffer.length);
+	
+	//将所有music混入到bgmBuffer中
 	var poss=chunk.poss||[];
 	chunk.poss=poss;
-	
-	var sum;
-	//将所有music混入到buffer中
-	for(var i=0;i<musics.length;i++){
-		var music=musics[i];
-		sum=0;
-		var step=music.sampleRate/sampleRate;
-		var curFloat=poss[i]||0,curInt=-1;
-		for(var j=0;j<buffer.length;j++){
-			var cur=Math.floor(curFloat);
-			if(cur>curInt){
-				var data_mix,data1=buffer[j],data2=music.pcm[cur]*musicPercent;
-				if(!voiceIsStart && i==0){
-					//未开始说话，将采样数据设置为0，即静音
-					data1=0;
-				};
-				
-				//简单混音算法 https://blog.csdn.net/dancing_night/article/details/53080819
-				if(data1<0 && data2<0){
-					data_mix = data1+data2 - (data1 * data2 / -(Math.pow(2,16-1)-1));  
-				}else{
-					data_mix = data1+data2 - (data1 * data2 / (Math.pow(2,16-1)-1));
-				};
-				
-				buffer[j]=data_mix;
-			};
-			curInt=cur;
-			curFloat+=step;
-			if(curFloat>=music.pcm.length){
-				curFloat=0;
-				curInt=-1;//洗脑循环 直接回到开头可否 ????
-			};
-			
-			sum+=Math.abs(buffer[j]);
+	if(!voiceSet.muteBGM){
+		for(var i=0;i<musics.length;i++){
+			poss[i]=Mix(bgmBuffer,sampleRate,false,musics[i],poss[i]||0,true).pos;
 		};
-		poss[i]=curFloat;
+	};
+	//将所有音效混入到bgmBuffer中
+	var bgms=voiceSet.bgms||[];
+	for(var i=0;i<bgms.length;i++){
+		var bgm=musicBGs[bgms[i].key];
+		var pos=Mix(bgmBuffer,sampleRate,false,bgm,bgms[i].pos||0,false).pos;
+		bgms[i].pos=pos;
+		
+		//此音效已混完
+		if(pos>=bgm.pcm.length){
+			bgms.splice(i,1);
+			i--;
+		};
 	};
 	
-	chunk.powerLevel=Recorder.PowerLevel(sum,buffer.length);
+	//播放bgmBuffer，录制端能听到实时bgm反馈
+	playBuffer(chunk,bgmBuffer,sampleRate);
+	
+	//将bgmBuffer混入buffer中
+	var info=Mix(buffer,sampleRate,voiceSet.mute,{pcm:bgmBuffer,sampleRate:sampleRate},0,false);
+	
+	chunk.powerLevel=Recorder.PowerLevel(info.sum,buffer.length);
+};
+var playBuffer=function(chunk,buffer,sampleRate){
+	var size=chunk.playSize||0;
+	var arr=chunk.playArr||[];
+	var st=sampleRate/1000*300;//缓冲播放，不然间隔太短接续爆音明显
+	
+	size+=buffer.length;
+	arr.push(buffer);
+	if(size>=st){
+		var ctx=Recorder.Ctx;
+		var audio=ctx.createBuffer(1,size,sampleRate);
+		var channel=audio.getChannelData(0);
+		for(var j=0,idx=0;j<arr.length;j++){
+			var buf=arr[j];
+			for(var i=0;i<buf.length;i++){
+				channel[idx++]=buf[i]/0x7FFF;
+			};
+		};
+		var source=ctx.createBufferSource();
+		source.channelCount=1;
+		source.buffer=audio;
+		source.connect(ctx.destination);
+		source.start();
+		
+		size=0;
+		arr=[];
+	};
+	chunk.playSize=size;
+	chunk.playArr=arr;
 };
 
-var voiceIsStart=0;
-var voiceStart=function(){
-	if(!rec){Runtime.Log("未开始混音",1);return}
-	voiceIsStart=1;
-	Runtime.Log("开始混入语音...");
+var voiceSet={};
+var muteChange=function(bgm){
+	if(!rec){
+		Runtime.Log("未开始混音",1);
+		return
+	};
+	bgm=bgm||"";
+	voiceSet["mute"+bgm]=!voiceSet["mute"+bgm];
+	$(".mixBtn-mute"+bgm)[voiceSet["mute"+bgm]?"removeClass":"addClass"]("mixMinBtnOff");
 };
-var voiceStop=function(){
-	if(!rec){Runtime.Log("未开始混音",1);return}
-	voiceIsStart=0;
-	Runtime.Log("结束混入语音");
+var bgmSet=function(bgm){
+	if(!rec){
+		Runtime.Log("未开始混音",1);
+		return
+	};
+	var bgms=voiceSet.bgms=voiceSet.bgms||[];
+	bgms.push({key:bgm});
 };
 
 
@@ -86,10 +146,25 @@ Runtime.Ctrls([
 	{name:"开始混音",click:"recStart"}
 	,{name:"结束混音",click:"recStop"}
 	
-	,{html:"<div>默认自己的麦克风是静音的，要插入你的语音，点下面这两个按钮</div>"}
+	,{html:'<hr/><div style="margin-bottom:8px;font-size:12px">音效控制\
+<style>\
+.mixMinBtn{\
+	height: 30px;\
+	line-height: 30px;\
+	padding: 0 10px;\
+	font-size: 13px;\
+}\
+.mixMinBtnOff{\
+	background:#999;\
+}\
+</style>\
+</div>'}
 	
-	,{name:"开始混入语音",click:"voiceStart"}
-	,{name:"结束混入语音",click:"voiceStop"}
+	,{name:"麦克风静音",click:"muteChange",cls:"mixMinBtn mixMinBtnOff mixBtn-mute"}
+	,{name:"BGM静音",click:"muteChange('BGM');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-muteBGM"}
+	,{name:"爆笑音效",click:"bgmSet('xiao');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-xiao"}
+	,{name:"晕倒音效",click:"bgmSet('yun');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-yun"}
+	,{name:"转场音效",click:"bgmSet('scene');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-scene"}
 ]);
 
 
@@ -104,8 +179,10 @@ Runtime.Import([
 //调用录音
 var rec;
 function recStart(){
-	voiceIsStart=0;
+	voiceSet={};
+	$(".mixMinBtn").addClass("mixMinBtnOff");
 	var mixChunk={};
+	
 	rec=Recorder({
 		type:"mp3"
 		,sampleRate:32000
@@ -151,7 +228,7 @@ function recStop(){
 $(".choiceFileBox").remove();
 Runtime.Log('<div class="choiceFileBox">\
 	<div class="dropFile" onclick="$(\'.choiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; text-align:center;cursor: pointer;">\
-	拖拽多个音乐文件到这里 / 点此选择，替换混音素材\
+	拖拽多个音乐文件到这里 / 点此选择，替换混音BGM\
 	</div>\
 	<input type="file" class="choiceFile" style="display:none" accept="audio/*" multiple="multiple">\
 </div>');
@@ -196,14 +273,14 @@ function readChoiceFile(files){
 
 //*****加载和解码素材********
 var loadWait=0;
-var load=function(name,call){
+var load=function(name,bgName,call){
 	Runtime.Log("开始加载混音音频素材"+name+"，请勿操作...");
 	loadWait++;
 	var xhr=new XMLHttpRequest();
 	xhr.onloadend=function(){
 		if(xhr.status==200){
 			loadWait--;
-			decodeAudio(name,xhr.response,call);
+			decodeAudio(name,xhr.response,call,bgName);
 		}else{
 			Runtime.Log("加载音频失败["+xhr.status+"]:"+name,1);
 		};
@@ -213,17 +290,17 @@ var load=function(name,call){
 	xhr.responseType="arraybuffer";
 	xhr.send();
 };
-var decodeAudio=function(name,arr,call){
+var decodeAudio=function(name,arr,call,bgName){
 	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 		Runtime.Log("浏览器不支持音频解码",1);
 		return;
 	};
-	var srcBlob=new Blob([arr]);
+	var srcBlob=new Blob([arr],{type:"audio/"+(/[^.]+$/.exec(name)||[])[0]});
 	var ctx=Recorder.Ctx;
 	ctx.decodeAudioData(arr,function(raw){
 		var src=raw.getChannelData(0);
 		var sampleRate=raw.sampleRate;
-		console.log(name,raw);
+		console.log(name,raw,srcBlob);
 		
 		var pcm=new Int16Array(src.length);
 		for(var i=0;i<src.length;i++){//floatTo16BitPCM 
@@ -233,16 +310,26 @@ var decodeAudio=function(name,arr,call){
 		};
 		
 		Runtime.LogAudio(srcBlob,Math.round(src.length/sampleRate*1000),{set:{sampleRate:sampleRate}},"已解码"+name);
-		musics.push({pcm:pcm,sampleRate:sampleRate});
+		if(bgName){
+			musicBGs[bgName]={pcm:pcm,sampleRate:sampleRate};
+		}else{
+			musics.push({pcm:pcm,sampleRate:sampleRate});
+		};
 		call();
 	},function(e){
 		Runtime.Log("audio解码失败:"+e.message,1);
 	});
 };
 var loadAll=function(){
-	load("music-阿刁-张韶涵.mp3",function(){
-		load("music-在人间-张韶涵.mp3",function(){
-			Runtime.Log("待混音音频素材已准备完毕，可以开始录音了",2);
+	load("music-阿刁-张韶涵.mp3",0,function(){
+		load("music-在人间-张韶涵.mp3",0,function(){
+			load("bgm-爆笑.mp3","xiao",function(){
+				load("bgm-晕倒.mp3","yun",function(){
+					load("bgm-转场.mp3","scene",function(){
+						Runtime.Log("待混音音频素材已准备完毕，可以开始录音了",2);
+					});
+				});
+			});
 		});
 	});
 };
