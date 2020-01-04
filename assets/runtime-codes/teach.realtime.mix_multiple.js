@@ -100,10 +100,18 @@ var playBuffer=function(chunk,buffer,sampleRate){
 		var ctx=Recorder.Ctx;
 		var audio=ctx.createBuffer(1,size,sampleRate);
 		var channel=audio.getChannelData(0);
+		var sd=sampleRate/1000*2;//2ms的淡入淡出 大幅减弱爆音
 		for(var j=0,idx=0;j<arr.length;j++){
 			var buf=arr[j];
-			for(var i=0;i<buf.length;i++){
-				channel[idx++]=buf[i]/0x7FFF;
+			for(var i=0,l=buf.length,buf_sd=l-sd;i<l;i++){
+				var factor=1;//淡入淡出因子
+				if(i<sd){
+					factor=i/sd;
+				}else if(i>buf_sd){
+					factor=(l-i)/sd;
+				};
+				
+				channel[idx++]=buf[i]/0x7FFF*factor;
 			};
 		};
 		var source=ctx.createBufferSource();
