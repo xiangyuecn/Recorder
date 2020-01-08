@@ -615,14 +615,14 @@ set={
 可到[assets/sonic-java](https://github.com/xiangyuecn/Recorder/tree/master/assets/sonic-java)目录运行java代码测试原版效果。
 
 ### 本扩展支持
-1. Pitch：变调不变速（会说话的汤姆猫），男女变声，只调整音调，不改变播放速度
-2. Speed：变速不变调（快放慢放），只调整播放速度，不改变音调
-3. Rate：变速变调，会改变播放速度和音调
-4. Volume：支持调整音量
+1. `Pitch`：变调不变速（会说话的汤姆猫），男女变声，只调整音调，不改变播放速度
+2. `Speed`：变速不变调（快放慢放），只调整播放速度，不改变音调
+3. `Rate`：变速变调，会改变播放速度和音调
+4. `Volume`：支持调整音量
 5. 支持实时处理，可在onProcess中实时处理PCM（需开启异步），配合SampleData方法使用更佳
 
 ### Sonic文档
-Sonic有两个构造方法，一个是同步方法，Sonic.Async是异步方法，同步方法简单直接但处理量大时会消耗大量时间，主要用于一次性的处理；异步方法由WebWorker在后台进行运算处理，但异步方法不一定能成功开启（低版本浏览器），主要用于实时处理。
+Sonic有两个构造方法，一个是同步方法，Sonic.Async是异步方法，同步方法简单直接但处理量大时会消耗大量时间，主要用于一次性的处理；异步方法由WebWorker在后台进行运算处理，但异步方法不一定能成功开启（低版本浏览器），主要用于实时处理。异步方法调用后必须调用flush方法，否则会产生内存泄露。
 
 注意：由于同步方法转换操作需要占用比较多的CPU（但比转码小点），因此实时处理时在低端设备上可能会导致性能问题；在一次性处理大量pcm时，可采取切片+setTimeout进行处理，参考上面的demo片段。
 
@@ -633,7 +633,7 @@ Sonic有两个构造方法，一个是同步方法，Sonic.Async是异步方法�
 ``` javascript
 //【构造初始化】
 var sonic=Recorder.Sonic(set) //同步调用，用于一次性处理
-var sonic=Recorder.Sonic.Async(set) //异步调用，用于实时处理
+var sonic=Recorder.Sonic.Async(set) //异步调用，用于实时处理，调用后必须调用flush方法，否则会产生内存泄露。
     /*set:{
         sampleRate:待处理pcm的采样率，就是input输入的buffer的采样率
     }*/
