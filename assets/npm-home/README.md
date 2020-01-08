@@ -40,9 +40,13 @@ npm install recorder-core
 
 
 ## WaveView的调用方式
-直接通过Recorder.WaveView调用即可，详细的使用请参考[GitHub仓库](https://github.com/xiangyuecn/Recorder)里面的README
+直接通过Recorder.WaveView调用即可，录音时动态显示波形，详细的使用请参考[GitHub仓库](https://github.com/xiangyuecn/Recorder)里面的README
 
 @@Ref README.WaveView.Codes@@
+
+
+## Sonic的调用方式
+直接通过Recorder.Sonic调用即可，音频变速变调转换，详细的使用请参考[GitHub仓库](https://github.com/xiangyuecn/Recorder)里面的README
 
 
 ## RecordApp的调用方式

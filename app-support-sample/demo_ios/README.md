@@ -8,7 +8,7 @@
 
 可以直接copy目录内`RecordAppJsBridge.swift`使用，此文件为核心文件，其他文件都是没什么价值的；支持新开发WKWebView界面，或对已有的WKWebView实例升级支持RecordApp。
 
-**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果工程师水准**
+**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果公司工程师水准**
 
 
 ## 【截图】

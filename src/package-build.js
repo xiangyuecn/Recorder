@@ -55,6 +55,7 @@ function Run_minify(){
 	minify("../dist/engine/beta-amr.js",["engine/beta-amr.js","engine/beta-amr-engine.js","engine/wav.js"]);
 
 	minify("../dist/extensions/waveview.js",["extensions/waveview.js"]);
+	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };

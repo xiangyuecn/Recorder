@@ -104,8 +104,10 @@ RecordApp.RequestPermission(function(){
     
     RecordApp.Start({
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把支持文件到Platforms.Default内注册
-        ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+        ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //如果当前环境支持实时回调（RecordApp.Current.CanProcess()），收到录音数据时就会实时调用本回调方法
+            //可利用extensions/waveview.js扩展实时绘制波形
+            //可利用extensions/sonic.js扩展实时变速变调，此扩展计算量巨大，onProcess需要返回true开启异步模式
         }
     },function(){
         setTimeout(function(){
@@ -241,7 +243,7 @@ set配置默认值：
     sampleRate:16000//最佳采样率hz
     bitRate:16//最佳比特率kbps
     
-    onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate)，此回调和Recorder的回调行为完全一致
+    onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd)，此回调和Recorder的回调行为完全一致
 }
 注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
 

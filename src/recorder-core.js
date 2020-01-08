@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2019-11-7 21:47:48";
+var LM="2020-1-8 10:53:14";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -263,7 +263,7 @@ function initFn(set){
 					//wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
 					//采样率参考https://www.cnblogs.com/devin87/p/mp3-recorder.html
 		
-		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
+		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）；newBufferIdx:本次回调新增的buffer起始索引；asyncEnd:fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。onProcess返回值：如果返回true代表开启异步模式，在某些大量运算的场合异步是必须的，必须在异步处理完成时调用asyncEnd(不能真异步时需用setTimeout包裹)，在onProcess执行后新增的buffer会全部替换成空数组，因此本回调开头应立即将newBufferIdx到本次回调结尾位置的buffer全部保存到另外一个数组内，处理完成后写回buffers中本次回调的结尾位置。
 		
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
 	};
@@ -441,17 +441,13 @@ Recorder.prototype=initFn.prototype={
 	}
 	,envIn:function(pcm,sum){//和平台环境无关的pcm[Int16]输入
 		var This=this,set=This.set,engineCtx=This.engineCtx;
+		var bufferSampleRate=This.srcSampleRate;
 		var size=pcm.length;
-		This.recSize+=size;
+		var powerLevel=Recorder.PowerLevel(sum,size);
 		
 		var buffers=This.buffers;
+		var bufferFirstIdx=buffers.length;//之前的buffer都是经过onProcess处理好的，不允许再修改
 		buffers.push(pcm);
-		
-		var powerLevel=Recorder.PowerLevel(sum,size);
-		var bufferSampleRate=This.srcSampleRate;
-		var bufferSize=This.recSize;
-		
-		
 		
 		//卡顿丢失补偿：因为设备很卡的时候导致H5接收到的数据量不够造成播放时候变速，结果比实际的时长要短，此处保证了不会变短，但不能修复丢失的音频数据造成音质变差。当前算法采用输入时间侦测下一帧是否需要添加补偿帧，需要(6次输入||超过1秒)以上才会开始侦测，如果滑动窗口内丢失超过1/3就会进行补偿
 		var now=Date.now();
@@ -488,12 +484,16 @@ Recorder.prototype=initFn.prototype={
 				//用静默进行补偿
 				if(fixOpen){
 					var addPcm=new Int16Array(addTime*bufferSampleRate/1000);
-					This.recSize+=addPcm.length;
+					size+=addPcm.length;
 					buffers.push(addPcm);
 				};
 			};
 		};
 		
+		
+		var sizeOld=This.recSize,addSize=size;
+		var bufferSize=sizeOld+addSize;
+		This.recSize=bufferSize;//此值在onProcess后需要修正，可能新数据被修改
 		
 		
 		//此类型有边录边转码(Worker)支持，开启实时转码
@@ -502,21 +502,55 @@ Recorder.prototype=initFn.prototype={
 			var chunkInfo=Recorder.SampleData(buffers,bufferSampleRate,set.sampleRate,engineCtx.chunkInfo);
 			engineCtx.chunkInfo=chunkInfo;
 			
-			engineCtx.pcmSize+=chunkInfo.data.length;
-			bufferSize=engineCtx.pcmSize;
+			sizeOld=engineCtx.pcmSize;
+			addSize=chunkInfo.data.length;
+			bufferSize=sizeOld+addSize;
+			engineCtx.pcmSize=bufferSize;//此值在onProcess后需要修正，可能新数据被修改
+			
 			buffers=engineCtx.pcmDatas;
-			var bufferIdx=buffers.length;
+			bufferFirstIdx=buffers.length;
 			buffers.push(chunkInfo.data);
 			bufferSampleRate=chunkInfo.sampleRate;
 		};
 		
 		var duration=Math.round(bufferSize/bufferSampleRate*1000);
-		//实时回调处理数据
-		set.onProcess(buffers,powerLevel,duration,bufferSampleRate);
+		var bufferNextIdx=buffers.length;
 		
-		if(engineCtx){
-			//推入后台边录边转码
-			This[set.type+"_encode"](engineCtx,buffers[bufferIdx]);
+		//允许异步处理buffer数据
+		var asyncEnd=function(){
+			//重新计算size，去掉本次添加的然后重新计算
+			var num=asyncBegin?0:-addSize;
+			for(var i=bufferFirstIdx;i<bufferNextIdx;i++){
+				var buffer=buffers[i];
+				num+=buffer.length;
+				
+				//推入后台边录边转码
+				if(engineCtx&&buffer.length){
+					This[set.type+"_encode"](engineCtx,buffer);
+				};
+			};
+			if(engineCtx){
+				engineCtx.pcmSize+=num;
+			}else{
+				This.recSize+=num;
+			};
+		};
+		//实时回调处理数据，允许修改或替换上次回调以来新增的数据 ，但是不允许修改已处理过的，不允许增删第一维数组 ，允许将第二维数组任意修改替换成空数组也可以
+		var asyncBegin=set.onProcess(buffers,powerLevel,duration,bufferSampleRate,bufferFirstIdx,asyncEnd);
+		
+		if(asyncBegin===true){
+			//开启了异步模式，onProcess已接管buffers新数据，立即清空，避免出现未处理的数据
+			for(var i=bufferFirstIdx;i<bufferNextIdx;i++){
+				buffers[i]=new Int16Array(0);
+			};
+			//还原size
+			if(engineCtx){
+				engineCtx.pcmSize-=addSize;
+			}else{
+				This.recSize-=addSize;
+			};
+		}else{
+			asyncEnd();
 		};
 	}
 	

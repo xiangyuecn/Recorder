@@ -77,8 +77,10 @@ var rec;
 var recOpen=function(success){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
     rec=Recorder({
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
-        ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+        ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //录音实时回调，大约1秒调用12次本回调
+            //可利用extensions/waveview.js扩展实时绘制波形
+            //可利用extensions/sonic.js扩展实时变速变调，此扩展计算量巨大，onProcess需要返回true开启异步模式
         }
     });
 
@@ -234,6 +236,7 @@ $.ajax({
 4. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
 5. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
 6. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
+7. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
 
 
 
@@ -320,10 +323,16 @@ set={
     ,sampleRate:16000 //采样率，必须是数字，wav格式（8位）文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
                 //wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
     
-    ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate) 
-                //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段，每次回调可能增加0-n个不定量的pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）
+    ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd)
+                //返回值：onProcess如果返回true代表开启异步模式，在某些大量运算的场合异步是必须的，必须在异步处理完成时调用asyncEnd(不能真异步时需用setTimeout包裹)；返回其他值或者不返回为同步模式（需避免在回调内执行耗时逻辑）；如果开启异步模式，在onProcess执行后新增的buffer会全部替换成空数组，因此本回调开头应立即将newBufferIdx到本次回调结尾位置的buffer全部保存到另外一个数组内，处理完成后写回buffers中本次回调的结尾位置。
+                //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段，每次回调可能增加0-n个不定量的pcm片段。
+                //powerLevel：当前缓冲的音量级别0-100。
+                //bufferDuration：已缓冲时长。
+                //bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）。
+                //newBufferIdx:本次回调新增的buffer起始索引。
+                //asyncEnd：fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
-                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers原始数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输；修改buffers内的数据将会改变最终生成的音频内容，比如简单有限的实现实时静音、降噪、混音等处理，详细参考下面的rec.buffers
+                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers原始数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输；修改或替换buffers内的数据将会改变最终生成的音频内容（注意不能改变第一维数组长度），比如简单有限的实现实时静音、降噪、混音等处理，详细参考下面的rec.buffers
 }
 ```
 
@@ -377,7 +386,7 @@ set={
 ### 【属性】rec.buffers
 此数据为从开始录音到现在为止的所有已缓冲的PCM片段列表，`buffers` `=` `[[Int16,...],...]` 为二维数组；在没有边录边转码的支持时（mock调用、非mp3等），录音stop时会使用此完整数据进行转码成指定的格式。
 
-buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率`rec.srcSampleRate`；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据；修改`onProcess`回调中`buffers`参数可以改变最终生成的音频内容，但修改`rec.buffers`不一定会有效，因此你可以在`onProcess`中修改`buffers`参数里面的内容，注意不能改变数组的长度；以此可以简单有限的实现实时静音、降噪、混音等处理。
+buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏览器提供的原始采样率`rec.srcSampleRate`；在`rec.set.onProcess`回调中`buffers`参数就是此数据或者此数据重新采样后的新数据；修改或替换`onProcess`回调中`buffers`参数可以改变最终生成的音频内容，但修改`rec.buffers`不一定会有效，因此你可以在`onProcess`中修改或替换`buffers`参数里面的内容，注意只能修改或替换上次回调以来新增的buffer（不允许修改已处理过的，不允许增删第一维数组，允许将第二维数组任意修改替换成空数组也可以）；以此可以简单有限的实现实时静音、降噪、混音等处理。
 
 如果你需要长时间实时录音（如长时间语音通话），并且不需要得到最终完整编码的音频文件，Recorder初始化时应当使用一个未知的类型进行初始化（如: type:"unknown"，仅仅用于初始化而已，实时转码可以手动转成有效格式，因为有效格式可能内部还有其他类型的缓冲），并且实时在`onProcess`中修改`rec.buffers`数组，只保留最后两个元素，其他元素设为null（代码：`rec.buffers[rec.buffers.length-3]=null`），以释放占用的内存，并且录音结束时可以不用调用`stop`，直接调用`close`丢弃所有数据即可。只要buffers[0]==null时调用`stop`永远会直接走fail回调。
 
@@ -597,6 +606,56 @@ set={
 
 ### 【方法】wave.input(pcmData,powerLevel,sampleRate)
 输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData `[Int16,...]` 一维数组，为当前的录音数据片段，其他参数和`onProcess`回调相同。
+
+
+
+## `Sonic`扩展
+`sonic.js`，37kb大小源码(压缩版gzip后4.5kb)，音频变速变调转换，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)。此扩展从[Sonic.java](https://github.com/waywardgeek/sonic/blob/71c51195de71627d7443d05378c680ba756545e8/Sonic.java)移植，并做了适当精简。
+
+可到[assets/sonic-java](https://github.com/xiangyuecn/Recorder/tree/master/assets/sonic-java)目录运行java代码测试原版效果。
+
+### 本扩展支持
+1. Pitch：变调不变速（会说话的汤姆猫），男女变声，只调整音调，不改变播放速度
+2. Speed：变速不变调（快放慢放），只调整播放速度，不改变音调
+3. Rate：变速变调，会改变播放速度和音调
+4. Volume：支持调整音量
+5. 支持实时处理，可在onProcess中实时处理PCM（需开启异步），配合SampleData方法使用更佳
+
+### Sonic文档
+Sonic有两个构造方法，一个是同步方法，Sonic.Async是异步方法，同步方法简单直接但处理量大时会消耗大量时间，主要用于一次性的处理；异步方法由WebWorker在后台进行运算处理，但异步方法不一定能成功开启（低版本浏览器），主要用于实时处理。
+
+注意：由于同步方法转换操作需要占用比较多的CPU（但比转码小点），因此实时处理时在低端设备上可能会导致性能问题；在一次性处理大量pcm时，可采取切片+setTimeout进行处理，参考上面的demo片段。
+
+注意：变速变调会大幅增减PCM数据长度，如果需要在onProcess中实时处理PCM，需要在rec.set中设置内部参数`rec.set.disableEnvInFix=true`来禁用设备卡顿时音频输入丢失补偿功能，否则可能导致错误的识别为设备卡顿。
+
+注意：每次input输入的数据量应该尽量的大些，太少容易产生杂音，每次传入200ms以上的数据量就几乎没有影响了。
+
+``` javascript
+//【构造初始化】
+var sonic=Recorder.Sonic(set) //同步调用，用于一次性处理
+var sonic=Recorder.Sonic.Async(set) //异步调用，用于实时处理
+    /*set:{
+        sampleRate:待处理pcm的采样率，就是input输入的buffer的采样率
+    }*/
+
+//【功能配置调用函数】同步异步通用，以下num取值正常为0.1-2.0，超过这个范围也是可以的，但不推荐
+sonic.setPitch(num)  //num:0.1-n，变调不变速（会说话的汤姆猫），男女变声，只调整音调，不改变播放速度，默认为1.0不调整
+sonic.setSpeed(num)  //num:0.1-n，变速不变调（快放慢放），只调整播放速度，不改变音调，默认为1.0不调整
+sonic.setRate(num)  //num:0.1-n，变速变调，越小越缓重，越大越尖锐，会改变播放速度和音调，默认为1.0不调整
+sonic.setVolume(num)  //num:0.1-n，调整音量，默认为1.0不调整
+sonic.setChordPitch(bool)  //bool:默认false，作用未知，不推荐使用
+sonic.setQuality(num)  //num:0或1，默认0时会减小输入采样率来提供处理速度，变调时才会用到，不推荐使用
+
+//【同步调用方法】
+sonic.input(buffer)  //buffer:[Int16,...] 一维数组，输入pcm数据，返回转换后的部分pcm数据，完整输出需要调用flush；返回值[Int16,...]长度可能为0，代表没有数据被转换；此方法是耗时的方法，一次性处理大量pcm需要切片+setTimeout优化
+sonic.flush()  //将残余的未转换的pcm数据完成转换并返回；返回值[Int16,...]长度可能为0，代表没有数据被转换
+
+//【异步调用方法】
+sonic.input(buffer,callback) //callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
+sonic.flush(callback) //callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
+```
+
+
 
 
 # :open_book:兼容性

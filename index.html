@@ -40,6 +40,7 @@ console.log(
 
 <!--加载可选扩展库-->
 <script src="src/extensions/waveview.js"></script>
+<script src="src/extensions/sonic.js"></script>
 
 
 <style>
@@ -60,7 +61,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-11-7 21:48:00";
+var PageLM="2020-1-9 02:11:37";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -177,6 +178,27 @@ RandomKey.idx=0;
 	
 	<hr>
 	<div class="pd">
+		<div>
+			<button onclick="resetSonicCtrl()">重置变速变调</button>
+			实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）</div>
+		<div class="sonicCtrlBox" style="margin:5px 0 16px">
+			<style>
+				.sonicCtrlBox span{display:inline-block;width:80px;text-align:right;}
+				.sonicCtrlBox input{text-align:right;}
+			</style>
+			<div><span>Pitch:</span><input class="sonicCtrlInput sonicCtrlPitch" style="width:60px"> 男声<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">女声，变调不变速（会说话的汤姆猫）</div>
+			<div><span>Speed:</span><input class="sonicCtrlInput sonicCtrlSpeed" style="width:60px"> 慢放<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">快放，变速不变调（快放慢放），由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
+			<div><span>Rate:</span><input class="sonicCtrlInput sonicCtrlRate" style="width:60px"> 缓重<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">尖锐，变速变调，由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
+			<div><span>Volume:</span><input class="sonicCtrlInput sonicCtrlVolume" style="width:60px"> 调低<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">调高，调整音量</div>
+			
+			<div><span>处理缓冲:</span><input class="sonicCtrlInput sonicCtrlBuffer" style="width:60px">ms 0ms<input type="range" class="sonicCtrlRange sonicCtrlBufferRange" min="0" max="1000" step="100" value="200">1000ms，控制缓冲大小减少转换引入的杂音，0不缓冲</div>
+			
+			<div style="margin-top:10px"><button onclick="sonicRecTransform()">重新转换当前录音</button></div>
+		</div>
+	</div>
+	
+	<hr>
+	<div class="pd">
 		<label><input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）</label>
 		<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
 	</div>
@@ -264,6 +286,7 @@ function recopen(){
 	var sample=+$(".sample").val();
 	
 	var wave,waveSet=$(".recwaveSet")[0].checked;
+	window.sonicAsync=null;
 	
 	var disableEnvInFixSet=$(".disableEnvInFixSet")[0].checked;
 	if(disableEnvInFixSet){
@@ -278,15 +301,20 @@ function recopen(){
 		,bitRate:bit
 		,sampleRate:sample
 		,disableEnvInFix:disableEnvInFixSet
-		,onProcess:function(buffers,level,time,sampleRate){
-			$(".recpowerx").css("width",level+"%");
-			$(".recpowert").html(time+"/"+level);
+		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+			//优先进行pcm处理，可能会发生数据修改，对于需要大量运算的处理需要开启异步模式，onProcess返回true即可开启，异步操作完成后必须回调asyncEnd
+			var beginAsync=sonicProcess(buffers,sampleRate,newBufferIdx,asyncEnd);
 			
-			waveSet && wave.input(buffers[buffers.length-1],level,sampleRate);
+			$(".recpowerx").css("width",powerLevel+"%");
+			$(".recpowert").html(duration+"/"+powerLevel);
+			
+			waveSet && wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
 			
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(rec.set,realTimeSendTime,buffers,sampleRate);
 			};
+			
+			return beginAsync;//返回true转成异步操作
 		}
 	});
 	
@@ -351,6 +379,9 @@ function recstart(call){
 	});
 	if(rec){
 		window.realTimeSendTryReset&&realTimeSendTryReset();
+		
+		sonicAsync&&sonicAsync.flush();//丢弃不管，省的去同步麻烦
+		sonicAsync=null;
 		
 		rec.start();
 		var set=rec.set;
@@ -550,7 +581,8 @@ if(window.isSecureContext===false){
 };
 
 reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");
-reclog("WaveView Extensions已启用");
+reclog("WaveView Extensions已启用：显示波形功能即为此扩展，源码：src/extensions/waveview.js");
+reclog("Sonic Extensions已启用：变速变调功能即为此扩展，源码：src/extensions/sonic.js");
 
 
 function goiframe(){
@@ -586,6 +618,123 @@ $(".realTimeSendSet").bind("change",function(e){
 		$("head")[0].appendChild(elem);
 	};
 });
+
+
+
+//变速变调
+var sonicCtrlSet={};
+$(".sonicCtrlInput").bind("change",function(e){
+	sonicCtrlSet[/sonicCtrl[^ ]+$/.exec(e.target.className)[0]]=+e.target.value;
+});
+$(".sonicCtrlRange").bind("change",function(e){
+	$(e.target).parent().find(".sonicCtrlInput").val(/\d+\.\d+/.exec(e.target.value+".0")[0]).change();
+}).change();
+var resetSonicCtrl=function(){
+	$(".sonicCtrlRange").val(1).change();
+	$(".sonicCtrlBufferRange").val(200).change();
+};
+var sonicRecTransform=function(){
+	if(!rec||!rec.buffers){
+		reclog("请先录音",1);
+		return;
+	};
+	var type=rec.set.type;
+	var sampleRate=rec.set.sampleRate;
+	var bitRate=rec.set.bitRate;
+	if(type!="mp3"){
+		reclog("目前只支持mp3格式的录音重新转换，因为其他格式buffers已被污染",1);
+		return;
+	};
+	
+	sonicAsync&&sonicAsync.flush();
+	sonicAsync=null;
+	
+	var srcBuffers=rec.buffers;
+	var buffers=[];
+	var idx=-1;
+	var run=function(){
+		idx++;
+		if(idx>=srcBuffers.length){
+			var mockRec=Recorder({type:type,sampleRate:sampleRate,bitRate:bitRate});
+			mockRec.mock(Recorder.SampleData(buffers,sampleRate,sampleRate).data,sampleRate);
+			recstopFn(null,0,function(){
+				return "已转换";
+			},mockRec);
+			return;
+		};
+		
+		buffers.push(Recorder.SampleData([srcBuffers[idx]],rec.srcSampleRate,sampleRate).data);
+		var beginAsync=sonicProcess(buffers,sampleRate,idx,run);
+		if(!beginAsync){
+			reclog("不存在变速变调设置，或不能开启转换",1);
+		};
+		buffers[idx]=new Int16Array(0);
+	};
+	run();
+};
+var sonicInfo;
+var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
+	if(sonicCtrlSet.sonicCtrlPitch==1
+		&&sonicCtrlSet.sonicCtrlRate==1
+		&&sonicCtrlSet.sonicCtrlSpeed==1
+		&&sonicCtrlSet.sonicCtrlVolume==1){//不存在变速变调设置
+		return;
+	};
+	
+	if(sonicAsync==-1){
+		return;
+	};
+	if(!sonicAsync||sonicAsync.set.sampleRate!=sampleRate){
+		//实时处理只能用异步操作，不能用同步方法，否则必然卡顿
+		sonicAsync=Recorder.Sonic.Async({sampleRate:sampleRate});
+		sonicInfo={};
+		if(!sonicAsync){
+			sonicAsync=-1;
+			reclog("不能开启Sonic.Async，浏览器不支持WebWorker操作，降级不变速变调",1);
+			return;
+		};
+	};
+	
+	sonicAsync.setPitch(sonicCtrlSet.sonicCtrlPitch);
+	sonicAsync.setRate(sonicCtrlSet.sonicCtrlRate);
+	sonicAsync.setSpeed(sonicCtrlSet.sonicCtrlSpeed);
+	sonicAsync.setVolume(sonicCtrlSet.sonicCtrlVolume);
+	
+	var newBuffers=sonicInfo.buffers||[];
+	var newBufferSize=sonicInfo.bufferSize||0;
+	var blockSize=sampleRate/1000*sonicCtrlSet.sonicCtrlBuffer;//缓冲0-1000ms的数据进行处理，200ms以上可避免引入大量杂音
+	var lastIdx=buffers.length-1;
+	for(var i=newBufferIdx;i<=lastIdx;i++){
+		newBuffers.push(buffers[i]);//copy出来，异步onProcess会清空这些数组
+		newBufferSize+=buffers[i].length;
+	};
+	
+	if(newBufferSize<blockSize){
+		setTimeout(function(){
+			asyncEnd();//缓冲未满，此时并未处理，但也需要进行异步回调
+		});
+	}else{
+		var buffer=newBuffers[0]||[];
+		if(newBuffers.length>1){
+			buffer=Recorder.SampleData(newBuffers,sampleRate,sampleRate).data;
+		};
+		newBuffers=[];
+		newBufferSize=0;
+		var sizeOld=buffer.length,sizeNew=0;
+		
+		//推入后台异步转换
+		sonicAsync.input(buffer,function(pcm){
+			buffers[lastIdx]=pcm;//写回buffers，放到调用时的最后一个位置即可 ，其他内容已在开启异步模式时已经被自动替换成了空数组
+			
+			asyncEnd();//完成处理必须进行回调
+		});
+	};
+	
+	sonicInfo.buffers=newBuffers;
+	sonicInfo.bufferSize=newBufferSize;
+	
+	return true;
+};
 </script>
 
 
@@ -802,6 +951,7 @@ function loadEngine(input){
 				if(i>=engines.length){
 					loadEngineState[type]=minjs;
 					Recorder.WaveView=WaveViewBak;
+					Recorder.Sonic=SonicBak;
 					
 					reclog("<span style='color:#0b1'>"+type+"编码器"+(minjs?"压缩版":"源码版")+"已加载，可以录音了</span>");
 					end();
@@ -823,6 +973,7 @@ function loadEngine(input){
 };
 loadEngineState={};
 var WaveViewBak=Recorder.WaveView;
+var SonicBak=Recorder.Sonic;
 
 (function(){try{
 	var minjs=$(".loadMinJs");
