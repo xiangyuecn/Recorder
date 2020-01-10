@@ -520,19 +520,27 @@ Recorder.prototype=initFn.prototype={
 		var asyncEnd=function(){
 			//重新计算size，去掉本次添加的然后重新计算
 			var num=asyncBegin?0:-addSize;
+			var hasClear=0;
 			for(var i=bufferFirstIdx;i<bufferNextIdx;i++){
 				var buffer=buffers[i];
-				num+=buffer.length;
-				
-				//推入后台边录边转码
-				if(engineCtx&&buffer.length){
-					This[set.type+"_encode"](engineCtx,buffer);
+				if(buffer==null){//已被主动释放内存，比如长时间实时传输录音时
+					hasClear=1;
+				}else{
+					num+=buffer.length;
+					
+					//推入后台边录边转码
+					if(engineCtx&&buffer.length){
+						This[set.type+"_encode"](engineCtx,buffer);
+					};
 				};
 			};
-			if(engineCtx){
-				engineCtx.pcmSize+=num;
-			}else{
-				This.recSize+=num;
+			
+			if(!hasClear){
+				if(engineCtx){
+					engineCtx.pcmSize+=num;
+				}else{
+					This.recSize+=num;
+				};
 			};
 		};
 		//实时回调处理数据，允许修改或替换上次回调以来新增的数据 ，但是不允许修改已处理过的，不允许增删第一维数组 ，允许将第二维数组任意修改替换成空数组也可以
@@ -540,14 +548,24 @@ Recorder.prototype=initFn.prototype={
 		
 		if(asyncBegin===true){
 			//开启了异步模式，onProcess已接管buffers新数据，立即清空，避免出现未处理的数据
+			var hasClear=0;
 			for(var i=bufferFirstIdx;i<bufferNextIdx;i++){
-				buffers[i]=new Int16Array(0);
+				if(buffers[i]==null){//已被主动释放内存，比如长时间实时传输录音时 ，但又要开启异步模式，此种情况是非法的
+					hasClear=1;
+				}else{
+					buffers[i]=new Int16Array(0);
+				};
 			};
-			//还原size
-			if(engineCtx){
-				engineCtx.pcmSize-=addSize;
+			
+			if(hasClear){
+				console.warn("异步模式下不能清除buffers");
 			}else{
-				This.recSize-=addSize;
+				//还原size
+				if(engineCtx){
+					engineCtx.pcmSize-=addSize;
+				}else{
+					This.recSize-=addSize;
+				};
 			};
 		}else{
 			asyncEnd();
