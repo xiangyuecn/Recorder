@@ -82,49 +82,12 @@ var mixProcessWork=function(buffer,sampleRate,chunk){
 	};
 	
 	//播放bgmBuffer，录制端能听到实时bgm反馈
-	playBuffer(chunk,bgmBuffer,sampleRate);
+	DemoFragment.PlayBuffer(chunk,bgmBuffer,sampleRate);
 	
 	//将bgmBuffer混入buffer中
 	var info=Mix(buffer,sampleRate,voiceSet.mute,{pcm:bgmBuffer,sampleRate:sampleRate},0,false);
 	
 	chunk.powerLevel=Recorder.PowerLevel(info.sum,buffer.length);
-};
-var playBuffer=function(chunk,buffer,sampleRate){
-	var size=chunk.playSize||0;
-	var arr=chunk.playArr||[];
-	var st=sampleRate/1000*300;//缓冲播放，不然间隔太短接续爆音明显
-	
-	size+=buffer.length;
-	arr.push(buffer);
-	if(size>=st){
-		var ctx=Recorder.Ctx;
-		var audio=ctx.createBuffer(1,size,sampleRate);
-		var channel=audio.getChannelData(0);
-		var sd=sampleRate/1000*1;//1ms的淡入淡出 大幅减弱爆音
-		for(var j=0,idx=0;j<arr.length;j++){
-			var buf=arr[j];
-			for(var i=0,l=buf.length,buf_sd=l-sd;i<l;i++){
-				var factor=1;//淡入淡出因子
-				if(i<sd){
-					factor=i/sd;
-				}else if(i>buf_sd){
-					factor=(l-i)/sd;
-				};
-				
-				channel[idx++]=buf[i]/0x7FFF*factor;
-			};
-		};
-		var source=ctx.createBufferSource();
-		source.channelCount=1;
-		source.buffer=audio;
-		source.connect(ctx.destination);
-		source.start();
-		
-		size=0;
-		arr=[];
-	};
-	chunk.playSize=size;
-	chunk.playArr=arr;
 };
 
 var voiceSet={};
@@ -197,6 +160,8 @@ Runtime.Import([
 	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
 	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
+	
+	,{url:RootFolder+"/assets/runtime-codes/fragment.playbuffer.js",check:function(){return !window.DemoFragment||!DemoFragment.PlayBuffer}}//引入DemoFragment.PlayBuffer
 ]);
 
 

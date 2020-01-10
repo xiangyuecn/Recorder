@@ -191,7 +191,8 @@ RandomKey.idx=0;
 			<div><span>Rate:</span><input class="sonicCtrlInput sonicCtrlRate" style="width:60px"> 缓重<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">尖锐，变速变调，由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
 			<div><span>Volume:</span><input class="sonicCtrlInput sonicCtrlVolume" style="width:60px"> 调低<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">调高，调整音量</div>
 			
-			<div><span>处理缓冲:</span><input class="sonicCtrlInput sonicCtrlBuffer" style="width:60px">ms 0ms<input type="range" class="sonicCtrlRange sonicCtrlBufferRange" min="0" max="1000" step="100" value="200">1000ms，控制缓冲大小减少转换引入的杂音，0不缓冲</div>
+			<div style="border-top: 1px solid #eee;margin-top: 10px;"><span>处理缓冲:</span><input class="sonicCtrlInput sonicCtrlBuffer" style="width:60px">ms 0ms<input type="range" class="sonicCtrlRange sonicCtrlBufferRange" min="0" max="1000" step="100" value="200">1000ms，控制缓冲大小减少转换引入的杂音，0不缓冲</div>
+			<div><span>播放反馈:</span><input class="sonicCtrlInput sonicCtrlPlay" style="width:60px"> 不播放 <input type="range" class="sonicCtrlRange" min="0" max="1" step="1" value="1">实时播放反馈</div>
 			
 			<div style="margin-top:10px"><button onclick="sonicRecTransform()">重新转换当前录音</button></div>
 		</div>
@@ -624,7 +625,7 @@ $(".realTimeSendSet").bind("change",function(e){
 //变速变调
 var sonicCtrlSet={};
 $(".sonicCtrlInput").bind("change",function(e){
-	sonicCtrlSet[/sonicCtrl[^ ]+$/.exec(e.target.className)[0]]=+e.target.value;
+	sonicCtrlSet[/sonicCtrl([^ ]+)$/.exec(e.target.className)[1].toLowerCase()]=+e.target.value;
 });
 $(".sonicCtrlRange").bind("change",function(e){
 	$(e.target).parent().find(".sonicCtrlInput").val(/\d+\.\d+/.exec(e.target.value+".0")[0]).change();
@@ -674,10 +675,10 @@ var sonicRecTransform=function(){
 };
 var sonicInfo;
 var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
-	if(sonicCtrlSet.sonicCtrlPitch==1
-		&&sonicCtrlSet.sonicCtrlRate==1
-		&&sonicCtrlSet.sonicCtrlSpeed==1
-		&&sonicCtrlSet.sonicCtrlVolume==1){//不存在变速变调设置
+	if(sonicCtrlSet.pitch==1
+		&&sonicCtrlSet.rate==1
+		&&sonicCtrlSet.speed==1
+		&&sonicCtrlSet.volume==1){//不存在变速变调设置
 		return;
 	};
 	
@@ -693,16 +694,24 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 			reclog("不能开启Sonic.Async，浏览器不支持WebWorker操作，降级不变速变调",1);
 			return;
 		};
+		
+		//加载PlayBuffer
+		if(!window.DemoFragment||!DemoFragment.PlayBuffer){
+			var elem=document.createElement("script");
+			elem.setAttribute("type","text/javascript");
+			elem.setAttribute("src","assets/runtime-codes/fragment.playbuffer.js");
+			$("head")[0].appendChild(elem);
+		};
 	};
 	
-	sonicAsync.setPitch(sonicCtrlSet.sonicCtrlPitch);
-	sonicAsync.setRate(sonicCtrlSet.sonicCtrlRate);
-	sonicAsync.setSpeed(sonicCtrlSet.sonicCtrlSpeed);
-	sonicAsync.setVolume(sonicCtrlSet.sonicCtrlVolume);
+	sonicAsync.setPitch(sonicCtrlSet.pitch);
+	sonicAsync.setRate(sonicCtrlSet.rate);
+	sonicAsync.setSpeed(sonicCtrlSet.speed);
+	sonicAsync.setVolume(sonicCtrlSet.volume);
 	
 	var newBuffers=sonicInfo.buffers||[];
 	var newBufferSize=sonicInfo.bufferSize||0;
-	var blockSize=sampleRate/1000*sonicCtrlSet.sonicCtrlBuffer;//缓冲0-1000ms的数据进行处理，200ms以上可避免引入大量杂音
+	var blockSize=sampleRate/1000*sonicCtrlSet.buffer;//缓冲0-1000ms的数据进行处理，200ms以上可避免引入大量杂音
 	var lastIdx=buffers.length-1;
 	for(var i=newBufferIdx;i<=lastIdx;i++){
 		newBuffers.push(buffers[i]);//copy出来，异步onProcess会清空这些数组
@@ -725,6 +734,11 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 		//推入后台异步转换
 		sonicAsync.input(buffer,function(pcm){
 			buffers[lastIdx]=pcm;//写回buffers，放到调用时的最后一个位置即可 ，其他内容已在开启异步模式时已经被自动替换成了空数组
+			
+			//实时播放反馈
+			if(sonicCtrlSet.play&&window.DemoFragment&&DemoFragment.PlayBuffer){
+				DemoFragment.PlayBuffer(sonicInfo,pcm,sampleRate);
+			};
 			
 			asyncEnd();//完成处理必须进行回调
 		});

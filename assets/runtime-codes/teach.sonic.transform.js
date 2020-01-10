@@ -6,19 +6,14 @@
 通过extensions/sonic.js可实现：变调不变速（会说话的汤姆猫）、变速不变调（快放慢放）、变速变调、调节音量。
 
 Recorder.Sonic有同步和异步两种调用方式，同步方法简单直接但处理量大时会消耗大量时间，主要用于一次性的处理；异步方法由WebWorker在后台进行运算处理，但异步方法不一定能成功开启（低版本浏览器），主要用于实时处理。
-
-本示例是一次性完成转换，没有开启实时特性，因此采用同步方法来进行转换。实时异步处理的例子请参考在线测试完整demo中的sonicProcess方法。
 ******************/
 var prevPcms,prevSampleRate;
-var transform=function(pcms,pcmSampleRate){
+/***使用同步方法一次性处理全部PCM****/
+var transformAll=function(pcms,pcmSampleRate){
 	prevPcms=pcms;
 	prevSampleRate=pcmSampleRate;
 	
 	var sampleRate=16000;
-	var setSpeed=+$(".sonicCtrlSpeed").val();
-	var setPitch=+$(".sonicCtrlPitch").val();
-	var setRate=+$(".sonicCtrlRate").val();
-	var setVolume=+$(".sonicCtrlVolume").val();
 	
 	var t1=Date.now();
 	var chunk=Recorder.SampleData(pcms,pcmSampleRate,sampleRate);
@@ -26,15 +21,15 @@ var transform=function(pcms,pcmSampleRate){
 	//核心的sonic同步调用
 	var sonic=Recorder.Sonic({sampleRate:sampleRate});
 	//进行sonic配置
-	sonic.setSpeed(setSpeed);
-	sonic.setPitch(setPitch);
-	sonic.setRate(setRate);
-	sonic.setVolume(setVolume);
+	sonic.setPitch(sonicCtrlSet.pitch);
+	sonic.setRate(sonicCtrlSet.rate);
+	sonic.setSpeed(sonicCtrlSet.speed);
+	sonic.setVolume(sonicCtrlSet.volume);
 	
 	//进行同步转换处理，当pcm太大时使用切片+setTimeout异步化，避免界面卡住
 	var buffers=[],newPcm,size=0,idx=0,blockLen=0;
 	var run1=function(endCall){
-		var blockSize=pcmSampleRate;//块大小尽量大些，避免引入杂音
+		var blockSize=sampleRate/1000*sonicCtrlSet.buffer;//切成0-1000ms的数据进行处理，200ms以上可避免引入大量杂音
 		var pcm=chunk.data,buffer;
 		if(idx>=pcm.length){
 			buffer=sonic.flush();//把剩余的内容输出，如果有的话
@@ -82,10 +77,10 @@ var transform=function(pcms,pcmSampleRate){
 		});
 		mockRec.mock(newPcm,sampleRate);
 		mockRec.stop(function(blob,duration){
-			Runtime.Log("Pitch:"+/\d+\.\d+/.exec(setPitch+".0")[0]
-				+" "+"Speed:"+/\d+\.\d+/.exec(setSpeed+".0")[0]
-				+" "+"Rate:"+/\d+\.\d+/.exec(setRate+".0")[0]
-				+" "+"Volume:"+/\d+\.\d+/.exec(setVolume+".0")[0]
+			Runtime.Log("Pitch:"+/\d+\.\d+/.exec(sonicCtrlSet.pitch+".0")[0]
+				+" "+"Speed:"+/\d+\.\d+/.exec(sonicCtrlSet.speed+".0")[0]
+				+" "+"Rate:"+/\d+\.\d+/.exec(sonicCtrlSet.rate+".0")[0]
+				+" "+"Volume:"+/\d+\.\d+/.exec(sonicCtrlSet.volume+".0")[0]
 				+" 转换耗时："+(t2-t1)+"ms 转码耗时："+(Date.now()-t2)+"ms");
 			Runtime.LogAudio(blob,duration,mockRec,"已转换");
 		},function(msg){
@@ -95,16 +90,88 @@ var transform=function(pcms,pcmSampleRate){
 	
 	run1(run2);
 };
-var recTransform=function(){
+var recTransformAll=function(){
 	if(!rec||!rec.buffers){
 		if(prevPcms){
-			transform(prevPcms,prevSampleRate);
+			transformAll(prevPcms,prevSampleRate);
 			return;
 		};
 		Runtime.Log("请先录个音",1);
 		return;
 	};
-	transform(rec.buffers,rec.srcSampleRate);
+	transformAll(rec.buffers,rec.srcSampleRate);
+};
+
+
+
+
+/***使用异步方法实时处理buffer，此处仅仅用作实时播放反馈****/
+var sonicInfo;
+var transformBufferPlayOnly=function(buffers,sampleRate,newBufferIdx,asyncEnd){
+	if(sonicCtrlSet.pitch==1
+		&&sonicCtrlSet.rate==1
+		&&sonicCtrlSet.speed==1
+		&&sonicCtrlSet.volume==1){//不存在变速变调设置
+		return;
+	};
+	
+	if(sonicAsync==-1){
+		return;
+	};
+	if(!sonicAsync||sonicAsync.set.sampleRate!=sampleRate){
+		//实时处理只能用异步操作，不能用同步方法，否则必然卡顿
+		sonicAsync=Recorder.Sonic.Async({sampleRate:sampleRate});
+		sonicInfo={};
+		if(!sonicAsync){
+			sonicAsync=-1;
+			reclog("不能开启Sonic.Async，浏览器不支持WebWorker操作，降级不变速变调",1);
+			return;
+		};
+	};
+	
+	sonicAsync.setPitch(sonicCtrlSet.pitch);
+	sonicAsync.setRate(sonicCtrlSet.rate);
+	sonicAsync.setSpeed(sonicCtrlSet.speed);
+	sonicAsync.setVolume(sonicCtrlSet.volume);
+	
+	var newBuffers=sonicInfo.buffers||[];
+	var newBufferSize=sonicInfo.bufferSize||0;
+	var blockSize=sampleRate/1000*sonicCtrlSet.buffer;//缓冲0-1000ms的数据进行处理，200ms以上可避免引入大量杂音
+	var lastIdx=buffers.length-1;
+	for(var i=newBufferIdx;i<=lastIdx;i++){
+		newBuffers.push(buffers[i]);//copy出来，异步onProcess会清空这些数组
+		newBufferSize+=buffers[i].length;
+	};
+	
+	if(newBufferSize<blockSize){
+		setTimeout(function(){
+			asyncEnd();//缓冲未满，此时并未处理，但也需要进行异步回调
+		});
+	}else{
+		var buffer=newBuffers[0]||[];
+		if(newBuffers.length>1){
+			buffer=Recorder.SampleData(newBuffers,sampleRate,sampleRate).data;
+		};
+		newBuffers=[];
+		newBufferSize=0;
+		var sizeOld=buffer.length,sizeNew=0;
+		
+		//推入后台异步转换
+		sonicAsync.input(buffer,function(pcm){
+			buffers[lastIdx]=buffer;//pcm;此处不篡改buffers，仅仅用于播放 //写回buffers，放到调用时的最后一个位置即可 ，其他内容已在开启异步模式时已经被自动替换成了空数组
+			
+			if(sonicCtrlSet.play){
+				DemoFragment.PlayBuffer(sonicInfo,pcm,sampleRate);
+			};
+			
+			asyncEnd();//完成处理必须进行回调
+		});
+	};
+	
+	sonicInfo.buffers=newBuffers;
+	sonicInfo.bufferSize=newBufferSize;
+	
+	return true;
 };
 
 
@@ -124,8 +191,11 @@ Runtime.Ctrls([
 	<div><span>Speed:</span><input class="sonicCtrlInput sonicCtrlSpeed" style="width:60px"> 慢放<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">快放，变速不变调（快放慢放）</div>\
 	<div><span>Rate:</span><input class="sonicCtrlInput sonicCtrlRate" style="width:60px"> 缓重<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">尖锐，变速变调</div>\
 	<div><span>Volume:</span><input class="sonicCtrlInput sonicCtrlVolume" style="width:60px"> 调低<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">调高，调整音量</div>\
+	\
+	<div style="border-top: 1px solid #eee;margin-top: 10px;"><span>处理缓冲:</span><input class="sonicCtrlInput sonicCtrlBuffer" style="width:60px">ms 0ms<input type="range" class="sonicCtrlRange sonicCtrlBufferRange" min="0" max="1000" step="100" value="200">1000ms，控制缓冲大小减少转换引入的杂音，0不缓冲</div>\
+	<div><span>播放反馈:</span><input class="sonicCtrlInput sonicCtrlPlay" style="width:60px"> 不播放 <input type="range" class="sonicCtrlRange" min="0" max="1" step="1" value="1">实时播放反馈</div>\
 </div>'}
-	,{name:"重新转换",click:"recTransform"}
+	,{name:"重新转换",click:"recTransformAll"}
 	,{name:"重置设置",click:"resetCtrl"}
 	
 	,{choiceFile:{
@@ -134,7 +204,7 @@ Runtime.Ctrls([
 				Runtime.LogAudio(data.srcBlob,data.duration,{set:data},"已解码"+fileName);
 				
 				rec=null;
-				transform([data.data],data.sampleRate);
+				transformAll([data.data],data.sampleRate);
 				
 				endCall();
 			},function(msg){
@@ -145,11 +215,16 @@ Runtime.Ctrls([
 	}}
 ]);
 
+var sonicCtrlSet={};
+$(".sonicCtrlInput").bind("change",function(e){
+	sonicCtrlSet[/sonicCtrl([^ ]+)$/.exec(e.target.className)[1].toLowerCase()]=+e.target.value;
+});
 $(".sonicCtrlRange").bind("change",function(e){
-	$(e.target).parent().find(".sonicCtrlInput").val(/\d+\.\d+/.exec(e.target.value+".0")[0]);
+	$(e.target).parent().find(".sonicCtrlInput").val(/\d+\.\d+/.exec(e.target.value+".0")[0]).change();
 }).change();
 var resetCtrl=function(){
 	$(".sonicCtrlRange").val(1).change();
+	$(".sonicCtrlBufferRange").val(200).change();
 };
 
 
@@ -159,17 +234,24 @@ Runtime.Import([
 	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
 	,{url:RootFolder+"/src/extensions/sonic.js",check:function(){return !Recorder.Sonic}}
+	
+	,{url:RootFolder+"/assets/runtime-codes/fragment.playbuffer.js",check:function(){return !window.DemoFragment||!DemoFragment.PlayBuffer}}//引入DemoFragment.PlayBuffer
 ]);
 
 //调用录音
 var rec;
 function recStart(){
+	window.sonicAsync&&sonicAsync.flush();
+	window.sonicAsync=null;
+	
 	rec=Recorder({
 		type:"mp3"
 		,sampleRate:16000
 		,bitRate:16
-		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
 			Runtime.Process.apply(null,arguments);
+			
+			return transformBufferPlayOnly(buffers,bufferSampleRate,newBufferIdx,asyncEnd);
 		}
 	});
 	var t=setTimeout(function(){
@@ -188,7 +270,7 @@ function recStop(){
 	rec.stop(function(blob,duration){
 		Runtime.LogAudio(blob,duration,rec);
 		
-		recTransform();
+		recTransformAll();
 	},function(msg){
 		Runtime.Log("录音失败:"+msg, 1);
 	},true);
