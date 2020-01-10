@@ -141,7 +141,7 @@ platform.Start=function(set,success,fail){
 		}
 	});
 };
-platform.Stop=function(success,failx){
+platform.Stop=function(successx,failx){
 	var fail=function(msg){
 		failx("录音失败："+(msg.errMsg||msg));
 	};
@@ -166,7 +166,7 @@ platform.Stop=function(success,failx){
 			};
 			var blob=new Blob([u8arr.buffer], {type:list0.mime});
 			
-			success(blob,list0.duration);
+			successx(blob,list0.duration);
 			return;
 		};
 		
@@ -190,7 +190,7 @@ platform.Stop=function(success,failx){
 				for(var k in rec.set){
 					set[k]=rec.set[k];
 				};
-				success(blob,duration);
+				successx(blob,duration);
 			},fail);
 		};
 		
@@ -231,6 +231,11 @@ platform.Stop=function(success,failx){
 	
 	var mediaIds=[];
 	var stopFn=function(){
+		if(!successx){//仅清理资源的直接返回，避免进行上传和下载操作
+			fail("仅清理资源");
+			return;
+		};
+		
 		var upIds=[];
 		for(var i=0;i<timeouts.length;i++){
 			upIds.push(timeouts[i].res.localId);

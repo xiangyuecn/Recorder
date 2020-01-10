@@ -35,6 +35,15 @@ java收到js发起的`RecordAppJsBridge.request`请求，解析请求数据参�
 Android端的录音还算完美，比IOS的轻松很多。
 
 
+## 需要权限
+1. `android.permission.RECORD_AUDIO`
+2. `android.permission.MODIFY_AUDIO_SETTINGS`
+
+
+## 如何接入使用
+请阅读[RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java)文件开头的注释文档，可直接copy此文件到你的项目中使用；支持新开发WebView界面，或对已有的WebView实例升级支持RecordApp。
+
+
 ## 为什么不用UserAgent来识别App环境
 
 通过修改WebView的UA来让H5、服务器判断是不是在App里面运行的，此方法非常简单而且实用。但有一个致命缺陷，当UA数据很敏感的场景下，虽然方便了我方H5、服务器来识别这个App，但也同时也暴露给了任何在此WebView中发起的请求，不可避免的会将我们的标识信息随请求而发送给第三方（虽然可通过额外编程把信息抹掉，但代价太大了）。IOS不动UA基本上别人的服务器几乎不太可能识别出我们的App，Android神一样的把包名添加到了X-Requested-With请求头中，还能不能讲理了。

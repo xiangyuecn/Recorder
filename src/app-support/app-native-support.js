@@ -91,6 +91,11 @@ platform.Stop=function(success,fail){
 				onRecFn.param[k]=rec.set[k];
 			};
 		};
+		if(!success){
+			end();
+			failCall("仅清理资源");
+			return;
+		};
 		rec.stop(function(blob,duration){
 			console.log("rec encode end")
 			end();

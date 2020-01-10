@@ -223,15 +223,21 @@ Default.Stop=function(success,fail){
 			appRec.appSet[k]=appRec.set[k];
 		};
 	};
+	
+	var stopFail=function(msg){
+		end();
+		fail(msg);
+		App.__Rec=null;
+	};
+	if(!success){
+		stopFail("仅清理资源");
+		return;
+	};
 	appRec.stop(function(blob,duration){
 		end();
 		success(blob,duration);
 		App.__Rec=null;
-	},function(msg){
-		end();
-		fail(msg);
-		App.__Rec=null;
-	});
+	},stopFail);
 };
 
 
@@ -380,7 +386,7 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 
 
 /*
-请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调，调用start前需先至少调用一次此方法
+请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调，调用start前需先至少调用一次此方法；请求权限后如果不使用了，不管有没有调用Start，至少要调用一次Stop来清理可能持有的资源。
 success:fn() 有权限时回调
 fail:fn(errMsg,isUserNotAllow) 没有权限或者不能录音时回调，如果是用户主动拒绝的录音权限，除了有错误消息外，isUserNotAllow=true，方便程序中做不同的提示，提升用户主动授权概率
 */
@@ -446,6 +452,8 @@ success:fn(blob,duration)	结束录音时回调
 	duration:123 //音频持续时间
 	
 fail:fn(errMsg) 录音出错时回调
+
+本方法可以用来清理持有的资源，如果不提供success参数=null时，将不会进行音频编码操作，只进行清理完可能持有的资源后走fail回调
 */
 ,Stop:function(success,fail){
 	var cur=App.Current;
@@ -454,9 +462,9 @@ fail:fn(errMsg) 录音出错时回调
 		return;
 	};
 	
-	cur.Stop(function(blob,duration){
+	cur.Stop(!success?null:function(blob,duration){
 		console.log("结束录音"+blob.size+"b "+duration+"ms",blob);
-		success&&success(blob, duration);
+		success(blob, duration);
 	},function(msg){
 		console.log("结束录音失败："+msg);
 		fail&&fail(msg);

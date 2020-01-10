@@ -87,7 +87,7 @@ pre{
 
 <script>
 //兼容环境
-var PageLM="2019-11-7 21:49:55";
+var PageLM="2020-1-10 11:52:57";
 
 function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
@@ -183,6 +183,8 @@ RandomKey.idx=0;
 	<div class="pd btns">
 		<button onclick="recstart()">录制</button>
 		<button onclick="recstop()">停止</button>
+		
+		<button onclick="recstopX()" style="margin-left:60px;padding:2px 5px;">停止(仅清理)</button>
 	</div>
 	<div class="pd recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
@@ -383,6 +385,14 @@ function recstart(call){
 	},function(err){
 		call(RecordApp.Current.Key+"打开失败："+err);
 	});
+};
+function recstopX(){
+	RecordApp.Stop(
+		null //success传null就只会清理资源，不会进行转码
+		,function(msg){
+			reclog("已清理，错误信息："+msg);
+		}
+	);
 };
 var recblob={};
 function recstop(call){
