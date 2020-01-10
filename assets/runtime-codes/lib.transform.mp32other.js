@@ -98,6 +98,16 @@ var test=function(mp3Blob){
 Runtime.Ctrls([
 	{name:"开始mp3录音",click:"recStart"}
 	,{name:"结束录音并转换",click:"recStop"}
+	
+	,{choiceFile:{
+		multiple:false
+		,name:"mp3"
+		,mime:"audio/mp3"
+		,process:function(fileName,arrayBuffer,filesCount,fileIdx,endCall){
+			test(new Blob([arrayBuffer]));
+			endCall();
+		}
+	}}
 ]);
 
 
@@ -142,39 +152,4 @@ function recStop(){
 	},function(msg){
 		Runtime.Log("录音失败:"+msg, 1);
 	});
-};
-
-
-
-
-//*****拖拽或者选择文件******
-$(".choiceFileBox").remove();
-Runtime.Log('<div class="choiceFileBox">\
-	<div class="dropFile" onclick="$(\'.choiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; margin-top:30px; text-align:center;cursor: pointer;">\
-	拖拽mp3到这里 / 点此选择，并转换\
-	</div>\
-	<input type="file" class="choiceFile" style="display:none" accept="audio/mp3">\
-</div>');
-$(".dropFile").bind("dragover",function(e){
-	e.preventDefault();
-}).bind("drop",function(e){
-	e.preventDefault();
-	
-	readChoiceFile(e.originalEvent.dataTransfer.files);
-});
-$(".choiceFile").bind("change",function(e){
-	readChoiceFile(e.target.files);
-});
-function readChoiceFile(files){
-	if(!files.length){
-		return;
-	};
-	
-	var file = files[0];
-	Runtime.Log("发现"+files.length+"个文件，只转换第1个:"+file.name+"，开始转换...");
-	var reader = new FileReader();
-	reader.onload = function(e){
-		test(new Blob([e.target.result]));
-	}
-	reader.readAsArrayBuffer(file);
 };

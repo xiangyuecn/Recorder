@@ -173,6 +173,22 @@ Runtime.Ctrls([
 	,{name:"爆笑音效",click:"bgmSet('xiao');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-xiao"}
 	,{name:"晕倒音效",click:"bgmSet('yun');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-yun"}
 	,{name:"转场音效",click:"bgmSet('scene');Date.now",cls:"mixMinBtn mixMinBtnOff mixBtn-scene"}
+	
+	,{choiceFile:{
+		title:"替换混音BGM"
+		,process:function(fileName,arrayBuffer,filesCount,fileIdx,endCall){
+			if(fileIdx==0){
+				loadWait=0;
+				musics=[];
+			};
+			decodeAudio(fileName,arrayBuffer,function(){
+				if(fileIdx+1>=filesCount){
+					Runtime.Log("素材替换完毕，可以开始录音了",2);
+				};
+				endCall();
+			});
+		}
+	}}
 ]);
 
 
@@ -234,51 +250,6 @@ function recStop(){
 };
 
 
-//*****拖拽或者选择文件******
-$(".choiceFileBox").remove();
-Runtime.Log('<div class="choiceFileBox">\
-	<div class="dropFile" onclick="$(\'.choiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; text-align:center;cursor: pointer;">\
-	拖拽多个音乐文件到这里 / 点此选择，替换混音BGM\
-	</div>\
-	<input type="file" class="choiceFile" style="display:none" accept="audio/*" multiple="multiple">\
-</div>');
-$(".dropFile").bind("dragover",function(e){
-	e.preventDefault();
-}).bind("drop",function(e){
-	e.preventDefault();
-	
-	readChoiceFile(e.originalEvent.dataTransfer.files);
-});
-$(".choiceFile").bind("change",function(e){
-	readChoiceFile(e.target.files);
-});
-function readChoiceFile(files){
-	if(!files.length){
-		return;
-	};
-	
-	Runtime.Log("发现"+files.length+"个文件，开始替换素材...");
-	loadWait=0;
-	musics=[];
-	
-	var idx=-1;
-	var run=function(){
-		idx++;
-		if(idx>=files.length){
-			Runtime.Log("素材替换完毕，可以开始录音了",2);
-			return;
-		};
-		
-		var file = files[idx];
-		var reader = new FileReader();
-		reader.onload = function(e){
-			decodeAudio(file.name,e.target.result,run);
-		}
-		reader.readAsArrayBuffer(file);
-	};
-	run();
-};
-
 
 
 //*****加载和解码素材********
@@ -301,33 +272,18 @@ var load=function(name,bgName,call){
 	xhr.send();
 };
 var decodeAudio=function(name,arr,call,bgName){
-	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
-		Runtime.Log("浏览器不支持音频解码",1);
-		return;
-	};
-	var srcBlob=new Blob([arr],{type:"audio/"+(/[^.]+$/.exec(name)||[])[0]});
-	var ctx=Recorder.Ctx;
-	ctx.decodeAudioData(arr,function(raw){
-		var src=raw.getChannelData(0);
-		var sampleRate=raw.sampleRate;
-		console.log(name,raw,srcBlob);
+	Runtime.DecodeAudio(name,arr,function(data){
+		Runtime.LogAudio(data.srcBlob,data.duration,{set:data},"已解码"+name);
 		
-		var pcm=new Int16Array(src.length);
-		for(var i=0;i<src.length;i++){//floatTo16BitPCM 
-			var s=Math.max(-1,Math.min(1,src[i]));
-			s=s<0?s*0x8000:s*0x7FFF;
-			pcm[i]=s;
-		};
-		
-		Runtime.LogAudio(srcBlob,Math.round(src.length/sampleRate*1000),{set:{sampleRate:sampleRate}},"已解码"+name);
 		if(bgName){
-			musicBGs[bgName]={pcm:pcm,sampleRate:sampleRate};
+			musicBGs[bgName]={pcm:data.data,sampleRate:data.sampleRate};
 		}else{
-			musics.push({pcm:pcm,sampleRate:sampleRate});
+			musics.push({pcm:data.data,sampleRate:data.sampleRate});
 		};
 		call();
-	},function(e){
-		Runtime.Log("audio解码失败:"+e.message,1);
+	},function(msg){
+		Runtime.Log(msg,1);
+		call();
 	});
 };
 var loadAll=function(){

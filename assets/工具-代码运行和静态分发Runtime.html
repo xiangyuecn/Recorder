@@ -147,6 +147,7 @@ var WaveViewBak=Recorder.WaveView;
 var ProcessWaveView;
 var LogAudios=[0];
 
+window.NOOP=function(){};
 window.RootFolder="..";
 window.Runtime={
 	LogAudios:LogAudios
@@ -161,6 +162,8 @@ window.Runtime={
 			var o=ctrls[i];
 			if(o.html){
 				html.push(o.html);
+			}else if(o.choiceFile){
+				Runtime.ViewChoiceFile(o.choiceFile);
 			}else{
 				html.push('<button class="mainBtn '+o.cls+'" onclick="'+o.click+'()">'+o.name+'</button>');
 			};
@@ -211,6 +214,42 @@ window.Runtime={
 		$(".ctrlProcessT").html(bufferDuration+"/"+powerLevel);
 		
 		ProcessWaveView.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+	}
+	
+	,DecodeAudio:function(fileName,arrayBuffer,True,False){
+		True=True||NOOP;
+		False=False||NOOP;
+		if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+			False("浏览器不支持音频解码");
+			return;
+		};
+		var type=(/[^.]+$/.exec(fileName)||[])[0]||"";
+		var srcBlob=new Blob([arrayBuffer],{type:type&&("audio/"+type)||""});
+		
+		var ctx=Recorder.Ctx;
+		ctx.decodeAudioData(arrayBuffer,function(raw){
+			var src=raw.getChannelData(0);
+			var sampleRate=raw.sampleRate;
+			console.log(fileName,raw,srcBlob);
+			
+			var pcm=new Int16Array(src.length);
+			for(var i=0;i<src.length;i++){//floatTo16BitPCM 
+				var s=Math.max(-1,Math.min(1,src[i]));
+				s=s<0?s*0x8000:s*0x7FFF;
+				pcm[i]=s;
+			};
+			
+			True({
+				sampleRate:sampleRate
+				,duration:Math.round(src.length/sampleRate*1000)
+				,srcBlob:srcBlob
+				,type:type
+				,data:pcm
+			});
+		},function(e){
+			console.error("audio解码失败",e);
+			False(fileName+"解码失败:"+(e&&e.message||"-"));
+		});
 	}
 	
 	/*显示日志内容，color:0默认，1红色，2绿色，其他指定颜色*/
@@ -348,6 +387,61 @@ Runtime.LogAudioDown64=function(key, cls){
 	};
 	reader.readAsDataURL(o.blob);
 };
+
+
+
+Runtime.ViewChoiceFile=function(set){
+	set=$.extend({
+		multiple:true
+		,name:"音乐"
+		,title:"转换"
+		,mime:"audio/*"
+		,process:NOOP //fn(fileName,arrayBuffer,filesCount,fileIdx,endCall)
+	},set);
+	
+	$(".RuntimeChoiceFileBox").remove();
+	Runtime.Log('\
+<div class="RuntimeChoiceFileBox">\
+	<div class="RuntimeChoiceDropFile" onclick="$(\'.RuntimeChoiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; text-align:center;cursor: pointer;">\
+	拖拽'+(set.multiple?"多":"一")+'个'+set.name+'文件到这里 / 点此选择，并'+set.title+'\
+	</div>\
+	<input type="file" class="RuntimeChoiceFile" style="display:none" accept="'+set.mime+'" '+(set.multiple?'multiple="multiple"':'')+'>\
+</div>');
+	$(".RuntimeChoiceDropFile").bind("dragover",function(e){
+		e.preventDefault();
+	}).bind("drop",function(e){
+		e.preventDefault();
+		
+		readChoiceFile(e.originalEvent.dataTransfer.files);
+	});
+	$(".RuntimeChoiceFile").bind("change",function(e){
+		readChoiceFile(e.target.files);
+	});
+	function readChoiceFile(files){
+		if(!files.length){
+			return;
+		};
+		
+		Runtime.Log("发现"+files.length+"个文件，开始"+set.title+"...");
+		
+		var idx=-1;
+		var run=function(){
+			idx++;
+			if(idx>=files.length){
+				return;
+			};
+			
+			var file = files[idx];
+			var reader = new FileReader();
+			reader.onload = function(e){
+				set.process(file.name,e.target.result,files.length,idx,run);
+			}
+			reader.readAsArrayBuffer(file);
+		};
+		run();
+	};
+};
+
 
 })();
 </script>
@@ -819,8 +913,10 @@ AddDemoCode(999,"self_base_demo","【教程】本工具使用示例，和Recorde
 
 	Runtime.Import(jsList) 导入js列表，只能调用一次，jsList:[{url:"",check:fn()},...] check返回false跳过这条的导入
 
-	Runtime.Ctrls(ctrls) 在控制区显示按钮，只能调用一次，ctrls:[{html:"html代码"},{name:"按钮名称",click:"函数名称",cls:"class name"},...]
-
+	Runtime.Ctrls(ctrls) 在控制区显示按钮，只能调用一次，ctrls:[{name:"按钮名称",click:"函数名称",cls:"class name"},{html:"html代码"},{choiceFile:{multiple:true,name:"音乐",title:"转换",mime:"audio/*",process:fn(fileName,arrayBuffer,filesCount,fileIdx,endCall)}},...]
+	
+	Runtime.DecodeAudio(fileName,arrayBuffer,True,False) 解码一个音频文件，True({sampleRate:采样率,duration:音频时长,srcBlob:Blob对象,type:从文件名中提取的音频类型,data:[Int16,...]pcm数据})，False(errMsg)
+	
 	Runtime.Log(msgHtml,color) 在日志区显示日志html，color:0默认，1红色，2绿色，其他指定颜色
 
 	Runtime.LogAudio(blob,duration,rec,msgHtml) 在日志区显示一个音频的日志信息，rec只要对象内有set属性就行

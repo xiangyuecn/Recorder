@@ -127,6 +127,22 @@ Runtime.Ctrls([
 </div>'}
 	,{name:"重新转换",click:"recTransform"}
 	,{name:"重置设置",click:"resetCtrl"}
+	
+	,{choiceFile:{
+		process:function(fileName,arrayBuffer,filesCount,fileIdx,endCall){
+			Runtime.DecodeAudio(fileName,arrayBuffer,function(data){
+				Runtime.LogAudio(data.srcBlob,data.duration,{set:data},"已解码"+fileName);
+				
+				rec=null;
+				transform([data.data],data.sampleRate);
+				
+				endCall();
+			},function(msg){
+				Runtime.Log(msg,1);
+				endCall();
+			});
+		}
+	}}
 ]);
 
 $(".sonicCtrlRange").bind("change",function(e){
@@ -176,77 +192,4 @@ function recStop(){
 	},function(msg){
 		Runtime.Log("录音失败:"+msg, 1);
 	},true);
-};
-
-
-
-//*****拖拽或者选择文件******
-$(".choiceFileBox").remove();
-Runtime.Log('<div class="choiceFileBox">\
-	<div class="dropFile" onclick="$(\'.choiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; text-align:center;cursor: pointer;">\
-	拖拽多个音乐文件到这里 / 点此选择，并转换\
-	</div>\
-	<input type="file" class="choiceFile" style="display:none" accept="audio/*" multiple="multiple">\
-</div>');
-$(".dropFile").bind("dragover",function(e){
-	e.preventDefault();
-}).bind("drop",function(e){
-	e.preventDefault();
-	
-	readChoiceFile(e.originalEvent.dataTransfer.files);
-});
-$(".choiceFile").bind("change",function(e){
-	readChoiceFile(e.target.files);
-});
-function readChoiceFile(files){
-	if(!files.length){
-		return;
-	};
-	
-	Runtime.Log("发现"+files.length+"个文件，开始转换...");
-	
-	var idx=-1;
-	var run=function(){
-		idx++;
-		if(idx>=files.length){
-			return;
-		};
-		
-		var file = files[idx];
-		var reader = new FileReader();
-		reader.onload = function(e){
-			decodeAudio(file.name,e.target.result,run);
-		}
-		reader.readAsArrayBuffer(file);
-	};
-	run();
-};
-var decodeAudio=function(name,arr,call){
-	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
-		Runtime.Log("浏览器不支持音频解码",1);
-		return;
-	};
-	var srcBlob=new Blob([arr],{type:"audio/"+(/[^.]+$/.exec(name)||[])[0]});
-	var ctx=Recorder.Ctx;
-	ctx.decodeAudioData(arr,function(raw){
-		var src=raw.getChannelData(0);
-		var sampleRate=raw.sampleRate;
-		console.log(name,raw,srcBlob);
-		
-		var pcm=new Int16Array(src.length);
-		for(var i=0;i<src.length;i++){//floatTo16BitPCM 
-			var s=Math.max(-1,Math.min(1,src[i]));
-			s=s<0?s*0x8000:s*0x7FFF;
-			pcm[i]=s;
-		};
-		
-		Runtime.LogAudio(srcBlob,Math.round(src.length/sampleRate*1000),{set:{sampleRate:sampleRate}},"已解码"+name);
-		
-		rec=null;
-		transform([pcm],sampleRate);
-		
-		call();
-	},function(e){
-		Runtime.Log("audio解码失败:"+e.message,1);
-	});
 };
