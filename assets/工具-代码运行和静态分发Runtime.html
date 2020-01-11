@@ -63,7 +63,7 @@ a:hover{
 	background: #f60;
 	color:#fff;
 	padding: 0 15px;
-	margin-right:20px;
+	margin:3px 20px 3px 0;
 	line-height: 36px;
 	height: 36px;
 	overflow: hidden;
@@ -211,7 +211,7 @@ window.Runtime={
 		};
 		
 		$(".ctrlProcessX").css("width",powerLevel+"%");
-		$(".ctrlProcessT").html(bufferDuration+"/"+powerLevel);
+		$(".ctrlProcessT").text(formatMs(bufferDuration,1)+" / "+powerLevel);
 		
 		ProcessWaveView.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
 	}
@@ -265,12 +265,19 @@ window.Runtime={
 		var id=LogAudios.length;
 		LogAudios.push({blob:blob,set:$.extend({},set),duration:duration});
 		
-		Runtime.Log((msg||"已录制")+":"+(set.bitRate||"-")+"kbps "+(set.sampleRate||"-")+"hz "+blob.size+"b ["+(set.type||"-")+"]"+duration+'ms <button onclick="Runtime.LogAudioDown(\''+id+'\')">下载</button> <button onclick="Runtime.LogAudioPlay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="LogAudio_'+id+'"></span>');
+		Runtime.Log((msg||"已录制")+":"+(set.bitRate||"-")+"kbps "+(set.sampleRate||"-")+"hz "+blob.size+"b ["+(set.type||"-")+"]"+formatMs(duration||0)+'ms <button onclick="Runtime.LogAudioDown(\''+id+'\')">下载</button> <button onclick="Runtime.LogAudioPlay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="LogAudio_'+id+'"></span>');
 	}
 	,LogClear:function(){
 		$(".mainLog").html("");
 		LogAudios.length=1;
 	}
+};
+var formatMs=function(ms,all){
+	var f=Math.floor(ms/60000),m=Math.floor(ms/1000)%60;
+	var s=(all||f>0?(f<10?"0":"")+f+":":"")
+		+(all||f>0||m>0?("0"+m).substr(-2)+"″":"")
+		+("00"+ms%1000).substr(-3);
+	return s;
 };
 $(window).bind("error",function(e){
 	Runtime.Log('【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre>',1);

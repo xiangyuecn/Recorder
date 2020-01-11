@@ -11,6 +11,8 @@
 </head>
 
 <body>
+<div class="main">
+
 <script>
 //这里有几处编译指令，可以忽略掉，因为这个文件可以双击打开、github.io打开；主要的还是通过我的代理服务器来打开，这时候后面的值会生效，因为微信JsSDK只能在绑定的域名下调用。
 var PageSet_RecordAppBaseFolder=/*=:=*/ "../src/" /*<@ "https://xiangyuecn.github.io/Recorder/src/" @>*/;
@@ -72,16 +74,67 @@ var isInstall=false;
 <style>
 body{
 	word-wrap: break-word;
-	background:#fff;
+	background:#f5f5f5 center top no-repeat;
+    background-size: auto 680px;
 }
 pre{
 	white-space:pre-wrap;
 }
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.mainBtn{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin:3px 20px 3px 0;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.mainBtn:active{
+	background: #f00;
+}
+
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+
+
 .pd{
 	padding:0 0 6px 0;
-}
-.btns button{
-	padding: 5px 10px;
 }
 </style>
 
@@ -101,24 +154,22 @@ RandomKey.idx=0;
 ></script>
 
 
-<div>
+<div class="mainBox">
 	<style>
 		.navItem{
 			display:inline-block;
-			width:40%;
+			width:45%;
 			max-width:300px;
-			margin-right:20px;
 			vertical-align: top;
 			background:#eee;
-			border-bottom: 5px solid #ccc;
+			box-shadow: 2px 2px 3px #ddd;
 			color:#666;
 			text-decoration:none;
 			border-radius: 8px;
 			padding: 0 5px 3px;
 		}
 		.navItem.slc{
-			border-bottom: 5px solid #0B1;
-			color:#000;
+			color:#f60;
 		}
 		.navItem:hover{
 			color:#d44;
@@ -132,7 +183,7 @@ RandomKey.idx=0;
 			font-size:12px;
 		}
 	</style>
-	<a class="navItem" href="https://xiangyuecn.github.io/Recorder/">
+	<a class="navItem" style="margin-right:2%;" href="https://xiangyuecn.github.io/Recorder/">
 		<div class="navTitle">Recorder H5</div>
 		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
 	</a>
@@ -141,21 +192,22 @@ RandomKey.idx=0;
 		<div class="navTitle">RecordApp</div>
 		<div class="navDesc">RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view</div>
 	</a>
-</div>
-
-
-
-<div>
-	<div class="pd">
+	
+	<div style="margin-top:8px" class="pd">
 		<span style="font-size:18px;color:#ef6ea8">似乎仅为仅为兼容IOS而生</span>
 		RecordApp会加载Recorder，因此算是完全兼容Recorder。在开启了原生App支持(Platforms.Native)的情况下，Hybrid App内会走App原生录音；在开启IOS微信支持(Platforms.IOS-Weixin)的情况下，在IOS微信内会走微信JsSDK录音；其他情况走Recorder。
 		
 	</div>
-	<div class="pd">
-		GitHub：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample">https://github.com/xiangyuecn/Recorder/ => app-support-sample</a>
+	<div>
+		<span class="lb">GitHub :</span> <a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample">https://github.com/xiangyuecn/Recorder/ => app-support-sample</a>
 	</div>
+</div>
+
+
+
+<div class="mainBox">
 	<div class="pd types">
-		类型:
+		<span class="lb">类型 :</span>
 		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" class="initType" checked>mp3</label>
 		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
 		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine">ogg(beta)</label>
@@ -163,28 +215,30 @@ RandomKey.idx=0;
 		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine,wav">amr(beta)</label>
 	</div>
 	<div class="pd">
-		提示：<span class="typeTips">-</span>
+		<span class="lb">提示 :</span> <span class="typeTips">-</span>
 	</div>
 	<div class="pd">
-		比特率: <input type="text" class="bit" value="16" style="width:60px"> kbps，越大音质越好
+		<span class="lb">比特率 :</span> <input type="text" class="bit" value="16" style="width:60px"> kbps，越大音质越好
 	</div>
 	<div class="pd">
-		采样率: <input type="text" class="sample" value="16000" style="width:60px"> hz，越大细节越丰富
+		<span class="lb">采样率 :</span> <input type="text" class="sample" value="16000" style="width:60px"> hz，越大细节越丰富
 	</div>
 	<div class="pd">
-		JsSDK: <label><input type="checkbox" class="alwaysUseWeixinJS">Android微信内也用JsSDK</label>
+		<span class="lb">JsSDK :</span> <label><input type="checkbox" class="alwaysUseWeixinJS">Android微信内也用JsSDK</label>
 	</div>
+	<div>
+		<span class="lb">AppUseJS :</span> <label><input type="checkbox" class="alwaysAppUseJS">App里面总是使用Recorder H5录音</label>
+	</div>
+</div>
+
+<div class="mainBox">
 	<div class="pd">
-		AppUseJS: <label><input type="checkbox" class="alwaysAppUseJS">App里面总是使用Recorder H5录音</label>
-	</div>
-	<div class="pd btns">
-		<button onclick="recreq()">请求权限测试</button>
-	</div>
-	<div class="pd btns">
-		<button onclick="recstart()">录制</button>
-		<button onclick="recstop()">停止</button>
+		<button  class="mainBtn"onclick="recreq()">请求权限</button>
 		
-		<button onclick="recstopX()" style="margin-left:60px;padding:2px 5px;">停止(仅清理)</button>
+		<button class="mainBtn" onclick="recstart()">录制</button>
+		<button class="mainBtn" onclick="recstop()" style="margin-right:80px;">停止</button>
+		
+		<button onclick="recstopX()">停止(仅清理)</button>
 	</div>
 	<div class="pd recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
@@ -194,52 +248,50 @@ RandomKey.idx=0;
 	</div>
 	<div class="pd">
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
-		<input type="checkbox" class="recwaveSet" checked>
 	</div>
-	<div class="pd webrtcBox">
+	<div class="webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
 		<div class="webrtcView" style="display:none;"></div>
 	</div>
-	
-	<hr>
+</div>
+
+
+<div class="mainBox">
 	<audio class="recPlay" style="width:100%"></audio>
 	<div class="reclog"></div>
-	
-	<hr>
-	<div class="pd">
-		【测试App】
-		IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
-		
-		，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
-	</div>
-	
-	<div class="recinfo"></div>
 </div>
-<script type="text/template" class="tp_recinfo">
-<hr/>
-浏览器环境情况:
-<pre>
-IsWx:{fn:!!RecordApp.IsWx}
-IsApp:{isApp}
-Platforms:{fn:RecordApp.Current.Key}
 
-AudioContext:{fn:!!window.AudioContext}
-webkitAudioContext:{fn:!!window.webkitAudioContext}
-mediaDevices:{fn:!!navigator.mediaDevices}
-mediaDevices.getUserMedia:{fn:!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}
-navigator.getUserMedia:{fn:!!navigator.getUserMedia}
-navigator.webkitGetUserMedia:{fn:!!navigator.webkitGetUserMedia}
 
-URL:{fn:location.href.replace(/#.+/g,"")}
-UA:{fn:navigator.userAgent}
+<div class="mainBox">
+	<span class="lb">测试App :</span>
+	IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
+	
+	，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+</div>
 
-RecordApp库修改时间（有可能修改了忘改）:{fn:RecordApp.LM}
-Recorder库修改时间（有可能修改了忘改）:{fn:Recorder.LM}
-本页面修改时间（有可能修改了忘改）：{fn:PageLM}
+<div class="mainBox">
+	<span class="lb">浏览器环境情况 :</span>
+<pre class="recinfoCode">
+IsWx:${!!RecordApp.IsWx}
+IsApp:${isApp}
+Platforms:${RecordApp.Current.Key}
 
+AudioContext:${!!window.AudioContext}
+webkitAudioContext:${!!window.webkitAudioContext}
+mediaDevices:${!!navigator.mediaDevices}
+mediaDevices.getUserMedia:${!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}
+navigator.getUserMedia:${!!navigator.getUserMedia}
+navigator.webkitGetUserMedia:${!!navigator.webkitGetUserMedia}
+
+URL:${location.href.replace(/#.+/g,"")}
+UA:${navigator.userAgent}
+
+RecordApp库修改时间（有可能修改了忘改）:${RecordApp.LM}
+Recorder库修改时间（有可能修改了忘改）:${Recorder.LM}
+本页面修改时间（有可能修改了忘改）：${PageLM}
 </pre>
-</script>
+</div>
 
 
 
@@ -350,7 +402,7 @@ function recstart(call){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
-	var wave,waveSet=$(".recwaveSet")[0].checked;
+	var wave;
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
@@ -366,9 +418,9 @@ function recstart(call){
 		,sampleRate:sample
 		,onProcess:function(buffers,level,time,sampleRate){
 			$(".recpowerx").css("width",level+"%");
-			$(".recpowert").html(time+"/"+level);
+			$(".recpowert").text(formatMs(time,1)+" / "+level);
 			
-			waveSet && wave && wave.input(buffers[buffers.length-1],level,sampleRate);
+			wave && wave.input(buffers[buffers.length-1],level,sampleRate);
 			
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(set,realTimeSendTime,buffers,sampleRate);
@@ -411,7 +463,7 @@ function recstopFn(call,isClick,endCall,rec){
 	var add=function(time,tag,blob,set){
 		var id=RandomKey(16);
 		recblob[id]={blob:blob,set:$.extend({},set),time:time};
-		reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+		reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 	};
 	
 	if(!isClick){
@@ -476,6 +528,13 @@ var intp=function(s,len){
 	s=s==null?"-":s+"";
 	if(s.length>=len)return s;
 	return ("_______"+s).substr(-len);
+};
+var formatMs=function(ms,all){
+	var f=Math.floor(ms/60000),m=Math.floor(ms/1000)%60;
+	var s=(all||f>0?(f<10?"0":"")+f+":":"")
+		+(all||f>0||m>0?("0"+m).substr(-2)+"″":"")
+		+("00"+ms%1000).substr(-3);
+	return s;
 };
 function recplay(key){
 	var o=recblob[key];
@@ -592,9 +651,9 @@ $(".realTimeSendSet").bind("change",function(e){
 
 
 
-<hr>
-<div>
-<h3>移动端js运行简易控制台</h3>
+<div class="mainBox">
+<div style="padding-bottom:8px"><span class="lb">移动端js运行简易控制台</span></div>
+
 <textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">"AlwaysUseWeixinJS: "+RecordApp.AlwaysUseWeixinJS+"\nAlwaysAppUseJS: "+RecordApp.AlwaysAppUseJS</textarea>
 <input type="button" value="执行js" onclick="cmdExec()">
 <textarea id="cmdExecVal" style="width:300px;height:160px;" placeholder="运行结果"></textarea>
@@ -616,7 +675,7 @@ var cmdExec=function(){
 };
 </script>
 
-<h3>ConsoleX:</h3>
+<div style="padding-bottom:8px"><span class="lb">ConsoleX</span></div>
 <textarea class="Xlog" style="width:300px;height:160px;"></textarea>
 <script>
 var XLogInput=$(".Xlog")[0];
@@ -768,7 +827,7 @@ function onInstall(){
 	var isApp;
 	RecordApp.Platforms.Native.Config.IsApp(function(v){isApp=v;});
 	
-	$(".recinfo").html(BuildHtml($(".tp_recinfo").html(),{isApp:isApp}));
+	$(".recinfoCode").text($(".recinfoCode").text().replace(/\$\{(.+?)\}/g,function(a,b){return eval(b)}));
 	if(!/:\/\/[^\/]*jiebian.life(\/|$)/.test(location.href)){
 		reclog("<span style='color:red'>当前域名不在微信JsSDK绑定的域名中，无法使用JsSDK相关功能</span>");
 	}else{
@@ -793,5 +852,6 @@ DonateWidget({
 });
 </script>
 
+</div>
 </body>
 </html>

@@ -35,6 +35,8 @@ console.log(
 </head>
 
 <body>
+<div class="main">
+
 <!--加载核心库，其他类型支持库在下面根据用户点击选择加载-->
 <script src="src/recorder-core.js"></script>
 
@@ -46,16 +48,67 @@ console.log(
 <style>
 body{
 	word-wrap: break-word;
-	background:#fff;
+	background:#f5f5f5 center top no-repeat;
+    background-size: auto 680px;
 }
 pre{
 	white-space:pre-wrap;
 }
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.btns button{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin:3px 20px 3px 0;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.btns button:active{
+	background: #f00;
+}
+
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+
+
 .pd{
 	padding:0 0 6px 0;
-}
-.btns button{
-	padding: 5px 10px;
 }
 </style>
 
@@ -63,7 +116,6 @@ pre{
 //兼容环境
 var PageLM="2020-1-9 02:11:37";
 
-function BuildHtml(html,o,notEncode,loop){return o||(o={}),html=(null==html?"":html+"").replace(/\{(fn:)?(:)?(.+?)\}/gi,function(a,b,c,code){try{var v=eval(b?code:"o."+code);return v=void 0===v?"":v+"",c||notEncode?v:v}catch(e){return console.log("BuildHtml Fail",a+"\n"+e.stack),""}}),loop&&/\{(fn:)?(.+?)\}/.test(html)&&(html=BuildHtml(html,o,notEncode,loop)),html};
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
 };
@@ -72,24 +124,22 @@ RandomKey.idx=0;
 <script src="assets/ztest-jquery.min-1.9.1.js"></script>
 
 
-<div class="demoHead">
+<div class="demoHead mainBox">
 	<style>
 		.navItem{
 			display:inline-block;
-			width:40%;
+			width:45%;
 			max-width:300px;
-			margin-right:20px;
 			vertical-align: top;
 			background:#eee;
-			border-bottom: 5px solid #ccc;
+			box-shadow: 2px 2px 3px #ddd;
 			color:#666;
 			text-decoration:none;
 			border-radius: 8px;
 			padding: 0 5px 3px;
 		}
 		.navItem.slc{
-			border-bottom: 5px solid #0B1;
-			color:#000;
+			color:#f60;
 		}
 		.navItem:hover{
 			color:#d44;
@@ -103,7 +153,7 @@ RandomKey.idx=0;
 			font-size:12px;
 		}
 	</style>
-	<a class="navItem slc" href="https://xiangyuecn.github.io/Recorder/">
+	<a class="navItem slc" style="margin-right:2%;" href="https://xiangyuecn.github.io/Recorder/">
 		<div class="navTitle">Recorder H5</div>
 		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
 	</a>
@@ -112,6 +162,12 @@ RandomKey.idx=0;
 		<div class="navTitle">RecordApp</div>
 		<div class="navDesc">RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view</div>
 	</a>
+	
+	<div style="margin-top:8px">
+		<span class="lb">GitHub :</span> <a href="https://github.com/xiangyuecn/Recorder">前往GitHub仓库</a>
+		
+		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">在线编辑和运行</a> ， <a href="https://xiangyuecn.github.io/Recorder/assets/demo-vue" target="_blank">vue+webpack测试</a>
+	</div>
 </div>
 
 
@@ -119,11 +175,10 @@ RandomKey.idx=0;
 
 <!-- begin 开始copy源码 -->
 <div class="demoMain">
-	<div class="pd gitUrl">
-		GitHub：<a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a> ， 更多Demo：<a href="https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">在线编辑和运行</a> ， <a href="https://xiangyuecn.github.io/Recorder/assets/demo-vue" target="_blank">vue+webpack测试</a>
-	</div>
+
+<div class="mainBox">
 	<div class="pd">
-		类型:<span class="types">
+		<span class="lb">类型 :</span> <span class="types">
 		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" min="/recorder.mp3.min" class="initType" checked>mp3</label>
 		<label><input type="radio" name="type" value="wav" engine="wav" min="/recorder.wav.min">wav</label>
 		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine" min=",beta-ogg">ogg(beta)</label>
@@ -133,25 +188,32 @@ RandomKey.idx=0;
 		<label><input type="checkbox" class="loadMinJs">请求压缩版</label>
 	</div>
 	<div class="pd">
-		提示：<span class="typeTips">-</span>
+		<span class="lb">提示 :</span> <span class="typeTips">-</span>
 	</div>
 	<div class="pd">
-		比特率: <input type="text" class="bit" value="16" style="width:60px"> kbps，越大音质越好
+		<span class="lb">比特率 :</span> <input type="text" class="bit" value="16" style="width:60px"> kbps，越大音质越好
 	</div>
-	<div class="pd">
-		采样率: <input type="text" class="sample" value="16000" style="width:60px"> hz，越大细节越丰富
+	<div>
+		<span class="lb">采样率 :</span> <input type="text" class="sample" value="16000" style="width:60px"> hz，越大细节越丰富
 	</div>
+</div>
+
+<div class="mainBox">
 	<div class="pd btns">
-		<button onclick="recopen()">打开录音</button>
-		<button onclick="recclose()">关闭录音</button>
-	</div>
-	<div class="pd btns">
-		<button onclick="recstart()">录制</button>
-		<button onclick="recstop()">停止</button>
+		<div>
+			<button onclick="recopen()">打开录音</button>
+			<button onclick="recclose()">关闭录音</button>
+		</div>
 		
-		<button onclick="recpause()" style="margin-left:60px">暂停</button>
-		<button onclick="recresume()">继续</button>
+		<button onclick="recstart()">录制</button>
+		<button onclick="recstop()" style="margin-right:80px">停止</button>
+		
+		<span style="display: inline-block;">
+			<button onclick="recpause()">暂停</button>
+			<button onclick="recresume()">继续</button>
+		</span>
 	</div>
+	
 	<div class="pd recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
 			<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
@@ -164,103 +226,91 @@ RandomKey.idx=0;
 	</div>
 	<div class="pd waveBox">
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
-		<input type="checkbox" class="recwaveSet" checked>
 	</div>
-	<div class="pd webrtcBox">
+	<div class="webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
 		<div class="webrtcView" style="display:none;"></div>
 	</div>
+</div>
 	
-	<hr>
+<div class="mainBox">
 	<audio class="recPlay" style="width:100%"></audio>
 	<div class="reclog"></div>
-	
-	<hr>
-	<div class="pd">
-		<div>
-			<button onclick="resetSonicCtrl()">重置变速变调</button>
-			实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）</div>
-		<div class="sonicCtrlBox" style="margin:5px 0 16px">
-			<style>
-				.sonicCtrlBox span{display:inline-block;width:80px;text-align:right;}
-				.sonicCtrlBox input{text-align:right;}
-			</style>
-			<div><span>Pitch:</span><input class="sonicCtrlInput sonicCtrlPitch" style="width:60px"> 男声<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">女声，变调不变速（会说话的汤姆猫）</div>
-			<div><span>Speed:</span><input class="sonicCtrlInput sonicCtrlSpeed" style="width:60px"> 慢放<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">快放，变速不变调（快放慢放），由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
-			<div><span>Rate:</span><input class="sonicCtrlInput sonicCtrlRate" style="width:60px"> 缓重<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">尖锐，变速变调，由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
-			<div><span>Volume:</span><input class="sonicCtrlInput sonicCtrlVolume" style="width:60px"> 调低<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">调高，调整音量</div>
-			
-			<div style="border-top: 1px solid #eee;margin-top: 10px;"><span>处理缓冲:</span><input class="sonicCtrlInput sonicCtrlBuffer" style="width:60px">ms 0ms<input type="range" class="sonicCtrlRange sonicCtrlBufferRange" min="0" max="1000" step="100" value="200">1000ms，控制缓冲大小减少转换引入的杂音，0不缓冲</div>
-			<div><span>播放反馈:</span><input class="sonicCtrlInput sonicCtrlPlay" style="width:60px"> 不播放 <input type="range" class="sonicCtrlRange" min="0" max="1" step="1" value="1">实时播放反馈</div>
-			
-			<div style="margin-top:10px"><button onclick="sonicRecTransform()">重新转换当前录音</button></div>
-		</div>
-	</div>
-	
-	<hr>
-	<div class="pd">
-		<label><input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）</label>
-		<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
-	</div>
-	
-	<hr>
-	<div class="pd">
-		【测试App】
-		IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
-		
-		，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
-	</div>
-	
-	<hr>
-	<div class="pd">
-		<button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
-		测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，跨域时未设置相应策略权限永远是拒绝的
-	</div>
-	
-	<hr>
-	<div class="pd">
-		音乐播放测试：
-		<button onclick="recplay2(this,'rec-4000ms-8kbps-16000hz.wav')">wav</button>
-		<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.mp3')">mp3</button>
-		<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.ogg')">ogg</button>
-		<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
-		<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
-		
-		Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>）；IOS Safari如果未开始过录音并且播放了音乐，然后后续录音将会有问题；再现方法(<a href="https://xiangyuecn.github.io/Recorder/assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>)：刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。
-	</div>
-	
-	<div class="recinfo"></div>
 </div>
-<script type="text/template" class="tp_recinfo">
-<hr/>
-浏览器环境情况:
-<pre>
-AudioContext:{fn:!!window.AudioContext}
-webkitAudioContext:{fn:!!window.webkitAudioContext}
-mediaDevices:{fn:!!navigator.mediaDevices}
-mediaDevices.getUserMedia:{fn:!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}
-navigator.getUserMedia:{fn:!!navigator.getUserMedia}
-navigator.webkitGetUserMedia:{fn:!!navigator.webkitGetUserMedia}
 
-URL:{fn:location.href.replace(/#.+/g,"")}
-UA:{fn:navigator.userAgent}
+<div class="mainBox">
+	<div>
+		<span class="lb">变速变调 :</span> 
+		<button onclick="resetSonicCtrl()">重置变速变调</button>
+		实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）</div>
+	<div class="sonicCtrlBox" style="margin:5px 0 0">
+		<style>
+			.sonicCtrlBox span{display:inline-block;width:80px;text-align:right;}
+			.sonicCtrlBox input{text-align:right;}
+		</style>
+		<div><span>Pitch:</span><input class="sonicCtrlInput sonicCtrlPitch" style="width:60px"> 男声<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">女声，变调不变速（会说话的汤姆猫）</div>
+		<div><span>Speed:</span><input class="sonicCtrlInput sonicCtrlSpeed" style="width:60px"> 慢放<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">快放，变速不变调（快放慢放），由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
+		<div><span>Rate:</span><input class="sonicCtrlInput sonicCtrlRate" style="width:60px"> 缓重<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">尖锐，变速变调，由于会增减PCM数据，实时处理时本功能需要禁用丢失补偿</div>
+		<div><span>Volume:</span><input class="sonicCtrlInput sonicCtrlVolume" style="width:60px"> 调低<input type="range" class="sonicCtrlRange" min="0.1" max="2" step="0.1" value="1.0">调高，调整音量</div>
+		
+		<div style="border-top: 1px solid #eee;margin-top: 10px;"><span>处理缓冲:</span><input class="sonicCtrlInput sonicCtrlBuffer" style="width:60px">ms 0ms<input type="range" class="sonicCtrlRange sonicCtrlBufferRange" min="0" max="1000" step="100" value="200">1000ms，控制缓冲大小减少转换引入的杂音，0不缓冲</div>
+		<div><span>播放反馈:</span><input class="sonicCtrlInput sonicCtrlPlay" style="width:60px"> 不播放 <input type="range" class="sonicCtrlRange" min="0" max="1" step="1" value="1">实时播放反馈</div>
+		
+		<div style="margin-top:10px"><button onclick="sonicRecTransform()">重新转换当前录音</button></div>
+	</div>
+</div>
+	
+<div class="mainBox">
+	<span class="lb">丢失补偿 :</span> <label><input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）</label>
+	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
+</div>
+	
+<div class="mainBox">
+	<span class="lb">测试App :</span>
+	IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
+	
+	，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+</div>
+	
+<div class="mainBox">
+	<span class="lb">iframe兼容性 :</span> <button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
+	测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，跨域时未设置相应策略权限永远是拒绝的
+</div>
+	
+<div class="mainBox">
+	<span class="lb">音乐播放测试 :</span>
+	<button onclick="recplay2(this,'rec-4000ms-8kbps-16000hz.wav')">wav</button>
+	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.mp3')">mp3</button>
+	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.ogg')">ogg</button>
+	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
+	<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
+	
+	Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>）；IOS Safari如果未开始过录音并且播放了音乐，然后后续录音将会有问题；再现方法(<a href="https://xiangyuecn.github.io/Recorder/assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>)：刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。
+</div>
 
-Recorder库修改时间（有可能修改了忘改）:{fn:Recorder.LM}
-本页面修改时间（有可能修改了忘改）：{fn:PageLM}
+<div class="mainBox">
+	<span class="lb">浏览器环境情况 :</span>
+	<pre class="recinfoCode">
+AudioContext:${!!window.AudioContext}
+webkitAudioContext:${!!window.webkitAudioContext}
+mediaDevices:${!!navigator.mediaDevices}
+mediaDevices.getUserMedia:${!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}
+navigator.getUserMedia:${!!navigator.getUserMedia}
+navigator.webkitGetUserMedia:${!!navigator.webkitGetUserMedia}
 
+URL:${location.href.replace(/#.+/g,"")}
+UA:${navigator.userAgent}
 
-
-
+Recorder库修改时间（有可能修改了忘改）:${Recorder.LM}
+本页面修改时间（有可能修改了忘改）：${PageLM}
 </pre>
-<div>
-<hr>
-<span style="color:#f60;font-size:16px;font-weight:bold;">问题自检：</span>录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
+	
+	<span class="lb">问题自检 :</span> 录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
+	<div style="padding-top:20px">
+	如果浏览器不能正常录音，并且不确定是不是这个库的问题，可以到 <a href="https://xiangyuecn.github.io/Recorder/assets/ztext_collab-project_videojs-record.html">assets/ztext_collab-project_videojs-record.html</a> 试一下。
+	</div>
 </div>
-<div style="padding-top:20px">
-如果浏览器不能正常录音，并且不确定是不是这个库的问题，可以到 <a href="https://xiangyuecn.github.io/Recorder/assets/ztext_collab-project_videojs-record.html">assets/ztext_collab-project_videojs-record.html</a> 试一下。
-</div>
-</script>
 
 
 
@@ -286,7 +336,7 @@ function recopen(){
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
 	
-	var wave,waveSet=$(".recwaveSet")[0].checked;
+	var wave;
 	window.sonicAsync=null;
 	
 	var disableEnvInFixSet=$(".disableEnvInFixSet")[0].checked;
@@ -307,9 +357,9 @@ function recopen(){
 			var beginAsync=sonicProcess(buffers,sampleRate,newBufferIdx,asyncEnd);
 			
 			$(".recpowerx").css("width",powerLevel+"%");
-			$(".recpowert").html(duration+"/"+powerLevel);
+			$(".recpowert").text(formatMs(duration,1)+" / "+powerLevel);
 			
-			waveSet && wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
+			wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
 			
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(rec.set,realTimeSendTime,buffers,sampleRate);
@@ -430,7 +480,7 @@ function recstopFn(call,isClick,endCall,rec){
 			
 			var id=RandomKey(16);
 			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
-			reclog((tag||"已录制")+":"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+intp(time,6)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+			reclog((tag||"已录制")+":"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 			
 			call(null,{data:blob,duration:time});
 		},function(s){
@@ -445,6 +495,13 @@ var intp=function(s,len){
 	s=s==null?"-":s+"";
 	if(s.length>=len)return s;
 	return ("_______"+s).substr(-len);
+};
+var formatMs=function(ms,all){
+	var f=Math.floor(ms/60000),m=Math.floor(ms/1000)%60;
+	var s=(all||f>0?(f<10?"0":"")+f+":":"")
+		+(all||f>0||m>0?("0"+m).substr(-2)+"″":"")
+		+("00"+ms%1000).substr(-3);
+	return s;
 };
 function recstop2(){
 	if(!rec||!rec.buffers){
@@ -573,7 +630,7 @@ function recdown64(key, cls){
 	reader.readAsDataURL(o.blob);
 };
 
-$(".recinfo").html(BuildHtml($(".tp_recinfo").html()));
+$(".recinfoCode").text($(".recinfoCode").text().replace(/\$\{(.+?)\}/g,function(a,b){return eval(b)}));
 
 if(window.isSecureContext===false){
 	reclog("当前网页不是安全环境（HTTPS），将无法获取录音权限，<a href='https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security'>MDN Privacy and security</a>",1);
@@ -753,6 +810,7 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 
 
 
+</div><!-- demoMain end -->
 
 
 
@@ -770,9 +828,11 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 
 
 
-<hr>
-<div>
-<h3>移动端js运行简易控制台</h3>
+
+
+<div class="mainBox">
+<div style="padding-bottom:8px"><span class="lb">移动端js运行简易控制台</span></div>
+
 <textarea id="cmdExecTxt" style="width:300px;height:160px;" placeholder="js代码，为一段表达式，可以返回结果显示。异步可读写JsVal.value，为结果输入框内容">JsVal.value+="尝试请求录音权限...";
 var scope=navigator.mediaDevices||navigator;
 var True=function(){
@@ -813,7 +873,7 @@ var cmdExec=function(){
 };
 </script>
 
-<h3>ConsoleX:</h3>
+<div style="padding-bottom:8px"><span class="lb">ConsoleX</span></div>
 <textarea class="Xlog" style="width:300px;height:160px;"></textarea>
 <script>
 var XLogInput=$(".Xlog")[0];
@@ -1020,5 +1080,6 @@ DonateWidget({
 });
 </script>
 
+</div>
 </body>
 </html>
