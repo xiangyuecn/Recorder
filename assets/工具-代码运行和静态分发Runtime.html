@@ -8,6 +8,8 @@
 <title>Recorder代码运行和静态分发工具</title>
 
 <script src="../src/recorder-core.js"></script>
+<script src="../src/extensions/lib.fft.js"></script>
+<script src="../src/extensions/frequency.histogram.view.js"></script>
 <script src="../src/extensions/waveview.js"></script>
 
 <script src="ztest-jquery.min-1.9.1.js"></script>
@@ -72,6 +74,29 @@ a:hover{
 .mainBtn:active{
 	background: #f00;
 }
+
+.recwaveChoice{
+	cursor: pointer;
+	display:inline-block;
+	vertical-align: bottom;
+	border-right:1px solid #ccc;
+	background:#ddd;
+	line-height:28px;
+	font-size:13px;
+	color:#666;
+	padding:0 5px;
+}
+.recwaveChoice:first-child{
+	border-radius: 99px 0 0 99px;
+}
+.recwaveChoice:last-child{
+	border-radius: 0 99px 99px 0;
+	border-right:none;
+}
+.recwaveChoice.slc,.recwaveChoice:hover{
+	background:#f60;
+	color:#fff;
+}
 </style>
 </head>
 
@@ -97,9 +122,17 @@ a:hover{
 	<div class="mainBox mainCtrl" style="display:none">
 		<div style="padding-bottom:12px">
 			<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block;vertical-align:bottom" class="ctrlProcessWave"></div>
-			<div style="height:40px;width:300px;display:inline-block;background:#999;position:relative;vertical-align:bottom">
-				<div class="ctrlProcessX" style="height:40px;background:#0B1;position:absolute;"></div>
-				<div class="ctrlProcessT" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			<div style="width:300px;display:inline-block;vertical-align:bottom">
+				<div style="height:40px;width:300px;display:inline-block;background:#999;position:relative;margin-bottom:12px">
+					<div class="ctrlProcessX" style="height:40px;background:#0B1;position:absolute;"></div>
+					<div class="ctrlProcessT" style="padding-left:50px; line-height:40px; position: relative;"></div>
+				</div>
+				
+				<span style="font-size:0">
+					<span class="recwaveChoice" key="WaveView">WaveView</span>
+					<span class="recwaveChoice" key="Histogram1">Histogram1</span>
+					<span class="recwaveChoice" key="Histogram2">Histogram2</span>
+				</span>
 			</div>
 		</div>
 		
@@ -144,7 +177,9 @@ hideBG(localStorage["hideBG"]);
 <script>
 (function(){
 var WaveViewBak=Recorder.WaveView;
-var ProcessWaveView;
+var LibFFTBak=Recorder.LibFFT;
+var FrequencyHistogramViewBak=Recorder.FrequencyHistogramView;
+var WaveStore;
 var LogAudios=[0];
 
 window.NOOP=function(){};
@@ -206,14 +241,31 @@ window.Runtime={
 	
 	,Process:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
 		Recorder.WaveView=WaveViewBak;
-		if(!ProcessWaveView){
-			ProcessWaveView=Recorder.WaveView({elem:".ctrlProcessWave"});
+		Recorder.LibFFT=LibFFTBak;
+		Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
+		var waveStore=WaveStore;
+		if(!waveStore){
+			waveStore=WaveStore={};
+			waveStore.WaveView=Recorder.WaveView({elem:".ctrlProcessWave"});
+			waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".ctrlProcessWave"});
+			waveStore.Histogram2=Recorder.FrequencyHistogramView({
+				elem:".ctrlProcessWave"
+				,position:0
+				,minHeight:1
+				,shadowBlur:6
+				,stripeEnable:false
+			});
 		};
 		
 		$(".ctrlProcessX").css("width",powerLevel+"%");
 		$(".ctrlProcessT").text(formatMs(bufferDuration,1)+" / "+powerLevel);
 		
-		ProcessWaveView.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+		//可视化图形绘制
+		if(waveStore.choice!=recwaveChoiceKey){
+			waveStore.choice=recwaveChoiceKey;
+			$(".ctrlProcessWave").html("").append(waveStore[recwaveChoiceKey].elem);
+		};
+		waveStore[recwaveChoiceKey].input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
 	}
 	
 	,DecodeAudio:function(fileName,arrayBuffer,True,False){
@@ -279,6 +331,18 @@ var formatMs=function(ms,all){
 		+("00"+ms%1000).substr(-3);
 	return s;
 };
+
+
+var recwaveChoiceKey=localStorage["RecWaveChoiceKey"]||"WaveView";
+$(".recwaveChoice").bind("click",function(e){
+	var elem=$(e.target);
+	$(".recwaveChoice").removeClass("slc");
+	recwaveChoiceKey=elem.addClass("slc").attr("key");
+	localStorage["RecWaveChoiceKey"]=recwaveChoiceKey;
+});
+$(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
+
+
 $(window).bind("error",function(e){
 	Runtime.Log('【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre>',1);
 });

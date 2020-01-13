@@ -49,9 +49,18 @@ document.body.appendChild=function(s){
 <script>
 (function(){
 //注册可选扩展库
-RecordApp.Platforms.Default.Config.paths.push({
+var paths=RecordApp.Platforms.Default.Config.paths;
+paths.push({
 	url:PageSet_RecordAppBaseFolder+"extensions/waveview.js"
 	,check:function(){return !Recorder.WaveView}
+});
+paths.push({
+	url:PageSet_RecordAppBaseFolder+"extensions/lib.fft.js"
+	,check:function(){return !Recorder.LibFFT}
+});
+paths.push({
+	url:PageSet_RecordAppBaseFolder+"extensions/frequency.histogram.view.js"
+	,check:function(){return !Recorder.FrequencyHistogramView}
 });
 
 //立即加载环境，自动把Recorder加载进来
@@ -120,6 +129,29 @@ a:hover{
 }
 .mainBtn:active{
 	background: #f00;
+}
+
+.recwaveChoice{
+	cursor: pointer;
+	display:inline-block;
+	vertical-align: bottom;
+	border-right:1px solid #ccc;
+	background:#ddd;
+	line-height:28px;
+	font-size:13px;
+	color:#666;
+	padding:0 5px;
+}
+.recwaveChoice:first-child{
+	border-radius: 99px 0 0 99px;
+}
+.recwaveChoice:last-child{
+	border-radius: 0 99px 99px 0;
+	border-right:none;
+}
+.recwaveChoice.slc,.recwaveChoice:hover{
+	background:#f60;
+	color:#fff;
 }
 
 .lb{
@@ -252,6 +284,12 @@ RandomKey.idx=0;
 	</div>
 	<div class="pd">
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
+		
+		<span style="font-size:0">
+			<span class="recwaveChoice" key="WaveView">WaveView</span>
+			<span class="recwaveChoice" key="Histogram1">Histogram1</span>
+			<span class="recwaveChoice" key="Histogram2">Histogram2</span>
+		</span>
 	</div>
 	<div class="webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
@@ -406,7 +444,7 @@ function recstart(call){
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
-	var wave;
+	var waveStore={};
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
@@ -420,12 +458,20 @@ function recstart(call){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
-		,onProcess:function(buffers,level,time,sampleRate){
-			$(".recpowerx").css("width",level+"%");
-			$(".recpowert").text(formatMs(time,1)+" / "+level);
+		,onProcess:function(buffers,powerLevel,duration,sampleRate){
+			$(".recpowerx").css("width",powerLevel+"%");
+			$(".recpowert").text(formatMs(duration,1)+" / "+powerLevel);
 			
-			wave && wave.input(buffers[buffers.length-1],level,sampleRate);
+			//可视化图形绘制
+			if(waveStore[recwaveChoiceKey]){
+				if(waveStore.choice!=recwaveChoiceKey){
+					waveStore.choice=recwaveChoiceKey;
+					$(".recwave").html("").append(waveStore[recwaveChoiceKey].elem);
+				};
+				waveStore[recwaveChoiceKey].input(buffers[buffers.length-1],powerLevel,sampleRate);
+			};
 			
+			//实时传输
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(set,realTimeSendTime,buffers,sampleRate);
 			};
@@ -436,7 +482,17 @@ function recstart(call){
 		curSet=set;
 		reclog(RecordApp.Current.Key+"已打开:"+type+" "+bit+"kbps");
 		
-		wave=Recorder.WaveView({elem:".recwave"});
+		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
+		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
+		waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".recwave"});
+		waveStore.Histogram2=Recorder.FrequencyHistogramView({
+			elem:".recwave"
+			,position:0
+			,minHeight:1
+			,shadowBlur:6
+			,stripeEnable:false
+		});
+		
 		call();
 	},function(err){
 		call(RecordApp.Current.Key+"打开失败："+err);
@@ -603,8 +659,24 @@ function recdown64(key, cls){
 	};
 	reader.readAsDataURL(o.blob);
 };
+
+
+var recwaveChoiceKey=localStorage["RecWaveChoiceKey"]||"WaveView";
+$(".recwaveChoice").bind("click",function(e){
+	var elem=$(e.target);
+	$(".recwaveChoice").removeClass("slc");
+	recwaveChoiceKey=elem.addClass("slc").attr("key");
+	localStorage["RecWaveChoiceKey"]=recwaveChoiceKey;
+});
+$(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
+
+
 reclog("点击录制开始哦");
-reclog("WaveView Extensions已启用");
+var s="https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/";
+reclog('已启用Extensions：\
+<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 音频可视化波形)\
+、<b>FrequencyHistogramView</b> (<a href="'+s+'frequency.histogram.view.js">frequency.histogram.view.js</a> + <a href="'+s+'lib.fft.js">lib.fft.js</a> 音频可视化频率直方图)\
+');
 
 
 if(window.top!=window){

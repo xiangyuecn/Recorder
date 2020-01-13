@@ -564,7 +564,7 @@ Recorder({type:"aac"})
 在`src/extensions`目录内为扩展支持库，这些扩展库默认都没有合并到生成代码中，需单独引用(`dist`或`src`中的)才能使用。
 
 ## `WaveView`扩展
-`waveview.js`，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
+(waveview.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/waveview.js)，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
 
 此扩展是在录音时`onProcess`回调中使用；`Recorder.BufferSize`会影响绘制帧率，越小越流畅（但越消耗cpu），默认配置的大概12帧/s。基础使用方法：[​](?Ref=WaveView.Codes&Start)
 ``` javascript
@@ -611,9 +611,61 @@ set={
 输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData `[Int16,...]` 一维数组，为当前的录音数据片段，其他参数和`onProcess`回调相同。
 
 
+## `FrequencyHistogramView`扩展
+[frequency.histogram.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/frequency.histogram.view.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)，12kb大小源码，音频可视化频率直方图显示，具体样子参考演示地址页面。此扩展核心算法参考Java开源库[jmp123 ](https://sourceforge.net/projects/jmp123/files/)的代码编写的，jmp123版本0.3。
+
+此扩展的使用方式和`WaveView`扩展完全相同，请参考上面的`WaveView`来使用，请注意：必须同时引入`lib.fft.js`才能正常工作。
+
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_histogram.png)
+
+### 【构造】histogram=Recorder.FrequencyHistogramView(set)
+构造函数，`set`参数为配置对象，默认配置值如下：
+``` javascript
+set={
+	elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
+		//或者配置显示大小，手动把frequencyObj.elem显示到别的地方
+	,width:0 //显示宽度
+	,height:0 //显示高度
+	
+	//以上配置二选一
+	
+	scale:2 //缩放系数，应为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
+	
+	,fps:20 //绘制帧率，不可过高
+	
+	,lineCount:15 //直方图柱子数量
+	,lineWidth:10 //柱子线条基础粗细
+	,minHeight:0 //柱子保留基础高度，position不为±1时应该保留点高度
+	,position:-1 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
+	
+	,stripeEnable:true //是否启用柱子顶上的峰值小横条，position不是-1时应当关闭，否则会很丑
+	,stripeHeight:5 //峰值小横条基础高度
+	,stripeMargin:8 //峰值小横条和柱子保持的基础距离
+	
+	,fallDuration:600 //柱子从最顶上下降到最底部最长时间ms
+	,stripeFallDuration:1200 //峰值小横条从最顶上下降到底部最长时间ms
+	
+	//柱子颜色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
+	,linear:[0,"rgba(0,187,17,1)",0.5,"rgba(255,215,0,1)",1,"rgba(255,102,0,1)"]
+	//峰值小横条css颜色 #abc，留空为柱子的渐变颜色
+	,stripeColor:""
+	
+	,shadowBlur:0 //柱子阴影基础大小，设为0不显示阴影
+	,shadowColor:"#bbb" //柱子阴影颜色
+	,stripeShadowBlur:-1 //峰值小横条阴影基础大小，设为0不显示阴影，-1为柱子的大小
+	,stripeShadowColor:"" //峰值小横条阴影颜色，留空为柱子的阴影颜色
+	
+	//当发生绘制时会回调此方法，参数为当前绘制的频率数据和采样率，可实现多个直方图同时绘制，只消耗一个input输入和计算时间
+	,onDraw:function(frequencyData,sampleRate){}
+}
+```
+
+### 【方法】histogram.input(pcmData,powerLevel,sampleRate)
+输入音频数据，更新直方图显示。pcmData `[Int16,...]` 一维数组，为当前的录音数据片段，其他参数和`onProcess`回调相同。
+
 
 ## `Sonic`扩展
-`sonic.js`，37kb大小源码(压缩版gzip后4.5kb)，音频变速变调转换，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)。此扩展从[Sonic.java](https://github.com/waywardgeek/sonic/blob/71c51195de71627d7443d05378c680ba756545e8/Sonic.java)移植，并做了适当精简。
+[sonic.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/sonic.js)，37kb大小源码(压缩版gzip后4.5kb)，音频变速变调转换，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)。此扩展从[Sonic.java](https://github.com/waywardgeek/sonic/blob/71c51195de71627d7443d05378c680ba756545e8/Sonic.java)移植，并做了适当精简。
 
 可到[assets/sonic-java](https://github.com/xiangyuecn/Recorder/tree/master/assets/sonic-java)目录运行java代码测试原版效果。
 
