@@ -205,7 +205,7 @@ fn.prototype=FrequencyHistogramView.prototype={
 				//10khz以上
 				fftIdx+=fftSizeStep2;
 			};
-			var end=Math.floor(fftIdx);
+			var end=Math.min(Math.ceil(fftIdx),fftSize);
 			
 			
 			//参考AudioGUI.java .drawHistogram方法
