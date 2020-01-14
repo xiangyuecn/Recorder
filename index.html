@@ -372,7 +372,7 @@ function recopen(){
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
 	
-	var waveStore={};
+	window.waveStore={};
 	window.sonicAsync=null;
 	
 	var disableEnvInFixSet=$(".disableEnvInFixSet")[0].checked;
@@ -424,6 +424,7 @@ function recopen(){
 		waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".recwave"});
 		waveStore.Histogram2=Recorder.FrequencyHistogramView({
 			elem:".recwave"
+			,lineCount:90
 			,position:0
 			,minHeight:1
 			,shadowBlur:6

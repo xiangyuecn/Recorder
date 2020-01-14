@@ -179,7 +179,6 @@ hideBG(localStorage["hideBG"]);
 var WaveViewBak=Recorder.WaveView;
 var LibFFTBak=Recorder.LibFFT;
 var FrequencyHistogramViewBak=Recorder.FrequencyHistogramView;
-var WaveStore;
 var LogAudios=[0];
 
 window.NOOP=function(){};
@@ -243,13 +242,14 @@ window.Runtime={
 		Recorder.WaveView=WaveViewBak;
 		Recorder.LibFFT=LibFFTBak;
 		Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
-		var waveStore=WaveStore;
+		var waveStore=Runtime.WaveStore;
 		if(!waveStore){
-			waveStore=WaveStore={};
+			waveStore=Runtime.WaveStore={};
 			waveStore.WaveView=Recorder.WaveView({elem:".ctrlProcessWave"});
 			waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".ctrlProcessWave"});
 			waveStore.Histogram2=Recorder.FrequencyHistogramView({
 				elem:".ctrlProcessWave"
+				,lineCount:90
 				,position:0
 				,minHeight:1
 				,shadowBlur:6
