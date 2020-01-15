@@ -42,7 +42,7 @@ window.DemoFragment||(window.DemoFragment={})
 		source.channelCount=1;
 		source.buffer=audio;
 		source.connect(ctx.destination);
-		source.start();
+		if(source.start){source.start()}else{source.noteOn(0)};
 		
 		size=0;
 		arr=[];

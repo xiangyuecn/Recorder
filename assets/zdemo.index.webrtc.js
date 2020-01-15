@@ -516,7 +516,7 @@ var rtcDecodePlay=function(decode){
 		source.channelCount=1;
 		source.buffer=buffer;
 		source.connect(ctx.destination);
-		source.start();
+		if(source.start){source.start()}else{source.noteOn(0)};
 		
 		//不关闭上一个，让它继续播放完结尾，衔接起来好些
 		//rtcDecPlaySource&&rtcDecPlaySource.stop();

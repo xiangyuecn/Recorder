@@ -60,7 +60,7 @@ Recorder.prototype.webm=function(res,True,False){
 		source.channelCount=1;
 		source.buffer=buffer;
 		source.connect(dest);
-		source.start();
+		if(source.start){source.start()}else{source.noteOn(0)};
 		source.onended=function(){
 			recorder.stop();
 		};
