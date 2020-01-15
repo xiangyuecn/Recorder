@@ -274,7 +274,11 @@ RandomKey.idx=0;
 		<button class="mainBtn" onclick="recstart()">录制</button>
 		<button class="mainBtn" onclick="recstop()" style="margin-right:80px;">停止</button>
 		
-		<button onclick="recstopX()">停止(仅清理)</button>
+		<button onclick="recstopX()" style="margin-right:40px;">停止(仅清理)</button>
+		
+		<span style="display: inline-block;">
+			<button onclick="recstartAndAutoStop()">录制+定时停止</button><input value="0" class="autoStopTime" style="width:60px;">ms
+		</span>
 	</div>
 	<div class="pd recpower">
 		<div style="height:40px;width:300px;background:#999;position:relative;">
@@ -370,6 +374,8 @@ function baseSet(){
 		RecordApp.alwaysAppUseJSPrev=alwaysAppUseJS;
 	};
 	RecordApp.AlwaysAppUseJS=alwaysAppUseJS;
+	
+	cancelAutoStop();
 };
 function recreq(){
 	baseSet();
@@ -423,7 +429,32 @@ var dialogCancel=function(){
 //弹框End
 
 
-var curSet;
+var curSet,autoStopTimer;
+function recstartAndAutoStop(){
+	var time=+$(".autoStopTime").val()||0;
+	if(time<100){
+		reclog("定时不能小于100ms",1);
+		return;
+	};
+	recstart(function(msg){
+		if(msg){
+			msg&&reclog(msg,1);
+			return;
+		};
+		reclog("定时"+time+"ms后自动停止录音");
+		autoStopTimer=setTimeout(function(){
+			reclog("定时时间到，开始自动调用停止...");
+			recstop();
+		},time);
+	});
+};
+var cancelAutoStop=function(){
+	if(autoStopTimer){
+		reclog("已取消定时停止",1);
+		clearTimeout(autoStopTimer);
+		autoStopTimer=0;
+	};
+};
 function recstart(call){
 	call||(call=function(msg){
 		msg&&reclog(msg,1);
@@ -499,6 +530,7 @@ function recstart(call){
 	});
 };
 function recstopX(){
+	cancelAutoStop();
 	RecordApp.Stop(
 		null //success传null就只会清理资源，不会进行转码
 		,function(msg){
@@ -515,6 +547,7 @@ function recstop(call){
 	});
 };
 function recstopFn(call,isClick,endCall,rec){
+	cancelAutoStop();
 	call||(call=function(msg){
 		msg&&reclog(msg,1);
 	});

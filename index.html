@@ -417,7 +417,17 @@ function recopen(){
 	
 	rec.open(function(){
 		dialogCancel();
-		reclog("<span style='color:#0b1'>已打开:"+type+" "+sample+"hz "+bit+"kbps</span>");
+		var typeSize="，<span style='border:1px solid #bbb;background:#f5f5f5;'>";
+		if(type=="wav"){
+			typeSize+="1秒的wav文件大小(字节)估算公式：采样率 × 位数 ÷ 8，当前："+sample+"*"+bit+"/8≈"+(sample*bit/8)+"b/s";
+		}else if(type=="mp3"){
+			typeSize+="1秒的mp3文件大小(字节)估算公式：比特率 × 1000 ÷ 8，当前："+bit+"*1000/8≈"+(bit*1000/8)+"b/s";
+		}else{
+			typeSize="";
+		};
+		typeSize&&(typeSize+="</span>");
+		
+		reclog("<span style='color:#0b1'>已打开:"+type+" "+sample+"hz "+bit+"kbps</span>"+typeSize);
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
@@ -479,7 +489,7 @@ function recstart(call){
 	call||(call=function(msg){
 		msg&&reclog(msg,1);
 	});
-	if(rec){
+	if(rec&&Recorder.IsOpen()){
 		window.realTimeSendTryReset&&realTimeSendTryReset();
 		
 		sonicAsync&&sonicAsync.flush();//丢弃不管，省的去同步麻烦
