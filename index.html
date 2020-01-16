@@ -42,6 +42,7 @@ console.log(
 
 <!--加载可选扩展库-->
 <script src="src/extensions/waveview.js"></script>
+<script src="src/extensions/wavesurfer.view.js"></script>
 <script src="src/extensions/lib.fft.js"></script>
 <script src="src/extensions/frequency.histogram.view.js"></script>
 <script src="src/extensions/sonic.js"></script>
@@ -105,7 +106,7 @@ a:hover{
 	border-right:1px solid #ccc;
 	background:#ddd;
 	line-height:28px;
-	font-size:13px;
+	font-size:12px;
 	color:#666;
 	padding:0 5px;
 }
@@ -259,6 +260,7 @@ RandomKey.idx=0;
 		
 		<span style="font-size:0">
 			<span class="recwaveChoice" key="WaveView">WaveView</span>
+			<span class="recwaveChoice" key="SurferView">SurferView</span>
 			<span class="recwaveChoice" key="Histogram1">Histogram1</span>
 			<span class="recwaveChoice" key="Histogram2">Histogram2</span>
 		</span>
@@ -431,6 +433,7 @@ function recopen(){
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
+		waveStore.SurferView=Recorder.WaveSurferView({elem:".recwave"});
 		waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".recwave"});
 		waveStore.Histogram2=Recorder.FrequencyHistogramView({
 			elem:".recwave"
@@ -714,7 +717,8 @@ if(window.isSecureContext===false){
 reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");
 var s="https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/";
 reclog('已启用Extensions：\
-<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 音频可视化波形)\
+<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 动态波形)\
+<b>WaveSurferView</b> (<a href="'+s+'wavesurfer.view.js">wavesurfer.view.js</a> 音频可视化波形)\
 、<b>FrequencyHistogramView</b> (<a href="'+s+'frequency.histogram.view.js">frequency.histogram.view.js</a> + <a href="'+s+'lib.fft.js">lib.fft.js</a> 音频可视化频率直方图)\
 、<b>Sonic</b> (<a href="'+s+'sonic.js">sonic.js</a> 变速变调)\
 ');
@@ -969,6 +973,7 @@ function loadEngine(input){
 				if(i>=engines.length){
 					loadEngineState[type]=minjs;
 					Recorder.WaveView=WaveViewBak;
+					Recorder.WaveSurferView=WaveSurferViewBak;
 					Recorder.LibFFT=LibFFTBak;
 					Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
 					Recorder.Sonic=SonicBak;
@@ -993,6 +998,7 @@ function loadEngine(input){
 };
 loadEngineState={};
 var WaveViewBak=Recorder.WaveView;
+var WaveSurferViewBak=Recorder.WaveSurferView;
 var LibFFTBak=Recorder.LibFFT;
 var FrequencyHistogramViewBak=Recorder.FrequencyHistogramView;
 var SonicBak=Recorder.Sonic;

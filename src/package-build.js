@@ -55,6 +55,7 @@ function Run_minify(){
 	minify("../dist/engine/beta-amr.js",["engine/beta-amr.js","engine/beta-amr-engine.js","engine/wav.js"]);
 
 	minify("../dist/extensions/waveview.js",["extensions/waveview.js"]);
+	minify("../dist/extensions/wavesurfer.view.js",["extensions/wavesurfer.view.js"]);
 	minify("../dist/extensions/lib.fft.js",["extensions/lib.fft.js"]);
 	minify("../dist/extensions/frequency.histogram.view.js",["extensions/frequency.histogram.view.js"]);
 	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);

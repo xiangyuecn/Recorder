@@ -55,6 +55,10 @@ paths.push({
 	,check:function(){return !Recorder.WaveView}
 });
 paths.push({
+	url:PageSet_RecordAppBaseFolder+"extensions/wavesurfer.view.js"
+	,check:function(){return !Recorder.WaveSurferView}
+});
+paths.push({
 	url:PageSet_RecordAppBaseFolder+"extensions/lib.fft.js"
 	,check:function(){return !Recorder.LibFFT}
 });
@@ -138,7 +142,7 @@ a:hover{
 	border-right:1px solid #ccc;
 	background:#ddd;
 	line-height:28px;
-	font-size:13px;
+	font-size:12px;
 	color:#666;
 	padding:0 5px;
 }
@@ -291,6 +295,7 @@ RandomKey.idx=0;
 		
 		<span style="font-size:0">
 			<span class="recwaveChoice" key="WaveView">WaveView</span>
+			<span class="recwaveChoice" key="SurferView">SurferView</span>
 			<span class="recwaveChoice" key="Histogram1">Histogram1</span>
 			<span class="recwaveChoice" key="Histogram2">Histogram2</span>
 		</span>
@@ -516,6 +521,7 @@ function recstart(call){
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
+		waveStore.SurferView=Recorder.WaveSurferView({elem:".recwave"});
 		waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".recwave"});
 		waveStore.Histogram2=Recorder.FrequencyHistogramView({
 			elem:".recwave"
@@ -708,7 +714,8 @@ $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 reclog("点击录制开始哦");
 var s="https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/";
 reclog('已启用Extensions：\
-<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 音频可视化波形)\
+<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 动态波形)\
+<b>WaveSurferView</b> (<a href="'+s+'wavesurfer.view.js">wavesurfer.view.js</a> 音频可视化波形)\
 、<b>FrequencyHistogramView</b> (<a href="'+s+'frequency.histogram.view.js">frequency.histogram.view.js</a> + <a href="'+s+'lib.fft.js">lib.fft.js</a> 音频可视化频率直方图)\
 ');
 

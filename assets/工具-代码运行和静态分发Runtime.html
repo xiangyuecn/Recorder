@@ -8,9 +8,10 @@
 <title>Recorder代码运行和静态分发工具</title>
 
 <script src="../src/recorder-core.js"></script>
+<script src="../src/extensions/waveview.js"></script>
+<script src="../src/extensions/wavesurfer.view.js"></script>
 <script src="../src/extensions/lib.fft.js"></script>
 <script src="../src/extensions/frequency.histogram.view.js"></script>
-<script src="../src/extensions/waveview.js"></script>
 
 <script src="ztest-jquery.min-1.9.1.js"></script>
 <script src="ztest-codemirror.min.5.48.4.js"></script>
@@ -82,7 +83,7 @@ a:hover{
 	border-right:1px solid #ccc;
 	background:#ddd;
 	line-height:28px;
-	font-size:13px;
+	font-size:12px;
 	color:#666;
 	padding:0 5px;
 }
@@ -130,6 +131,7 @@ a:hover{
 				
 				<span style="font-size:0">
 					<span class="recwaveChoice" key="WaveView">WaveView</span>
+					<span class="recwaveChoice" key="SurferView">SurferView</span>
 					<span class="recwaveChoice" key="Histogram1">Histogram1</span>
 					<span class="recwaveChoice" key="Histogram2">Histogram2</span>
 				</span>
@@ -177,6 +179,7 @@ hideBG(localStorage["hideBG"]);
 <script>
 (function(){
 var WaveViewBak=Recorder.WaveView;
+var WaveSurferViewBak=Recorder.WaveSurferView;
 var LibFFTBak=Recorder.LibFFT;
 var FrequencyHistogramViewBak=Recorder.FrequencyHistogramView;
 var LogAudios=[0];
@@ -240,12 +243,14 @@ window.Runtime={
 	
 	,Process:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
 		Recorder.WaveView=WaveViewBak;
+		Recorder.WaveSurferView=WaveSurferViewBak;
 		Recorder.LibFFT=LibFFTBak;
 		Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
 		var waveStore=Runtime.WaveStore;
 		if(!waveStore){
 			waveStore=Runtime.WaveStore={};
 			waveStore.WaveView=Recorder.WaveView({elem:".ctrlProcessWave"});
+			waveStore.SurferView=Recorder.WaveSurferView({elem:".ctrlProcessWave"});
 			waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".ctrlProcessWave"});
 			waveStore.Histogram2=Recorder.FrequencyHistogramView({
 				elem:".ctrlProcessWave"
