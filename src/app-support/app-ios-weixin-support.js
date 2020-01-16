@@ -79,6 +79,9 @@ var killStart=function(call){
 		setTimeout(call,300);
 	});
 };
+var timeLog=function(msg){
+	console.log("["+Date.now()+"]"+msg);
+};
 platform.Start=function(set,success,fail){
 	var wx=WXRecordData.wx;
 	if(!wx){
@@ -112,6 +115,7 @@ platform.Start=function(set,success,fail){
 			isWaitStart=0;
 			WXRecordData.startTime=Date.now();
 			WXRecordData.start=set;
+			timeLog("已开始录音");
 			success();
 		}
 		,fail:startFail
@@ -119,14 +123,29 @@ platform.Start=function(set,success,fail){
 	});
 	
 	//监听超时自动停止后接续录音
-	WXRecordData.timeout=[];
-	WXRecordData.err="";
+	WXRecordData.chunks=[];
+	WXRecordData.chunkErr="";
+	WXRecordData.stopJoinEnd=null;
 	wx.onVoiceRecordEnd({
 		complete:function(res){
 			var t1=Date.now();
-			WXRecordData.timeout.push({res:res,duration:t1-WXRecordData.startTime,time:t1});
+			if(WXRecordData.stopJoinEnd){
+				//正在进行stop调用时发生了onVoiceRecordEnd，此时不会触发stop回调，需要手动触发
+				WXRecordData.stopJoinEnd(res,"chunk");
+			}else{
+				if(res.localId && WXRecordData.chunks){
+					WXRecordData.chunks.push({res:res,duration:t1-WXRecordData.startTime,time:t1,from:"chunk"});
+				}else{
+					//已彻底停止录音了，就不要塞数据了，丢弃
+					console.error("已忽略chunk数据",res);
+				};
+			};
 			
-			console.log("微信录音超时，正在重启...");
+			timeLog("微信录音超时，正在重启...");
+			if(!isStart){
+				console.error("已停止录音，拒绝重启");
+				return;
+			};
 			wx.startRecord({
 				success:function(){
 					WXRecordData.startTime=Date.now();
@@ -135,13 +154,16 @@ platform.Start=function(set,success,fail){
 				,fail:function(o){
 					var msg="无法接续录音："+o.errMsg;
 					console.error(msg,o);
-					WXRecordData.err=msg;
+					WXRecordData.chunkErr=msg;
 				}
 			});
 		}
 	});
 };
 platform.Stop=function(successx,failx){
+	isStart=0;
+	timeLog("开始停止录音");
+	
 	var fail=function(msg){
 		failx("录音失败："+(msg.errMsg||msg));
 	};
@@ -205,7 +227,7 @@ platform.Stop=function(successx,failx){
 			};
 			
 			var data=list[deidx];
-			data.duration=timeouts[deidx].duration;
+			data.duration=chunkList[deidx].duration;
 			data.isAmr=true;
 			var bstr=atob(data.data),n=bstr.length,u8arr=new Uint8Array(n);
 			while(n--){
@@ -237,10 +259,11 @@ platform.Stop=function(successx,failx){
 		};
 		
 		var upIds=[];
-		for(var i=0;i<timeouts.length;i++){
-			upIds.push(timeouts[i].res.localId);
+		for(var i=0;i<chunkList.length;i++){
+			upIds.push(chunkList[i].res.localId);
 		};
-		console.log("结束录音共"+upIds.length+"段，开始上传下载");
+		timeLog("结束录音共"+upIds.length+"段，开始上传下载");
+		console.log(upIds,chunkList);
 		
 		//下载片段
 		var downidx=0;
@@ -312,26 +335,40 @@ platform.Stop=function(successx,failx){
 		up();
 	};
 	
-	var timeouts=WXRecordData.timeout;
-	if(WXRecordData.err){
-		console.error(WXRecordData.err,timeouts);
-		fail("录制失败，已录制"+timeouts.length+"分钟，但后面出错："+WXRecordData.err);
+	var chunkList=WXRecordData.chunks;
+	if(WXRecordData.chunkErr){
+		console.error(WXRecordData.chunkErr,chunkList);
+		fail("录制失败，已录制"+chunkList.length+"分钟，但后面出错："+WXRecordData.chunkErr);
 		return;
 	};
-	if(timeouts.length){
-		if(Date.now()-timeouts[timeouts.length-1].time<900){
-			stopNow();//丢弃结尾的渣渣
+	if(chunkList.length){
+		if(Date.now()-chunkList[chunkList.length-1].time<900){
+			console.error("丢弃结尾未停止太短录音");
+			stopNow();
 			stopFn();
 			return;
 		};
 	};
-	isStart=0;
+	
+	//等待停止回调，或者onVoiceRecordEnd回调，如果停止过程中发生了onVoiceRecordEnd可能不会触发stop回调
+	WXRecordData.stopJoinEnd=function(res,from){
+		WXRecordData.stopJoinEnd=null;
+		
+		var t1=Date.now();
+		if(res.localId){
+			chunkList.push({res:res,duration:t1-WXRecordData.startTime,time:t1,from:from});
+		}else{
+			//定时n分钟录音时，当刚刚接续录音，然后立即出发停止时，返回数据没有localId
+			console.error("已忽略"+from+"数据",res);
+		};
+		WXRecordData.chunks=null;//不要继续塞数据了，就算有也丢弃
+		
+		stopFn();
+	};
 	WXRecordData.wx.stopRecord({
 		fail:fail
 		,success:function(res){
-			var t1=Date.now();
-			timeouts.push({res:res,duration:t1-WXRecordData.startTime,time:t1});
-			stopFn();
+			WXRecordData.stopJoinEnd&&WXRecordData.stopJoinEnd(res,"stop");
 		}
 	});
 };
