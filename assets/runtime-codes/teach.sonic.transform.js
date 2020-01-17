@@ -177,6 +177,16 @@ var transformBufferPlayOnly=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 
 
 //******音频数据源，采集原始音频用的******
+//加载录音框架
+Runtime.Import([
+	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
+	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
+	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
+	,{url:RootFolder+"/src/extensions/sonic.js",check:function(){return !Recorder.Sonic}}
+	
+	,{url:RootFolder+"/assets/runtime-codes/fragment.playbuffer.js",check:function(){return !window.DemoFragment||!DemoFragment.PlayBuffer}}//引入DemoFragment.PlayBuffer
+]);
+
 //显示控制按钮
 Runtime.Ctrls([
 	{name:"开始录音",click:"recStart"}
@@ -228,15 +238,6 @@ var resetCtrl=function(){
 };
 
 
-//加载录音框架
-Runtime.Import([
-	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
-	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
-	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
-	,{url:RootFolder+"/src/extensions/sonic.js",check:function(){return !Recorder.Sonic}}
-	
-	,{url:RootFolder+"/assets/runtime-codes/fragment.playbuffer.js",check:function(){return !window.DemoFragment||!DemoFragment.PlayBuffer}}//引入DemoFragment.PlayBuffer
-]);
 
 //调用录音
 var rec;

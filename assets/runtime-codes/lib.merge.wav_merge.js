@@ -145,6 +145,12 @@ var test=function(){
 
 
 //=====以下代码无关紧要，音频数据源，采集原始音频用的==================
+//加载录音框架
+Runtime.Import([
+	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
+	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
+]);
+
 //显示控制按钮
 Runtime.Ctrls([
 	{name:"16位wav录音",click:"recStart16"}
@@ -153,12 +159,6 @@ Runtime.Ctrls([
 	,{name:"合并日志中所有wav",click:"test"}
 ]);
 
-
-//加载录音框架
-Runtime.Import([
-	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
-	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
-]);
 
 //调用录音
 var rec;

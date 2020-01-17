@@ -154,19 +154,19 @@ var TransferUpload=function(number,blobOrNull,duration,blobRec,isClose){
 
 
 //=====以下代码无关紧要，音频数据源，采集原始音频用的==================
-//显示控制按钮
-Runtime.Ctrls([
-	{name:"开始录音和传输mp3",click:"recStartMp3"}
-	,{name:"开始录音和传输wav",click:"recStartWav"}
-	,{name:"停止录音",click:"recStop"}
-]);
-
 //加载框架
 Runtime.Import([
 	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
 	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
 	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
+]);
+
+//显示控制按钮
+Runtime.Ctrls([
+	{name:"开始录音和传输mp3",click:"recStartMp3"}
+	,{name:"开始录音和传输wav",click:"recStartWav"}
+	,{name:"停止录音",click:"recStop"}
 ]);
 
 
