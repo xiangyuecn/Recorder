@@ -1,6 +1,6 @@
 /*
 录音 Recorder扩展，频率直方图显示
-使用本扩展需要引入lib.fft.js支持，直方图特意优化主要显示0-10khz语音部分，其他高频显示区域较小，不适合用来展示音乐频谱
+使用本扩展需要引入lib.fft.js支持，直方图特意优化主要显示0-5khz语音部分，其他高频显示区域较小，不适合用来展示音乐频谱
 
 https://github.com/xiangyuecn/Recorder
 
@@ -189,20 +189,21 @@ fn.prototype=FrequencyHistogramView.prototype={
 		var dBmax=20*Math.log(0x7fff)/Math.log(10);
 		
 		var fftSize=bufferSize/2;
-		var fftSize10k=Math.floor(fftSize*10000/sampleRate);//10khz所在位置
-		var line80=Math.round(lineCount*0.8);//80%的柱子位置
-		var fftSizeStep1=fftSize10k/line80;
-		var fftSizeStep2=(fftSize-fftSize10k)/(lineCount-line80);
+		var fftSize5k=Math.min(fftSize,Math.floor(fftSize*5000/(sampleRate/2)));//5khz所在位置，8000采样率及以下最高只有4khz
+		var fftSize5kIsAll=fftSize5k==fftSize;
+		var line80=fftSize5kIsAll?lineCount:Math.round(lineCount*0.8);//80%的柱子位置
+		var fftSizeStep1=fftSize5k/line80;
+		var fftSizeStep2=fftSize5kIsAll?0:(fftSize-fftSize5k)/(lineCount-line80);
 		var fftIdx=0;
 		for(var i=0;i<lineCount;i++){
 			//不采用jmp123的非线性划分频段，录音语音并不适用于音乐的频率，应当弱化高频部分
-			//80%关注0-10khz主要人声部分 20%关注剩下的高频，这样不管什么采样率都能做到大部分频率显示一致。
+			//80%关注0-5khz主要人声部分 20%关注剩下的高频，这样不管什么采样率都能做到大部分频率显示一致。
 			var start=Math.ceil(fftIdx);
 			if(i<line80){
-				//10khz以下
+				//5khz以下
 				fftIdx+=fftSizeStep1;
 			}else{
-				//10khz以上
+				//5khz以上
 				fftIdx+=fftSizeStep2;
 			};
 			var end=Math.min(Math.ceil(fftIdx),fftSize);
