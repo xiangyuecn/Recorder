@@ -238,6 +238,7 @@ $.ajax({
 6. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
 7. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
 8. [【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
+9. [【测试】音频可视化相关扩展测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
 
 
 
@@ -563,6 +564,11 @@ Recorder({type:"aac"})
 # :open_book:扩展
 在`src/extensions`目录内为扩展支持库，这些扩展库默认都没有合并到生成代码中，需单独引用(`dist`或`src`中的)才能使用。
 
+【附】部分扩展使用效果图：
+
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.gif)
+
+
 ## `WaveView`扩展
 [waveview.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/waveview.js)，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此扩展参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
 
@@ -581,7 +587,6 @@ rec.open(function(){
 });
 ```
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.png)
 [​](?RefEnd)
 
 ### 【构造】wave=Recorder.WaveView(set)
@@ -611,12 +616,48 @@ set={
 输入音频数据，更新波形显示，这个方法调用的越快，波形越流畅。pcmData `[Int16,...]` 一维数组，为当前的录音数据片段，其他参数和`onProcess`回调相同。
 
 
+## `WaveSurferView`扩展
+[wavesurfer.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/wavesurfer.view.js)，7kb大小源码，音频可视化波形显示，具体样子参考演示地址页面。
+
+此扩展的使用方式和`WaveView`扩展完全相同，请参考上面的`WaveView`来使用；本扩展的波形绘制直接简单的使用PCM的采样数值大小来进行线条的绘制，同一段音频绘制出的波形和Audition内显示的波形外观上几乎没有差异。
+
+### 【构造】surfer=Recorder.WaveSurferView(set)
+构造函数，`set`参数为配置对象，默认配置值如下：
+``` javascript
+set={
+    elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
+        //或者配置显示大小，手动把frequencyObj.elem显示到别的地方
+    ,width:0 //显示宽度
+    ,height:0 //显示高度
+    
+    //以上配置二选一
+    
+    scale:2 //缩放系数，应为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
+    
+    ,fps:50 //绘制帧率，不可过高，50-60fps运动性质动画明显会流畅舒适，实际显示帧率达不到这个值也并无太大影响
+    
+    ,duration:2500 //当前视图窗口内最大绘制的波形的持续时间，此处决定了移动速率
+    ,direction:1 //波形前进方向，取值：1由左往右，-1由右往左
+    ,position:0 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
+    
+    ,centerHeight:1 //中线基础粗细，如果为0不绘制中线，position=±1时应当设为0
+    
+    //波形颜色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
+    ,linear:[0,"rgba(0,187,17,1)",0.7,"rgba(255,215,0,1)",1,"rgba(255,102,0,1)"]
+    ,lineColor:"" //中线css颜色，留空取波形第一个渐变颜色
+}
+```
+
+### 【方法】surfer.input(pcmData,powerLevel,sampleRate)
+输入音频数据，更新波形显示。pcmData `[Int16,...]` 一维数组，为当前的录音数据片段，其他参数和`onProcess`回调相同。
+
+
+
 ## `FrequencyHistogramView`扩展
 [frequency.histogram.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/frequency.histogram.view.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)，12kb大小源码，音频可视化频率直方图显示，具体样子参考演示地址页面。此扩展核心算法参考Java开源库[jmp123](https://sourceforge.net/projects/jmp123/files/)的代码编写的，`jmp123`版本`0.3`；直方图特意优化主要显示0-10khz语音部分，其他高频显示区域较小，不适合用来展示音乐频谱。
 
 此扩展的使用方式和`WaveView`扩展完全相同，请参考上面的`WaveView`来使用；请注意：必须同时引入`lib.fft.js`才能正常工作。
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_histogram.png)
 
 ### 【构造】histogram=Recorder.FrequencyHistogramView(set)
 构造函数，`set`参数为配置对象，默认配置值如下：

@@ -40,19 +40,25 @@ npm install recorder-core
 
 
 ## WaveView的调用方式
-直接通过Recorder.WaveView调用即可，录音时动态显示波形，详细的使用请参考下面详细的README。
+引入`src/extensions/waveview.js`，再通过Recorder.WaveView调用即可，录音时动态显示波形，详细的使用请参考下面详细的README。
 
 @@Ref README.WaveView.Codes@@
 
+【附】部分扩展使用效果图：
+
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.gif)
+
+
+## WaveSurferView的调用方式
+引入`src/extensions/wavesurfer.view.js`，再通过Recorder.WaveSurferView调用即可，录音时动态显示波形，详细的使用请参考下面详细的README。
+
 
 ## FrequencyHistogramView的调用方式
-直接通过Recorder.FrequencyHistogramView调用即可，音频可视化频率直方图显示，详细的使用请参考下面详细的README。
-
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_histogram.png)
+引入`src/extensions/frequency.histogram.view.js`+`lib.fft.js`，再通过Recorder.FrequencyHistogramView调用即可，音频可视化频率直方图显示，详细的使用请参考下面详细的README。
 
 
 ## Sonic的调用方式
-直接通过Recorder.Sonic调用即可，音频变速变调转换，详细的使用请参考下面详细的README。
+引入`src/extensions/sonic.js`，再通过Recorder.Sonic调用即可，音频变速变调转换，详细的使用请参考下面详细的README。
 
 
 ## RecordApp的调用方式

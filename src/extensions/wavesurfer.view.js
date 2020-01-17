@@ -31,7 +31,7 @@ var fn=function(set){
 		,fps:50 //绘制帧率，不可过高，50-60fps运动性质动画明显会流畅舒适，实际显示帧率达不到这个值也并无太大影响
 		
 		,duration:2500 //当前视图窗口内最大绘制的波形的持续时间，此处决定了移动速率
-		,direction:1 //波形前进反向，取值：1由左往右，-1由右往左
+		,direction:1 //波形前进方向，取值：1由左往右，-1由右往左
 		,position:0 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
 		
 		,centerHeight:1 //中线基础粗细，如果为0不绘制中线，position=±1时应当设为0
@@ -161,8 +161,8 @@ fn.prototype=WaveSurferView.prototype={
 		
 		//计算绘制占用长度
 		var pcmDuration=pcmData.length*1000/sampleRate;
-		var pcmWidth=Math.floor(pcmDuration*width/set.duration);
-		var pointCount=Math.floor(pcmWidth/lineWidth);
+		var pcmWidth=pcmDuration*width/set.duration;
+		var pointCount=Math.max(1,Math.floor(pcmWidth/lineWidth));
 		
 		//***后台卷轴连续绘制***
 		var linear1=This.genLinear(ctx,set.linear,originY,originY-heightY);//上半部分的填充
