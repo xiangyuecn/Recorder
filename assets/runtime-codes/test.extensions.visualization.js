@@ -32,7 +32,7 @@ var waveConfigs={
 		,{testTitle:"顶部显示+粗大"
 			,lineCount:15
 			,position:1
-			,lineWidth:999
+			,spaceWidth:1.5
 			,stripeEnable:false
 			,linear:[0,"#ab00ff",1,"#ab00ff"]}
 	]

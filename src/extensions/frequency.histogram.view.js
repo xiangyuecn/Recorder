@@ -31,7 +31,8 @@ var fn=function(set){
 		,fps:20 //绘制帧率，不可过高
 		
 		,lineCount:30 //直方图柱子数量，数量的多少对性能影响不大，密集运算集中在FFT算法中
-		,lineWidth:6 //柱子线条基础粗细，当视图可以容下lineCount这么多时才会生效，否则自适应
+		,widthRatio:0.6 //柱子线条宽度占比，为所有柱子占用整个视图宽度的比例，剩下的空白区域均匀插入柱子中间；默认值也基本相当于一根柱子占0.6，一根空白占0.4；设为1不留空白，当视图不足容下所有柱子时也不留空白
+		,spaceWidth:0 //柱子间空白固定基础宽度，柱子宽度自适应，当不为0时widthRatio无效，当视图不足容下所有柱子时将不会留空白，允许为负数，让柱子发生重叠
 		,minHeight:0 //柱子保留基础高度，position不为±1时应该保留点高度
 		,position:-1 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
 		
@@ -250,11 +251,13 @@ fn.prototype=FrequencyHistogramView.prototype={
 		//绘制柱子
 		ctx.shadowBlur=set.shadowBlur*scale;
 		ctx.shadowColor=set.shadowColor;
-		var lineWidth=set.lineWidth*scale;
-		if(lineWidth*lineCount+(lineCount+1)*scale>width){//放不下了，调小点
-			lineWidth=Math.max(1*scale,Math.floor((width-(lineCount+1)*scale)/lineCount));
+		var widthRatio=set.widthRatio;
+		var spaceWidth=set.spaceWidth*scale;
+		if(spaceWidth!=0){
+			widthRatio=(width-spaceWidth*(lineCount+1))/width;
 		};
-		var spaceFloat=(width-lineCount*lineWidth)/(lineCount+1);//均匀间隔，首尾都留空
+		var lineWidth=Math.max(1*scale,Math.floor((width*widthRatio)/lineCount));//柱子宽度至少1个单位
+		var spaceFloat=(width-lineCount*lineWidth)/(lineCount+1);//均匀间隔，首尾都留空，可能为负数，柱子将发生重叠
 		var minHeight=set.minHeight*scale;
 		for(var i=0,xFloat=0,x,y,h;i<lineCount;i++){
 			xFloat+=spaceFloat;
