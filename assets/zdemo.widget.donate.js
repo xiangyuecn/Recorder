@@ -1,5 +1,6 @@
 //打赏挂件，创意来自：https://github.com/TangSY/echarts-map-demo
 (function(){
+"use strict";
 
 var ImgAlipay="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-alipay.png";
 var ImgWeixin="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-weixin.png";
@@ -83,14 +84,25 @@ Fn.prototype=DonateWidget.prototype={
 		this._render(!_f,!!_f,fixedElem.querySelector(".DonateWidget_dialogRender"));
 	}
 	,_render:function(isDialog,isFloat,elem){
-		var title="赏包辣条？";
-		var time=new Date("2020/01/25").getTime();//大年初一
-		var td=Math.ceil((time-Date.now())/24/60/60/1000);
-		if(td>0){
-			title="剩余"+td+"天就过年了，给大伙拜个早年吧~ 赏包辣条？";
-		}else if(td>-30){
-			tiltle="春节快乐，给大伙拜年啦~ 赏个红包？";
+		var title="",times=["2020/01/25","2021/02/12","2022/02/01","2023/01/22","2024-02-10"];//大年初一
+		var now=Date.now();
+		for(var i=0;!title&&i<times.length;i++){
+			var time=new Date(times[i]).getTime();
+			var td=Math.ceil((time-now)/24/60/60/1000);
+			if(td<=45&&td>-25){
+				if(td>0){
+					title="剩余"+td+"天就过年了，给大伙拜个早年吧~ 赏包辣条？";
+				}else{
+					title="春节快乐，给大伙拜年啦~";
+					if(td>-15){
+						title+=" 赏个红包？";
+					}else{
+						title+=" 赏包辣条？";
+					};
+				};
+			};
 		};
+		title=title||"赏包辣条？";
 		
 		var min=IsMobile?true:isDialog?false:true;
 		elem.innerHTML='\
