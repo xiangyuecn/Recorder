@@ -131,7 +131,7 @@ fn.prototype=WaveSurferView.prototype={
 		if(arr.length){
 			This.draw(arr,This.sampleRate);
 		}else{
-			if(now-This.inputTime>1.3){
+			if(now-This.inputTime>1300){
 				//超时没有输入，干掉定时器
 				clearInterval(This.timer);
 				This.timer=0;
