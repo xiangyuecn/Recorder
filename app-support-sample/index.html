@@ -72,7 +72,7 @@ paths.push({
 });
 
 //可以设置组件是否进行延迟加载，默认会延迟加载，不会阻塞Install
-RecordApp.UseLazyLoad=!!(+localStorage["RecordApp_UseLazyLoad"]||0);
+RecordApp.UseLazyLoad=!(+localStorage["RecordApp_UseLazyLoadDisable"]||0);
 
 //立即加载环境，自动把Recorder加载进来
 RecordApp.Install(function(){
@@ -854,7 +854,7 @@ function onInstall(){
 	
 	reclog("提示：部分组件可能会设置在Install成功后进行延迟加载，Start、Stop操作在组件未加载完时会等待OnLazyReady事件触发，可通过设置RecordApp.UseLazyLoad=false关闭此特性（会阻塞Install导致RequestPermission变慢），<span style='color:"+(RecordApp.UseLazyLoad?"#0b1'>当前已启用":"red'>当前已关闭")+"此特性</span><button onclick='changeUseLazyLoad()'>"+(RecordApp.UseLazyLoad?"关闭":"启用")+"</button>");
 	window.changeUseLazyLoad=function(){
-		localStorage["RecordApp_UseLazyLoad"]=RecordApp.UseLazyLoad?0:1;
+		localStorage["RecordApp_UseLazyLoadDisable"]=RecordApp.UseLazyLoad?1:0;
 		location.reload();
 	};
 	RecordApp.Current.OnLazyReady(function(){

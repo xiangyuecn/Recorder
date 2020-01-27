@@ -254,7 +254,7 @@ Default.Stop=function(success,fail){
 
 
 var App={
-LM:"2019-10-26 11:23:48"
+LM:"2020-1-28 04:38:58"
 ,Current:0
 ,IsWx:IsWx
 ,BaseFolder:BaseFolder
