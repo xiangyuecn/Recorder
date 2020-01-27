@@ -79,6 +79,24 @@ npm install recorder-core
     （如何避免自动加载：使用时可以把所有支持文件全部手动引入，或者压缩时可以把所有支持文件压缩到一起，会检测到组件已加载，就不会再进行自动加载；会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置）
     （**注意：需要在https等安全环境下才能进行录音**） -->
 <script src="你项目中的路径/src/app-support/app.js"></script>
+
+
+<!-- 可选的扩展支持项的引入
+        方法一：我们可以先直接引入Recorder核心，然后再引入扩展支持，这样会自动检测到组件已加载
+        <script src="你项目中的路径/src/recorder-core.js"></script>
+        <script src="你项目中的路径/src/extensions/waveview.js"></script>
+        
+        方法二：通过注入到Default实现的paths中让RecordApp去自动加载
+        <script>
+            RecordApp.Platforms.Default.Config.paths.push({
+                url:"你项目中的路径/src/extensions/waveview.js"
+                ,lazyBeforeStart:1 //开启延迟加载，在Start调用前任何时间进行加载都行
+                ,check:function(){return !Recorder.WaveView} //检测是否需要加载
+            });
+        </script>
+        
+        方法三：直接修改app.js源码中RecordApp.Platforms.Default.Config.paths，添加需要加载的js
+-->
 ```
 
 ### 调用录音

@@ -59,6 +59,24 @@
     （如何避免自动加载：使用时可以把所有支持文件全部手动引入，或者压缩时可以把所有支持文件压缩到一起，会检测到组件已加载，就不会再进行自动加载；会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置）
     （**注意：需要在https等安全环境下才能进行录音**） -->
 <script src="src/app-support/app.js"></script>
+
+
+<!-- 可选的扩展支持项的引入
+        方法一：我们可以先直接引入Recorder核心，然后再引入扩展支持，这样会自动检测到组件已加载
+        <script src="src/recorder-core.js"></script>
+        <script src="src/extensions/waveview.js"></script>
+        
+        方法二：通过注入到Default实现的paths中让RecordApp去自动加载
+        <script>
+            RecordApp.Platforms.Default.Config.paths.push({
+                url:"src/extensions/waveview.js"
+                ,lazyBeforeStart:1 //开启延迟加载，在Start调用前任何时间进行加载都行
+                ,check:function(){return !Recorder.WaveView} //检测是否需要加载
+            });
+        </script>
+        
+        方法三：直接修改app.js源码中RecordApp.Platforms.Default.Config.paths，添加需要加载的js
+-->
 ```
 
 **方式二**：通过import/require引入
@@ -102,7 +120,7 @@ import 'recorder-core/src/extensions/waveview'
 RecordApp.RequestPermission(function(){
     //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
     
-    RecordApp.Start({
+    RecordApp.Start({//如果需要的组件还在延迟加载，Start调用会等待这些组件加载完成后才会调起底层平台的Start方法，可通绑定RecordApp.Current.OnLazyReady事件来确定是否已完成组件的加载，或者设置RecordApp.UseLazyLoad=false来关闭延迟加载（会阻塞Install导致RequestPermission变慢）
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把支持文件到Platforms.Default内注册
         ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //如果当前环境支持实时回调（RecordApp.Current.CanProcess()），收到录音数据时就会实时调用本回调方法
@@ -285,9 +303,19 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 `sampleRate` 缓冲PCM的采样率
 
 
+## 【静态属性】RecordApp.UseLazyLoad
+默认为`true`开启部分非核心组件的延迟加载，不会阻塞`Install`，`Install`后通过`RecordApp.Current.OnLazyReady`事件来确定组件是否已全部加载；如果设为`false`，将忽略组件的延迟加载属性，`Install`时会将所有组件一次性加载完成后才会`Install`成功。
+
+此配置只有在组件是通过RecordApp自动加载时才会有效，如果组件是手动引入的时不会生效；会影响的组件有：`RecordApp.Platforms`的`Config.paths`中标记了`lazyBeforeStart=1`、`lazyBeforeStop=1`的js；`lazyBeforeStart`标记的js会在`Start`调用前完成加载，否则会阻塞`Start`，`lazyBeforeStop`标记的js会在`Stop`调用前完成加载，否则会阻塞`Stop`。
+
 
 ## 【静态属性】RecordApp.Current
 为`RecordApp.Install`初始化后识别到的底层平台，取值为`RecordApp.Platforms`之一。
+
+## 【静态方法】RecordApp.Current.OnLazyReady(fn)
+绑定一个函数，在所有延迟加载的组件加载完成后回调，受`RecordApp.UseLazyLoad`属性的影响，此回调的调用时机是不一样的：开启延迟加载后，OnLazyReady会在Install完成后，所有组件加载完成时调用；关闭延迟加载后，OnLazyReady会在Install完成前调用。
+
+`fn`: `fn(errMsg)` 提供一个回调函数，参数为错误信息，如果错误信息为空代表没有错误，否则代表组件有加载失败，可再次请求权限会尝试重新加载组件。
 
 ## 【静态方法】RecordApp.Current.CanProcess()
 识别的底层平台是否支持实时返回PCM数据，如果返回值为true，`set.onProcess`将可以被实时回调。
@@ -301,7 +329,7 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 支持的平台列表，目前有三个：
 1. `Native`: 原生App平台支持，底层由实际的`JsBridge`提供，此平台默认未开启
 2. `IOS-Weixin`: IOS微信`浏览器`、`小程序web-view`支持，底层使用的`微信JsSDK` `+` `Recorder`，此平台默认开启
-3. `Default`: H5原生支持，底层使用的`Recorder H5`，此平台默认开启且不允许关闭
+3. `Default`: H5原生支持，底层使用的`Recorder H5`，此平台默认开启且不允许关闭，其他平台需要此平台提供支持
 
 
 
@@ -309,7 +337,7 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 底层平台为`RecordApp.Platforms`中定义的值。
 
 
-## 统一实现
+## 统一实现参考
 每个底层平台都实现了三个方法，`Native`在[app-native-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-native-support.js)中实现了，`IOS-Weixin`在[app-ios-weixin-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-ios-weixin-support.js)中实现了，`Default`在[app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)中实现了。
 
 ### platform.RequestPermission(success,fail)
@@ -322,30 +350,30 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 本底层具体的开始录音实现，参数和`RecordApp.Stop`相同。
 
 
-## 配置
+## 【使用前需修改】配置
 每个底层平台都有一个`platform.Config`配置，这个配置是根据平台的需要什么我们这里面就要给什么；每个`platform.Config`内都有一个`paths`数组，里面包含了此平台初始化时需要加载的相关的实现文件、Recorder核心、编码引擎，可修改这些数组加载自己需要的格式编码引擎。另外还有一个全局配置`RecordAppBaseFolder`。
 
 ### 【全局变量】window.RecordAppBaseFolder
-文件基础目录`BaseFolder`，用来定位加载类库，此目录可以是`/src/`或者`/dist/`，目录内应该包含`recorder-core.js、engine`等。实际取值需自行根据自己的网站目录调整，或者加载`app.js`前，设置此全局变量。
+可提供文件基础目录`BaseFolder`，用来自动定位加载类库，此目录可以是`src/`或者`/dist/`，必须`/`结尾；目录内应该包含`recorder-core.js、engine`等。实际取值需自行根据自己的网站目录调整，或者加载`app.js`前，设置此全局变量。
 
 ### 【Event】window.OnRecordAppInstalled()
-可提供一个回调函数用来配置`RecordApp`，在`app.js`内代码执行完毕时回调，免得`RecordAppBaseFolder`要在`app.js`之前定义，其他配置又要在之后定义的麻烦。使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。
+可提供这个全局的回调函数用来配置`RecordApp`，在`app.js`内代码执行完毕时会尝试回调此方法，免得`RecordAppBaseFolder`要在`app.js`之前定义，其他配置又要在之后定义的麻烦。使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。
 
 
 ### 【配置】RecordApp.Platforms.Default.Config
-无需手动配置。
+此为默认的H5原生录音实现配置，配置内定义了对Recorder库和编码引擎的加载，可修改配置内的paths来添加自动加载扩展js。由于其他平台都需要此平台进行支持，因此修改这个配置会影响其他平台。
 
 
 ### 【配置】RecordApp.Platforms.Native.Config
-可以参考[app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)中的演示有效的配置。
+修改这个配置会有点复杂，可以参考[app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)中的演示有效的配置。
 
-需提供`IsApp`、`JsBridgeRequestPermission`、`JsBridgeStart`、`JsBridgeStop`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
+使用App原生录音，必需提供配置中的`IsApp`、`JsBridgeRequestPermission`、`JsBridgeStart`、`JsBridgeStop`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
 
 
 ### 【配置】RecordApp.Platforms.Weixin(IOS-Weixin).Config
-可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置。
+修改这个配置会有点复杂，可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置。
 
-需提供`WxReady`、`DownWxMedia`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
+使用微信录音，必需提供配置中的`WxReady`、`DownWxMedia`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
 
 - `WxReady`: 对使用到的[微信JsSDK进行签名](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)，至少要包含`startRecord,stopRecord,onVoiceRecordEnd,uploadVoice`接口。签名操作需要后端支持。
 - `DownWxMedia`: 对[微信录音素材进行下载](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727)，下载操作需要后端支持。

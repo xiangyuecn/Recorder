@@ -138,11 +138,11 @@ var Config_SupportPlatforms=[
 			,paths:[//当在微信中使用此实现时，会自动把这些js全部加载
 				{url:BaseFolder+"app-support/app-ios-weixin-support.js",check:function(){return !Weixin.IsInit}}
 				
-				//amr解码引擎文件，因为微信临时素材接口返回的音频为amr格式，刚好有amr解码器，省去了服务器端的复杂性
-				,{url:BaseFolder+"engine/beta-amr.js",check:function(){return !Recorder.prototype.amr}}
+				//amr解码引擎文件，因为微信临时素材接口返回的音频为amr格式，刚好有amr解码器，省去了服务器端的复杂性。amr解码器只是在Stop时才需要，因此可以在Stop前任何时候进行延迟加载
+				,{url:BaseFolder+"engine/beta-amr.js",lazyBeforeStop:1,check:function(){return !Recorder.prototype.amr}}
 				/*=:=*/
-					,{url:BaseFolder+"engine/beta-amr-engine.js",check:function(){return !Recorder.AMR}}
-					,{url:BaseFolder+"engine/wav.js",check:function(){return !Recorder.prototype.wav}}
+					,{url:BaseFolder+"engine/beta-amr-engine.js",lazyBeforeStop:1,check:function(){return !Recorder.AMR}}
+					,{url:BaseFolder+"engine/wav.js",lazyBeforeStop:1,check:function(){return !Recorder.prototype.wav}}
 				/*<@ @>*/
 			]
 		}
@@ -160,8 +160,10 @@ var Config_SupportPlatforms=[
 		,Config:{
 			paths:[//当使用默认实现时，会自动把这些js全部加载，如果core和编码器已手动加载，可以把此数组清空；另外需要其他编码格式的时候，直接把编码引擎加在后面（不需要mp3格式就删掉），会自动加载
 				{url:BaseFolder+"recorder-core.js",check:function(){return !window.Recorder}}
-				,{url:BaseFolder+"engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
-				/*=:=*/ ,{url:BaseFolder+"engine/mp3-engine.js",check:function(){return !Recorder.lamejs}} /*<@ @>*/ //编译指令：压缩后mp3-engine已包含在了mp3.js中
+				
+				//自动加载需要的编码引擎，这里默认提供mp3格式。因为编码引擎只有在Start时才需要，因此可以在Start前任何时候进行延迟加载
+				,{url:BaseFolder+"engine/mp3.js",lazyBeforeStart:1,check:function(){return !Recorder.prototype.mp3}}
+				/*=:=*/ ,{url:BaseFolder+"engine/mp3-engine.js",lazyBeforeStart:1,check:function(){return !Recorder.lamejs}} /*<@ @>*/ //编译指令：压缩后mp3-engine已包含在了mp3.js中
 			]
 		}
 	}
@@ -256,6 +258,7 @@ LM:"2019-10-26 11:23:48"
 ,Current:0
 ,IsWx:IsWx
 ,BaseFolder:BaseFolder
+,UseLazyLoad:true //默认为true开启部分非核心组件的延迟加载，不会阻塞Install，Install后通过RecordApp.Current.OnLazyReady事件来确定组件是否已全部加载；如果设为false，将忽略组件的延迟加载属性，Install时会将所有组件一次性加载完成后才会Install成功
 ,AlwaysUseWeixinJS:false //测试用的，微信里面总是使用微信的接口，方便Android上调试
 ,AlwaysAppUseJS:false //测试用的，App里面总是使用网页版录音，用于测试App里面的网页兼容性
 ,Platforms:{
@@ -321,16 +324,38 @@ fail: fn(msg) 初始化失败
 	};
 	
 	
+	var readConfigPaths=function(platform,jsLazyStart,jsLazyStop){
+		var config=platform.Config;
+		var paths=config.paths,jsArr=[];
+		for(var i=0,o;i<paths.length;i++){
+			o=paths[i];
+			if(App.UseLazyLoad){
+				if(o.lazyBeforeStart){
+					jsLazyStart&&jsLazyStart.push(o);
+				}else if(o.lazyBeforeStop){
+					jsLazyStop&&jsLazyStop.push(o);
+				}else{
+					jsArr.push(o);
+				};
+			}else{
+				jsArr.push(o);
+			};
+		};
+		return jsArr;
+	};
 	var idx=0;
 	var initPlatform=function(platform,end){
+		//此平台已完成初始化
 		if(platform.IsInit){
 			end();
 			return;
 		};
-		var config=platform.Config;
+		
+		var jsArr=readConfigPaths(platform);
+		console.log("Install "+platform.Key+"...",jsArr);
 		
 		//加载需要的支持js文件
-		App.Js(config.paths,function(){
+		App.Js(jsArr,function(){
 			platform.IsInit=true;
 			end();
 		},function(msg){
@@ -338,6 +363,83 @@ fail: fn(msg) 初始化失败
 			console.log(msg,platform);
 			fail(msg);
 		});
+	};
+	var tryLazyLoad=function(platform,first){
+		//尝试进行延迟加载，可能已经加载完成、未加载、加载错误
+		var jsLazyStart=[],jsLazyStop=[];
+		readConfigPaths(platform,jsLazyStart,jsLazyStop);
+		if(platform.ExtendDefault){
+			readConfigPaths(Default,jsLazyStart,jsLazyStop);
+		};
+		
+		var data=platform.LazyReady;
+		if(!data){
+			data=platform.LazyReady={
+				fsta:[] //start bind functions
+				,fsto:[] //stop bind functions
+				,fall:[] //all ready bind functions
+				,usta:0 //start status 0未加载 1加载失败 2加载中 3加载成功
+				,usto:0 //stop status
+				,msta:"" //start error msg
+				,msto:"" //stop error msg
+			};
+			platform.LazyAtStart=function(fn){
+				startLoadEnd()?fn(data.msta):data.fsta.push(fn);
+			};
+			platform.LazyAtStop=function(fn){
+				stopLoadEnd()?fn(data.msto):data.fsto.push(fn);
+			};
+			platform.OnLazyReady=function(fn){
+				startLoadEnd()&&stopLoadEnd()?fn(data.msta||data.msto):data.fall.push(fn);
+			};
+		};
+		var startLoadEnd=function(){return data.usta==1||data.usta==3};
+		var stopLoadEnd=function(){return data.usto==1||data.usto==3};
+		
+		var statusKey=first?"usta":"usto";
+		var msgKey=first?"msta":"msto";
+		var fnsKey=first?"fsta":"fsto";
+		
+		var loadNext=function(loadEnd){
+			if(loadEnd){
+				console.log("Lazy Load:"+statusKey);
+			};
+			var callBinds=function(key,err){
+				var fns=data[key];
+				data[key]=[];//先清空再说
+				for(var i=0;i<fns.length;i++){
+					fns[i](err);
+				};
+			};
+			if(data[statusKey]!=2){
+				callBinds(fnsKey,data[msgKey]);
+			};
+			if(startLoadEnd()&&stopLoadEnd()){
+				callBinds("fall",data.msta||data.msto);
+			};
+			
+			if(first){
+				tryLazyLoad(platform);
+			};
+		};
+		if(data[statusKey]<2){
+			data[msgKey]="";
+			data[statusKey]=2;
+			var jsArr=first?jsLazyStart:jsLazyStop;
+			console.log("Lazy Load..."+statusKey,jsArr);
+			App.Js(jsArr,function(){
+				data[statusKey]=3;
+				loadNext(1);
+			},function(msg){
+				msg="加载js库失败["+statusKey+"]："+msg;
+				console.log(msg,platform);
+				data[statusKey]=1;
+				data[msgKey]=msg;
+				loadNext(1);
+			});
+		}else{
+			loadNext();
+		};
 	};
 	var next=function(cur){
 		//遍历选择支持的底层平台
@@ -365,7 +467,11 @@ fail: fn(msg) 初始化失败
 			return;
 		};
 		
+		//先注册延迟加载事件函数，开始进行延迟加载
+		tryLazyLoad(cur,1);
+		
 		//已获取支持的底层平台
+		console.log("Install Success");
 		App.Current=cur;
 		success();
 	};
@@ -436,13 +542,30 @@ fail:fn(errMsg) 开启录音出错时回调
 	for(var k in obj){
 		set[k]||(set[k]=obj[k]);
 	};
-	cur.Start(set,function(){
-		console.log("开始录音",set);
-		success&&success();
-	},function(msg){
-		console.log("开始录音失败："+msg);
-		fail&&fail(msg);
+	var readyWait=0;
+	cur.LazyAtStart(function(err){
+		if(readyWait){
+			console.warn("Start Wait Ready "+(Date.now()-readyWait)+"ms");
+		};
+		readyWait=1;
+		
+		var failCall=function(msg){
+			console.log("开始录音失败："+msg);
+			fail&&fail(msg);
+		};
+		if(err){
+			failCall(err);
+		}else{
+			cur.Start(set,function(){
+				console.log("开始录音",set);
+				success&&success();
+			},failCall);
+		};
 	});
+	if(!readyWait){
+		console.warn("Start Wait Ready...");
+	};
+	readyWait=Date.now();
 }
 /*
 结束录音
@@ -462,13 +585,30 @@ fail:fn(errMsg) 录音出错时回调
 		return;
 	};
 	
-	cur.Stop(!success?null:function(blob,duration){
-		console.log("结束录音"+blob.size+"b "+duration+"ms",blob);
-		success(blob, duration);
-	},function(msg){
-		console.log("结束录音失败："+msg);
-		fail&&fail(msg);
+	var readyWait=0;
+	cur.LazyAtStop(function(err){
+		if(readyWait){
+			console.warn("Stop Wait Ready "+(Date.now()-readyWait)+"ms");
+		};
+		readyWait=1;
+		
+		var failCall=function(msg){
+			console.log("结束录音失败："+msg);
+			fail&&fail(msg);
+		};
+		if(err){
+			failCall(err);
+		}else{
+			cur.Stop(!success?null:function(blob,duration){
+				console.log("结束录音"+blob.size+"b "+duration+"ms",blob);
+				success(blob, duration);
+			},failCall);
+		};
 	});
+	if(!readyWait){
+		console.warn("Stop Wait Ready...");
+	};
+	readyWait=Date.now();
 }
 
 };

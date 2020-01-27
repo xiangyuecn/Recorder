@@ -52,20 +52,27 @@ document.body.appendChild=function(s){
 var paths=RecordApp.Platforms.Default.Config.paths;
 paths.push({
 	url:PageSet_RecordAppBaseFolder+"extensions/waveview.js"
+	,lazyBeforeStart:1 //开启延迟加载，在Start调用前任何时间进行加载都行
 	,check:function(){return !Recorder.WaveView}
 });
 paths.push({
 	url:PageSet_RecordAppBaseFolder+"extensions/wavesurfer.view.js"
+	,lazyBeforeStart:1
 	,check:function(){return !Recorder.WaveSurferView}
 });
 paths.push({
 	url:PageSet_RecordAppBaseFolder+"extensions/lib.fft.js"
+	,lazyBeforeStart:1
 	,check:function(){return !Recorder.LibFFT}
 });
 paths.push({
 	url:PageSet_RecordAppBaseFolder+"extensions/frequency.histogram.view.js"
+	,lazyBeforeStart:1
 	,check:function(){return !Recorder.FrequencyHistogramView}
 });
+
+//可以设置组件是否进行延迟加载，默认会延迟加载，不会阻塞Install
+RecordApp.UseLazyLoad=!!(+localStorage["RecordApp_UseLazyLoad"]||0);
 
 //立即加载环境，自动把Recorder加载进来
 RecordApp.Install(function(){
@@ -347,12 +354,12 @@ Recorder库修改时间（有可能修改了忘改）:${Recorder.LM}
 
 
 <script>
-function reclog(s,e){
+function reclog(s,color){
 	var now=new Date();
 	var t=("0"+now.getHours()).substr(-2)
 		+":"+("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2);
-	$(".reclog").prepend('<div style="color:'+(e?"red":"")+'">['+t+']'+s+'</div>');
+	$(".reclog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>');
 };
 window.onerror=function(message, url, lineNo, columnNo, error){
 	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
@@ -386,7 +393,7 @@ function recreq(){
 	baseSet();
 	reclog("开始请求授权...");
 	if(!isInstall){
-		reclog("<span style='color:#f60'>还在初始化环境加载js库，可能比较慢，初始化完成后将调用请求授权</span>");
+		reclog("还在初始化环境加载js库，可能比较慢，初始化完成后将调用请求授权","#f60");
 	};
 	
 	
@@ -396,7 +403,7 @@ function recreq(){
 	
 	RecordApp.RequestPermission(function(){
 		dialogCancel();
-		reclog("<span style='color:#0b1'>"+RecordApp.Current.Key+"已授权</span>");
+		reclog(RecordApp.Current.Key+"已授权",2);
 	},function(err,isUserNotAllow){
 		dialogCancel();
 		reclog(RecordApp.Current.Key+(isUserNotAllow?" UserNotAllow，":"")+" 授权失败："+err,1);
@@ -515,9 +522,10 @@ function recstart(call){
 		}
 	};
 	curSet=null;
+	reclog(RecordApp.Current.Key+"正在打开...");
 	RecordApp.Start(set,function(){
 		curSet=set;
-		reclog(RecordApp.Current.Key+"已打开:"+type+" "+bit+"kbps");
+		reclog(RecordApp.Current.Key+"已打开:"+type+" "+bit+"kbps",2);
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
@@ -834,8 +842,6 @@ function loadEngine(input){
 	};
 };
 function onInstall(){
-	loadEngine($(".initType"));
-	
 	var isApp;
 	RecordApp.Platforms.Native.Config.IsApp(function(v){isApp=v;});
 	
@@ -846,7 +852,16 @@ function onInstall(){
 		reclog("此页面由服务器代理，源网址<a href='https://xiangyuecn.github.io/Recorder/app-support-sample/'>https://xiangyuecn.github.io/Recorder/app-support-sample/</a>");
 	};
 	
-	reclog("<span style='color:#0b1'>Install成功，环境："+RecordApp.Current.Key+"，可以录音了</span>");
+	reclog("提示：部分组件可能会设置在Install成功后进行延迟加载，Start、Stop操作在组件未加载完时会等待OnLazyReady事件触发，可通过设置RecordApp.UseLazyLoad=false关闭此特性（会阻塞Install导致RequestPermission变慢），<span style='color:"+(RecordApp.UseLazyLoad?"#0b1'>当前已启用":"red'>当前已关闭")+"此特性</span><button onclick='changeUseLazyLoad()'>"+(RecordApp.UseLazyLoad?"关闭":"启用")+"</button>");
+	window.changeUseLazyLoad=function(){
+		localStorage["RecordApp_UseLazyLoad"]=RecordApp.UseLazyLoad?0:1;
+		location.reload();
+	};
+	RecordApp.Current.OnLazyReady(function(){
+		reclog("OnLazyReady触发，所有组件已完成加载",2);
+		loadEngine($(".initType"));
+	});
+	reclog("Install成功，环境："+RecordApp.Current.Key+"，可以录音了",2);
 };
 reclog("<span style='color:#f60'>正在执行Install，请勿操作...</span>");
 if(isInstall){
