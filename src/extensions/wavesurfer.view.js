@@ -38,7 +38,7 @@ var fn=function(set){
 		
 		//波形颜色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
 		,linear:[0,"rgba(0,187,17,1)",0.7,"rgba(255,215,0,1)",1,"rgba(255,102,0,1)"]
-		,lineColor:"" //中线css颜色，留空取波形第一个渐变颜色
+		,centerColor:"" //中线css颜色，留空取波形第一个渐变颜色
 	};
 	for(var k in set){
 		o[k]=set[k];
@@ -218,7 +218,7 @@ fn.prototype=WaveSurferView.prototype={
 			y=Math.max(y,0);
 			y=Math.min(y,height-centerHeight);
 			
-			ctx.fillStyle=set.lineColor||set.linear[1];
+			ctx.fillStyle=set.centerColor||set.linear[1];
 			ctx.fillRect(0, y, width, centerHeight);
 		};
 		
