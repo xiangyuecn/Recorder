@@ -239,6 +239,8 @@ IOS其他浏览器||
 
 # :open_book:方法文档
 
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_caller.png)
+
 ## 【静态方法】RecordApp.RequestPermission(success,fail)
 请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法，用于准备好必要的环境；请求权限后如果不使用了，不管有没有调用`Start`，至少要调用一次`Stop`来清理可能持有的资源。
 

@@ -312,6 +312,8 @@ IOS其他浏览器||
 
 # :open_book:方法文档
 
+![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_caller.png)
+
 ### 【构造】rec=Recorder(set)
 
 构造函数，拿到`Recorder`的实例，然后可以进行请求获取麦克风权限和录音。
@@ -644,7 +646,7 @@ set={
     
     //波形颜色配置：[位置，css颜色，...] 位置: 取值0.0-1.0之间
     ,linear:[0,"rgba(0,187,17,1)",0.7,"rgba(255,215,0,1)",1,"rgba(255,102,0,1)"]
-    ,lineColor:"" //中线css颜色，留空取波形第一个渐变颜色
+    ,centerColor:"" //中线css颜色，留空取波形第一个渐变颜色
 }
 ```
 
