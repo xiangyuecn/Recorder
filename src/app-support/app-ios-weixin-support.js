@@ -31,33 +31,28 @@ platform.RequestPermission=function(success,fail){
 		};
 		WXRecordData.wx=wx;
 		
-		//可能已经在录音了，关掉再说
-		if(isStart){
-			killStart(function(){
-				platform.RequestPermission(success,fail);
+		//可能已经在录音了，暴力直接关掉一次再说，不然没法start
+		killStart(function(){
+			//微信不能提前发起授权请求，需要开始录音时才会调起授权 ，并且授权一次后管很久，因此开始录音然后关闭就能检测出权限
+			wx.startRecord({
+				success:function(){
+					setTimeout(function(){
+						stopNow(function(e){
+							if(!e || /short/i.test(e)){ //排除stopRecord:tooshort错误
+								success();
+							}else{
+								fail("清理资源出错："+e);
+							};
+						});
+					},100);
+				}
+				,fail:function(o){
+					fail("无法录音："+o.errMsg);
+				}
+				,cancel:function(o){
+					fail("用户不允许录音："+o.errMsg,true);
+				}
 			});
-			return;
-		};
-		
-		//微信不能提前发起授权请求，需要开始录音时才会调起授权，并且授权一次后管很久，因此开始录音然后关闭就能检测出权限
-		wx.startRecord({
-			success:function(){
-				setTimeout(function(){
-					stopNow(function(e){
-						if(!e || /short/i.test(e)){ //排除stopRecord:tooshort错误
-							success();
-						}else{
-							fail("清理资源出错："+e);
-						};
-					});
-				},100);
-			}
-			,fail:function(o){
-				fail("无法录音："+o.errMsg);
-			}
-			,cancel:function(o){
-				fail("用户不允许录音："+o.errMsg,true);
-			}
 		});
 	});
 };
@@ -74,7 +69,9 @@ var stopNow=function(call){
 	});
 };
 var killStart=function(call){
-	console.warn("录音中，正在kill重试");
+	if(isStart){
+		console.warn("录音中，正在kill重试");
+	};
 	stopNow(function(){
 		setTimeout(call,300);
 	});

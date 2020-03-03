@@ -6,6 +6,7 @@
   "main": "src/recorder-core.js",
   "keywords": [
     "recorder",
+    "recordapp",
     "record",
     "html录音",
     "h5录音",
