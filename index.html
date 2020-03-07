@@ -198,6 +198,12 @@ RandomKey.idx=0;
 		<span class="lb">GitHub :</span> <a href="https://github.com/xiangyuecn/Recorder">前往GitHub仓库</a>
 		
 		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">在线编辑和运行</a> ， <a href="https://xiangyuecn.github.io/Recorder/assets/demo-vue" target="_blank">vue+webpack测试</a>
+		
+		<div style="margin-top:6px;">
+			<span class="lb">QuickStart :</span>
+			<a href="https://github.com/xiangyuecn/Recorder/QuickStart.html" target="_blank">QuickStart.html</a>
+			<span style="font-size:12px;color:#999">(Copy即用，更适合入门学习)</span>
+		</div>
 	</div>
 </div>
 
@@ -232,8 +238,8 @@ RandomKey.idx=0;
 <div class="mainBox">
 	<div class="pd btns">
 		<div>
-			<button onclick="recopen()">打开录音</button>
-			<button onclick="recclose()">关闭录音</button>
+			<button onclick="recopen()" style="margin-right:10px">打开录音,请求权限</button>
+			<button onclick="recclose()" style="margin-right:0">关闭录音,释放资源</button>
 		</div>
 		
 		<button onclick="recstart()">录制</button>
