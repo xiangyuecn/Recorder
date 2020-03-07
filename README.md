@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）。快捷方式: [【QuickStart】](https://github.com/xiangyuecn/Recorder/QuickStart.html)，[【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【vue+webpack测试】](https://xiangyuecn.github.io/Recorder/assets/demo-vue)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[无用户操作测试](https://xiangyuecn.github.io/Recorder/assets/ztest_no_user_operation.html)，[【Can I Use】查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
+[​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）。快捷方式: [【QuickStart】](https://xiangyuecn.github.io/Recorder/QuickStart.html)，[【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【vue+webpack测试】](https://xiangyuecn.github.io/Recorder/assets/demo-vue)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[无用户操作测试](https://xiangyuecn.github.io/Recorder/assets/ztest_no_user_operation.html)，[【Can I Use】查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
 
 录音默认输出mp3格式，另外可选wav格式；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -28,7 +28,7 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 
 # :open_book:快速使用
 
-你可以通过阅读和运行[QuickStart.html](https://github.com/xiangyuecn/Recorder/QuickStart.html)文件来快速入门学习，直接将`QuickStart.html`copy到你的(https、localhost)网站中，无需其他文件，就能正常开始测试了；注意：需要在https、localhost等[安全环境](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)下才能进行录音。
+你可以通过阅读和运行[QuickStart.html](https://xiangyuecn.github.io/Recorder/QuickStart.html)文件来快速入门学习，直接将`QuickStart.html`copy到你的(https、localhost)网站中，无需其他文件，就能正常开始测试了；注意：需要在https、localhost等[安全环境](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)下才能进行录音。
 
 
 ## 【1】加载框架
