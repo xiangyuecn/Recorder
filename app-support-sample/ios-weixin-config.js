@@ -17,8 +17,18 @@ https://github.com/xiangyuecn/Recorder
 window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
 
 /**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式；后端相应实现请参考微信公众号的开放文档，下面也有相关文档链接。**/
-var MyWxApi="https://jiebian.life/api/weixin/git_record";
-
+var MyWxApi="https://jiebian.life/api/weixin/git_record"; /*本例子提供的这个api接口：
+			会实现两个功能，完整请求参数看下面ajax调用:
+				request.post.action=sign //JsSDK签名
+				request.post.action=wxdown //素材下载
+			响应内容(JSON Object):
+				{
+					c:0		//code，0：正常，其他：错误
+					,m:""	//errMsg 错误描述
+					,v:Any	//返回结果value，一般为JSON Object，
+							//sign时:v={appid:"", timestamp:"", noncestr:"", signature:""} 就是返回wx.config需要的签名相关参数
+							//wxdown时:v={mime:"audio/amr", data:"base64文本"} 就是返回素材下载的音频文件base64编码数据
+				}*/
 /******END******/
 
 
@@ -39,7 +49,7 @@ var win=window.top;//微信JsSDK让顶层去加载，免得iframe各种麻烦
 
 /*********实现app.js内IOS-Weixin中Config的接口*************/
 config.WxReady=function(call){
-	//此方法需要自行实现，需要在微信JsSDK wx.config好后调用call(wx,err)函数
+	//此方法已实现在微信JsSDK wx.config好后调用call(wx,err)函数
 	if(!win.WxReady){
 		win.eval("var InitJsSDK="+InitJsSDK.toString()+";InitJsSDK")(App,MyWxApi,ajax);
 	};
