@@ -231,6 +231,9 @@ mp3Buffers=[ArrayBuffer,...]
 length=mp3Buffers的数据二进制总长度
 */
 Recorder.mp3ReadMeta=function(mp3Buffers,length){
+	//kill babel-polyfill ES6 Number.parseInt 不然放到Worker里面找不到方法
+	var parseInt_ES3=typeof(window)=="object"?window.parseInt:self.parseInt;
+	
 	var u8arr0=new Uint8Array(mp3Buffers[0]||[]);
 	if(u8arr0.length<4){
 		return null;
@@ -251,11 +254,11 @@ Recorder.mp3ReadMeta=function(mp3Buffers,length){
 		,"2":[22050, 24000, 16000]
 		,"2.5":[11025, 12000, 8000]
 	})[version];
-	sampleRate&&(sampleRate=sampleRate[parseInt(b4.substr(4,2),2)]);
+	sampleRate&&(sampleRate=sampleRate[parseInt_ES3(b4.substr(4,2),2)]);
 	var bitRate=[ //lamejs -> Tables.bitrate_table
 		[0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160] //MPEG 2 2.5
 		,[0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320]//MPEG 1
-	][version==1?1:0][parseInt(b4.substr(0,4),2)];
+	][version==1?1:0][parseInt_ES3(b4.substr(0,4),2)];
 	
 	if(!version || !layer || !bitRate || !sampleRate){
 		return null;
