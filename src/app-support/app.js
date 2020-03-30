@@ -107,7 +107,7 @@ var Config_SupportPlatforms=[
 		,Config:{
 			WxReady:function(call){
 				//【需实现】
-				//此方法需要自行实现，需要在微信JsSDK wx.config好后调用call(wx,err)函数
+				//此方法需要自行实现，需要在微信JsSDK wx.config好后调用call(wx,errMsg)函数，成功只需要提供wx对象，如果失败需要提供errMsg错误原因。微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
 				call(null,"未实现IOS-Weixin.Config.WxReady");
 			}
 			,DownWxMedia:function(param,success,fail){

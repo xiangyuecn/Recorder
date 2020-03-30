@@ -16,7 +16,10 @@ https://github.com/xiangyuecn/Recorder
 /**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
 window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
 
-/**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式；后端相应实现请参考微信公众号的开放文档，下面也有相关文档链接。**/
+/**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式。
+后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
+后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
+**/
 var MyWxApi="https://jiebian.life/api/weixin/git_record"; /*本例子提供的这个api接口：
 			会实现两个功能，完整请求参数看下面ajax调用:
 				request.post.action=sign //JsSDK签名
@@ -50,6 +53,7 @@ var win=window.top;//微信JsSDK让顶层去加载，免得iframe各种麻烦
 /*********实现app.js内IOS-Weixin中Config的接口*************/
 config.WxReady=function(call){
 	//此方法已实现在微信JsSDK wx.config好后调用call(wx,err)函数
+	//微信JsSDK wx.config需使用到后端接口进行签名，文档： https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
 	if(!win.WxReady){
 		win.eval("var InitJsSDK="+InitJsSDK.toString()+";InitJsSDK")(App,MyWxApi,ajax);
 	};
@@ -155,18 +159,21 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 	var calls=[];
 	var errMsg="";
 	
-	App.Js([{url:"https://res.wx.qq.com/open/js/jweixin-1.4.0.js",check:function(){return true}}],function(){
-		console.log("weixin jssdk准备好了");
-		
+	var jsEnd=function(){
 		isReady=true;
 		var arr=calls;
 		calls=[];
 		for(var i=0;i<arr.length;i++){
 			wxOjbK(arr[i]);
 		};
+	};
+	App.Js([{url:"https://res.wx.qq.com/open/js/jweixin-1.4.0.js",check:function(){return !window.wx||!wx.config}}],function(){
+		console.log("weixin jssdk加载好了");
+		jsEnd();
 	},function(msg){
-		isReady=true;
-		errMsg="初始化微信JsSDK失败，请刷新页面："+msg;
+		errMsg="加载微信JsSDK失败，请刷新页面："+msg;
+		console.error("weixin jssdk加载失败:"+msg);
+		jsEnd();
 	},window);
 	
 	
