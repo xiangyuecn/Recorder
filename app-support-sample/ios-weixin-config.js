@@ -20,15 +20,17 @@ window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyue
 后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
 后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
 **/
-var MyWxApi="https://jiebian.life/api/weixin/git_record"; /*本例子提供的这个api接口：
-			会实现两个功能，完整请求参数看下面ajax调用:
-				request.post.action=sign //JsSDK签名
-				request.post.action=wxdown //素材下载
+var MyWxApi=window.PageSet_RecordAppWxApi||"https://jiebian.life/api/weixin/git_record"; /*本例子提供的这个api接口：
+			会实现两个功能，ajax POST请求参数如下(都是两个参数，完整细节看下面ajax调用):
+				功能一、action="sign" //JsSDK签名
+						url="https://x.com/page" //当前页面url地址,需要对这个地址进行签名
+				功能二、action="wxdown" //素材下载
+						mediaID="abcd" //需下载的素材ID
 			响应内容(JSON Object):
 				{
 					c:0		//code，0：正常，其他：错误
-					,m:""	//errMsg 错误描述
-					,v:Any	//返回结果value，一般为JSON Object，
+					,m:""	//errMsg code!=0时的错误描述
+					,v:{}	//返回结果value，为JSON Object
 							//sign时:v={appid:"", timestamp:"", noncestr:"", signature:""} 就是返回wx.config需要的签名相关参数
 							//wxdown时:v={mime:"audio/amr", data:"base64文本"} 就是返回素材下载的音频文件base64编码数据
 				}*/

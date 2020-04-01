@@ -5,65 +5,114 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <link rel="shortcut icon" type="image/png" href="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/icon.png">
 
-<title>Recorder QuickStart: 快速入门</title>
+<title>RecordApp QuickStart: 快速入门</title>
+
 <script>
-var Tips="你可以直接将此QuickStart.html文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了；相比 Recorder H5 (/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习"+unescape("%uD83D%uDE04");
+var Tips="你可以直接将 app-support-sample/QuickStart.html文件copy 到你的(https)网站中，然后将变量PageSet_RecordAppWxApi改成你自己的后端API地址，无需其他文件，就能正常开始测试了；相比 RecordApp (/app-support-sample/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习"+unescape("%uD83D%uDE04");
 console.log(Tips);
 </script>
+</head>
+
+<body>
+<script>
+/********将此处后端API地址改成你的地址即可开始测试**********/
+
+/**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个空的默认值，微信【强制】要【绑安全域名】，别的站用不了。
+后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
+后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
+**/
+var PageSet_RecordAppWxApi="";
+/*这个api接口：
+	会实现两个功能，ajax POST请求参数如下(都是两个参数，完整细节看下面ajax调用):
+		功能一、action="sign" //JsSDK签名
+				url="https://x.com/page" //当前页面url地址,需要对这个地址进行签名
+		功能二、action="wxdown" //素材下载
+				mediaID="abcd" //需下载的素材ID
+	响应内容(JSON Object):
+		{
+			c:0		//code，0：正常，其他：错误
+			,m:""	//errMsg code!=0时的错误描述
+			,v:{}	//返回结果value，为JSON Object
+					//sign时:v={appid:"", timestamp:"", noncestr:"", signature:""} 就是返回wx.config需要的签名相关参数
+					//wxdown时:v={mime:"audio/amr", data:"base64文本"} 就是返回素材下载的音频文件base64编码数据
+		}*/
 
 
+/**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置**/
+var PageSet_RecordAppBaseFolder = "https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/";//使用dist目录内的文件小2/3
+</script>
+
+<!--【1.1】加载独立配置文件，免得修改app.js-->
+<!-- 可选开启ios weixin支持的相关配置 -->
+<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/app-support-sample/ios-weixin-config.js"></script>
+<!-- 可选开启native支持的相关配置 -->
+<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/app-support-sample/native-config.js"></script>
 
 
 <!--
-【1】引入框架文件，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入，这里为了方便copy文件测试起见，使用了JsDelivr CDN。
-
-另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
+【1.2】引入框架文件，app.js会自动加载实现文件、Recorder核心、编码引擎，需确保PageSet_RecordAppBaseFolder目录正确
+注意自己使用时应当自己把源码clone下来，然后通过src="/src/app-support/app.js"引入，这里为了方便copy文件测试起见，使用了JsDelivr CDN。
 -->
-
-<!-- 【1.1】引入核心文件 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/recorder-core.js"></script>
-
-<!-- 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/engine/mp3.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/engine/mp3-engine.js"></script>
-
-<!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/extensions/frequency.histogram.view.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/extensions/lib.fft.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/app-support/app.js"></script>
 
 
-</head>
-<body>
+<script>
+(function(){
+//注册可选扩展库
+var paths=RecordApp.Platforms.Default.Config.paths;
+paths.push({
+	url:PageSet_RecordAppBaseFolder+"extensions/waveview.js"
+	,lazyBeforeStart:1 //开启延迟加载，在Start调用前任何时间进行加载都行
+	,check:function(){return !Recorder.WaveView}
+});
+paths.push({
+	url:PageSet_RecordAppBaseFolder+"extensions/lib.fft.js"
+	,lazyBeforeStart:1
+	,check:function(){return !Recorder.LibFFT}
+});
+paths.push({
+	url:PageSet_RecordAppBaseFolder+"extensions/frequency.histogram.view.js"
+	,lazyBeforeStart:1
+	,check:function(){return !Recorder.FrequencyHistogramView}
+});
+
+RecordApp.AlwaysUseWeixinJS=!!(+localStorage["RecordApp_AlwaysUseWeixinJS"]||0);
+RecordApp.AlwaysAppUseJS=!!(+localStorage["RecordApp_AlwaysAppUseJS"]||0);
+
+//立即加载环境，自动把Recorder加载进来
+RecordApp.Install(function(){
+	console.log("RecordApp.Install成功");
+},function(){
+	var msg="RecordApp.Install出错："+err;
+	console.log(msg);
+	alert(msg);
+});
+
+})();
+</script>
+
 
 <!-- 【2】构建界面 -->
 <div class="main">
 	<div class="mainBox">
-		<span style="font-size:32px;color:#f60;">Recorder QuickStart: 快速入门</span>
+		<span style="font-size:32px;color:#f60;">RecordApp QuickStart: 快速入门</span>
 		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
 		
 		<div style="padding-top:10px;color:#666">
 			更多Demo：
 			<a class="lb" href="https://xiangyuecn.github.io/Recorder/">Recorder H5</a>
 			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx">RecordApp</a>
-			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html">RecordApp QuickStart</a>
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/QuickStart.html">Recorder QuickStart</a>
 		</div>
 	</div>
 	
 	<div class="mainBox">
 		<!-- 按钮控制区域 -->
 		<div class="pd btns">
-			<div>
-				<button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
-				<button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
-			</div>
-			
+			<button onclick="recReq()">请求权限</button>
 			<button onclick="recStart()">录制</button>
 			<button onclick="recStop()" style="margin-right:80px">停止</button>
 			
-			<span style="display: inline-block;">
-				<button onclick="recPause()">暂停</button>
-				<button onclick="recResume()">继续</button>
-			</span>
 			<span style="display: inline-block;">
 				<button onclick="recPlay()">播放</button>
 				<button onclick="recUpload()">上传</button>
@@ -80,6 +129,16 @@ console.log(Tips);
 		<div class="pd waveBox">
 			<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
 		</div>
+		
+		<!-- 功能配置区域 -->
+		<div>
+			<div class="pd">
+				<span class="lb">JsSDK :</span> <label><input type="checkbox" class="alwaysUseWeixinJS">Android微信内也用JsSDK</label>
+			</div>
+			<div>
+				<span class="lb">AppUseJS :</span> <label><input type="checkbox" class="alwaysAppUseJS">App里面总是使用Recorder H5录音</label>
+			</div>
+		</div>
 	</div>
 	
 	<!-- 日志输出区域 -->
@@ -92,36 +151,20 @@ console.log(Tips);
 <!-- 【3】实现录音逻辑 -->
 <script>
 var rec,wave,recBlob;
-/**调用open打开录音请求好录音权限**/
-var recOpen=function(){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
-	rec=null;
-	wave=null;
-	recBlob=null;
-	var newRec=Recorder({
-		type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
-		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
-			//录音实时回调，大约1秒调用12次本回调
-			document.querySelector(".recpowerx").style.width=powerLevel+"%";
-			document.querySelector(".recpowert").innerText=bufferDuration+" / "+powerLevel;
-			
-			//可视化图形绘制
-			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
-		}
-	});
-
+/**调用RequestPermission打开录音请求好录音权限**/
+var recReq=function(){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
+	rec=false;
+	reclog("正在打开录音，请稍后...");
+	
 	createDelayDialog(); //我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调，此处demo省略了弹窗的代码
-	newRec.open(function(){//打开麦克风授权获得相关资源
+	RecordApp.RequestPermission(function(){
+		rec=true;
 		dialogCancel(); //如果开启了弹框，此处需要取消
-		
-		rec=newRec;
-		
-		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
-		wave=Recorder.FrequencyHistogramView({elem:".recwave"});
 		
 		reclog("已打开录音，可以点击录制开始录音了",2);
-	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+	},function(err,isUserNotAllow){
 		dialogCancel(); //如果开启了弹框，此处需要取消
-		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开录音失败："+msg,1);
+		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开录音失败："+err,1);
 	});
 	
 	window.waitDialogClick=function(){
@@ -132,53 +175,55 @@ var recOpen=function(){//一般在显示出录音按钮或相关的录音界面�
 
 
 
-/**关闭录音，释放资源**/
-function recClose(){
-	if(rec){
-		rec.close();
-		reclog("已关闭");
-	}else{
-		reclog("未打开录音",1);
-	};
-};
-
-
-
 /**开始录音**/
-function recStart(){//打开了录音后才能进行start、stop调用
-	if(rec&&Recorder.IsOpen()){
-		recBlob=null;
-		rec.start();
-		reclog("已开始录音...");
-	}else{
-		reclog("未打开录音",1);
+function recStart(){
+	if(!rec|| !RecordApp.Current){
+		reclog("未请求权限", 1);
+		return;
 	};
-};
-
-/**暂停录音**/
-function recPause(){
-	if(rec&&Recorder.IsOpen()){
-		rec.pause();
+	
+	if(RecordApp.Current==RecordApp.Platforms.Weixin){
+		reclog("正在使用微信JsSDK，录音过程中不会有任何回调，不要惊慌");
+	}else if(RecordApp.Current==RecordApp.Platforms.Native){
+		reclog("正在使用Native录音，底层由App原生层提供支持");
 	}else{
-		reclog("未打开录音",1);
+		reclog("正在使用H5录音，底层由Recorder直接提供支持");
 	};
-};
-/**恢复录音**/
-function recResume(){
-	if(rec&&Recorder.IsOpen()){
-		rec.resume();
-	}else{
-		reclog("未打开录音",1);
+	
+	var set={
+		type:"mp3"
+		,bitRate:16
+		,sampleRate:16000
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
+			//录音实时回调，大约1秒调用12次本回调
+			document.querySelector(".recpowerx").style.width=powerLevel+"%";
+			document.querySelector(".recpowert").innerText=bufferDuration+" / "+powerLevel;
+			
+			//可视化图形绘制
+			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+		}
 	};
+	
+	wave=null;
+	recBlob=null;
+	RecordApp.Start(set,function(){
+		reclog(RecordApp.Current.Key+"录制中:"+set.type+" "+set.bitRate+"kbps",2);
+		
+		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
+		wave=Recorder.FrequencyHistogramView({elem:".recwave"});
+	},function(err){
+		reclog(RecordApp.Current.Key+"开始录音失败："+err,1);
+	});
 };
 
 /**结束录音，得到音频文件**/
 function recStop(){
 	if(!(rec&&Recorder.IsOpen())){
-		reclog("未打开录音",1);
+		reclog("未请求权限",1);
 		return;
 	};
-	rec.stop(function(blob,duration){
+	
+	RecordApp.Stop(function(blob,duration){
 		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
 		
 		recBlob=blob;
@@ -278,7 +323,7 @@ function recUpload(){
 
 
 
-//recOpen我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
+//recReq我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
 var showDialog=function(){
 	if(!/mobile/i.test(navigator.userAgent)){
 		return;//只在移动端开启没有权限请求的检测
@@ -315,7 +360,7 @@ var dialogCancel=function(){
 		elems[i].parentNode.removeChild(elems[i]);
 	};
 };
-//recOpen弹框End
+//recReq弹框End
 </script>
 
 
@@ -326,6 +371,24 @@ var dialogCancel=function(){
 
 
 <!--以下这坨可以忽略-->
+<script>
+(function(){
+var alwaysUseWeixinJS=document.querySelector(".alwaysUseWeixinJS");
+var alwaysAppUseJS=document.querySelector(".alwaysAppUseJS");
+
+alwaysUseWeixinJS.checked=RecordApp.AlwaysUseWeixinJS;
+alwaysAppUseJS.checked=RecordApp.AlwaysAppUseJS;
+
+var clickFn=function(key){
+	return function(e){
+		localStorage[key]=e.target.checked?1:0;
+		location.reload();
+	};
+};
+alwaysUseWeixinJS.addEventListener("click",clickFn("RecordApp_AlwaysUseWeixinJS"));
+alwaysAppUseJS.addEventListener("click",clickFn("RecordApp_AlwaysAppUseJS"));
+})();
+</script>
 <script>
 function reclog(s,color){
 	var now=new Date();
@@ -393,6 +456,15 @@ a:hover{
 
 .pd{
 	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
 }
 </style>
 
