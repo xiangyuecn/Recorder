@@ -7,7 +7,7 @@
 
 <title>Recorder QuickStart: 快速入门</title>
 <script>
-var Tips="你可以直接将此QuickStart.html文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了；相比 Recorder H5 (/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习"+unescape("%uD83D%uDE04");
+var Tips='你可以直接将 <a target="_blank" href="https://github.com/xiangyuecn/Recorder/blob/master/QuickStart.html">/QuickStart.html</a> 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了；相比 Recorder H5 (/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习'+unescape("%uD83D%uDE04");
 console.log(Tips);
 </script>
 
@@ -338,8 +338,22 @@ function reclog(s,color){
 	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
 };
 
-reclog(Tips,"#06c");
+reclog("Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音"+unescape("%uD83D%uDCAA"),"#f60;font-weight:bold;font-size:24px");
+reclog("RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view"+unescape("%uD83C%uDF89"),"#0b1;font-weight:bold;font-size:24px");
+reclog(Tips);
 </script>
+
+<!-- 加载打赏挂件 -->
+<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/zdemo.widget.donate.js"></script>
+<script>
+var donateView=document.createElement("div");
+document.querySelector(".reclog").appendChild(donateView);
+DonateWidget({
+	log:function(msg){reclog(msg)}
+	,mobElem:donateView
+});
+</script>
+
 <style>
 body{
 	word-wrap: break-word;
