@@ -2,6 +2,7 @@ package com.github.xianyuecn.recorder;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -18,6 +19,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -34,6 +36,11 @@ public class MainActivity extends Activity {
     private RecordAppJsBridge jsBridge;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if(Build.VERSION.SDK_INT>=26 && Build.VERSION.SDK_INT<=27){
+            //android 8.x 透明+竖屏居然被脑残限制，印度阿三的脑洞吗？ https://blog.csdn.net/starry_eve/article/details/82777160
+            killAndroid8x();
+        }
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -337,6 +344,19 @@ public class MainActivity extends Activity {
             }
             PermissionCall.run();
             PermissionCall=null;
+        }
+    }
+
+    private void killAndroid8x(){
+        try {
+            String sadiaoName="mActivityInfo";
+            Field field = Activity.class.getDeclaredField(sadiaoName);
+            field.setAccessible(true);
+            ActivityInfo o = (ActivityInfo)field.get(this);
+            o.screenOrientation = -1;
+            field.setAccessible(false);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
