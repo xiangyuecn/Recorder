@@ -15,12 +15,18 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 <p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/icon.png" alt="Recorder logo"></a></p>
 
 <p align="center">
+  Basic:
   <a title="Stars" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1&logo=github" alt="Stars"></a>
   <a title="Forks" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder?color=0b1&logo=github" alt="Forks"></a>
-  <a title="npm Version" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=f60&logo=npm" alt="npm Version"></a>
-  <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
-  <a title="cnpm" href="https://npm.taobao.org/package/recorder-core"><img src="https://img.shields.io/badge/cnpm-available-0b1" alt="cnpm"></a>
+  <a title="npm Version" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=0b1&logo=npm" alt="npm Version"></a>
   <a title="License" href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
+</p>
+<p align="center">
+  Traffic:
+  <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
+  <a title="cnpm" href="https://npm.taobao.org/package/recorder-core"><img src="https://img.shields.io/badge/cnpm-available-1690CD" alt="cnpm"></a><a title="cnpm" href="https://npm.taobao.org/package/recorder-core"><img src="https://npm.taobao.org/badge/d/recorder-core.svg" alt="cnpm"></a>
+  <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://data.jsdelivr.com/v1/package/gh/xiangyuecn/Recorder/badge" alt="JsDelivr CDN"></a>
+  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="cnpm"></a>
 </p>
 
 [​](?RefEnd)
@@ -567,7 +573,7 @@ Recorder({type:"aac"})
 # :open_book:扩展
 在`src/extensions`目录内为扩展支持库，这些扩展库默认都没有合并到生成代码中，需单独引用(`dist`或`src`中的)才能使用。
 
-【附】部分扩展使用效果图：
+【附】部分扩展使用效果图（[在线运行观看](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)）：
 
 ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.gif)
 
