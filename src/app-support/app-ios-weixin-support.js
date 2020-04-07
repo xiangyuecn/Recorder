@@ -158,6 +158,7 @@ platform.Start=function(set,success,fail){
 	});
 };
 platform.Stop=function(successx,failx){
+	var wx=WXRecordData.wx;
 	isStart=0;
 	timeLog("开始停止录音");
 	
@@ -362,7 +363,7 @@ platform.Stop=function(successx,failx){
 		
 		stopFn();
 	};
-	WXRecordData.wx.stopRecord({
+	wx.stopRecord({
 		fail:fail
 		,success:function(res){
 			WXRecordData.stopJoinEnd&&WXRecordData.stopJoinEnd(res,"stop");
