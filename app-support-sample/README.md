@@ -47,6 +47,8 @@
 
 # :open_book:快速使用
 
+你可以通过阅读和运行[QuickStart.html](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将 [/app-support-sample/QuickStart.html](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/QuickStart.html) 文件copy 到你的(https)网站中，然后将变量PageSet_RecordAppWxApi改成你自己的后端API地址，无需其他文件，就能正常开始测试了，App内同样适用。
+
 ## 【1】加载框架
 
 **方式一**：使用script标签引入

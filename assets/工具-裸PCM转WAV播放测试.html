@@ -6,27 +6,163 @@
 <link rel="shortcut icon" type="image/png" href="icon.png">
 
 <title>裸(RAW、WAV)PCM转WAV播放测试和转码</title>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5 center top no-repeat;
+	background-size: auto 680px;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:1000px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.btns button{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin:3px 20px 3px 0;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.btns button:active{
+	background: #f00;
+}
+
+.pd{
+	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+</style>
 </head>
 
 <body>
-<div style="padding-top:30px;font-size:24px;font-weight:bold;text-align:center;color:#0b1;">把裸(RAW、WAV)PCM数据文件拖入此页面即可生成.wav文件，然后可转码成其他格式</div>
-<div style="text-align:center;padding-top:15px;">
-	<input type="file" multiple="multiple" onchange="choiceFile(this)" style="width:80%;line-height:60px;font-size:24px;color:#fff; background:#0b1;">
-	<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。</div>
-	<div style="color:#F90;">.wav（raw pcm format）文件可以反复拖入，只不过前44字节wav头会被删除而已</div>
-	<div style="color:#0b1">一次拖入多个文件时将按文件名排序，然后合并成一个wav文件，音频参数以第一个为准</div>
-	<div style="color:#F00">乱填采样率、位数，会变声</div>
-	<div style="color:#F0f">除了PCM数据文件外，其他格式文件拖入可能导致惊悚的播放效果</div>
-	<div><a href="https://github.com/xiangyuecn/Recorder">https://github.com/xiangyuecn/Recorder</a></div>
-</div>
 
-<div><audio id="recPlayAudio" style="width:100%"></audio></div>
+<div class="main">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#f60;">裸(RAW、WAV)PCM转WAV播放测试和转码</span>
+		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
+	</div>
+	
+	<div class="mainBox">
+		<div class="pd" style="font-size:24px;font-weight:bold;color:#0b1;">把PCM、WAV数据文件拖入此页面即可生成.wav文件，然后可转码成其他格式</div>
+		<div class="pd">
+			<input type="file" multiple="multiple" onchange="choiceFile(this)" style="width:95%;font-size:24px;color:#fff;border: 3px dashed #a2a1a1;background: #eee;padding:24px 0;text-align: center;cursor: pointer;">
+		</div>
+		
+		<div class="pd btns">
+			<button onclick="createWavClick()">点此转成wav文件</button>
+		</div>
+		
+		<div class="pd btns">
+			<span class="lb">（必填）源文件：</span>
+			<span style="font-size:12px">
+				<span style="margin-right:16px">
+					采样率：
+					<input class="in_sampleRate" style="width:60px;text-align:right">hz
+				</span>
+				<span style="margin-right:16px">
+					位数：
+					<input class="in_bitRate" style="width:60px;text-align:right">位
+				</span>
+				<span>
+					声道数：
+					<input class="in_numChannels" style="width:60px;text-align:right">
+				</span>
+			</span>
+		</div>
+		<div class="pd btns">
+			<span class="lb">（可选）转换成：</span>
+			<span style="font-size:12px">
+				<span style="margin-right:16px">
+					采样率：
+					<input class="in_new_sampleRate" style="width:60px;text-align:right">hz
+				</span>
+				<span style="margin-right:16px">
+					位数：
+					<input class="in_new_bitRate" style="width:60px;text-align:right">位
+				</span>
+				<span>
+					声道数：
+					<input class="in_new_numChannels" style="width:60px;text-align:right">
+				</span>
+			</span>
+		</div>
+		<div class="pd btns">
+			<span class="lb">（可选）范围截取：</span>
+			<span style="font-size:12px">
+				<span style="margin-right:16px">
+					开始位置：
+					<input class="in_new_start" style="width:60px;text-align:right">ms
+				</span>
+				<span>
+					结束位置：
+					<input class="in_new_end" style="width:60px;text-align:right">ms
+				</span>
+			</span>
+		</div>
+	</div>
+	
+	<div class="mainBox">
+		<div><audio id="recPlayAudio" style="width:100%"></audio></div>
 
-<div id="list"></div>
+		<div id="list"></div>
 
-<div id="mockTransformDiv" style="display:none;width:98%; border:4px solid #0B1;margin:20px 0;">
-	<div id="mockTransformMsg"></div>
-	<iframe class="mockTransformIframe" style="width:100%;height:400px;"></iframe>
+		<div id="mockTransformDiv" style="display:none;width:98%; border:4px solid #0B1;margin:20px 0;">
+			<div id="mockTransformMsg"></div>
+			<iframe class="mockTransformIframe" style="width:100%;height:400px;"></iframe>
+		</div>
+	</div>
+	
+	<div class="mainBox">
+		<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。</div>
+		
+		<div style="color:#F90;padding-top:12px">.wav（raw pcm format）文件可以反复拖入，只不过前44字节wav头会被删除而已</div>
+		<div style="color:#0b1">一次拖入多个文件时将按文件名排序，然后合并成一个wav文件，音频参数以第一个为准</div>
+		
+		<div style="color:#F00;padding-top:12px">乱填采样率、位数，会变声</div>
+		<div style="color:#F0f">除了PCM数据文件外，其他格式文件拖入可能导致惊悚的播放效果</div>
+		
+		<div class="DonateLogs"></div>
+		<div class="DonateView"></div>
+	</div>
 </div>
 
 <script>
@@ -41,10 +177,13 @@ document.body.ondrop=function(e){
 function choiceFile(elem){
 	readFile(elem.files);
 };
+var fileData;
 function readFile(files){
+	fileData=null;
 	if(!files.length){
 		return;
 	};
+	
 	
 	var div=document.createElement("div");
 	list.prepend?list.prepend(div):list.appendChild(div);
@@ -60,7 +199,7 @@ function readFile(files){
 	});
 	files=fs;
 	
-	var idx=-1,datas=[],lens=0,info;
+	var idx=-1,datas=[],lens=0,wavInfo,pathInfo={};
 	var read=function(){
 		idx++;
 		if(idx>=files.length){
@@ -69,7 +208,32 @@ function readFile(files){
 				arr.set(datas[i],j);
 				j+=datas[i].length;
 			};
-			createWav(arr,info,files[0].name,div);
+			
+			var info={};
+			for(var k in pathInfo){
+				info[k]=pathInfo[k];
+			};
+			for(var k in wavInfo){
+				info[k]=wavInfo[k];
+			};
+			info.fileName=files[0].name;
+			info.fileCount=files.length;
+			info.u8arr=arr;
+			info.div=div;
+			fileData=info;
+			
+			//输入框填充默认数据
+			var setVal=function(cls,val){
+				if(val){
+					document.querySelector(cls).value=val;
+				};
+			};
+			setVal(".in_sampleRate",info.sampleRate);
+			setVal(".in_bitRate",info.bitRate);
+			setVal(".in_numChannels",info.numChannels);
+			setVal(".in_new_sampleRate",info.sampleRate);
+			setVal(".in_new_bitRate",info.bitRate);
+			setVal(".in_new_numChannels",info.numChannels);
 			return;
 		};
 		
@@ -84,8 +248,18 @@ function readFile(files){
 				var o=skipWavHead(arr);
 				if(o){
 					arr=o.u8arr;
-					info||(info=o.info);
+					wavInfo||(wavInfo=o.info);
 				};
+			};
+			//读取文件名中的信息
+			if(/(\d+)hz/i.test(file.name) && !pathInfo.sampleRate){
+				pathInfo.sampleRate=+RegExp.$1;
+			};
+			if(/(\d+)(kbps|bit)/i.test(file.name) && !pathInfo.bitRate){
+				pathInfo.bitRate=+RegExp.$1;
+			};
+			if(/(\d+)(ch|numCh)/i.test(file.name) && !pathInfo.numChannels){
+				pathInfo.numChannels=Math.min(Math.max(1,+RegExp.$1),2);
 			};
 			
 			datas.push(arr);
@@ -107,39 +281,62 @@ var skipWavHead=function(wavView){
 		return true;
 	};
 	if(eq(0,"RIFF")&&eq(8,"WAVEfmt ")){
-		if(wavView[20]==1 && wavView[22]==1){//raw pcm 单声道
+		var numCh=wavView[22];
+		if(wavView[20]==1 && (numCh==1||numCh==2)){//raw pcm
 			var sampleRate=wavView[24]+(wavView[25]<<8)+(wavView[26]<<16)+(wavView[27]<<24);
 			var bitRate=wavView[34]+(wavView[35]<<8);
-			console.log("wav info",sampleRate,bitRate);
+			console.log("wav info",sampleRate,bitRate,numCh);
 			
 			return {
 				u8arr:new Uint8Array(wavView.buffer.slice(44))
-				,info:{bitRate:bitRate,sampleRate:sampleRate}
+				,info:{bitRate:bitRate,sampleRate:sampleRate,numChannels:numCh}
 			};
 		};
 	};
 	
-	console.log("非单声道wav raw pcm格式音频，不进行任何解析");
+	console.log("非wav raw pcm格式音频，不进行任何解析");
 };
 
 
 
 
 
-var createWav=function(arr,info,fileName,div){
-	var instr=prompt("请输入 "+fileName+" 的\"采样率.位数-新采样率:结束毫秒:开始毫秒\"(默认16位)，如：16000（8位的需填位数16000.8，新采样16000-8000）",info?info.sampleRate+"."+info.bitRate:"");
-	
-	var sampleRate=0,bitRate=16,sampleRateNew=0,subA=0,subB=0;
-	if(/^(\d+)(?:\.(\d+))?(?:\-(\d+))?(?:\:(\d+))?(?:\:(\d+))?$/.test(instr)){
-		sampleRate=+RegExp.$1;
-		bitRate=+RegExp.$2==8?8:16;
-		sampleRateNew=+RegExp.$3||sampleRate;
-		
-		subB=+RegExp.$4||0;
-		subA=+RegExp.$5||0;
+
+
+
+
+
+
+var createWavClick=function(){
+	var arr=fileData.u8arr;
+	var fileName=fileData.fileName;
+	var div=fileData.div;
+	fileData.div=null;
+	if(!div){
+		div=document.createElement("div");
+		list.prepend?list.prepend(div):list.appendChild(div);
 	};
-	if(sampleRate<6000||sampleRateNew<6000){
-		div.appendChild(document.createTextNode("乱填采样率："+sampleRate+" "+sampleRateNew));
+	
+	var getVal=function(cls,def,name,min,max,t){
+		var val=+document.querySelector(cls).value||def;
+		if(t&&(val!=min&&val!=max) || !t&&(val<min||val>max)){
+			throw new Error("乱填"+name+"："+val);
+		}
+		return val;
+	};
+	try{
+		var sampleRate=getVal(".in_sampleRate",0,"采样率",6000,9999999999);
+		var bitRate=getVal(".in_bitRate",0,"位数",8,16,true);
+		var numChannels=getVal(".in_numChannels",0,"声道数",1,2,true);
+		
+		var sampleRateNew=getVal(".in_new_sampleRate",sampleRate,"新采样率",6000,9999999999);
+		var bitRateNew=getVal(".in_new_bitRate",bitRate,"新位数",8,16,true);
+		var numChannelsNew=getVal(".in_new_numChannels",numChannels,"新声道数",1,2,true);
+		
+		var subA=getVal(".in_new_start",0,"截取开始时间",0,9999999999);
+		var subB=getVal(".in_new_end",0,"截取结束时间",0,9999999999);
+	}catch(e){
+		div.appendChild(document.createTextNode(e.message));
 		return;
 	};
 	
@@ -154,6 +351,22 @@ var createWav=function(arr,info,fileName,div){
 			res[j]=(b-128)<<8;
 		};
 	};
+	
+	
+	var resA=res;
+	var resB=res;
+	if(numChannels==2){
+		//分离声道
+		resA=new Int16Array(res.length/2);
+		resB=new Int16Array(res.length/2);
+		for(var i=0;i<resA.length;i++){
+			resA[i]=res[i*2];
+			resB[i]=res[i*2+1];
+		};
+	};
+	
+	
+	//降低采样率
 	function sampleData(data, newSampleRate, oldSampleRate) {
 		var step=oldSampleRate/newSampleRate;
 		var fitCount = Math.floor(data.length / step);
@@ -169,19 +382,21 @@ var createWav=function(arr,info,fileName,div){
 		return newData;
 	};
 	if(sampleRate>sampleRateNew){
-		res=sampleData(res,sampleRateNew,sampleRate);
+		resA=sampleData(resA,sampleRateNew,sampleRate);
+		resB=sampleData(resB,sampleRateNew,sampleRate);
 		sampleRate=sampleRateNew;
 	};
 	
 	//截取
 	if(subA||subB){
-		res=res.subarray(Math.round(subA*sampleRate/1000),subB?Math.round(subB*sampleRate/1000):res.length);
+		resA=resA.subarray(Math.round(subA*sampleRate/1000),subB?Math.round(subB*sampleRate/1000):resA.length);
+		resB=resB.subarray(Math.round(subA*sampleRate/1000),subB?Math.round(subB*sampleRate/1000):resB.length);
 	};
-	var size=res.length;
+	var size=resA.length;
 	var duration=Math.floor(size/sampleRate*1000);
 	
 	//编码数据 https://github.com/mattdiamond/Recorderjs https://www.cnblogs.com/blqw/p/3782420.html https://www.cnblogs.com/xiaoqi/p/6993912.html
-	var dataLength=size*(bitRate/8);
+	var dataLength=size*(bitRateNew/8)*numChannelsNew;
 	var buffer=new ArrayBuffer(44+dataLength);
 	var data=new DataView(buffer);
 	
@@ -213,35 +428,44 @@ var createWav=function(arr,info,fileName,div){
 	/* sample format (raw) */
 	write16(1);
 	/* channel count */
-	write16(1);
+	write16(numChannelsNew);
 	/* sample rate */
 	write32(sampleRate);
 	/* byte rate (sample rate * block align) */
-	write32(sampleRate*(bitRate/8));
+	write32(sampleRate*(bitRateNew/8));
 	/* block align (channel count * bytes per sample) */
-	write16(bitRate/8);
+	write16(bitRateNew/8);
 	/* bits per sample */
-	write16(bitRate);
+	write16(bitRateNew);
 	/* data chunk identifier */
 	writeString('data');
 	/* data chunk length */
 	write32(dataLength);
 	// 写入采样数据
-	if(bitRate==8) {
+	if(bitRateNew==8) {
 		for(var i=0;i<size;i++,offset++) {
 			//16转8据说是雷霄骅的 https://blog.csdn.net/sevennight1989/article/details/85376149 细节比blqw的按比例的算法清晰点，虽然都有明显杂音
-			var val=(res[i]>>8)+128;
+			var val=(resA[i]>>8)+128;
 			data.setInt8(offset,val,true);
+			if(numChannelsNew==2){
+				offset++;
+				val=(resB[i]>>8)+128;
+				data.setInt8(offset,val,true);
+			};
 		};
 	}else{
 		for (var i=0;i<size;i++,offset+=2){
-			data.setInt16(offset,res[i],true);
+			data.setInt16(offset,resA[i],true);
+			if(numChannelsNew==2){
+				offset+=2;
+				data.setInt16(offset,resB[i],true);
+			};
 		};
 	};
 	
 	
 	var blob=new Blob([data.buffer],{type:"audio/wav"});
-	var name=fileName+"-"+duration+"ms"+"-"+bitRate+"bit-"+sampleRate+"hz.wav";
+	var name=fileName+"-"+duration+"ms"+"-"+bitRateNew+"bit-"+sampleRate+"hz-"+numChannelsNew+"ch.wav";
 	var url=(window.URL||webkitURL).createObjectURL(blob);
 	
 	var id=++rnd;
@@ -249,14 +473,19 @@ var createWav=function(arr,info,fileName,div){
 		name:fileName
 		,pcm:res
 		,sampleRate:sampleRate
-		,bitRate:bitRate
+		,bitRate:bitRateNew
 		,duration:duration
 		
 		,blob:blob
 	};
 	console.log(pcms[id]);
 	
-	div.innerHTML=id+". "+div.innerHTML+" 【"+name+'】'+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a> <button onclick="mockTransform('+id+')">转码</button> <button onclick="recplay('+id+',\''+url+'\')">播放</button> <span id="playc'+id+'" style="color:#0b1;"></span>';
+	var html=id+". "+new Date().toLocaleTimeString()+" "+fileData.fileCount+"个 "+" 【"+name+'】'+blob.size+'b <a download="'+name+'" href="'+url+'">下载</a>';
+	if(numChannelsNew==1){
+		html+=' <button onclick="mockTransform('+id+')">转码</button>';
+	};
+	html+=' <button onclick="recplay('+id+',\''+url+'\')">播放</button> <span id="playc'+id+'" style="color:#0b1;"></span>';
+	div.innerHTML=html;
 };
 var rnd=0;
 var pcms={};
@@ -326,9 +555,6 @@ function mockTransform(id){
 </script>
 
 <!-- 加载打赏挂件 -->
-<div class="DonateLogs"></div>
-<div class="DonateView"></div>
-<div style="padding-bottom:600px"></div>
 <script src="zdemo.widget.donate.js"></script>
 <script>
 DonateWidget({
