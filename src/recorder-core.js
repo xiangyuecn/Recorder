@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2020-1-8 10:53:14";
+var LM="2020-4-20 12:32:42";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -750,12 +750,22 @@ Recorder.Traffic=function(){
 	if(imgUrl){
 		var data=Recorder.Traffic;
 		var idf=location.href.replace(/#.*/,"");
+		
+		if(imgUrl.indexOf("//")==0){
+			//给url加上http前缀，如果是file协议下，不加前缀没法用
+			if(/^https:/i.test(idf)){
+				imgUrl="https:"+imgUrl;
+			}else{
+				imgUrl="http:"+imgUrl;
+			};
+		};
+		
 		if(!data[idf]){
 			data[idf]=1;
 			
 			var img=new Image();
 			img.src=imgUrl;
-			console.log("Traffic Analysis Image: Recorder.TrafficImgUrl="+imgUrl);
+			console.log("Traffic Analysis Image: Recorder.TrafficImgUrl="+Recorder.TrafficImgUrl);
 		};
 	};
 };

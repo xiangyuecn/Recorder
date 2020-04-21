@@ -59,6 +59,8 @@ function Run_minify(){
 	minify("../dist/extensions/lib.fft.js",["extensions/lib.fft.js"]);
 	minify("../dist/extensions/frequency.histogram.view.js",["extensions/frequency.histogram.view.js"]);
 	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);
+	
+	minify("../asset-record-sdk/record-sdk/record-web-sdk.js",["../asset-record-sdk/record-sdk/src/record-web-sdk.js"]);
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };
@@ -70,10 +72,15 @@ function minify(output,srcs){
 	for(var i=0;i<srcs.length;i++){
 		codes.push(fs.readFileSync(srcs[i],"utf-8"));
 	};
+	var sets={Desc:"录音"};
 	var code=codes.join("\n").replace(
-		/\/\*=:=\*\/([\S\s]+?)\/\*<@([\S\s]+?)@>\*\//g
-		,function(a,b,c){
+		/\/\*=(?:SET:(\w+)|:)=\*\/([\S\s]+?)\/\*<@([\S\s]+?)@>\*\//g
+		,function(a,s,b,c){
 			console.log("*******使用编译指令：\n"+a+"\n\n");
+			if(s){
+				sets[s]=c;
+				return "";
+			};
 			return c;
 		});
 	
@@ -84,7 +91,7 @@ function minify(output,srcs){
 	
 	code=
 `/*
-录音
+${sets.Desc}
 https://github.com/xiangyuecn/Recorder
 src: ${srcs.join(",")}
 */
