@@ -1,6 +1,6 @@
 # :open_book:Recorder用于html5录音
 
-[​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：UC系内核（典型的支付宝，大部分国产手机厂商的浏览器），IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）。快捷方式: [【QuickStart】](https://xiangyuecn.github.io/Recorder/QuickStart.html)，[【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【vue+webpack测试】](https://xiangyuecn.github.io/Recorder/assets/demo-vue)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[无用户操作测试](https://xiangyuecn.github.io/Recorder/assets/ztest_no_user_operation.html)，[【Can I Use】查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
+[​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.github.io/Recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：~~UC系内核（典型的支付宝），大部分国产手机厂商自研套壳娱乐浏览器，IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。快捷方式: [【QuickStart】](https://xiangyuecn.github.io/Recorder/QuickStart.html)，[【RecordApp测试】](https://jiebian.life/web/h5/github/recordapp.aspx)，[【vue+webpack测试】](https://xiangyuecn.github.io/Recorder/assets/demo-vue)，[【Android、IOS App Demo】](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)，[【工具】Recorder代码运行和静态分发](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html)，[【工具】裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.github.io/Recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ，[【无用户操作测试】](https://xiangyuecn.github.io/Recorder/assets/ztest_no_user_operation.html)，[【Can I Use】查看浏览器支持情况](https://caniuse.com/#search=getUserMedia)。
 
 录音默认输出mp3格式，另外可选wav格式；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
@@ -10,7 +10,7 @@ mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（
 
 如需在Hybrid App内使用（支持IOS、Android），或提供IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
 
-*IOS、国产厂商系统浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
+*IOS、国产厂商自研套壳娱乐浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
 
 <p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/icon.png" alt="Recorder logo"></a></p>
 
@@ -266,7 +266,7 @@ $.ajax({
 
 浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码；因此本库最佳推荐使用mp3、wav格式，代码也是优先照顾这两种格式。
 
-**特别注**：`IOS(11.X、12.X)`上只有`Safari`支持`getUserMedia`，IOS上其他浏览器均不支持，参考下面的已知问题。
+**特别注**：`IOS(11.X、12.X、13.X)`上只有`Safari`支持`getUserMedia`，IOS上其他浏览器均不支持，唯一有点卵用的Safari `getUserMedia` 底层实现bug奇多（严重关切他们团队水准，临时工少发工资了吧），参考下面的已知问题。
 
 **特别注**：大部分国产手机厂商的浏览器（系统浏览器，都用的UC内核？）虽然支持`getUserMedia`方法，但并不能使用，表现为直接返回拒绝或者干脆没有任何回调；UC系列目测全部阵亡（含支付宝）。
 
@@ -297,7 +297,7 @@ IOS其他浏览器||
 
 
 ## 已知问题
-*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
+*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X（13.X）` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
 
 *2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
 
@@ -305,11 +305,13 @@ IOS其他浏览器||
 
 *2019-06-14* 经[#29](https://github.com/xiangyuecn/Recorder/issues/29)反馈，稍微远程真机测试了部分厂商的比较新的Android手机系统浏览器的录音支持情况；华为：直接返回拒绝，小米：没有回调，OPPO：好像是没有回调，vivo：好像是没有回调；另外专门测试了一下UC最新版（支付宝）：直接返回拒绝。另[参考](https://www.jianshu.com/p/6cd5a7fa562c)。也许他们都商量好了或者本身都是用的UC？至于没有任何回调的，此种浏览器没有良心。
 
-*2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题。问题二：IOS上如果录音之前先播放了任何Audio，录音过程可能会变得很诡异，但如果先录音，就不存在此问题（19-09-18 Evan:QQ1346751357反馈发现本问题并非必现，[功能页面](https://hft.bigdatahefei.com/LocateSearchService/sfc/index)，但本库的Demo内却必现，原因不明）。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。问题一目前已通过全局共享一个MediaStream连接来解决，原因在于Safari上MediaStream断开后就无法再次进行连接使用（表现为静音），改成了全局只连接一次就避免了此问题；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。
+*2019-07-22* 对[#34](https://github.com/xiangyuecn/Recorder/issues/34)反馈研究后发现，问题一：~~macOS、IOS的Safari对连续调用录音（中途未调用close）是有问题的，但只要调用close后再重复录音就没有问题~~（已通过特殊手段解决）。问题二：IOS上如果录音之前先播放了任何Audio，录音过程可能会变得很诡异，但如果先录音，就不存在此问题（19-09-18 Evan:QQ1346751357反馈发现本问题并非必现，[功能页面](https://hft.bigdatahefei.com/LocateSearchService/sfc/index)，但本库的Demo内却必现，原因不明）。chrome、firefox正常的很。目测这两个问题是非我等屌丝能够解决的，于是报告给苹果家程序员看看，因此发了个[帖子](https://forums.developer.apple.com/message/373108)，顺手在`Feedback Assistant`提交了`bug report`，但好几天过去了没有任何回应（顺带给微软一个好评）。问题一目前已通过全局共享一个MediaStream连接来解决，原因在于Safari上MediaStream断开后就无法再次进行连接使用（表现为静音），改成了全局只连接一次就避免了此问题；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。
 
 *2019-10-26* 针对[#51](https://github.com/xiangyuecn/Recorder/issues/51)的问题研究后发现，如果录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。此问题能够稳定复现（使用别的程序大量占用CPU来模拟），目前已在`envIn`内部函数中进行了补偿处理，在浏览器两次传入PCM数据之间填充一段静默数据已弥补丢失的时长；最终编码得到的音频时长将和实际录音时长基本一致，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。
 
 *2019-11-03* lamejs原版编码器编码出来的mp3文件首尾存在填充数据并且会占据一定时长（这种数据播放时静默，记录的信息数据或者填充），同一录音mp3格式的时长会比wav格式的时长要长0-100ms左右，大部分情况下不会有影响，但如果涉及到实时转码并传输的话，这些数据将会造成多段mp3片段的总时长比实际录音要长，最终播放时会均匀的感觉到停顿，并且mp3片段越小越明显。本库已对lamejs编码出来的mp3文件进行了处理，去掉了头部的非音频数据，但由于编码出来的mp3每一帧数据都有固定时长，文件结尾最后一帧可能录音的时长不能刚好填满，就会产生填充数据；因此本库编码出来的mp3文件会比wav格式长0-30ms左右，多出来的时长在mp3的结尾处；mp3解码出来的pcm数据直接去掉结尾多出来的部分，就和wav中的pcm数据基本一致了；另外可以通过调节待编码的pcm数据长度以达到刚好填满最后一帧来规避此问题，参考`Recorder.SampleData`方法提供的连续转码针对此问题的处理。[参考wiki](https://github.com/xiangyuecn/Recorder/wiki/lamejs编码出来的mp3时长修正)。
+
+*2020-04-26* Safari Bug：据QQ群内`1048506792`、`190451148`开发者反馈研究发现，IOS ?-13.X Safari内打开录音后，如果切换到了其他标签、或其他App并且播放了任何声音，此时将会中断已打开的录音（系统级的？），切换回正在录音的页面，这个页面的录音功能将会彻底失效，并且刷新也无法恢复录音；表现为关闭录音后再次打开录音，能够正常获得权限，但浏览器返回的采集到的音频为静默的PCM，此时地址栏也并未显示出麦克风图标，刷新这个标签也也是一样不能正常获得录音，只有关掉此标签新打开页面才可正常录音。如果打开录音后关闭了录音，然后切换到其他标签或App播放声音，然后返回录音页面，不会出现此问题。此为Safari的底层Bug（也许是少给临时工工钱了吧，无能为力）。使用长按录音类似的用户交互可大幅度避免踩到这坨翔。
 
 
 
