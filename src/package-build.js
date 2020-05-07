@@ -60,7 +60,9 @@ function Run_minify(){
 	minify("../dist/extensions/frequency.histogram.view.js",["extensions/frequency.histogram.view.js"]);
 	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);
 	
-	minify("../asset-record-sdk/record-sdk/record-web-sdk.js",["../asset-record-sdk/record-sdk/src/record-web-sdk.js"]);
+	minify("../asset-record-sdk/record-sdk/record-web-sdk.js",["../asset-record-sdk/record-sdk/src/record-web-sdk.js","../asset-record-sdk/record-sdk/src/libs/qrcode.js"]);
+	minify("../asset-record-sdk/record-sdk/dist/ios-weixin-config.js",["../asset-record-sdk/record-sdk/src/ios-weixin-config.js"]);
+	minify("../asset-record-sdk/record-sdk/dist/native-config.js",["../asset-record-sdk/record-sdk/src/native-config.js"]);
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };
