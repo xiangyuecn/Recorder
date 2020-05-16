@@ -184,7 +184,7 @@ function recStart(){
 	if(rec){
 		rec.close();
 	};
-	debugger
+	
 	rec=Recorder({
 		type:"mp3"
 		,sampleRate:testSampleRate

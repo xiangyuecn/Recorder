@@ -122,7 +122,7 @@ a:hover{
 	
 	<div class="mainBox mainCtrl" style="display:none">
 		<div style="padding-bottom:12px">
-			<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block;vertical-align:bottom" class="ctrlProcessWave"></div>
+			<div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom"><div style="height:100px;width:300px;" class="ctrlProcessWave"></div></div>
 			<div style="width:300px;display:inline-block;vertical-align:bottom">
 				<div style="height:40px;width:300px;display:inline-block;background:#999;position:relative;margin-bottom:12px">
 					<div class="ctrlProcessX" style="height:40px;background:#0B1;position:absolute;"></div>
@@ -133,7 +133,8 @@ a:hover{
 					<span class="recwaveChoice" key="WaveView">WaveView</span>
 					<span class="recwaveChoice" key="SurferView">SurferView</span>
 					<span class="recwaveChoice" key="Histogram1">Histogram1</span>
-					<span class="recwaveChoice" key="Histogram2">Histogram2</span>
+					<span class="recwaveChoice" key="Histogram2">H...2</span>
+					<span class="recwaveChoice" key="Histogram3">H...3</span>
 				</span>
 			</div>
 		</div>
@@ -259,6 +260,16 @@ window.Runtime={
 				,minHeight:1
 				,stripeEnable:false
 			});
+			waveStore.Histogram3=Recorder.FrequencyHistogramView({
+				elem:".ctrlProcessWave"
+				,lineCount:10
+				,position:0
+				,minHeight:1
+				,fallDuration:400
+				,stripeEnable:false
+				,mirrorEnable:true
+				,linear:[0,"#0ac",1,"#0ac"]
+			});
 		};
 		
 		$(".ctrlProcessX").css("width",powerLevel+"%");
@@ -341,9 +352,14 @@ var recwaveChoiceKey=localStorage["RecWaveChoiceKey"]||"WaveView";
 $(".recwaveChoice").bind("click",function(e){
 	var elem=$(e.target);
 	$(".recwaveChoice").removeClass("slc");
-	recwaveChoiceKey=elem.addClass("slc").attr("key");
+	var val=elem.addClass("slc").attr("key");
+	
+	recwaveChoiceKey=val;
 	localStorage["RecWaveChoiceKey"]=recwaveChoiceKey;
 });
+if(!$(".recwaveChoice[key="+recwaveChoiceKey+"]").length){
+	recwaveChoiceKey="WaveView";
+};
 $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 
 
@@ -441,14 +457,14 @@ Runtime.LogAudioDown=function(id){
 		var name="rec-"+o.duration+"ms-"+(o.set.bitRate||"-")+"kbps-"+(o.set.sampleRate||"-")+"hz."+(o.set.type||(/\w+$/.exec(o.blob.type)||[])[0]||"unknown");
 		
 		o.down=(o.down||0)+1;
-		$(".LogAudio_"+id).html('<span style="color:red">'+o.down+'</span> <span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button onclick="Runtime.LogAudioDown64(\''+id+'\',\''+cls+'\')">生成Base64文本</button></span>');
+		$(".LogAudio_"+id).html('<span style="color:red">'+o.down+'</span> 点击 <span class="'+cls+'"> 下载，或复制文本<button onclick="Runtime.LogAudioDown64(\''+id+'\',\''+cls+'\')">生成Base64文本</button></span>');
 		
 		var downA=document.createElement("A");
 		downA.innerHTML="下载 "+name;
 		downA.href=(window.URL||webkitURL).createObjectURL(o.blob);
 		downA.download=name;
 		$("."+cls).prepend(downA);
-		downA.click();
+		//downA.click(); 某些软件内会跳转页面到恶心推广页
 	};
 };
 Runtime.LogAudioDown64=function(key, cls){

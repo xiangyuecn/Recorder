@@ -262,19 +262,23 @@ RandomKey.idx=0;
 		<input type="text" class="bits" value="8 to 96 step 8">kbps 测试音质用的，除比特率外其他参数可调整
 	</div>
 	<div class="pd waveBox">
-		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
+		<div style="border:1px solid #ccc;display:inline-block"><div style="height:100px;width:300px;" class="recwave"></div></div>
 		
 		<span style="font-size:0">
 			<span class="recwaveChoice" key="WaveView">WaveView</span>
 			<span class="recwaveChoice" key="SurferView">SurferView</span>
 			<span class="recwaveChoice" key="Histogram1">Histogram1</span>
-			<span class="recwaveChoice" key="Histogram2">Histogram2</span>
+			<span class="recwaveChoice" key="Histogram2">H...2</span>
+			<span class="recwaveChoice" key="Histogram3">H...3</span>
 		</span>
 	</div>
-	<div class="webrtcBox">
+	<div class="pd webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
 		<div class="webrtcView" style="display:none;"></div>
+	</div>
+	<div class="takeoffBox">
+		<label><input type="checkbox" class="takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk），切换后新打开录音生效</label>
 	</div>
 </div>
 	
@@ -359,12 +363,12 @@ Recorder库修改时间（有可能修改了忘改）:${Recorder.LM}
 
 
 <script>
-function reclog(s,e){
+function reclog(s,color){
 	var now=new Date();
 	var t=("0"+now.getHours()).substr(-2)
 		+":"+("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2);
-	$(".reclog").prepend('<div style="color:'+(e?"red":"")+'">['+t+']'+s+'</div>');
+	$(".reclog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>');
 };
 $(window).bind("error",function(e){
 	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
@@ -382,6 +386,7 @@ function recopen(){
 	
 	window.waveStore={};
 	window.sonicAsync=null;
+	window.takeoffChunks=[];
 	
 	var disableEnvInFixSet=$(".disableEnvInFixSet")[0].checked;
 	if(disableEnvInFixSet){
@@ -390,6 +395,8 @@ function recopen(){
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
+	
+	var takeoffEncodeChunkSet=$(".takeoffEncodeChunkSet")[0].checked;
 	
 	rec=Recorder({
 		type:type
@@ -416,6 +423,9 @@ function recopen(){
 			};
 			
 			return beginAsync;//返回true转成异步操作
+		}
+		,takeoffEncodeChunk:!takeoffEncodeChunkSet?null:function(chunkBytes){
+			takeoffChunks.push(chunkBytes);
 		}
 	});
 	
@@ -447,6 +457,16 @@ function recopen(){
 			,position:0
 			,minHeight:1
 			,stripeEnable:false
+		});
+		waveStore.Histogram3=Recorder.FrequencyHistogramView({
+			elem:".recwave"
+			,lineCount:10
+			,position:0
+			,minHeight:1
+			,fallDuration:400
+			,stripeEnable:false
+			,mirrorEnable:true
+			,linear:[0,"#0ac",1,"#0ac"]
 		});
 	},function(e,isUserNotAllow){
 		dialogCancel();
@@ -504,6 +524,8 @@ function recstart(call){
 		sonicAsync&&sonicAsync.flush();//丢弃不管，省的去同步麻烦
 		sonicAsync=null;
 		
+		takeoffChunks=[];
+		
 		rec.start();
 		var set=rec.set;
 		reclog("录制中："+set.type+" "+set.sampleRate+"hz "+set.bitRate+"kbps");
@@ -526,9 +548,26 @@ function recresume(){
 };
 var recblob={};
 function recstop(call){
-	recstopFn(call,true,function(){
+	recstopFn(call,true,function(err,blob,time){
 		setTimeout(function(){
 			window.realTimeSendTryStop&&realTimeSendTryStop(rec.set);
+			
+			if(!err && rec.set.takeoffEncodeChunk){
+				reclog("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据","#f60");
+				reclog("takeoffEncodeChunk接收到"+takeoffChunks.length+"片音频片段，正在合并成一个音频文件...");
+				var len=0;
+				for(var i=0;i<takeoffChunks.length;i++){
+					len+=takeoffChunks[i].length;
+				};
+				var chunkData=new Uint8Array(len);
+				for(var i=0,idx=0;i<takeoffChunks.length;i++){
+					var itm=takeoffChunks[i];
+					chunkData.set(itm,idx);
+					idx+=itm.length;
+				};
+				var blob=new Blob([chunkData],{type:"audio/"+rec.set.type});
+				addRecLog(time,"合并",blob,rec.set,Date.now());
+			};
 		});
 	});
 };
@@ -548,9 +587,7 @@ function recstopFn(call,isClick,endCall,rec){
 				return;
 			};
 			
-			var id=RandomKey(16);
-			recblob[id]={blob:blob,set:$.extend({},rec.set),time:time};
-			reclog((tag||"已录制")+":"+intp(rec.set.bitRate,3)+"kbps "+intp(rec.set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+rec.set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
+			addRecLog(time,tag||"已录制",blob,rec.set,t1);
 			
 			call(null,{data:blob,duration:time});
 		},function(s){
@@ -560,6 +597,11 @@ function recstopFn(call,isClick,endCall,rec){
 	}else{
 		call("未打开录音");
 	};
+};
+var addRecLog=function(time,tag,blob,set,t1){
+	var id=RandomKey(16);
+	recblob[id]={blob:blob,set:$.extend({},set),time:time};
+	reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 };
 var intp=function(s,len){
 	s=s==null?"-":s+"";
@@ -678,14 +720,14 @@ function recdown(key){
 		var name="rec-"+o.time+"ms-"+o.set.bitRate+"kbps-"+o.set.sampleRate+"hz."+o.set.type;
 		
 		o.down=(o.down||0)+1;
-		$(".d"+key).html('<span style="color:red">'+o.down+'</span> <span class="'+cls+'"> 没弹下载？试一下链接或复制文本<button onclick="recdown64(\''+key+'\',\''+cls+'\')">生成Base64文本</button></span>');
+		$(".d"+key).html('<span style="color:red">'+o.down+'</span> 点击 <span class="'+cls+'"> 下载，或复制文本<button onclick="recdown64(\''+key+'\',\''+cls+'\')">生成Base64文本</button></span>');
 		
 		var downA=document.createElement("A");
 		downA.innerHTML="下载 "+name;
 		downA.href=(window.URL||webkitURL).createObjectURL(o.blob);
 		downA.download=name;
 		$("."+cls).prepend(downA);
-		downA.click();
+		//downA.click(); 某些软件内会跳转页面到恶心推广页
 	};
 };
 function recdown64(key, cls){
@@ -704,13 +746,28 @@ function recdown64(key, cls){
 
 $(".recinfoCode").text($(".recinfoCode").text().replace(/\$\{(.+?)\}/g,function(a,b){return eval(b)}));
 
+var s="https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/";
+var extensionsInfo={
+	WaveView:'<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 动态波形)'
+	,SurferView:'<b>WaveSurferView</b> (<a href="'+s+'wavesurfer.view.js">wavesurfer.view.js</a> 音频可视化波形)'
+	,Histogram:'<b>FrequencyHistogramView</b> (<a href="'+s+'frequency.histogram.view.js">frequency.histogram.view.js</a> + <a href="'+s+'lib.fft.js">lib.fft.js</a> 音频可视化频率直方图)'
+	,Sonic:'<b>Sonic</b> (<a href="'+s+'sonic.js">sonic.js</a> 变速变调)'
+};
 var recwaveChoiceKey=localStorage["RecWaveChoiceKey"]||"WaveView";
 $(".recwaveChoice").bind("click",function(e){
 	var elem=$(e.target);
 	$(".recwaveChoice").removeClass("slc");
-	recwaveChoiceKey=elem.addClass("slc").attr("key");
+	var val=elem.addClass("slc").attr("key");
+	var info=extensionsInfo[val.replace(/\d+$/,"")];
+	if(recwaveChoiceKey!=val){
+		reclog("已切换波形显示为："+info);
+	};
+	recwaveChoiceKey=val;
 	localStorage["RecWaveChoiceKey"]=recwaveChoiceKey;
 });
+if(!$(".recwaveChoice[key="+recwaveChoiceKey+"]").length){
+	recwaveChoiceKey="WaveView";
+};
 $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 
 
@@ -721,13 +778,11 @@ if(window.isSecureContext===false){
 };
 
 reclog("点击打开录音开始哦，此浏览器<span style='color:"+(Recorder.Support()?"green'>":"red'>不")+"支持录音</span>");
-var s="https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/";
-reclog('已启用Extensions：\
-<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 动态波形)\
-<b>WaveSurferView</b> (<a href="'+s+'wavesurfer.view.js">wavesurfer.view.js</a> 音频可视化波形)\
-、<b>FrequencyHistogramView</b> (<a href="'+s+'frequency.histogram.view.js">frequency.histogram.view.js</a> + <a href="'+s+'lib.fft.js">lib.fft.js</a> 音频可视化频率直方图)\
-、<b>Sonic</b> (<a href="'+s+'sonic.js">sonic.js</a> 变速变调)\
-');
+reclog('已启用Extensions：'
+	+extensionsInfo.WaveView
+	+'、'+extensionsInfo.SurferView
+	+'、'+extensionsInfo.Histogram
+	+'、'+extensionsInfo.Sonic);
 
 
 function goiframe(){
@@ -1026,7 +1081,7 @@ var SonicBak=Recorder.Sonic;
 
 //pcm测试页面来的
 if(/ispcm=1/.test(location.href)){
-	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox,.webrtcBox").hide();
+	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox,.webrtcBox,.takeoffBox").hide();
 };
 }catch(e){console.error(e)}})();
 </script>

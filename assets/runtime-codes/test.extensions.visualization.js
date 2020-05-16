@@ -29,6 +29,27 @@ var waveConfigs={
 			,minHeight:1
 			,stripeEnable:false
 			,linear:[0,"#06c",1,"#06c"]}
+		,{testTitle:"粗大"
+			,lineCount:15
+			,spaceWidth:1.5
+			,stripeEnable:false
+			,linear:[0,"#ab00ff",1,"#ab00ff"]}
+			
+		,{testTitle:"镜像"
+			,lineCount:15
+			,position:0
+			,minHeight:1
+			,fallDuration:400
+			,stripeEnable:false
+			,mirrorEnable:true}
+		,{testTitle:"稀疏镜像"
+			,lineCount:8
+			,position:0
+			,minHeight:1
+			,fallDuration:400
+			,stripeEnable:false
+			,mirrorEnable:true
+			,linear:[0,"#0ac",1,"#0ac"]}
 		,{testTitle:"顶部显示+粗大"
 			,lineCount:15
 			,position:1
@@ -72,7 +93,7 @@ var visualizationCreate=function(){
 			var cls="view"+k+i;
 			box.append('<div style="display:inline-block;margin:0 6px 6px 0;vertical-align:top">\
 	<div style="font-size:12px;width:'+waveStore.width+'px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;">'+config.testTitle+'</div>\
-	<div style="height:'+waveStore.height+'px;width:'+waveStore.width+'px;border:1px solid #ccc;box-sizing:border-box;" class="'+cls+'"></div>\
+	<div style="border:1px solid #ccc;"><div style="height:'+waveStore.height+'px;width:'+waveStore.width+'px;" class="'+cls+'"></div></div>\
 </div>');
 			
 			//实例化可视化对象

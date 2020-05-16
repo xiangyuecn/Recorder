@@ -35,6 +35,7 @@ var fn=function(set){
 		,spaceWidth:0 //柱子间空白固定基础宽度，柱子宽度自适应，当不为0时widthRatio无效，当视图不足容下所有柱子时将不会留空白，允许为负数，让柱子发生重叠
 		,minHeight:0 //柱子保留基础高度，position不为±1时应该保留点高度
 		,position:-1 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
+		,mirrorEnable:false //是否启用镜像，如果启用，视图宽度会分成左右两块，右边这块进行绘制，左边这块进行镜像（以中间这根柱子的中心进行镜像）
 		
 		,stripeEnable:true //是否启用柱子顶上的峰值小横条，position不是-1时应当关闭，否则会很丑
 		,stripeHeight:3 //峰值小横条基础高度
@@ -248,18 +249,26 @@ fn.prototype=FrequencyHistogramView.prototype={
 		var linear2=This.genLinear(ctx,set.linear,originY,originY+heightY);//下半部分的填充
 		var stripeLinear2=set.stripeLinear&&This.genLinear(ctx,set.stripeLinear,originY,originY+heightY)||linear2;//上半部分的峰值小横条填充
 		
-		//绘制柱子
+		//计算柱子间距
 		ctx.shadowBlur=set.shadowBlur*scale;
 		ctx.shadowColor=set.shadowColor;
+		var mirrorEnable=set.mirrorEnable;
+		var mirrorCount=mirrorEnable?lineCount*2-1:lineCount;//镜像柱子数量翻一倍-1根
+		
 		var widthRatio=set.widthRatio;
 		var spaceWidth=set.spaceWidth*scale;
 		if(spaceWidth!=0){
-			widthRatio=(width-spaceWidth*(lineCount+1))/width;
+			widthRatio=(width-spaceWidth*(mirrorCount+1))/width;
 		};
-		var lineWidth=Math.max(1*scale,Math.floor((width*widthRatio)/lineCount));//柱子宽度至少1个单位
-		var spaceFloat=(width-lineCount*lineWidth)/(lineCount+1);//均匀间隔，首尾都留空，可能为负数，柱子将发生重叠
+		
+		var lineWidth=Math.max(1*scale,Math.floor((width*widthRatio)/mirrorCount));//柱子宽度至少1个单位
+		var spaceFloat=(width-mirrorCount*lineWidth)/(mirrorCount+1);//均匀间隔，首尾都留空，可能为负数，柱子将发生重叠
+		
+		//绘制柱子
 		var minHeight=set.minHeight*scale;
-		for(var i=0,xFloat=0,x,y,h;i<lineCount;i++){
+		var mirrorSubX=spaceFloat+lineWidth/2;
+		var xFloat=mirrorEnable?width/2-mirrorSubX:0;//镜像时，中间柱子位于正中心
+		for(var i=0,x,y,h;i<lineCount;i++){
 			xFloat+=spaceFloat;
 			x=Math.floor(xFloat);
 			h=Math.max(lastH[i],minHeight);
@@ -309,6 +318,15 @@ fn.prototype=FrequencyHistogramView.prototype={
 				
 				xFloat+=lineWidth;
 			};
+		};
+		
+		//镜像，从中间直接镜像即可
+		if(mirrorEnable){
+			var srcW=Math.floor(width/2);
+			ctx.save();
+			ctx.scale(-1,1);
+			ctx.drawImage(This.canvas,Math.ceil(width/2),0,srcW,height,-srcW,0,srcW,height);
+			ctx.restore();
 		};
 		
 		set.onDraw(frequencyData,sampleRate);
