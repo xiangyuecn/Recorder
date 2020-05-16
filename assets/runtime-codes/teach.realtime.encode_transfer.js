@@ -1,5 +1,5 @@
 /******************
-《【教程】实时转码并上传》
+《【教程】实时转码并上传-通用版》
 作者：高坚果
 时间：2019-10-22 23:04:49
 
@@ -16,6 +16,8 @@
 【引入杂音、停顿问题】除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）；
 wav格式最终拼接出来的音频音质比mp3的要好很多，因为wav拼接出来的PCM数据和录音得到的PCM数据是相同的；
 但mp3拼接出来的就不一样了，因为每次mp3编码时都会引入首尾的静默数据，使音频时长略微变长，这部分静默数据听起来就像有杂音和停顿一样，在实时转码间隔很短的情况下尤其明显（比如50ms），但只要转码间隔比较大时（比如500ms），mp3的这种停顿就会感知不到，音质几乎可以达到和wav一样。
+
+仅使用mp3格式时，请参考更优良的《【教程】实时转码并上传-MP3专版》采用的takeoffEncodeChunk实现，不会有停顿导致的杂音。
 ******************/
 var testOutputWavLog=false;//本测试如果是输出mp3，就顺带打一份wav的log，录音后执行mp3、wav合并的demo代码可对比音质
 var testSampleRate=16000;
@@ -55,7 +57,7 @@ var RealTimeSendTry=function(rec,isClose){
 		realTimeSendTryChunk=null;
 	};
 	if(!isClose && t1-realTimeSendTryTime<SendInterval){
-		return;
+		return;//控制缓冲达到指定间隔才进行传输
 	};
 	realTimeSendTryTime=t1;
 	var number=++realTimeSendTryNumber;

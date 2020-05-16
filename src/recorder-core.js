@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2020-1-8 10:53:14";
+var LM="2020-5-16 18:35:30";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -265,7 +265,14 @@ function initFn(set){
 		
 		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）；newBufferIdx:本次回调新增的buffer起始索引；asyncEnd:fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。onProcess返回值：如果返回true代表开启异步模式，在某些大量运算的场合异步是必须的，必须在异步处理完成时调用asyncEnd(不能真异步时需用setTimeout包裹)，在onProcess执行后新增的buffer会全部替换成空数组，因此本回调开头应立即将newBufferIdx到本次回调结尾位置的buffer全部保存到另外一个数组内，处理完成后写回buffers中本次回调的结尾位置。
 		
+		//*******高级设置******
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
+		
+		//,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出
+				//当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；环境要求比较苛刻：如果当前环境不支持实时编码处理，将在open时直接走fail逻辑
+				//因此提供此回调后调用stop方法将无法获得有效的音频数据，因为编码器内没有音频数据，因此stop时返回的blob将是一个字节长度为0的blob
+				//目前只有mp3格式实现了实时编码，在支持实时处理的环境中将会实时的将编码出来的mp3片段通过此方法回调，所有的chunkBytes拼接到一起即为完整的mp3，此种拼接的结果比mock方法实时生成的音质更加，因为天然避免了首尾的静默
+				//目前除mp3外其他格式不可以提供此回调，提供了将在open时直接走fail逻辑
 	};
 	
 	for(var k in set){
@@ -333,6 +340,12 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		
+		//环境配置检查
+		var checkMsg=This.envCheck({envName:"H5",canProcess:true});
+		if(checkMsg){
+			False("不能录音："+checkMsg);
+			return;
+		};
 		
 		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
 		var f1=function(stream){
@@ -411,6 +424,23 @@ Recorder.prototype=initFn.prototype={
 		This.srcSampleRate=pcmSampleRate;
 		return This;
 	}
+	,envCheck:function(envInfo){//平台环境下的可用性检查，任何时候都可以调用检查，返回errMsg:""正常，"失败原因"
+		//envInfo={envName:"H5",canProcess:true}
+		var errMsg,This=this,set=This.set;
+		
+		//编码器检查环境下配置是否可用
+		if(!errMsg){
+			if(This[set.type+"_envCheck"]){//编码器已实现环境检查
+				errMsg=This[set.type+"_envCheck"](envInfo,set);
+			}else{//未实现检查的手动检查配置是否有效
+				if(set.takeoffEncodeChunk){
+					errMsg=set.type+"类型不支持设置takeoffEncodeChunk";
+				};
+			};
+		};
+		
+		return errMsg||"";
+	}
 	,envStart:function(mockEnv,sampleRate){//和平台环境无关的start调用
 		var This=this,set=This.set;
 		This.isMock=mockEnv?1:0;//非H5环境需要启用mock
@@ -448,6 +478,10 @@ Recorder.prototype=initFn.prototype={
 		var buffers=This.buffers;
 		var bufferFirstIdx=buffers.length;//之前的buffer都是经过onProcess处理好的，不允许再修改
 		buffers.push(pcm);
+		
+		//有engineCtx时会被覆盖，这里保存一份
+		var buffersThis=buffers;
+		var bufferFirstIdxThis=bufferFirstIdx;
 		
 		//卡顿丢失补偿：因为设备很卡的时候导致H5接收到的数据量不够造成播放时候变速，结果比实际的时长要短，此处保证了不会变短，但不能修复丢失的音频数据造成音质变差。当前算法采用输入时间侦测下一帧是否需要添加补偿帧，需要(6次输入||超过1秒)以上才会开始侦测，如果滑动窗口内丢失超过1/3就会进行补偿
 		var now=Date.now();
@@ -515,6 +549,7 @@ Recorder.prototype=initFn.prototype={
 		
 		var duration=Math.round(bufferSize/bufferSampleRate*1000);
 		var bufferNextIdx=buffers.length;
+		var bufferNextIdxThis=buffersThis.length;
 		
 		//允许异步处理buffer数据
 		var asyncEnd=function(){
@@ -532,6 +567,13 @@ Recorder.prototype=initFn.prototype={
 					if(engineCtx&&buffer.length){
 						This[set.type+"_encode"](engineCtx,buffer);
 					};
+				};
+			};
+			
+			//同步清理This.buffers，不管buffers到底清了多少个，buffersThis全清
+			if(hasClear && engineCtx){
+				for(var i=bufferFirstIdxThis;i<bufferNextIdxThis;i++){
+					buffersThis[i]=null;
 				};
 			};
 			
@@ -672,7 +714,9 @@ Recorder.prototype=initFn.prototype={
 		};
 		var ok=function(blob,duration){
 			console.log("["+Date.now()+"]结束 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
-			if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
+			if(set.takeoffEncodeChunk){//接管了输出，此时blob长度为0
+				console.warn("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据");
+			}else if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
 				err("生成的"+set.type+"无效");
 				return;
 			};
@@ -700,10 +744,18 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		
+		//环境配置检查，此处仅针对mock调用，因为open已经检查过了
+		if(This.isMock){
+			var checkMsg=This.envCheck({envName:"mock",canProcess:false});//mock没有onProcess回调
+			if(checkMsg){
+				err("录音错误："+checkMsg);
+				return;
+			};
+		};
+		
 		//此类型有边录边转码(Worker)支持
 		var engineCtx=This.engineCtx;
 		if(This[set.type+"_complete"]&&engineCtx){
-			var pcmDatas=engineCtx.pcmDatas;
 			var duration=Math.round(engineCtx.pcmSize/set.sampleRate*1000);//采用后的数据长度和buffers的长度可能微小的不一致，是采样率连续转换的精度问题
 			
 			t1=Date.now();
@@ -750,12 +802,22 @@ Recorder.Traffic=function(){
 	if(imgUrl){
 		var data=Recorder.Traffic;
 		var idf=location.href.replace(/#.*/,"");
+		
+		if(imgUrl.indexOf("//")==0){
+			//给url加上http前缀，如果是file协议下，不加前缀没法用
+			if(/^https:/i.test(idf)){
+				imgUrl="https:"+imgUrl;
+			}else{
+				imgUrl="http:"+imgUrl;
+			};
+		};
+		
 		if(!data[idf]){
 			data[idf]=1;
 			
 			var img=new Image();
 			img.src=imgUrl;
-			console.log("Traffic Analysis Image: Recorder.TrafficImgUrl="+imgUrl);
+			console.log("Traffic Analysis Image: Recorder.TrafficImgUrl="+Recorder.TrafficImgUrl);
 		};
 	};
 };

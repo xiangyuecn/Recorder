@@ -53,6 +53,10 @@ var win=window.top;//微信JsSDK让顶层去加载，免得iframe各种麻烦
 
 
 /*********实现app.js内IOS-Weixin中Config的接口*************/
+config.Enable=function(call){
+	//是否启用微信支持，默认启用，如果要禁用就回调call(false)
+	call(true);
+};
 config.WxReady=function(call){
 	//此方法已实现在微信JsSDK wx.config好后调用call(wx,err)函数
 	//微信JsSDK wx.config需使用到后端接口进行签名，文档： https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
@@ -72,14 +76,14 @@ config.DownWxMedia=function(param,success,fail){
 		transform_bitRate:123 建议的比特率，转码用的，同transform_type
 		transform_sampleRate:123 建议的采样率，转码用的，同transform_type
 		
-		* 素材下载的amr音质很渣，也许可以通过高清接口获得清晰点的音频，那么后两个参数就有用武之地。
+		* 素材下载的amr音质很渣，也许可以通过高清接口获得清晰点的speex音频，那么transform_*参数就有用武之地；直接下载的amr只需用mediaId参数就可以了。
 	}
 	success： fn(obj) 下载成功返回结果
 		obj:{
 			mime:"audio/amr" //这个值是服务器端请求临时素材接口返回的Content-Type响应头，未转码必须是audio/amr；如果服务器进行了转码，是转码后的类型mime，并且提供duration
 			,data:"base64文本" //服务器端下载到或转码的文件二进制内容进行base64编码
 			
-			,duration:0 //音频时长，这个是可选的，如果服务器端进行了转码，必须提供这个参数
+			,duration:0 //音频时长，如果服务器端进行了转码，必须返回这个参数并且>0，否则不要提供或者直接给0
 		}
 	fail: fn(msg) 下载出错回调
 	*/

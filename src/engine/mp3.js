@@ -74,60 +74,86 @@ Recorder.BindDestroy("mp3Worker",function(){
 	mp3Worker=null;
 });
 
-var openList={id:0};
+
+Recorder.prototype.mp3_envCheck=function(envInfo,set){//检查环境下配置是否可用
+	var errMsg="";
+	//需要实时编码返回数据，此时需要检查环境是否有实时特性、和是否可实时编码
+	if(set.takeoffEncodeChunk){
+		if(!envInfo.canProcess){
+			errMsg=envInfo.envName+"环境不支持实时处理";
+		}else if(!newContext()){//浏览器不能创建实时编码环境
+			errMsg="当前浏览器版本太低，无法实时处理";
+		};
+	};
+	return errMsg;
+};
 Recorder.prototype.mp3_start=function(set){//如果返回null代表不支持
+	return newContext(set);
+};
+var openList={id:0};
+var newContext=function(setOrNull){
 	var worker=mp3Worker;
 	try{
-		var onmsg=function(e){
-			var ed=e.data;
-			var cur=wk_ctxs[ed.id];
-			if(ed.action=="init"){
-				wk_ctxs[ed.id]={
-					sampleRate:ed.sampleRate
-					,bitRate:ed.bitRate
-					
-					,mp3Size:0
-					,pcmSize:0
-					,encArr:[]
-					,encObj:new wk_lame.Mp3Encoder(1,ed.sampleRate,ed.bitRate)
+		if(!worker){
+			var onmsg=function(e){
+				var ed=e.data;
+				var cur=wk_ctxs[ed.id];
+				if(ed.action=="init"){
+					wk_ctxs[ed.id]={
+						sampleRate:ed.sampleRate
+						,bitRate:ed.bitRate
+						,takeoff:ed.takeoff
+						
+						,mp3Size:0
+						,pcmSize:0
+						,encArr:[]
+						,encObj:new wk_lame.Mp3Encoder(1,ed.sampleRate,ed.bitRate)
+					};
+				}else if(!cur){
+					return;
 				};
-			}else if(!cur){
-				return;
+				
+				switch(ed.action){
+				case "stop":
+					cur.encObj=null;
+					delete wk_ctxs[ed.id];
+					break;
+				case "encode":
+					cur.pcmSize+=ed.pcm.length;
+					var buf=cur.encObj.encodeBuffer(ed.pcm);
+					if(buf.length>0){
+						if(cur.takeoff){
+							self.postMessage({action:"takeoff",id:ed.id,chunk:buf});
+						}else{
+							cur.mp3Size+=buf.buffer.byteLength;
+							cur.encArr.push(buf.buffer);
+						};
+					};
+					break;
+				case "complete":
+					var buf=cur.encObj.flush();
+					if(buf.length>0){
+						if(cur.takeoff){
+							self.postMessage({action:"takeoff",id:ed.id,chunk:buf});
+						}else{
+							cur.mp3Size+=buf.buffer.byteLength;
+							cur.encArr.push(buf.buffer);
+						};
+					};
+					
+					//去掉开头的标记信息帧
+					var meta=wk_mp3TrimFix.fn(cur.encArr,cur.mp3Size,cur.pcmSize,cur.sampleRate);
+					
+					self.postMessage({
+						action:ed.action
+						,id:ed.id
+						,blob:new Blob(cur.encArr,{type:"audio/mp3"})
+						,meta:meta
+					});
+					break;
+				};
 			};
 			
-			switch(ed.action){
-			case "stop":
-				cur.encObj=null;
-				delete wk_ctxs[ed.id];
-				break;
-			case "encode":
-				cur.pcmSize+=ed.pcm.length;
-				var buf=cur.encObj.encodeBuffer(ed.pcm);
-				if(buf.length>0){
-					cur.mp3Size+=buf.buffer.byteLength;
-					cur.encArr.push(buf.buffer);
-				};
-				break;
-			case "complete":
-				var buf=cur.encObj.flush();
-				if(buf.length>0){
-					cur.mp3Size+=buf.buffer.byteLength;
-					cur.encArr.push(buf.buffer);
-				};
-				
-				//去掉开头的标记信息帧
-				var meta=wk_mp3TrimFix.fn(cur.encArr,cur.mp3Size,cur.pcmSize,cur.sampleRate);
-				
-				self.postMessage({
-					action:ed.action
-					,id:ed.id
-					,blob:new Blob(cur.encArr,{type:"audio/mp3"})
-					,meta:meta
-				});
-				break;
-			};
-		};
-		if(!worker){
 			//创建一个新Worker
 			var jsCode=");wk_lame();var wk_ctxs={};self.onmessage="+onmsg;
 			jsCode+=";var wk_mp3TrimFix={rm:"+mp3TrimFix.rm+",fn:"+mp3TrimFix.fn+"}";
@@ -139,26 +165,40 @@ Recorder.prototype.mp3_start=function(set){//如果返回null代表不支持
 			(window.URL||webkitURL).revokeObjectURL(url);//必须要释放，不然每次调用内存都明显泄露内存
 			
 			worker.onmessage=function(e){
-				var ctx=openList[e.data.id];
+				var data=e.data;
+				var ctx=openList[data.id];
 				if(ctx){
-					ctx.call&&ctx.call(e.data);
-					ctx.call=null;
+					if(data.action=="takeoff"){
+						//取走实时生成的mp3数据
+						ctx.set.takeoffEncodeChunk(new Uint8Array(data.chunk.buffer));
+					}else{
+						//complete
+						ctx.call&&ctx.call(data);
+						ctx.call=null;
+					};
 				};
 			};
 		};
 		
-		var ctx={worker:worker,set:set};
-		ctx.id=++openList.id;
-		openList[ctx.id]=ctx;
-		
-		worker.postMessage({
-			action:"init"
-			,id:ctx.id
-			,sampleRate:set.sampleRate
-			,bitRate:set.bitRate
+		var ctx={worker:worker,set:setOrNull,takeoffQueue:[]};
+		if(setOrNull){
+			ctx.id=++openList.id;
+			openList[ctx.id]=ctx;
 			
-			,x:new Int16Array(5)//低版本浏览器不支持序列化TypedArray
-		});
+			worker.postMessage({
+				action:"init"
+				,id:ctx.id
+				,sampleRate:setOrNull.sampleRate
+				,bitRate:setOrNull.bitRate
+				,takeoff:!!setOrNull.takeoffEncodeChunk
+				
+				,x:new Int16Array(5)//低版本浏览器不支持序列化TypedArray
+			});
+		}else{
+			worker.postMessage({
+				x:new Int16Array(5)//低版本浏览器不支持序列化TypedArray
+			});
+		};
 		
 		
 		mp3Worker=worker;

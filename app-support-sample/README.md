@@ -17,37 +17,27 @@
 
 [在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
 
-## 【IOS】Hybrid App测试
-
-[demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ，详细的原生实现、权限配置等请阅读这个目录内的README；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+，已测试IOS 12.3。
-
-**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果公司工程师水准**
-
-
-## 【Android】Hybrid App测试
-
-[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
-
-## 【IOS微信】H5测试
-[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
-
-此demo页面为代理页面（[源](https://xiangyuecn.github.io/Recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
-
-## 【IOS微信】小程序WebView测试
-[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
-
-1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
-2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
-3. 不出意外就进入了上面这个在线测试页面，开始愉快的测试吧。
-
-> Android微信H5、WebView支持录音，无需特殊兼容，因此上面特意针对IOS微信。
-
-
-
 
 # :open_book:快速使用
 
 你可以通过阅读和运行[QuickStart.html](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将 [/app-support-sample/QuickStart.html](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/QuickStart.html) 文件copy 到你的(https)网站中，然后将变量PageSet_RecordAppWxApi改成你自己的后端API地址，无需其他文件，就能正常开始测试了，App内同样适用。
+
+
+## 【后端】可选 - 实现后端微信接口
+RecordApp默认开启IOS端微信内的支持（可配置禁用支持），在IOS微信环境内，自动走微信JsSDK来录音，其他环境走Native、H5录音。
+
+开启微信支持需要后端实现：
+- 签名接口：使用微信JsSDK需要后端提供JsSDK签名。
+- 素材下载接口：JsSDK录音完成后需要后端服务器调用微信素材接口下载录音二进制数据。
+
+详细的接口文档和实现，请阅读下面的`Weixin(IOS-Weixin).Config`章节。
+
+
+## 【App】可选 - 实现App原生接口
+RecordApp默认未开启App内原生录音支持，可开启后在App环境中将走Native录音，其他环境走Weixin、H5录音。
+
+详细的开启和实现，请阅读下面的`Native.Config`章节。
+
 
 ## 【1】加载框架
 
@@ -190,6 +180,34 @@ function createDelayDialog(){
 
 
 
+## 案例演示
+
+### 【IOS】Hybrid App测试
+
+[demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ，详细的原生实现、权限配置等请阅读这个目录内的README；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+，已测试IOS 12.3。
+
+**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果公司工程师水准**
+
+
+### 【Android】Hybrid App测试
+
+[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
+
+### 【IOS微信】H5测试
+[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
+
+此demo页面为代理页面（[源](https://xiangyuecn.github.io/Recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
+
+### 【IOS微信】小程序WebView测试
+[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
+
+1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
+2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
+3. 不出意外就进入了上面这个在线测试页面，开始愉快的测试吧。
+
+> Android微信H5、WebView支持录音，无需特殊兼容，因此上面特意针对IOS微信。
+
+
 
 
 # :open_book:仅为兼容IOS而生
@@ -231,7 +249,7 @@ IOS其他浏览器||
 
 - 会自动加载`Recorder`，因此`Recorder`支持的功能，`RecordApp`基本上都能支持，包括语音通话聊天。
 - 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用`IOS-Weixin`选项。
-- 默认开启`IOS-Weixin`支持，用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
+- 默认开启`IOS-Weixin`支持（可配置禁用支持），用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
 - 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用；本方式优先级最高。
 
 
@@ -271,6 +289,11 @@ set配置默认值：
     bitRate:16//最佳比特率kbps
     
     onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd)，此回调和Recorder的回调行为完全一致
+    
+    //*******高级设置******
+        //,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能，如果不清楚作用请勿随意使用
+        //,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出。此回调和Recorder的回调行为完全一致
+                //加了这个回调就意味着录音环境必须支持实时回调，因此RecordApp.Current.CanProcess()==false时，Start将直接走fail回调（如IOS-Weixin环境就不支持）
 }
 注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
 
@@ -382,8 +405,9 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 ### 【配置】RecordApp.Platforms.Weixin(IOS-Weixin).Config
 修改这个配置会有点复杂，可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置。
 
-使用微信录音，必需提供配置中的`WxReady`、`DownWxMedia`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
+使用微信录音，必需提供配置中的`WxReady`、`DownWxMedia`方法，可选提供`Enable`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
 
+- `Enable`: 回调返回是否要启用微信支持，本方法是可选的，默认启用支持。
 - `WxReady`: 对使用到的[微信JsSDK进行签名](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)，至少要包含`startRecord,stopRecord,onVoiceRecordEnd,uploadVoice`接口。签名操作需要后端支持。
 - `DownWxMedia`: 对[微信录音素材进行下载](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727)，下载操作需要后端支持。
 

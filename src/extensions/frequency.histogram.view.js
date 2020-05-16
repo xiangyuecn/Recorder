@@ -311,7 +311,7 @@ fn.prototype=FrequencyHistogramView.prototype={
 			};
 		};
 		
-		set.onDraw(frequencyData);
+		set.onDraw(frequencyData,sampleRate);
 	}
 };
 Recorder.FrequencyHistogramView=FrequencyHistogramView;
