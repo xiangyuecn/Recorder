@@ -7,7 +7,7 @@ Recorder.Support();//激活Recorder.Ctx
 
 /*********注入界面******************/
 (function(){
-	reclog("<span style='color:#f60'>实时编码除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>");
+	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制</span>；参考<a target='_blank' href='https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】实时转码并上传-mp3专版</a>。");
 	
 	var i=0;
 	reclog(['已开启实时编码传输模拟'
@@ -20,7 +20,7 @@ Recorder.Support();//激活Recorder.Ctx
 	,(++i)+'. 复制设备B"本机信息"到设备A的"远程信息"中，设备A中点击确定连接'
 	,(++i)+'. 连接已建立，任何一方都可随时开始录音，并且数据都会发送给另外一方'
 	,''
-	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式的音质wav算是勉强最好，MP3差点。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外MP3编码出来的音频的播放时间比PCM原始数据要长一些，这个地方需要注意。'
+	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式的音质wav算是勉强最好，MP3差点。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外MP3编码出来的音频的播放时间比PCM原始数据要长一些，这个地方需要注意（本例子默认采用的是onProcess+mock实现，因此会有停顿杂音，如果开启takeoffEncodeChunk实现就无此限制，参考下面日志里的链接）。'
 	,''
 	,'<span style="color:red">本demo仅支持局域网</span>（无需服务器支持），采用WebRTC P2P传输数据，如果要支持公网访问会异常复杂，实际使用时用WebSocket来进行数据传输数据会简单很多'
 	,''
@@ -100,6 +100,7 @@ var realTimeSendTryEncBusy;
 var realTimeSendTryChunk;
 var realTimeSendTryChunks;
 var realTimeSendTryChunkSampleRate;
+var realTimeSendTryTakeoffChunksIdx;
 var realTimeSendTryReset=function(){
 	realTimeSendTryTime=0;
 };
@@ -115,6 +116,7 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 		realTimeSendTryEncBusy=0;
 		realTimeSendTryChunk=null;
 		realTimeSendTryChunks=[];
+		realTimeSendTryTakeoffChunksIdx=0;
 		
 		if(recSet.type=="wav"){
 			reclog("<span style='color:#0b1'>实时编码wav格式很快，无需任何优化</span>");
@@ -122,6 +124,13 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 			reclog("<span style='color:#0b1'>实时编码"+recSet.type+"格式支持边录边转码(Worker)</span>");
 		}else{
 			reclog("<span style='color:#f60'>实时编码"+recSet.type+"格式采用UI线程转码，将会有明显卡顿</span>");
+		};
+		
+		if(recSet.takeoffEncodeChunk){
+			reclog("已开启takeoffEncodeChunk实现，通过接管实时编码输出，避免了音频片段首尾的静默停顿导致的杂音",2);
+			if(recSet.type!="mp3"){
+				reclog("当前测试代码只提供了mp3格式的takeoffEncodeChunk处理，请升级代码",1);
+			};
 		};
 	};
 	if(t1-realTimeSendTryTime<interval){
@@ -135,12 +144,55 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 	realTimeSendTryChunks.push(chunk.data);
 	realTimeSendTryChunkSampleRate=chunk.sampleRate;
 	
-	var recMock=Recorder($.extend({},recSet));
-	recMock.mock(chunk.data,chunk.sampleRate);
 	
 	if(recImpl[recSet.type+"_start"]){
 		endT=Date.now();
 	};
+	
+	var st1=Date.now();
+	var encodeEnd=function(tag,blob,duration){
+		//此处应伪装成发送blob数据
+		//emmmm.... 发送给语音聊天webrtc
+		if(window.rtcChannelOpen){
+			webrtcStreamSend(blob,{
+				duration:duration
+				,interval:interval
+			});
+			return;
+		};
+		
+		addRecLog(duration,tag,blob,recSet,st1);
+	};
+	
+	//已接管编码器输出
+	if(recSet.takeoffEncodeChunk && recSet.type=="mp3"){
+		//合并所有的音频片段
+		var len=0;
+		for(var i=realTimeSendTryTakeoffChunksIdx;i<takeoffChunks.length;i++){
+			len+=takeoffChunks[i].length;
+		};
+		var chunkData=new Uint8Array(len);
+		for(var i=realTimeSendTryTakeoffChunksIdx,idx=0;i<takeoffChunks.length;i++){
+			var itm=takeoffChunks[i];
+			chunkData.set(itm,idx);
+			idx+=itm.length;
+		};
+		realTimeSendTryTakeoffChunksIdx=takeoffChunks.length;
+		
+		//生成完整blob音频文件
+		var blob=new Blob([chunkData],{type:"audio/"+recSet.type});
+		var meta=Recorder.mp3ReadMeta([chunkData.buffer],len)||{};
+		
+		var tag=realTimeSendTryChunks.length+"接管音频输出";
+		encodeEnd(tag,blob,meta.duration);
+		return;
+	};
+	
+	//mock转码
+	var mockSet=$.extend({},recSet);
+	mockSet.takeoffEncodeChunk=null;
+	var recMock=Recorder(mockSet);
+	recMock.mock(chunk.data,chunk.sampleRate);
 	
 	if(realTimeSendTryEncBusy>=2){
 		if(window.rtcChannelOpen){
@@ -153,23 +205,19 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 	};
 	realTimeSendTryEncBusy++;
 	
-	recstopFn(null,0,function(err,blob,duration){
+	recMock.stop(function(blob,duration){
 		realTimeSendTryEncBusy&&(realTimeSendTryEncBusy--);
-		
-		//此处应伪装成发送blob数据
-		//emmmm.... 发送给语音聊天webrtc
-		if(blob&&window.rtcChannelOpen){
-			webrtcStreamSend(blob,{
-				duration:duration
-				,interval:interval
-			});
-			return -1;
-		};
 		
 		var ms=(endT||Date.now())-t1;
 		var max=recImpl[recSet.type+"_start"]?99999:1000*pcmDatas[0].length/sampleRate-10;//录音回调1帧时长
-		return realTimeSendTryChunks.length+"实时编码占用<span style='color:"+(ms>max?"red":"")+"'>"+ms+"ms</span>";
-	},recMock);
+		
+		var tag=realTimeSendTryChunks.length+"实时编码占用<span style='color:"+(ms>max?"red":"")+"'>"+ms+"ms</span>";
+		encodeEnd(tag,blob,duration);
+	},function(err){
+		realTimeSendTryEncBusy&&(realTimeSendTryEncBusy--);
+		
+		reclog("实时编码失败："+err,1);
+	});
 };
 var realTimeSendTryStop=function(recSet){
 	if(!realTimeSendTryTime){
@@ -179,11 +227,16 @@ var realTimeSendTryStop=function(recSet){
 	//借用SampleData函数把二维数据转成一维，采样率转换是次要的
 	var chunk=Recorder.SampleData(realTimeSendTryChunks,realTimeSendTryChunkSampleRate,realTimeSendTryChunkSampleRate);
 	
-	var recMock=Recorder($.extend({},recSet));
+	var mockSet=$.extend({},recSet);
+	mockSet.takeoffEncodeChunk=null;
+	var recMock=Recorder(mockSet);
 	recMock.mock(chunk.data,chunk.sampleRate);
-	recstopFn(null,0,function(err,blob,time){
-		return "实时编码汇总结果";
-	},recMock);
+	var mockT=Date.now();
+	recMock.stop(function(blob,duration){
+		addRecLog(duration,"实时编码汇总结果",blob,mockSet,mockT);
+	},function(err){
+		reclog("实时编码汇总失败："+err,1);
+	});
 };
 
 
@@ -322,7 +375,7 @@ function webrtcVoiceSend(data){
 function webrtcReceive(data){
 	var m=/^(.+?)##(.+?)##(?:txt:([\S\s]*)|data:(.+?);\s*base64\s*,\s*(.+))?$/.exec(data);
 	if(!m){
-		console.warn("webrtc收到未知数据：",data);
+		rtcMsgView("webrtc收到未知数据："+data,true);
 		return;
 	};
 	var type=m[1];

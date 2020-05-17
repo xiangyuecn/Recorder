@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2020-5-16 18:35:30";
+var LM="2020-5-17 08:21:54";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -419,6 +419,7 @@ Recorder.prototype=initFn.prototype={
 		This._stop();//清理掉已有的资源
 		
 		This.isMock=1;
+		This.mockEnvInfo=null;
 		This.buffers=[pcmData];
 		This.recSize=pcmData.length;
 		This.srcSampleRate=pcmSampleRate;
@@ -441,9 +442,10 @@ Recorder.prototype=initFn.prototype={
 		
 		return errMsg||"";
 	}
-	,envStart:function(mockEnv,sampleRate){//和平台环境无关的start调用
+	,envStart:function(mockEnvInfo,sampleRate){//平台环境相关的start调用
 		var This=this,set=This.set;
-		This.isMock=mockEnv?1:0;//非H5环境需要启用mock
+		This.isMock=mockEnvInfo?1:0;//非H5环境需要启用mock，并提供envCheck需要的环境信息
+		This.mockEnvInfo=mockEnvInfo;
 		This.buffers=[];//数据缓冲
 		This.recSize=0;//数据大小
 		
@@ -553,9 +555,9 @@ Recorder.prototype=initFn.prototype={
 		
 		//允许异步处理buffer数据
 		var asyncEnd=function(){
-			//重新计算size，去掉本次添加的然后重新计算
+			//重新计算size，异步的早已减去添加的，同步的需去掉本次添加的然后重新计算
 			var num=asyncBegin?0:-addSize;
-			var hasClear=0;
+			var hasClear=buffers[0]==null;
 			for(var i=bufferFirstIdx;i<bufferNextIdx;i++){
 				var buffer=buffers[i];
 				if(buffer==null){//已被主动释放内存，比如长时间实时传输录音时
@@ -570,19 +572,27 @@ Recorder.prototype=initFn.prototype={
 				};
 			};
 			
-			//同步清理This.buffers，不管buffers到底清了多少个，buffersThis全清
+			//同步清理This.buffers，不管buffers到底清了多少个，buffersThis是使用不到的进行全清
 			if(hasClear && engineCtx){
-				for(var i=bufferFirstIdxThis;i<bufferNextIdxThis;i++){
+				var i=bufferFirstIdxThis;
+				if(buffersThis[0]){
+					i=0;
+				};
+				for(;i<bufferNextIdxThis;i++){
 					buffersThis[i]=null;
 				};
 			};
 			
-			if(!hasClear){
-				if(engineCtx){
-					engineCtx.pcmSize+=num;
-				}else{
-					This.recSize+=num;
-				};
+			//统计修改后的size，如果异步发生clear要原样加回来，同步的无需操作
+			if(hasClear){
+				num=asyncBegin?addSize:0;
+				
+				buffers[0]=null;//彻底被清理
+			};
+			if(engineCtx){
+				engineCtx.pcmSize+=num;
+			}else{
+				This.recSize+=num;
 			};
 		};
 		//实时回调处理数据，允许修改或替换上次回调以来新增的数据 ，但是不允许修改已处理过的，不允许增删第一维数组 ，允许将第二维数组任意修改替换成空数组也可以
@@ -600,9 +610,9 @@ Recorder.prototype=initFn.prototype={
 			};
 			
 			if(hasClear){
-				console.warn("异步模式下不能清除buffers");
+				console.warn("未进入异步前不能清除buffers");
 			}else{
-				//还原size
+				//还原size，异步结束后再统计仅修改后的size，如果发生clear要原样加回来
 				if(engineCtx){
 					engineCtx.pcmSize-=addSize;
 				}else{
@@ -628,7 +638,7 @@ Recorder.prototype=initFn.prototype={
 		var This=this,set=This.set,ctx=Recorder.Ctx;
 		This._stop();
 		This.state=0;
-		This.envStart(0,ctx.sampleRate);
+		This.envStart(null,ctx.sampleRate);
 		
 		//检查open过程中stop是否已经调用过
 		if(This._SO&&This._SO+1!=This._S){//上面调用过一次 _stop
@@ -746,7 +756,7 @@ Recorder.prototype=initFn.prototype={
 		
 		//环境配置检查，此处仅针对mock调用，因为open已经检查过了
 		if(This.isMock){
-			var checkMsg=This.envCheck({envName:"mock",canProcess:false});//mock没有onProcess回调
+			var checkMsg=This.envCheck(This.mockEnvInfo||{envName:"mock",canProcess:false});//没有提供环境信息的mock时没有onProcess回调
 			if(checkMsg){
 				err("录音错误："+checkMsg);
 				return;

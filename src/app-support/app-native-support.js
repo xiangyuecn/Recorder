@@ -36,7 +36,9 @@ var onRecFn=window.NativeRecordReceivePCM=window.top.NativeRecordReceivePCM=func
 		return;
 	};
 	if(!rec._appStart){
-		rec.envStart(1,sampleRate);
+		rec.envStart({
+			envName:platform.Key,canProcess:platform.CanProcess()
+		},sampleRate);
 	};
 	rec._appStart=1;
 	

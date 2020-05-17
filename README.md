@@ -240,7 +240,7 @@ $.ajax({
 1. [【Demo库】【格式转换】-mp3格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
 2. [【Demo库】【格式转换】-wav格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
 3. [【教程】实时转码并上传-通用版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
-4. [【教程】实时转码并上传-MP3专版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3)
+4. [【教程】实时转码并上传-mp3专版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3)
 5. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
 6. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
 7. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
@@ -310,7 +310,7 @@ IOS其他浏览器||
 
 *2019-10-26* 针对[#51](https://github.com/xiangyuecn/Recorder/issues/51)的问题研究后发现，如果录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。此问题能够稳定复现（使用别的程序大量占用CPU来模拟），目前已在`envIn`内部函数中进行了补偿处理，在浏览器两次传入PCM数据之间填充一段静默数据已弥补丢失的时长；最终编码得到的音频时长将和实际录音时长基本一致，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。
 
-*2019-11-03* lamejs原版编码器编码出来的mp3文件首尾存在填充数据并且会占据一定时长（这种数据播放时静默，记录的信息数据或者填充），同一录音mp3格式的时长会比wav格式的时长要长0-100ms左右，大部分情况下不会有影响，但如果涉及到实时转码并传输的话，这些数据将会造成多段mp3片段的总时长比实际录音要长，最终播放时会均匀的感觉到停顿，并且mp3片段越小越明显。本库已对lamejs编码出来的mp3文件进行了处理，去掉了头部的非音频数据，但由于编码出来的mp3每一帧数据都有固定时长，文件结尾最后一帧可能录音的时长不能刚好填满，就会产生填充数据；因此本库编码出来的mp3文件会比wav格式长0-30ms左右，多出来的时长在mp3的结尾处；mp3解码出来的pcm数据直接去掉结尾多出来的部分，就和wav中的pcm数据基本一致了；另外可以通过调节待编码的pcm数据长度以达到刚好填满最后一帧来规避此问题，参考`Recorder.SampleData`方法提供的连续转码针对此问题的处理。[参考wiki](https://github.com/xiangyuecn/Recorder/wiki/lamejs编码出来的mp3时长修正)。
+*2019-11-03* lamejs原版编码器编码出来的mp3文件首尾存在填充数据并且会占据一定时长（这种数据播放时静默，记录的信息数据或者填充），同一录音mp3格式的时长会比wav格式的时长要长0-100ms左右，大部分情况下不会有影响，但如果涉及到实时转码并传输的话，这些数据将会造成多段mp3片段的总时长比实际录音要长，最终播放时会均匀的感觉到停顿，并且mp3片段越小越明显。本库已对lamejs编码出来的mp3文件进行了处理，去掉了头部的非音频数据，但由于编码出来的mp3每一帧数据都有固定时长，文件结尾最后一帧可能录音的时长不能刚好填满，就会产生填充数据；因此本库编码出来的mp3文件会比wav格式长0-30ms左右，多出来的时长在mp3的结尾处；mp3解码出来的pcm数据直接去掉结尾多出来的部分，就和wav中的pcm数据基本一致了；另外可以通过调节待编码的pcm数据长度以达到刚好填满最后一帧来规避此问题，参考`Recorder.SampleData`方法提供的连续转码针对此问题的处理（但小的mp3片段拼接起来停顿导致的杂音还是非常明显，实时处理时使用`takeoffEncodeChunk`选项可完全避免此问题）。[参考wiki](https://github.com/xiangyuecn/Recorder/wiki/lamejs编码出来的mp3时长修正)。
 
 *2020-04-26* Safari Bug：据QQ群内`1048506792`、`190451148`开发者反馈研究发现，IOS ?-13.X Safari内打开录音后，如果切换到了其他标签、或其他App并且播放了任何声音，此时将会中断已打开的录音（系统级的？），切换回正在录音的页面，这个页面的录音功能将会彻底失效，并且刷新也无法恢复录音；表现为关闭录音后再次打开录音，能够正常获得权限，但浏览器返回的采集到的音频为静默的PCM，此时地址栏也并未显示出麦克风图标，刷新这个标签也也是一样不能正常获得录音，只有关掉此标签新打开页面才可正常录音。如果打开录音后关闭了录音，然后切换到其他标签或App播放声音，然后返回录音页面，不会出现此问题。此为Safari的底层Bug（也许是少给临时工工钱了吧，无能为力）。使用长按录音类似的用户交互可大幅度避免踩到这坨翔。
 
@@ -552,7 +552,7 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 ### 简单将多段小的mp3片段合成长的mp3文件
 由于lamejs CBR编码出来的mp3二进制数据从头到尾全部是大小相同的数据帧（采样率44100等无法被8整除的部分帧可能存在额外多1字节填充），没有其他任何多余信息，通过文件长度可计算出mp3的时长`fileSize*8/bitRate`（[参考](https://blog.csdn.net/u010650845/article/details/53520426)），数据帧之间可以直接拼接。因此将小的mp3片段文件的二进制数据全部合并到一起即可得到长的mp3文件；要求待合成的所有mp3片段的采样率和比特率需一致。[mp3合并参考和测试+可移植源码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
 
-*注：CBR编码由于每帧数据的时长是固定的，mp3文件结尾最后这一帧的录音可能不能刚好填满，就会产生填充数据，多出来的这部分数据会导致mp3时长变长一点点，在实时转码传输时应当留意，解码成pcm后可直接去掉结尾的多余；另外可以通过调节待编码的pcm数据长度以达到刚好填满最后一帧来规避此问题，参考`Recorder.SampleData`方法提供的连续转码针对此问题的处理。首帧或前两帧可能是lame记录的信息帧，本库已去除，参考上面的已知问题。*
+*注：CBR编码由于每帧数据的时长是固定的，mp3文件结尾最后这一帧的录音可能不能刚好填满，就会产生填充数据，多出来的这部分数据会导致mp3时长变长一点点，在实时转码传输时应当留意，解码成pcm后可直接去掉结尾的多余；另外可以通过调节待编码的pcm数据长度以达到刚好填满最后一帧来规避此问题，参考`Recorder.SampleData`方法提供的连续转码针对此问题的处理。首帧或前两帧可能是lame记录的信息帧，本库已去除（但小的mp3片段拼接起来停顿导致的杂音还是非常明显，实时处理时使用`takeoffEncodeChunk`选项可完全避免此问题），参考上面的已知问题。*
 
 
 ## beta-ogg (Vorbis)
@@ -705,6 +705,7 @@ set={
     ,spaceWidth:0 //柱子间空白固定基础宽度，柱子宽度自适应，当不为0时widthRatio无效，当视图不足容下所有柱子时将不会留空白，允许为负数，让柱子发生重叠
     ,minHeight:0 //柱子保留基础高度，position不为±1时应该保留点高度
     ,position:-1 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
+    ,mirrorEnable:false //是否启用镜像，如果启用，视图宽度会分成左右两块，右边这块进行绘制，左边这块进行镜像（以中间这根柱子的中心进行镜像）
     
     ,stripeEnable:true //是否启用柱子顶上的峰值小横条，position不是-1时应当关闭，否则会很丑
     ,stripeHeight:3 //峰值小横条基础高度
@@ -830,7 +831,7 @@ public void onPermissionRequest(PermissionRequest request) {
 
 编写本语音测试的目的在于验证H5录音实时转码、传输的可行性，并验证实时转码mp3格式小片段文件接收后的可播放性。经测试发现：除了移动端可能存在设备性能低下的问题以外，录音后实时转码mp3并传输给对方是可行的，对方接收后播放也能连贯的播放（效果还是要看播放代码写的怎么样，目前没有比较完美的播放代码）。另外（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。
 
-另外除wav外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意。
+另外除wav外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意（如果类型支持，实时处理时使用`takeoffEncodeChunk`选项可完全避免此问题）。
 
 ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_webrtc.png)
 

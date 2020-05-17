@@ -1,5 +1,5 @@
 /******************
-《【教程】实时转码并上传-MP3专版》
+《【教程】实时转码并上传-mp3专版》
 作者：高坚果
 时间：2020-5-16 16:58:48
 
@@ -15,7 +15,7 @@ var testOutputWavLog=false;//顺带打一份wav的log，录音后执行mp3、wav
 var testSampleRate=16000;
 var testBitRate=16;
 
-var SendInterval=300;//mp3 chunk数据会缓冲，当pcm的累积时长达到这个时长，就会传输发送
+var SendInterval=300;//mp3 chunk数据会缓冲，当pcm的累积时长达到这个时长，就会传输发送。这个值在takeoffEncodeChunk实现下，使用0也不会有性能上的影响。
 
 //重置环境
 var RealTimeSendTryReset=function(){
@@ -103,13 +103,13 @@ var RealTimeOnProcessClear=function(buffers,powerLevel,bufferDuration,bufferSamp
 		realTimeSendTryWavTestBuffers=[];
 		realTimeSendTryWavTestSampleRate=0;
 	};
-	realTimeSendTryClearPrevBufferIdx=newBufferIdx;
 	
 	//清理PCM缓冲数据，最后完成录音时不能调用stop，因为数据已经被清掉了
-	//这里进行了延迟操作，只清理上次到现在的buffer
+	//这里进行了延迟操作（必须要的操作），只清理上次到现在的buffer
 	for(var i=realTimeSendTryClearPrevBufferIdx;i<newBufferIdx;i++){
 		buffers[i]=null;
 	};
+	realTimeSendTryClearPrevBufferIdx=newBufferIdx;
 	
 	//备份一下方便后面生成测试wav
 	for(var i=newBufferIdx;i<buffers.length;i++){
