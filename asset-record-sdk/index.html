@@ -1,0 +1,318 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/icon.png">
+
+<title>RecordSDK测试</title>
+
+<script src="record-sdk/src/record-web-sdk.js"></script>
+<script src="record-sdk/src/libs/qrcode.js"></script>
+
+</head>
+<body>
+
+
+<div class="main">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#f60;">RecordSDK测试</span>
+		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
+		
+		<div style="padding-top:10px;color:#666">
+			更多Demo：
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/">Recorder H5</a>
+			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx">RecordApp</a>
+			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html">RecordApp QuickStart</a>
+		</div>
+	</div>
+	
+	<div class="mainBox">
+		<!-- 按钮控制区域 -->
+		<div class="pd btns">
+			<div>
+				<button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
+				<button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
+			</div>
+			
+			<button onclick="recStart()">录制</button>
+			<button onclick="recStop()" style="margin-right:80px">停止</button>
+			
+			<span style="display: inline-block;">
+				<button onclick="recPause()">暂停</button>
+				<button onclick="recResume()">继续</button>
+			</span>
+			<span style="display: inline-block;">
+				<button onclick="recPlay()">播放</button>
+				<button onclick="recUpload()">上传</button>
+			</span>
+		</div>
+		
+		<!-- 波形绘制区域 -->
+		<div class="pd recpower">
+			<div style="height:40px;width:300px;background:#999;position:relative;">
+				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+				<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			</div>
+		</div>
+		<div class="pd waveBox">
+			<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block" class="recwave"></div>
+		</div>
+	</div>
+	
+	<!-- 日志输出区域 -->
+	<div class="mainBox">
+		<div class="reclog"></div>
+		
+		<div id="oldBrowserLog" class="pd"></div>
+	</div>
+</div>
+
+
+
+
+
+<script>
+//古董浏览器测试简单兼容
+if(!document.querySelector){
+	document.querySelector=function(cls){
+		return document.querySelectorAll(cls)[0];
+	};
+	document.querySelectorAll=function(cls){
+		console.warn("querySelectorAll",cls);
+		var elems=document.getElementsByTagName("*");
+		var exp=new RegExp("\\b"+cls.substr(1)+"\\b");
+		var rtv=[];
+		for(var i=0;i<elems.length;i++) {
+			if(exp.test(elems[i].className)){
+				rtv.push(elems[i]);
+			};
+		};
+		return rtv;
+	};
+};
+if(!window.console){
+	window.console={
+		out:function(t,arr){
+			var msg=[];
+			for(var i=0;i<arr.length;i++){
+				msg.push(arr[i]+"");
+			};
+			var div=document.createElement("div");
+			div.innerHTML='<div style="color:'
+				+(t=="error"?"#f00":t=="warn"?"#f60":"")
+				+'">[console.'+t+']'+msg.join(" ")+'</div>';
+			oldBrowserLog.insertBefore(div,oldBrowserLog.firstChild);
+		}
+		,debug:function(){this.out("debug",arguments)}
+		,log:function(){this.out("log",arguments)}
+		,info:function(){this.out("info",arguments)}
+		,warn:function(){this.out("warn",arguments)}
+		,error:function(){this.out("error",arguments)}
+	};
+};
+
+
+function reclog(s,color){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	var div=document.createElement("div");
+	var elem=document.querySelector(".reclog");
+	elem.insertBefore(div,elem.firstChild);
+	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
+};
+window.onerror=function(message, url, lineNo, columnNo, error){
+	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
+	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+};
+</script>
+
+
+<script>
+//立即进行一次配置，执行初始化
+RecordSDK.Config();
+
+setTimeout(function(){
+
+reclog("<span class='aaa'></span>");
+document.querySelector(".aaa").appendChild(RecordSDK.QRCode(location.href));
+
+},1000);
+
+
+
+
+
+
+
+
+/**播放**/
+function recPlay(){
+	if(!recBlob){
+		reclog("请先录音，然后停止后再播放",1);
+		return;
+	};
+	var cls=("a"+Math.random()).replace(".","");
+	reclog('播放中: <span class="'+cls+'"></span>');
+	var audio=document.createElement("audio");
+	audio.controls=true;
+	document.querySelector("."+cls).appendChild(audio);
+	//简单利用URL生成播放地址，注意不用了时需要revokeObjectURL，否则霸占内存
+	audio.src=(window.URL||webkitURL).createObjectURL(recBlob);
+	audio.play();
+	
+	setTimeout(function(){
+		(window.URL||webkitURL).revokeObjectURL(audio.src);
+	},5000);
+};
+
+/**上传**/
+function recUpload(){
+	var blob=recBlob;
+	if(!blob){
+		reclog("请先录音，然后停止后再上传",1);
+		return;
+	};
+	
+	//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
+	//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+	var api="https://xx.xx/test_request";
+	var onreadystatechange=function(title){
+		return function(){
+			if(xhr.readyState==4){
+				if(xhr.status==200){
+					reclog(title+"上传成功",2);
+				}else{
+					reclog(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。", "#d8c1a0");
+					
+					console.error(title+"上传失败",xhr.status,xhr.responseText);
+				};
+			};
+		};
+	};
+	reclog("开始上传到"+api+"，请求稍后...");
+
+	/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
+	var reader=new FileReader();
+	reader.onloadend=function(){
+		var postData="";
+		postData+="mime="+encodeURIComponent(blob.type);//告诉后端，这个录音是什么格式的，可能前后端都固定的mp3可以不用写
+		postData+="&upfile_b64="+encodeURIComponent((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result)||[])[1]) //录音文件内容，后端进行base64解码成二进制
+		//...其他表单参数
+		
+		var xhr=new XMLHttpRequest();
+		xhr.open("POST", api);
+		xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+		xhr.onreadystatechange=onreadystatechange("上传方式一【Base64】");
+		xhr.send(postData);
+	};
+	reader.readAsDataURL(blob);
+
+	/***方式二：使用FormData用multipart/form-data表单上传文件***/
+	var form=new FormData();
+	form.append("upfile",blob,"recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+	//...其他表单参数
+	
+	var xhr=new XMLHttpRequest();
+	xhr.open("POST", api);
+	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
+	xhr.send(form);
+};
+</script>
+
+
+
+
+
+
+
+
+<!--以下这坨可以忽略-->
+<script>
+reclog("Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音"+unescape("%uD83D%uDCAA"),"#f60;font-weight:bold;font-size:24px");
+reclog("RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view"+unescape("%uD83C%uDF89"),"#0b1;font-weight:bold;font-size:24px");
+//reclog(Tips);
+</script>
+
+<!-- 加载打赏挂件 -->
+<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/zdemo.widget.donate.js"></script>
+<script>
+var donateView=document.createElement("div");
+document.querySelector(".reclog").appendChild(donateView);
+if(donateView.addEventListener){//兼容古董浏览器
+	DonateWidget({
+		log:function(msg){reclog(msg)}
+		,mobElem:donateView
+	});
+};
+</script>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5 center top no-repeat;
+	background-size: auto 680px;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.btns button{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin:3px 20px 3px 0;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.btns button:active{
+	background: #f00;
+}
+
+.pd{
+	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+</style>
+
+</body>
+</html>
