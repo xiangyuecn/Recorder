@@ -267,8 +267,8 @@ fn.prototype=FrequencyHistogramView.prototype={
 		//绘制柱子
 		var minHeight=set.minHeight*scale;
 		var mirrorSubX=spaceFloat+lineWidth/2;
-		var xFloat=mirrorEnable?width/2-mirrorSubX:0;//镜像时，中间柱子位于正中心
-		for(var i=0,x,y,h;i<lineCount;i++){
+		var XFloat=mirrorEnable?width/2-mirrorSubX:0;//镜像时，中间柱子位于正中心
+		for(var i=0,xFloat=XFloat,x,y,h;i<lineCount;i++){
 			xFloat+=spaceFloat;
 			x=Math.floor(xFloat);
 			h=Math.max(lastH[i],minHeight);
@@ -294,7 +294,7 @@ fn.prototype=FrequencyHistogramView.prototype={
 			ctx.shadowBlur=(stripeShadowBlur==-1?set.shadowBlur:stripeShadowBlur)*scale;
 			ctx.shadowColor=set.stripeShadowColor||set.shadowColor;
 			var stripeHeight=set.stripeHeight*scale;
-			for(var i=0,xFloat=0,x,y,h;i<lineCount;i++){
+			for(var i=0,xFloat=XFloat,x,y,h;i<lineCount;i++){
 				xFloat+=spaceFloat;
 				x=Math.floor(xFloat);
 				h=stripesH[i];

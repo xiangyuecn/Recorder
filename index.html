@@ -338,6 +338,17 @@ RandomKey.idx=0;
 </div>
 
 <div class="mainBox">
+	<span class="lb">视频播放测试 :</span>
+	<button onclick="$('.videoTest').show().html('<video controls src=\'assets/audio/movie-sexy-rabbit-baby.mp4\' style=\'width:240px;height:160px\'></'+'video>').find('video')[0].play()">播放mp4</button>
+	
+	Video对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/84">issues#84</a>）；IOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音。
+	<button onclick="$('.videoTest').show()">显示video</button>
+	<button onclick="$('.videoTest').hide()">隐藏video</button>
+	<button onclick="$('.videoTest').html('')">移除video</button>
+	<div class="videoTest"></div>
+</div>
+
+<div class="mainBox">
 	<span class="lb">浏览器环境情况 :</span>
 	<pre class="recinfoCode">
 AudioContext:${!!window.AudioContext}
