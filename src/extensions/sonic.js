@@ -1031,7 +1031,9 @@ SonicFunction.Async=function(set){
 			var url=(window.URL||webkitURL).createObjectURL(new Blob(["var wk_sonic=(",sonicCode,jsCode], {type:"text/javascript"}));
 			
 			worker=new Worker(url);
-			(window.URL||webkitURL).revokeObjectURL(url);//必须要释放，不然每次调用内存都明显泄露内存
+			setTimeout(function(){
+				(window.URL||webkitURL).revokeObjectURL(url);//必须要释放，不然每次调用内存都明显泄露内存
+			},10000);//chrome 83 file协议下如果直接释放，将会使WebWorker无法启动
 			
 			worker.onmessage=function(e){
 				var ctx=openList[e.data.id];
