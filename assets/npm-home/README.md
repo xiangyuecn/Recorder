@@ -61,6 +61,10 @@ npm install recorder-core
 引入`src/extensions/sonic.js`，再通过Recorder.Sonic调用即可，音频变速变调转换，详细的使用请参考下面详细的README。
 
 
+## DTMF的调用方式
+引入`src/extensions/dtmf.decode.js`+`lib.fft.js`：DTMF（电话拨号按键信号）解码器，解码得到按键值；`src/extensions/dtmf.encode.js`：编码生成器，生成按键对应的音频PCM信号；详细的使用请参考下面详细的README。
+
+
 ## RecordApp的调用方式
 **方式一**：通过import/require引入
 

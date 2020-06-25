@@ -283,6 +283,13 @@ window.Runtime={
 		waveStore[recwaveChoiceKey].input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
 	}
 	
+	,ReadBlob:function(blob,call){
+		var reader = new FileReader();
+		reader.onloadend = function(e){
+			call(reader.result);
+		};
+		reader.readAsArrayBuffer(blob);
+	}
 	,DecodeAudio:function(fileName,arrayBuffer,True,False){
 		True=True||NOOP;
 		False=False||NOOP;
@@ -1006,6 +1013,8 @@ AddDemoCode(999,"self_base_demo","【教程】本工具使用示例，和Recorde
 
 	Runtime.Ctrls(ctrls) 在控制区显示按钮，只能调用一次，ctrls:[{name:"按钮名称",click:"函数名称",cls:"class name"},{html:"html代码"},{choiceFile:{multiple:true,name:"音乐",title:"转换",mime:"audio/*",process:fn(fileName,arrayBuffer,filesCount,fileIdx,endCall)}},...]
 	
+	Runtime.ReadBlob(blob,call) 读取blob为arrayBuffer,call(arrayBuffer)
+	
 	Runtime.DecodeAudio(fileName,arrayBuffer,True,False) 解码一个音频文件，True({sampleRate:采样率,duration:音频时长,srcBlob:Blob对象,type:从文件名中提取的音频类型,data:[Int16,...]pcm数据})，False(errMsg)
 	
 	Runtime.Log(msgHtml,color) 在日志区显示日志html，color:0默认，1红色，2绿色，其他指定颜色
@@ -1086,6 +1095,7 @@ var demos=[
 
 {n:"【Demo库】【格式转换】-mp3格式转成其他格式",k:"lib.transform.mp32other"}
 ,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
+,{n:"【Demo库】【格式转换】-amr格式转成其他格式",k:"lib.transform.amr2other"}
 
 ,{n:"【教程】实时转码并上传-通用版",k:"teach.realtime.encode_transfer"}
 ,{n:"【教程】实时转码并上传-mp3专版",k:"teach.realtime.encode_transfer_mp3"}
@@ -1095,6 +1105,7 @@ var demos=[
 
 ,{n:"【教程】实时多路音频混音",k:"teach.realtime.mix_multiple"}
 ,{n:"【教程】变速变调音频转换",k:"teach.sonic.transform"}
+,{n:"【教程】DTMF（电话拨号按键信号）解码、编码",k:"teach.dtmf.decode_and_encode"}
 
 ,{n:"【Demo库】PCM采样率提升",k:"lib.samplerate.raise"}
 ,{n:"【测试】音频可视化相关扩展测试",k:"test.extensions.visualization"}

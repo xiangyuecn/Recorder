@@ -19,7 +19,7 @@ var fn=function(set){
 	var o={
 		/*
 		elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
-			//或者配置显示大小，手动把frequencyObj.elem显示到别的地方
+			//或者配置显示大小，手动把surferObj.elem显示到别的地方
 		,width:0 //显示宽度
 		,height:0 //显示高度
 		

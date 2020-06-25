@@ -59,6 +59,8 @@ function Run_minify(){
 	minify("../dist/extensions/lib.fft.js",["extensions/lib.fft.js"]);
 	minify("../dist/extensions/frequency.histogram.view.js",["extensions/frequency.histogram.view.js"]);
 	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);
+	minify("../dist/extensions/dtmf.encode.js",["extensions/dtmf.encode.js"]);
+	minify("../dist/extensions/dtmf.decode.js",["extensions/dtmf.decode.js"]);
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };

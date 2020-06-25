@@ -10,13 +10,14 @@ DemoFragment.PlayBuffer(store,buffer,sampleRate)
 		sampleRate：buffer的采样率
 		
 调用本方法前，应当确保Recorder.Support()是支持的。
+本方法默认会缓冲播放，如果缓冲未满将不会进行播放，小片段偶尔播放应当禁用此特性store.PlayBufferDisable=true。
 ******************/
 (
 window.DemoFragment||(window.DemoFragment={})
 ).PlayBuffer=function(store,buffer,sampleRate){
 	var size=store.PlayBufferSize||0;
 	var arr=store.PlayBufferArr||[];
-	var st=sampleRate/1000*300;//缓冲播放，不然间隔太短接续爆音明显
+	var st=store.PlayBufferDisable?0:sampleRate/1000*300;//缓冲播放，不然间隔太短接续爆音明显
 	
 	size+=buffer.length;
 	arr.push(buffer);

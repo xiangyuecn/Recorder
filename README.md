@@ -239,14 +239,16 @@ $.ajax({
 ### 【Demo片段列表】
 1. [【Demo库】【格式转换】-mp3格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
 2. [【Demo库】【格式转换】-wav格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
-3. [【教程】实时转码并上传-通用版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
-4. [【教程】实时转码并上传-mp3专版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3)
-5. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
-6. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
-7. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
-8. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
-9. [【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
-10. [【测试】音频可视化相关扩展测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
+3. [【Demo库】【格式转换】-amr格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.amr2other)
+4. [【教程】实时转码并上传-通用版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
+5. [【教程】实时转码并上传-mp3专版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3)
+6. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
+7. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
+8. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
+9. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
+10. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
+11. [【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
+12. [【测试】音频可视化相关扩展测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
 
 
 
@@ -561,8 +563,8 @@ wav格式编码器时参考网上资料写的，会发现代码和别人家的�
 ## beta-webm
 这个编码器时通过查阅MDN编写的一个玩意，没多大使用价值：录几秒就至少要几秒来编码。。。原因是：未找到对已有pcm数据进行快速编码的方法。数据导入到MediaRecorder，音频有几秒就要等几秒，类似边播放边收听形。(想接原始录音Stream？我不可能给的!)输出音频虽然可以通过比特率来控制文件大小，但音频文件中的比特率并非设定比特率，采样率由于是我们自己采样的，到这个编码器随他怎么搞。只有比较新的浏览器支持（需实现浏览器MediaRecorder），压缩率和mp3差不多。源码2kb大小。
 
-## beta-amr
-采用的是[benz-amr-recorder](https://github.com/BenzLeung/benz-amr-recorder)(MIT License)优化后的[amr.js](https://github.com/jpemartins/amr.js)(Unknown License)，`https://github.com/BenzLeung/benz-amr-recorder/blob/462c6b91a67f7d9f42d0579fb5906fad9edb2c9d/src/amrnb.js`这个版本的文件代码，已对此代码进行过调整更方便使用。支持编码和解码操作。由于最高只有12.8kbps的码率，音质和同比配置的mp3、ogg差一个档次。由于支持解码操作，理论上所有支持Audio的浏览器都可以播放（需要自己写代码实现）。源码1M多，蛮大，压缩后445K，开启gzip后136K。优点：录音文件小。
+## beta-amr (NB 窄带)
+采用的是[benz-amr-recorder](https://github.com/BenzLeung/benz-amr-recorder)(MIT License)优化后的[amr.js](https://github.com/jpemartins/amr.js)(Unknown License)，`https://github.com/BenzLeung/benz-amr-recorder/blob/462c6b91a67f7d9f42d0579fb5906fad9edb2c9d/src/amrnb.js`这个版本的文件代码，已对此代码进行过调整更方便使用。支持编码和解码操作。由于最高只有12.8kbps的码率(AMR 12.2，8000hz)，音质和同比配置的mp3、ogg差一个档次。由于支持解码操作，理论上所有支持Audio的浏览器都可以播放（需要自己写代码实现）。源码1M多，蛮大，压缩后445K，开启gzip后136K。优点：录音文件小。
 
 ### Recorder.amr2wav(amrBlob,True,False)
 已实现的一个把amr转成wav格式来播放的方法，`True=fn(wavBlob,duration)`。要使用此方法需要带上上面的`wav`格式编码器。仿照此方法可轻松转成别的格式，参考`mock`方法介绍那节。
@@ -652,7 +654,7 @@ set={
 ``` javascript
 set={
     elem:"css selector" //自动显示到dom，并以此dom大小为显示大小
-        //或者配置显示大小，手动把frequencyObj.elem显示到别的地方
+        //或者配置显示大小，手动把surferObj.elem显示到别的地方
     ,width:0 //显示宽度
     ,height:0 //显示高度
     
@@ -777,6 +779,73 @@ sonic.flush()  //将残余的未转换的pcm数据完成转换并返回；返回
 //【异步调用方法】
 sonic.input(buffer,callback) //callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
 sonic.flush(callback) //callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
+```
+
+
+## `DTMF`扩展
+[dtmf.decode.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/dtmf.decode.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)、[dtmf.encode.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/dtmf.encode.js)，两个js一个解码、一个编码，体积小均不超过10kb，纯js实现易于移植。[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)。
+
+1. DTMF（电话拨号按键信号）解码器，解码得到按键值：可实现实时从音频数据流中解码得到电话拨号按键信息，用于电话录音软解，软电话实时提取DTMF按键信号等；请注意：使用dtmf.decode.js必须同时引入`lib.fft.js`才能正常工作。
+2. DTMF（电话拨号按键信号）编码生成器，生成按键对应的音频PCM信号：可实现生成按键对应的音频PCM信号，用于DTMF按键信号生成，软电话实时发送DTMF按键信号等。
+
+### 【方法】Recorder.DTMF_Decode(pcmData,sampleRate,prevChunk)
+解码DTMF只有这个一个函数，此函数支持连续调用，将上次的返回值当做参数即可实现实时音频流数据的连续解码处理。
+
+``` javascript
+参数：
+    pcmData:[Int16,...] pcm一维数组，原则上一次处理的数据量不要超过10秒，太长的数据应当分段延时处理
+    sampleRate: 123 pcm的采样率
+    prevChunk: null || {} 上次的返回值，用于连续识别
+    
+返回:
+    chunk:{
+        keys:[keyItem,...] 识别到的按键，如果未识别到数组长度为0
+                keyItem:{
+                    key:"" //按键值 0-9 #*
+                    time:123 //所在的时间位置，ms
+                }
+        
+        //以下用于下次接续识别
+        lastIs:"" "":mute {}:match 结尾处是什么
+        lastCheckCount:0 结尾如果是key，此时的检查次数
+        totalLen:0 总采样数，相对4khz
+        pcm:[Int16,...] 4khz pcm数据
+    }
+```
+
+### 【方法】Recorder.DTMF_Encode(key,sampleRate,duration,mute)
+本方法用来生成单个按键信号pcm数据，属于底层方法，要混合多个按键信号到别的pcm中请用封装好的DTMF_EncodeMix方法。
+
+``` javascript
+参数：
+    key: 单个按键0-9#*
+    sampleRate:123 要生成的pcm采样率
+    duration:100 按键音持续时间
+    mute:50 按键音前后静音时长
+返回：
+    pcm：[Int16,...]，生成单个按键信号
+```
+
+### 【方法】Recorder.DTMF_EncodeMix(set)
+本方法返回EncodeMix对象，将输入的按键信号混合到持续输入的pcm流中，当.mix(inputPcm)提供的太短的pcm会无法完整放下一个完整的按键信号，所以需要不停调用.mix(inputPcm)进行混合。
+``` javascript
+set={
+    duration:100 //按键信号持续时间
+    ,mute:50 //按键音前后静音时长
+    ,interval:250 //两次按键信号间隔时长
+}
+
+EncodeMix对象：
+    .add(keys)
+        添加一个按键或多个按键 "0" "123#*"，后面慢慢通过mix方法混合到pcm中，无返回值
+    
+    .mix(pcms,sampleRate,index)
+        将已添加的按键信号混合到pcm中，pcms:[[Int16,...],...]二维数组，sampleRate：pcm的采样率，index：pcms第一维开始索引，将从这个pcm开始混合。
+        返回状态对象：{
+            newEncodes:[{key:"*",data:[Int16,...]},...] //本次混合新生成的按键信号列表 ，如果没有产生新信号将为空数组
+            ,hasNext:false //是否还有未混合完的信号
+        }
+		注意：调用本方法会修改pcms中的内容，因此混合结果就在pcms内。
 ```
 
 

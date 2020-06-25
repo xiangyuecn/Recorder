@@ -1,7 +1,7 @@
 {
   "name": "recorder-core",
   "version": "1.1.123456.9999",
-  "description": "Recorder库：html5 js 录音 mp3 wav ogg webm amr 格式，支持pc和Android、ios部分浏览器、和Hybrid App（提供Android IOS App源码），微信也是支持的，提供H5版语音通话聊天示例",
+  "description": "Recorder库：html5 js 录音 mp3 wav ogg webm amr 格式，支持pc和Android、ios部分浏览器、和Hybrid App（提供Android IOS App源码），微信也是支持的，提供H5版语音通话聊天示例 和DTMF编解码",
   "homepage": "https://github.com/xiangyuecn/Recorder",
   "main": "src/recorder-core.js",
   "keywords": [
@@ -13,7 +13,9 @@
     "html5",
     "mp3",
     "wav",
-    "recording"
+    "DTMF",
+    "recording",
+    "webrtc"
   ],
   "repository": {
     "type": "git",

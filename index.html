@@ -46,6 +46,11 @@ console.log(
 <script src="src/extensions/lib.fft.js"></script>
 <script src="src/extensions/frequency.histogram.view.js"></script>
 <script src="src/extensions/sonic.js"></script>
+<script src="src/extensions/dtmf.encode.js"></script>
+<script src="src/extensions/dtmf.decode.js"></script>
+
+<!--加载PlayBuffer-->
+<script src="assets/runtime-codes/fragment.playbuffer.js"></script>
 
 
 <style>
@@ -308,6 +313,32 @@ RandomKey.idx=0;
 		<div style="margin-top:10px"><button onclick="sonicRecTransform()">重新转换当前录音</button></div>
 	</div>
 </div>
+
+<div class="mainBox">
+	<div>
+		<span class="lb">DTMF电话按键信号 :</span> 
+		DTMF解码、编码扩展，可以方便的处理电话拨号按键信号，用于：电话录音软解，软电话实时提取DTMF按键信号、实时发送DTMF按键信号等。下面拨号盘可在录音时往录音文件中添加按键信息：
+	</div>
+<div>
+<style>
+.dtmfTab td{padding: 15px 25px;border: 3px solid #ddd;cursor: pointer;user-select: none;}
+.dtmfTab td:hover{background:#f60;opacity:.2;color:#fff}
+.dtmfTab td:active{opacity:1}
+</style>
+	<table onclick="sendDTMFKeyClick(event)" class="dtmfTab" style="border-collapse: collapse;text-align: center;border: 3px #ccc solid;">
+		<tr><td>1</td><td>2</td><td>3</td><td>A</td></tr>
+		<tr><td>4</td><td>5</td><td>6</td><td>B</td></tr>
+		<tr><td>7</td><td>8</td><td>9</td><td>C</td></tr>
+		<tr><td>*</td><td>0</td><td>#</td><td>D</td></tr>
+	</table>
+</div>
+	<div style="margin:5px 0 0">
+		<div style="margin-top:10px">
+			<button onclick="decodeDTMF()">识别当前录音中的DTMF按键信息</button>
+			<button onclick="sendDTMFKeysClick()">发送*#1234567890#*</button>
+		</div>
+	</div>
+</div>
 	
 <div class="mainBox">
 	<span class="lb">丢失补偿 :</span> <label><input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）</label>
@@ -416,6 +447,16 @@ function recopen(){
 		,disableEnvInFix:disableEnvInFixSet
 		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
 			//优先进行pcm处理，可能会发生数据修改，对于需要大量运算的处理需要开启异步模式，onProcess返回true即可开启，异步操作完成后必须回调asyncEnd
+			
+			//实时混合按键信号
+			if(dtmfMix){
+				var val=dtmfMix.mix(buffers, sampleRate, newBufferIdx);
+				if(val.newEncodes.length>0){
+					rec.PlayBufferDisable=true;
+					DemoFragment.PlayBuffer(rec,val.newEncodes[0].data,sampleRate);
+				};
+			};
+			//变速变调
 			var beginAsync=sonicProcess(buffers,sampleRate,newBufferIdx,asyncEnd);
 			
 			$(".recpowerx").css("width",powerLevel+"%");
@@ -609,9 +650,11 @@ function recstopFn(call,isClick,endCall,rec){
 		call("未打开录音");
 	};
 };
+var recLogLast;
 var addRecLog=function(time,tag,blob,set,t1){
 	var id=RandomKey(16);
-	recblob[id]={blob:blob,set:$.extend({},set),time:time};
+	recLogLast={blob:blob,set:$.extend({},set),time:time};
+	recblob[id]=recLogLast;
 	reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 };
 var intp=function(s,len){
@@ -752,6 +795,48 @@ function recdown64(key, cls){
 	};
 	reader.readAsDataURL(o.blob);
 };
+var ReadBlob=function(blob,call){
+	var reader = new FileReader();
+	reader.onloadend = function(e){
+		call(reader.result);
+	};
+	reader.readAsArrayBuffer(blob);
+};
+var DecodeAudio=function(fileName,arrayBuffer,True,False){
+	True=True||function(){};
+	False=False||function(){};
+	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+		False("浏览器不支持音频解码");
+		return;
+	};
+	var type=(/[^.]+$/.exec(fileName)||[])[0]||"";
+	var srcBlob=new Blob([arrayBuffer],{type:type&&("audio/"+type)||""});
+	
+	var ctx=Recorder.Ctx;
+	ctx.decodeAudioData(arrayBuffer,function(raw){
+		var src=raw.getChannelData(0);
+		var sampleRate=raw.sampleRate;
+		console.log(fileName,raw,srcBlob);
+		
+		var pcm=new Int16Array(src.length);
+		for(var i=0;i<src.length;i++){//floatTo16BitPCM 
+			var s=Math.max(-1,Math.min(1,src[i]));
+			s=s<0?s*0x8000:s*0x7FFF;
+			pcm[i]=s;
+		};
+		
+		True({
+			sampleRate:sampleRate
+			,duration:Math.round(src.length/sampleRate*1000)
+			,srcBlob:srcBlob
+			,type:type
+			,data:pcm
+		});
+	},function(e){
+		console.error("audio解码失败",e);
+		False(fileName+"解码失败:"+(e&&e.message||"-"));
+	});
+};
 
 
 
@@ -763,6 +848,7 @@ var extensionsInfo={
 	,SurferView:'<b>WaveSurferView</b> (<a href="'+s+'wavesurfer.view.js">wavesurfer.view.js</a> 音频可视化波形)'
 	,Histogram:'<b>FrequencyHistogramView</b> (<a href="'+s+'frequency.histogram.view.js">frequency.histogram.view.js</a> + <a href="'+s+'lib.fft.js">lib.fft.js</a> 音频可视化频率直方图)'
 	,Sonic:'<b>Sonic</b> (<a href="'+s+'sonic.js">sonic.js</a> 变速变调)'
+	,DTMF:'<b>DTMF</b> (<a href="'+s+'dtmf.decode.js">dtmf.decode.js</a> + <a href="'+s+'dtmf.encode.js">dtmf.encode.js</a> （电话拨号按键信号）解码、编码)'
 };
 var recwaveChoiceKey=localStorage["RecWaveChoiceKey"]||"WaveView";
 $(".recwaveChoice").bind("click",function(e){
@@ -793,7 +879,8 @@ reclog('已启用Extensions：'
 	+extensionsInfo.WaveView
 	+'、'+extensionsInfo.SurferView
 	+'、'+extensionsInfo.Histogram
-	+'、'+extensionsInfo.Sonic);
+	+'、'+extensionsInfo.Sonic
+	+'、'+extensionsInfo.DTMF);
 
 
 function goiframe(){
@@ -902,14 +989,6 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 			reclog("不能开启Sonic.Async，浏览器不支持WebWorker操作，降级不变速变调",1);
 			return;
 		};
-		
-		//加载PlayBuffer
-		if(!window.DemoFragment||!DemoFragment.PlayBuffer){
-			var elem=document.createElement("script");
-			elem.setAttribute("type","text/javascript");
-			elem.setAttribute("src","assets/runtime-codes/fragment.playbuffer.js");
-			$("head")[0].appendChild(elem);
-		};
 	};
 	
 	sonicAsync.setPitch(sonicCtrlSet.pitch);
@@ -957,6 +1036,63 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 	
 	return true;
 };
+
+
+
+
+
+/****DTMF电话按键信号****/
+var decodeDTMF=function(){
+	if(!recLogLast){
+		reclog("请先录音",1);
+		return;
+	};
+	
+	reclog("开始识别DTMF...",2);
+	ReadBlob(recLogLast.blob,function(arr){
+		DecodeAudio("rec."+recLogLast.set.type,arr,function(data){
+			var finds=[];
+			var chunk=Recorder.DTMF_Decode(data.data,data.sampleRate);
+			for(var i=0;i<chunk.keys.length;i++){
+				reclog("发现按键["+chunk.keys[i].key+"]，位于"+chunk.keys[i].time+"ms处");
+				finds.push(chunk.keys[i].key);
+			};
+			reclog("识别完毕，"+(finds.length?"发现按键："+finds.join(""):"未发现按键信息"),2);
+		},function(err){
+			reclog(err,2);
+		});
+	});
+};
+var decodeDTMFStream=function(pcm,sampleRate,chunk){
+	chunk=Recorder.DTMF_Decode(pcm,sampleRate,chunk);
+	for(var i=0;i<chunk.keys.length;i++){
+		reclog("发现按键["+chunk.keys[i].key+"]，位于"+chunk.keys[i].time+"ms处");
+	};
+	return chunk;
+};
+var sendDTMFKeyClick=function(e){
+	if(e.target.tagName=="TD"){
+		sendDTMFKeys(e.target.innerHTML)
+	};
+};
+var sendDTMFKeysClick=function(){
+	sendDTMFKeys("*#1234567890#*");
+};
+var sendDTMFKeys=function(keys){
+	if(!dtmfMix){
+		dtmfMix=Recorder.DTMF_EncodeMix({
+			duration:100 //按键信号持续时间
+			,mute:50 //按键音前后静音时长
+			,interval:300 //两次按键信号间隔时长
+		});
+	};
+	if(!rec||!rec.buffers){
+		reclog("没有开始录音，按键会存储到下次录音","#bbb");
+	};
+	dtmfMix.add(keys);
+	//添加过去就不用管了，实时处理时会调用mix方法混入到pcm中。
+};
+var dtmfMix;
 </script>
 
 
@@ -1049,6 +1185,9 @@ function loadEngine(input){
 					Recorder.LibFFT=LibFFTBak;
 					Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
 					Recorder.Sonic=SonicBak;
+					Recorder.DTMF_Encode=DTMF_EncodeBak;
+					Recorder.DTMF_EncodeMix=DTMF_EncodeMixBak;
+					Recorder.DTMF_Decode=DTMF_DecodeBak;
 					
 					reclog("<span style='color:#0b1'>"+type+"编码器"+(minjs?"压缩版":"源码版")+"已加载，可以录音了</span>");
 					end();
@@ -1074,6 +1213,9 @@ var WaveSurferViewBak=Recorder.WaveSurferView;
 var LibFFTBak=Recorder.LibFFT;
 var FrequencyHistogramViewBak=Recorder.FrequencyHistogramView;
 var SonicBak=Recorder.Sonic;
+var DTMF_EncodeBak=Recorder.DTMF_Encode;
+var DTMF_EncodeMixBak=Recorder.DTMF_EncodeMix;
+var DTMF_DecodeBak=Recorder.DTMF_Decode;
 
 (function(){try{
 	var minjs=$(".loadMinJs");
