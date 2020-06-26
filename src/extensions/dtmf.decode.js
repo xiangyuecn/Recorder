@@ -2,6 +2,8 @@
 录音 Recorder扩展，DTMF（电话拨号按键信号）解码器，解码得到按键值
 使用本扩展需要引入lib.fft.js支持
 
+本扩展识别DTMF按键准确度高，误识别率低，支持识别120ms以上按键间隔+30ms以上的按键音，纯js实现易于移植
+
 使用场景：电话录音软解，软电话实时提取DTMF按键信号等
 https://github.com/xiangyuecn/Recorder
 */
@@ -179,7 +181,7 @@ var FindIndex=function(freq, freqs, freqStep){
 		var xb=Math.abs(freqs[i]-freq);
 		if(idxb>xb){
 			idxb=xb;
-			if(xb<freqStep*2){//2个分辨率内误差
+			if(xb<freqStep){//最多1个分辨率内误差
 				idx=i;
 			};
 		};

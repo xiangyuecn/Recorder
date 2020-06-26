@@ -5,6 +5,8 @@
 	DTMF_Encode
 	DTMF_EncodeMix
 
+本扩展生成信号代码、原理简单粗暴，纯js实现易于移植，0依赖
+
 使用场景：DTMF按键信号生成，软电话实时发送DTMF按键信号等
 https://github.com/xiangyuecn/Recorder
 */
@@ -45,16 +47,16 @@ Recorder.DTMF_Encode=function(key,sampleRate,duration,mute){
 };
 
 
-/**返回EncodeMix对象，将输入的按键信号混合到持续输入的pcm流中，当.mix(inputPcm)提供的太短的pcm会无法完整放下一个完整的按键信号，所以需要不停调用.mix(inputPcm)进行混合**/
+/**返回EncodeMix对象，将输入的按键信号混合到持续输入的pcm流中，当.mix(inputPcms)提供的太短的pcm会无法完整放下一个完整的按键信号，所以需要不停调用.mix(inputPcms)进行混合**/
 Recorder.DTMF_EncodeMix=function(set){
 	return new EncodeMix(set);
 };
 var EncodeMix=function(set){
 	var This=this;
 	This.set={
-		duration:100 //按键信号持续时间
-		,mute:50 //按键音前后静音时长
-		,interval:250 //两次按键信号间隔时长
+		duration:100 //按键信号持续时间 ms，最小值为30ms
+		,mute:25 //按键音前后静音时长 ms，取值为0也是可以的
+		,interval:200 //两次按键信号间隔时长 ms，间隔内包含了duration+mute*2，最小值为120ms
 	};
 	for(var k in set){
 		This.set[k]=set[k];
@@ -76,17 +78,17 @@ EncodeMix.prototype={
 		index||(index=0);
 		var This=this,set=This.set;
 		var newEncodes=[];
-		var hasNext=0;
 		
+		var state=This.state;
 		var pcmPos=0;
 		loop:
-		for(var i0=index;This.keys.length>This.idx && i0<pcms.length;i0++){
+		for(var i0=index;i0<pcms.length;i0++){
 			var pcm=pcms[i0];
-			var state=This.state;
 			
 			var key=This.keys.charAt(This.idx);
-			while(key){
-				hasNext=1;
+			if(!key){//没有需要处理的按键，把间隔消耗掉
+				state.skip=Math.max(0, state.skip-pcm.length);
+			} else while(key){
 				//按键间隔处理
 				if(state.skip){
 					var op=pcm.length-pcmPos;
@@ -123,6 +125,7 @@ EncodeMix.prototype={
 				//将keyPcm混合到当前pcm中，实际是替换逻辑
 				var res=Mix(pcm,pcmPos,keyPcm,state.cur,true);
 				state.cur=res.cur;
+				pcmPos=res.last;
 				
 				//下一个按键
 				if(res.cur>=keyPcm.length){
@@ -137,12 +140,11 @@ EncodeMix.prototype={
 					continue loop;//下一个pcm
 				};
 			};
-			hasNext=0;
 		};
 		
 		return {
 			newEncodes:newEncodes //本次混合新生成的按键信号列表 [{key:"*",data:[Int16,...]},...]，如果没有产生新信号将为空数组
-			,hasNext:!!hasNext //是否还有未混合完的信号
+			,hasNext:This.idx<This.keys.length //是否还有未混合完的信号
 		};
 	}
 };

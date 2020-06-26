@@ -69,9 +69,9 @@ var sendKeysClick=function(){
 var sendKeys=function(keys){
 	if(!dtmfMix){
 		dtmfMix=Recorder.DTMF_EncodeMix({
-			duration:100 //按键信号持续时间
-			,mute:50 //按键音前后静音时长
-			,interval:300 //两次按键信号间隔时长
+			duration:100 //按键信号持续时间 ms，最小值为30ms
+			,mute:25 //按键音前后静音时长 ms，取值为0也是可以的
+			,interval:200 //两次按键信号间隔时长 ms，间隔内包含了duration+mute*2，最小值为120ms
 		});
 	};
 	if(!rec){
@@ -80,7 +80,7 @@ var sendKeys=function(keys){
 	dtmfMix.add(keys);
 	//添加过去就不用管了，实时处理时会调用mix方法混入到pcm中。
 };
-var dtmfMix;
+var dtmfMix=null;
 
 
 

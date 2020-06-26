@@ -785,8 +785,8 @@ sonic.flush(callback) //callback:fn(pcm)，和同步方法相同，只是返回�
 ## `DTMF`扩展
 [dtmf.decode.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/dtmf.decode.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)、[dtmf.encode.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/dtmf.encode.js)，两个js一个解码、一个编码，体积小均不超过10kb，纯js实现易于移植。[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)。
 
-1. DTMF（电话拨号按键信号）解码器，解码得到按键值：可实现实时从音频数据流中解码得到电话拨号按键信息，用于电话录音软解，软电话实时提取DTMF按键信号等；请注意：使用dtmf.decode.js必须同时引入`lib.fft.js`才能正常工作。
-2. DTMF（电话拨号按键信号）编码生成器，生成按键对应的音频PCM信号：可实现生成按键对应的音频PCM信号，用于DTMF按键信号生成，软电话实时发送DTMF按键信号等。
+1. DTMF（电话拨号按键信号）解码器，解码得到按键值：可实现实时从音频数据流中解码得到电话拨号按键信息，用于电话录音软解，软电话实时提取DTMF按键信号等；识别DTMF按键准确度高，误识别率低，支持识别120ms以上按键间隔+30ms以上的按键音，纯js实现易于移植；请注意：使用dtmf.decode.js必须同时引入`lib.fft.js`（由java移植过来的）才能正常工作。
+2. DTMF（电话拨号按键信号）编码生成器，生成按键对应的音频PCM信号：可实现生成按键对应的音频PCM信号，用于DTMF按键信号生成，软电话实时发送DTMF按键信号等；生成信号代码、原理简单粗暴，纯js实现易于移植，0依赖。
 
 ### 【方法】Recorder.DTMF_Decode(pcmData,sampleRate,prevChunk)
 解码DTMF只有这个一个函数，此函数支持连续调用，将上次的返回值当做参数即可实现实时音频流数据的连续解码处理。
@@ -827,12 +827,12 @@ sonic.flush(callback) //callback:fn(pcm)，和同步方法相同，只是返回�
 ```
 
 ### 【方法】Recorder.DTMF_EncodeMix(set)
-本方法返回EncodeMix对象，将输入的按键信号混合到持续输入的pcm流中，当.mix(inputPcm)提供的太短的pcm会无法完整放下一个完整的按键信号，所以需要不停调用.mix(inputPcm)进行混合。
+本方法返回EncodeMix对象，将输入的按键信号混合到持续输入的pcm流中，当.mix(inputPcms)提供的太短的pcm会无法完整放下一个完整的按键信号，所以需要不停调用.mix(inputPcms)进行混合。
 ``` javascript
 set={
-    duration:100 //按键信号持续时间
-    ,mute:50 //按键音前后静音时长
-    ,interval:250 //两次按键信号间隔时长
+    duration:100 //按键信号持续时间 ms，最小值为30ms
+    ,mute:25 //按键音前后静音时长 ms，取值为0也是可以的
+    ,interval:200 //两次按键信号间隔时长 ms，间隔内包含了duration+mute*2，最小值为120ms
 }
 
 EncodeMix对象：
@@ -845,7 +845,7 @@ EncodeMix对象：
             newEncodes:[{key:"*",data:[Int16,...]},...] //本次混合新生成的按键信号列表 ，如果没有产生新信号将为空数组
             ,hasNext:false //是否还有未混合完的信号
         }
-		注意：调用本方法会修改pcms中的内容，因此混合结果就在pcms内。
+        注意：调用本方法会修改pcms中的内容，因此混合结果就在pcms内。
 ```
 
 
