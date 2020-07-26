@@ -162,7 +162,15 @@ fn.prototype=WaveSurferView.prototype={
 		//计算绘制占用长度
 		var pcmDuration=pcmData.length*1000/sampleRate;
 		var pcmWidth=pcmDuration*width/set.duration;
-		var pointCount=Math.max(1,Math.floor(pcmWidth/lineWidth));
+		pcmWidth+=This.drawLoss||0;
+		var pointCount=0;
+		if(pcmWidth<lineWidth){
+			This.drawLoss=pcmWidth;
+			//pointCount=0; 不够一根不绘制
+		}else{
+			This.drawLoss=0;
+			pointCount=Math.floor(pcmWidth/lineWidth);
+		};
 		
 		//***后台卷轴连续绘制***
 		var linear1=This.genLinear(ctx,set.linear,originY,originY-heightY);//上半部分的填充
