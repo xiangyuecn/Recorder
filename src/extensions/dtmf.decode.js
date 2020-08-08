@@ -77,40 +77,81 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 	
 	
 	var freqStep=sampleRate/bufferSize;//分辨率
-	
-	var Y0=1 << (Math.round(Math.log(bufferSize)/Math.log(2) + 3) << 1);
-	var logY0 = Math.log(Y0)/Math.log(10);
-	var logMin=Math.log(0x7fff*0.5)+logY0;//粗略计算信号强度最小值
+	var logMin=20;//粗略计算信号强度最小值，此值是先给0再根据下面的Math.log(fv)多次【测试】(下面一个log)出来的
 	
 	
 	/****循环处理所有数据，识别出所有按键信号****/
 	for(var i0=0; i0+bufferSize<=pcmData.length; i0+=windowSize){
 		var arr=pcmData.subarray(i0,i0+bufferSize);
 		var freqs=fft.transform(arr);
+		var freqPs=[];
 		
-		var fv1=0,fv0=0,v1=0,v0=0;//查找高群和低群
+		var fv0=0,p0=0,v0=0,vi0=0, fv1=0,p1=0,v1=0,vi1=0;//查找高群和低群
 		for(var i2=0;i2<freqs.length;i2++){
 			var fv=freqs[i2];
+			var p=Math.log(fv);//粗略计算信号强度
+			freqPs.push(p);
 			var v=(i2+1)*freqStep;
-			if(fv>fv0 && v<1050){
-				if(Math.log(fv)>logMin){//粗略计算信号强度
+			if(p>logMin){
+				if(fv>fv0 && v<1050){
 					fv0=fv;
+					p0=p;
 					v0=v;
-				};
-			}else if(fv>fv1 && v>1050){
-				if(Math.log(fv)>logMin){
+					vi0=i2;
+				}else if(fv>fv1 && v>1050){
 					fv1=fv;
+					p1=p;
 					v1=v;
+					vi1=i2;
 				};
 			};
 		};
-		var pv0 = FindIndex(v0, DTMF_Freqs[0], freqStep);
-		var pv1 = FindIndex(v1, DTMF_Freqs[1], freqStep);
+		var pv0 =-1, pv1=-1;
+		if(v0>600 && v1<1600 && Math.abs(p0-p1)<2.5){//高低频的幅度相差不能太大，此值是先给个大值再多次【测试】(下面一个log)得出来的
+			//波形匹配度：两个峰值之间应当是深V型曲线，如果出现大幅杂波，可以直接排除掉
+			var isV=1;
+			//先找出谷底
+			var pMin=p0,minI=0;
+			for(var i2=vi0;i2<vi1;i2++){
+				var v=freqPs[i2];
+				if(v && v<pMin){//0不作数
+					pMin=v;
+					minI=i2;
+				};
+			};
+			var xMax=(p0-pMin)*0.5//允许幅度变化最大值
+			//V左侧，下降段
+			var curMin=p0;
+			for(var i2=vi0;isV&&i2<minI;i2++){
+				var v=freqPs[i2];
+				if(v<=curMin){
+					curMin=v;
+				}else if(v-curMin>xMax){
+					isV=0;//下降段检测到过度上升
+				};
+			};
+			//V右侧，上升段
+			var curMax=pMin;
+			for(var i2=minI;isV&&i2<vi1;i2++){
+				var v=freqPs[i2];
+				if(v>=curMax){
+					curMax=v;
+				}else if(curMax-v>xMax){
+					isV=0;//上升段检测到过度下降
+				};
+			};
+			
+			if(isV){
+				pv0=FindIndex(v0, DTMF_Freqs[0], freqStep);
+				pv1=FindIndex(v1, DTMF_Freqs[1], freqStep);
+			};
+		};
 		
 		
 		var key="";
 		if (pv0 >= 0 && pv1 >= 0) {
 			key = DTMF_Chars[pv0][pv1];
+			//console.log(key,Math.round((startTotal+i0)/sampleRate*1000),p0.toFixed(2),p1.toFixed(2),Math.abs(p0-p1).toFixed(2)); //【测试】得出数值
 			
 			if(lastIs){
 				if(lastIs.key==key){//有效，增加校验次数
@@ -120,7 +161,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 					lastCheckCount=lastIs.old+lastCheckCount;
 				};
 			}else if(lastCheckCount>=checkCount){//间隔够了，开始按键识别计数
-				lastIs={key:key,old:lastCheckCount,start:i0,use:0};
+				lastIs={key:key,old:lastCheckCount,start:startTotal+i0,pcms:[],use:0};
 				lastCheckCount=1;
 			}else{//上次识别以来间隔不够，重置间隔计数
 				key="";
@@ -133,12 +174,13 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 		};
 		
 		if(key){
+			lastIs.pcms.push(arr);
 			//按键有效，并且未push过
 			if(lastCheckCount>=checkCount && !lastIs.use){
 				lastIs.use=1;
 				keys.push({
 					key:key
-					,time:Math.round((startTotal+lastIs.start)/sampleRate*1000)
+					,time:Math.round(lastIs.start/sampleRate*1000)
 				});
 			};
 			//重置间隔数据
@@ -148,6 +190,9 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 			};
 		}else{
 			//未发现按键
+			if(lastIs){
+				//console.log(lastIs) //测试，输出疑似key
+			};
 			lastIs="";
 			lastCheckCount++;
 		};
@@ -181,7 +226,7 @@ var FindIndex=function(freq, freqs, freqStep){
 		var xb=Math.abs(freqs[i]-freq);
 		if(idxb>xb){
 			idxb=xb;
-			if(xb<freqStep){//最多1个分辨率内误差
+			if(xb<freqStep*2){//最多2个分辨率内误差
 				idx=i;
 			};
 		};
