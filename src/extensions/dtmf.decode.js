@@ -30,6 +30,7 @@ https://github.com/xiangyuecn/Recorder
 		prevIs:"" "":null {}:match 上次疑似检测到了什么
 		totalLen:0 总采样数，相对4khz
 		pcm:[Int16,...] 4khz pcm数据
+		checkFactor:3 信号检查因子，取值1，2，3，默认为3不支持低于32ms的按键音检测，当需要检测时可以设为2，当信号更恶劣时设为1，这样将会减少检查的次数，导致错误识别率变高
 		debug:false 是否开启调试日志
 	}
 */
@@ -40,6 +41,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 	var prevIs=prevChunk.prevIs||"";
 	var totalLen=prevChunk.totalLen||0;
 	var prevPcm=prevChunk.pcm;
+	var checkFactor=prevChunk.checkFactor||0;
 	var debug=prevChunk.debug;
 	
 	var keys=[];
@@ -53,7 +55,8 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 	
 	/****初始值计算****/
 	var windowSize=bufferSize/4;//滑动窗口大小，取值为4的原因：64/4=16ms，16ms*(3-1)=32ms，保证3次取值判断有效性
-	var checkCount=3;//只有3次连续窗口内计算结果相同判定为有效信号或间隔
+	var checkCount=checkFactor||3;//只有3次连续窗口内计算结果相同判定为有效信号或间隔
+	var muteCount=3;//两个信号间的最小间隔，3个窗口大小
 	var startTotal=totalLen;
 	
 	/****将采样率降低到4khz，单次fft处理1000/(4000/256)=64ms，分辨率4000/256=15.625hz，允许连续dtmf信号间隔128ms****/
@@ -174,7 +177,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 					};
 				};
 				if(!lastIs){
-					if(lastCheckCount>=checkCount){//间隔够了，开始按键识别计数
+					if(lastCheckCount>=muteCount){//间隔够了，开始按键识别计数
 						lastIs={key:key,old:lastCheckCount,old2:lastCheckCount,start:startTotal+i0,pcms:[],use:0};
 						lastCheckCount=1;
 					}else{//上次识别以来间隔不够，重置间隔计数
@@ -226,6 +229,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 		,prevIs:prevIs
 		,totalLen:totalLen
 		,pcm:pcmData
+		,checkFactor:checkFactor
 		,debug:debug
 	};
 };
