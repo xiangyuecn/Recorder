@@ -27,16 +27,20 @@ https://github.com/xiangyuecn/Recorder
 		//以下用于下次接续识别
 		lastIs:"" "":mute {}:match 结尾处是什么
 		lastCheckCount:0 结尾如果是key，此时的检查次数
+		prevIs:"" "":null {}:match 上次疑似检测到了什么
 		totalLen:0 总采样数，相对4khz
 		pcm:[Int16,...] 4khz pcm数据
+		debug:false 是否开启调试日志
 	}
 */
 Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 	prevChunk||(prevChunk={});
 	var lastIs=prevChunk.lastIs||"";
 	var lastCheckCount=prevChunk.lastCheckCount==null?99:prevChunk.lastCheckCount;
+	var prevIs=prevChunk.prevIs||"";
 	var totalLen=prevChunk.totalLen||0;
 	var prevPcm=prevChunk.pcm;
+	var debug=prevChunk.debug;
 	
 	var keys=[];
 	
@@ -151,7 +155,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 		var key="";
 		if (pv0 >= 0 && pv1 >= 0) {
 			key = DTMF_Chars[pv0][pv1];
-			//console.log(key,Math.round((startTotal+i0)/sampleRate*1000),p0.toFixed(2),p1.toFixed(2),Math.abs(p0-p1).toFixed(2)); //【测试】得出数值
+			if(debug)console.log(key,Math.round((startTotal+i0)/sampleRate*1000),p0.toFixed(2),p1.toFixed(2),Math.abs(p0-p1).toFixed(2)); //【测试】得出数值
 			
 			if(lastIs){
 				if(lastIs.key==key){//有效，增加校验次数
@@ -160,21 +164,34 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 					key="";
 					lastCheckCount=lastIs.old+lastCheckCount;
 				};
-			}else if(lastCheckCount>=checkCount){//间隔够了，开始按键识别计数
-				lastIs={key:key,old:lastCheckCount,start:startTotal+i0,pcms:[],use:0};
-				lastCheckCount=1;
-			}else{//上次识别以来间隔不够，重置间隔计数
-				key="";
-				lastCheckCount=0;
+			}else{
+				//没有连续的信号，检查是否在100ms内有检测到信号，当中间是断开的那种
+				if(prevIs && prevIs.old2 && prevIs.key==key){
+					if(startTotal+i0-prevIs.start<100*sampleRate/1000){
+						lastIs=prevIs;
+						lastCheckCount=prevIs.old2+1;
+						if(debug)console.warn("接续了开叉的信号"+lastCheckCount);
+					};
+				};
+				if(!lastIs){
+					if(lastCheckCount>=checkCount){//间隔够了，开始按键识别计数
+						lastIs={key:key,old:lastCheckCount,old2:lastCheckCount,start:startTotal+i0,pcms:[],use:0};
+						lastCheckCount=1;
+					}else{//上次识别以来间隔不够，重置间隔计数
+						key="";
+						lastCheckCount=0;
+					};
+				};
 			};
 		}else{
 			if(lastIs){//下一个，恢复间隔计数
+				lastIs.old2=lastCheckCount;
 				lastCheckCount=lastIs.old+lastCheckCount;
 			};
 		};
 		
 		if(key){
-			lastIs.pcms.push(arr);
+			if(debug)lastIs.pcms.push(arr);
 			//按键有效，并且未push过
 			if(lastCheckCount>=checkCount && !lastIs.use){
 				lastIs.use=1;
@@ -185,13 +202,16 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 			};
 			//重置间隔数据
 			if(lastIs.use){
+				if(debug)console.log(key+"有效按键",lastIs);
 				lastIs.old=0;
+				lastIs.old2=0;
 				lastCheckCount=0;
 			};
 		}else{
 			//未发现按键
 			if(lastIs){
-				//console.log(lastIs) //测试，输出疑似key
+				if(debug)console.log(lastIs) //测试，输出疑似key
+				prevIs=lastIs;
 			};
 			lastIs="";
 			lastCheckCount++;
@@ -203,8 +223,10 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 		
 		,lastIs:lastIs
 		,lastCheckCount:lastCheckCount
+		,prevIs:prevIs
 		,totalLen:totalLen
 		,pcm:pcmData
+		,debug:debug
 	};
 };
 
