@@ -5,11 +5,32 @@
 
 [​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.gitee.io/recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：~~UC系内核（典型的支付宝），大部分国产手机厂商自研套壳娱乐浏览器，IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
 
-**Recorder H5**: [ [H5在线测试](https://xiangyuecn.gitee.io/recorder/) ]、[ [H5 QuickStart](https://xiangyuecn.gitee.io/recorder/QuickStart.html) ]、[ [vue+webpack测试](https://xiangyuecn.gitee.io/recorder/assets/demo-vue) ]
 
-**RecordApp**: [ [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx) ]、[ [RecordApp QuickStart](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html) ]、[ [Android、IOS App 源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
 
-**工具**: [ [Recorder代码运行和静态分发](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html) ]、[ [裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ]、[ [无用户操作测试](https://xiangyuecn.gitee.io/recorder/assets/ztest_no_user_operation.html) ]、[ [Can I Use查看浏览器支持情况](https://caniuse.com/#search=getUserMedia) ]
+
+**Recorder H5** ：
+[ [H5在线测试](https://xiangyuecn.gitee.io/recorder/) ]
+[ [H5 QuickStart](https://xiangyuecn.gitee.io/recorder/QuickStart.html) ]
+[ [vue+webpack测试](https://xiangyuecn.gitee.io/recorder/assets/demo-vue) ]
+
+
+
+**RecordApp** ：
+[ [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx) ]
+[ [RecordApp QuickStart](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html) ]
+[ [Android、IOS App 源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
+
+
+
+**工具集** ：
+[ [Recorder代码运行和静态分发](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html) ]
+[ [裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ]
+[ [无用户操作测试](https://xiangyuecn.gitee.io/recorder/assets/ztest_no_user_operation.html) ]
+[ [Can I Use查看浏览器支持情况](https://caniuse.com/#search=getUserMedia) ]
+
+
+
+
 
 录音默认输出mp3格式，另外可选wav格式；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 

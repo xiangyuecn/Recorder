@@ -34,18 +34,22 @@ RecordApp默认开启IOS端微信内的支持（可配置禁用支持），在IO
 - 签名接口：使用微信JsSDK需要后端提供JsSDK签名。
 - 素材下载接口：JsSDK录音完成后需要后端服务器调用微信素材接口下载录音二进制数据。
 
+你可以直接copy [app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js) 这个演示配置文件改改，提供后端接口后即可正常使用。
+
 详细的接口文档和实现，请阅读下面的`Weixin(IOS-Weixin).Config`章节。
 
 
 ## 【App】可选 - 实现App原生接口
 RecordApp默认未开启App内原生录音支持，可开启后在App环境中将走Native录音，其他环境走Weixin、H5录音。
 
+你可以直接copy [app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js) 这个演示配置文件改改，然后Android、IOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift`，即可正常使用。
+
 详细的开启和实现，请阅读下面的`Native.Config`章节。
 
 > 注：Android可以不实现App原生接口，仅IOS App实现原生接口；因为Android可以通过开启WebView的H5录音权限来进行H5录音，不过H5的麦克风获取似乎没有原生来的稳定，具体的H5权限开启请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节。
 
 
-## 【1】加载框架
+## 【集成步骤1】加载框架
 
 **方式一**：使用script标签引入
 
@@ -116,7 +120,7 @@ import 'recorder-core/src/extensions/waveview'
 ```
 [​](?RefEnd)
 
-## 【2】调用录音
+## 【集成步骤2】调用录音
 [​](?Ref=Codes&Start)然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
 ``` javascript
 //var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于权限请求前执行，因为回调不确定是同步还是异步的

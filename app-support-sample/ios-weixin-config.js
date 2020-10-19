@@ -57,7 +57,9 @@ if(isIOS){
 	win[sbwxKey]=win[sbwxKey]||window[sbwxKey]||location.href;
 	//如果你是在 history.pushState 修改了地址之后加载的本js，就更惨了，此初始化url将不准确，因此你可以在页面首次加载时立即设置Bad_WeixinIOSH5HistoryInitLocation变量为那时的location.href
 	
+	$(function(){setTimeout(function(){
 	console.warn("1970-2020年 IOS内微信不认 history.pushState 产生的新地址，如果签名地址不是页面加载时的地址，可能会导致问题（如果哪天又认了，恭喜核弹已起爆），当前签名使用的地址为："+win[sbwxKey]);
+	},3000)});
 };
 
 
