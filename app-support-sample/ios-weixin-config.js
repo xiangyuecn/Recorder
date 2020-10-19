@@ -14,9 +14,9 @@ https://github.com/xiangyuecn/Recorder
 //可简单修改此处配置即可正常使用。当然参考本例子全部自己写是最佳选择，可能需要多花点时间。
 
 /**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
-window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
+window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.gitee.io/recorder/src/";
 
-/**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式。
+/**【需修改】请使用自己的微信JsSDK签名接口、素材下载功能接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式。
 后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
 后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
 **/
@@ -31,7 +31,7 @@ var MyWxApi=window.PageSet_RecordAppWxApi||"https://jiebian.life/api/weixin/git_
 					c:0		//code，0：正常，其他：错误
 					,m:""	//errMsg code!=0时的错误描述
 					,v:{}	//返回结果value，为JSON Object
-							//sign时:v={appid:"", timestamp:"", noncestr:"", signature:""} 就是返回wx.config需要的签名相关参数
+							//sign时:v={appid:"公众号appid", timestamp:1577836800, noncestr:"随机字符串", signature:"签名值"} 就是返回wx.config需要的签名相关参数
 							//wxdown时:v={mime:"audio/amr", data:"base64文本"} 就是返回素材下载的音频文件base64编码数据
 				}*/
 /******END******/
@@ -50,6 +50,15 @@ var platform=App.Platforms.Weixin;
 var config=platform.Config;
 
 var win=window.top;//微信JsSDK让顶层去加载，免得iframe各种麻烦
+
+var isIOS=/iphone/i.test(navigator.userAgent);
+if(isIOS){
+	var sbwxKey="Bad_WeixinIOSH5HistoryInitLocation";
+	win[sbwxKey]=win[sbwxKey]||window[sbwxKey]||location.href;
+	//如果你是在 history.pushState 修改了地址之后加载的本js，就更惨了，此初始化url将不准确，因此你可以在页面首次加载时立即设置Bad_WeixinIOSH5HistoryInitLocation变量为那时的location.href
+	
+	console.warn("1970-2020年 IOS内微信不认 history.pushState 产生的新地址，如果签名地址不是页面加载时的地址，可能会导致问题（如果哪天又认了，恭喜核弹已起爆），当前签名使用的地址为："+win[sbwxKey]);
+};
 
 
 /*********实现app.js内IOS-Weixin中Config的接口*************/
@@ -238,9 +247,10 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 				end();
 			});
 		};
+		var href=window.Bad_WeixinIOSH5HistoryInitLocation||location.href;
 		ajax(MyWxApi,{
 			action:"sign"
-			,url:location.href.replace(/#.*/g,"")
+			,url:href.replace(/#.*/g,"")
 		},function(data){
 			config(data.v);
 		},end);
@@ -265,7 +275,7 @@ if(window.RecordApp){
 
 console.error("【注意】本网站正在使用RecordApp的ios-weixin-config.js测试用的配置例子，这个配置如果要使用到你的网站，需要自己重写或修改后才能使用");
 //别的站点引用弹窗醒目提示
-if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href)
+if(!/^file:|:\/\/[^\/]*(jiebian.life|git\w+.io)(\/|$)/.test(location.href)
 	&& !localStorage["DisableAppSampleAlert"]
 	&& !window.AppSampleAlert){
 	window.AppSampleAlert=1;

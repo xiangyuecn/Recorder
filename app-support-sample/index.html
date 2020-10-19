@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <link rel="shortcut icon" type="image/png" DEF="/*=:=*/" href="../assets/icon.png"
-	DEF="/*<@ href='https://xiangyuecn.github.io/Recorder/assets/icon.png' @>*/">
+	DEF="/*<@ href='https://xiangyuecn.gitee.io/recorder/assets/icon.png' @>*/">
 
 <title>RecordApp测试</title>
 
@@ -14,8 +14,8 @@
 <div class="main">
 
 <script>
-//这里有几处编译指令，可以忽略掉，因为这个文件可以双击打开、github.io打开；主要的还是通过我的代理服务器来打开，这时候后面的值会生效，因为微信JsSDK只能在绑定的域名下调用。
-var PageSet_RecordAppBaseFolder=/*=:=*/ "../src/" /*<@ "https://xiangyuecn.github.io/Recorder/src/" @>*/;
+//这里有几处编译指令，可以忽略掉，因为这个文件可以双击打开、github.io、gitee.io打开；主要的还是通过我的代理服务器来打开，这时候后面的值会生效，因为微信JsSDK只能在绑定的域名下调用。
+var PageSet_RecordAppBaseFolder=/*=:=*/ "../src/" /*<@ "https://xiangyuecn.gitee.io/recorder/src/" @>*/;
 
 /*=:=*/ /*<@
 //crossorigin
@@ -33,17 +33,17 @@ document.body.appendChild=function(s){
 <!-- 加载独立配置文件，免得修改app.js -->
 <script
 	DEF="/*=:=*/" src="../app-support-sample/native-config.js"
-	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/app-support-sample/native-config.js' @>*/"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.gitee.io/recorder/app-support-sample/native-config.js' @>*/"
 ></script>
 <script
 	DEF="/*=:=*/" src="../app-support-sample/ios-weixin-config.js"
-	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/app-support-sample/ios-weixin-config.js' @>*/"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.gitee.io/recorder/app-support-sample/ios-weixin-config.js' @>*/"
 ></script>
 
 <!-- 加载app.js -->
 <script
 	DEF="/*=:=*/" src="../src/app-support/app.js"
-	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/src/app-support/app.js' @>*/"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.gitee.io/recorder/src/app-support/app.js' @>*/"
 ></script>
 
 <script>
@@ -192,7 +192,7 @@ RandomKey.idx=0;
 </script>
 <script
 	DEF="/*=:=*/" src="../assets/ztest-jquery.min-1.9.1.js"
-	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/assets/ztest-jquery.min-1.9.1.js' @>*/"
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.gitee.io/recorder/assets/ztest-jquery.min-1.9.1.js' @>*/"
 ></script>
 
 
@@ -230,7 +230,7 @@ RandomKey.idx=0;
 			font-size:12px;
 		}
 	</style>
-	<a class="navItem" style="margin-right:2%;" href="https://xiangyuecn.github.io/Recorder/">
+	<a class="navItem" style="margin-right:2%;" href="https://xiangyuecn.gitee.io/recorder/">
 		<div class="navTitle">Recorder H5</div>
 		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音</div>
 	</a>
@@ -334,7 +334,7 @@ RandomKey.idx=0;
 	<span class="lb">测试App :</span>
 	IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
 	
-	，Android Demo App：<a href="https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+	，Android Demo App：<a href="https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
 </div>
 
 <div class="mainBox">
@@ -903,7 +903,7 @@ function onInstall(){
 	if(!/:\/\/[^\/]*jiebian.life(\/|$)/.test(location.href)){
 		reclog("<span style='color:red'>当前域名不在微信JsSDK绑定的域名中，无法使用JsSDK相关功能</span>");
 	}else{
-		reclog("此页面由服务器代理，源网址<a href='https://xiangyuecn.github.io/Recorder/app-support-sample/'>https://xiangyuecn.github.io/Recorder/app-support-sample/</a>");
+		reclog("此页面由服务器代理，源网址<a href='https://xiangyuecn.gitee.io/recorder/app-support-sample/'>https://xiangyuecn.gitee.io/recorder/app-support-sample/</a>");
 	};
 	
 	reclog("提示：部分组件可能会设置在Install成功后进行延迟加载，Start、Stop操作在组件未加载完时会等待OnLazyReady事件触发，可通过设置RecordApp.UseLazyLoad=false关闭此特性（会阻塞Install导致RequestPermission变慢），<span style='color:"+(RecordApp.UseLazyLoad?"#0b1'>当前已启用":"red'>当前已关闭")+"此特性</span><button onclick='changeUseLazyLoad()'>"+(RecordApp.UseLazyLoad?"关闭":"启用")+"</button>");
@@ -925,7 +925,7 @@ if(isInstall){
 
 <!-- 加载打赏挂件 -->
 <script DEF="/*=:=*/" src="../assets/zdemo.widget.donate.js"
-	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.github.io/Recorder/assets/zdemo.widget.donate.js' @>*/"></script>
+	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.gitee.io/recorder/assets/zdemo.widget.donate.js' @>*/"></script>
 <script>
 DonateWidget({
 	log:function(msg){reclog(msg)}

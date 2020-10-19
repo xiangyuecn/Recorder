@@ -17,7 +17,7 @@ console.log(Tips);
 <script>
 /********将此处后端API地址改成你的地址即可开始测试**********/
 
-/**【需修改】请使用自己的微信JsSDK签名接口、素材下载接口，不能用这个空的默认值，微信【强制】要【绑安全域名】，别的站用不了。
+/**【需修改】请使用自己的微信JsSDK签名接口、素材下载功能接口，不能用这个空的默认值，微信【强制】要【绑安全域名】，别的站用不了。
 后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
 后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
 **/
@@ -33,7 +33,7 @@ var PageSet_RecordAppWxApi="";
 			c:0		//code，0：正常，其他：错误
 			,m:""	//errMsg code!=0时的错误描述
 			,v:{}	//返回结果value，为JSON Object
-					//sign时:v={appid:"", timestamp:"", noncestr:"", signature:""} 就是返回wx.config需要的签名相关参数
+					//sign时:v={appid:"公众号appid", timestamp:1577836800, noncestr:"随机字符串", signature:"签名值"} 就是返回wx.config需要的签名相关参数
 					//wxdown时:v={mime:"audio/amr", data:"base64文本"} 就是返回素材下载的音频文件base64编码数据
 		}*/
 
@@ -100,9 +100,9 @@ RecordApp.Install(function(){
 		
 		<div style="padding-top:10px;color:#666">
 			更多Demo：
-			<a class="lb" href="https://xiangyuecn.github.io/Recorder/">Recorder H5</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/">Recorder H5</a>
 			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx">RecordApp</a>
-			<a class="lb" href="https://xiangyuecn.github.io/Recorder/QuickStart.html">Recorder QuickStart</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html">Recorder QuickStart</a>
 		</div>
 	</div>
 	

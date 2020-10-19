@@ -62,7 +62,7 @@ class MainView: UIViewController {
         webView.uiDelegate = webUI;
         webView.navigationDelegate = webNav;
         
-        let url="https://xiangyuecn.github.io/Recorder/app-support-sample/";
+        let url="https://xiangyuecn.gitee.io/recorder/app-support-sample/";
         webView.load(URLRequest(url: URL(string: url)!));
         
         

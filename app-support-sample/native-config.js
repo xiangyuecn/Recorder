@@ -13,7 +13,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 /**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
-window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.github.io/Recorder/src/";
+window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.gitee.io/recorder/src/";
 
 
 
@@ -180,7 +180,7 @@ if(window.RecordApp){
 
 console.error("【注意】本网站正在使用RecordApp的native-config.js测试用的配置例子，这个配置如果要使用到你的网站，需要自己重写或修改后才能使用");
 //别的站点引用弹窗醒目提示
-if(!/^file:|:\/\/[^\/]*(jiebian.life|github.io)(\/|$)/.test(location.href)
+if(!/^file:|:\/\/[^\/]*(jiebian.life|git\w+.io)(\/|$)/.test(location.href)
 	&& !localStorage["DisableAppSampleAlert"]
 	&& !window.AppSampleAlert){
 	window.AppSampleAlert=1;

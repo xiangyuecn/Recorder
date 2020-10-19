@@ -2,11 +2,15 @@
 
 # :open_book:Android Hybrid App
 
-目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
+目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
 
 本Demo是对[/app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)配置示例中定义的JsBridge接口的实现。
 
 可以直接copy目录内`RecordAppJsBridge.java`使用，此文件为核心文件，其他文件都是没什么价值的；支持新开发WebView界面，或对已有的WebView实例升级支持RecordApp。
+
+
+> 注：Android可以不实现此App原生接口，仅IOS App实现原生接口；因为Android可以通过开启WebView的H5录音权限来进行H5录音，不过H5的麦克风获取似乎没有原生来的稳定，具体的H5权限开启请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节。
+
 
 
 ## 【截图】

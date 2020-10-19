@@ -7,7 +7,7 @@ Recorder.Support();//激活Recorder.Ctx
 
 /*********注入界面******************/
 (function(){
-	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制</span>；参考<a target='_blank' href='https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】实时转码并上传-mp3专版</a>。");
+	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制</span>；参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】实时转码并上传-mp3专版</a>。");
 	
 	var i=0;
 	reclog(['已开启实时编码传输模拟'

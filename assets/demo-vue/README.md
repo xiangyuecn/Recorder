@@ -1,6 +1,6 @@
 # vue+webpack测试
 
-[在线测试](https://xiangyuecn.github.io/Recorder/assets/demo-vue)，主要文件为[component/main.vue](https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-vue/component/main.vue)
+[在线测试](https://xiangyuecn.gitee.io/recorder/assets/demo-vue)，主要文件为[component/main.vue](https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-vue/component/main.vue)
 
 # 运行方法
 ## 【1】编译vue源码

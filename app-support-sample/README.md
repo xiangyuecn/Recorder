@@ -13,6 +13,10 @@
   <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="cnpm"></a>
 
 
+
+**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)】如果本文档图片没有显示，请手动切换到Gitee镜像库阅读文档。**
+
+
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
 [在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
@@ -37,6 +41,8 @@ RecordApp默认开启IOS端微信内的支持（可配置禁用支持），在IO
 RecordApp默认未开启App内原生录音支持，可开启后在App环境中将走Native录音，其他环境走Weixin、H5录音。
 
 详细的开启和实现，请阅读下面的`Native.Config`章节。
+
+> 注：Android可以不实现App原生接口，仅IOS App实现原生接口；因为Android可以通过开启WebView的H5录音权限来进行H5录音，不过H5的麦克风获取似乎没有原生来的稳定，具体的H5权限开启请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节。
 
 
 ## 【1】加载框架
@@ -103,6 +109,7 @@ import 'recorder-core/src/engine/mp3-engine'
 //由于大部分情况下ios-weixin的支持需要用到amr解码器，应当把amr引擎也加载进来
 import 'recorder-core/src/engine/beta-amr'
 import 'recorder-core/src/engine/beta-amr-engine'
+import 'recorder-core/src/engine/wav' //amr依赖了wav引擎
 
 //可选的扩展支持项
 import 'recorder-core/src/extensions/waveview'
@@ -191,12 +198,12 @@ function createDelayDialog(){
 
 ### 【Android】Hybrid App测试
 
-[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://xiangyuecn.github.io/Recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
+[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
 
 ### 【IOS微信】H5测试
 [<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
-此demo页面为代理页面（[源](https://xiangyuecn.github.io/Recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io`上访问将导致`JsSDK`无法调用。
+此demo页面为代理页面（[源](https://xiangyuecn.gitee.io/recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io|gitee.io`上访问将导致`JsSDK`无法调用。
 
 ### 【IOS微信】小程序WebView测试
 [<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
@@ -258,7 +265,7 @@ IOS其他浏览器||
 - `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
 - `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
 - `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
-- `Android WebView`本身是支持录音的(古董版本就算啦)，仅需处理网页授权即可，但Android里面使用网页的录音权限问题可能比原生的权限机制要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo。
+- `Android WebView`本身是支持H5录音的(古董版本就算啦)，仅需处理H5网页授权即可，但Android里面使用网页的录音问题可能比原生的录音要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo，如果想使用Android H5录音，请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节来开启网页权限即可。
 
 
 
@@ -365,12 +372,12 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 
 
 
-# :open_book:底层平台配置和实现
-底层平台为`RecordApp.Platforms`中定义的值。
+# :open_book:配置和实现
+底层所有支持的平台为`RecordApp.Platforms`中定义的值。
 
 
-## 统一实现参考
-每个底层平台都实现了三个方法，`Native`在[app-native-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-native-support.js)中实现了，`IOS-Weixin`在[app-ios-weixin-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-ios-weixin-support.js)中实现了，`Default`在[app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)中实现了。
+## 附：统一实现参考
+每个底层平台都实现了三个方法，`Native`已在[app-native-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-native-support.js)中实现了，`IOS-Weixin`已在[app-ios-weixin-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-ios-weixin-support.js)中实现了，`Default`已在[app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)中实现了。
 
 ### platform.RequestPermission(success,fail)
 本底层具体的权限请求实现，参数和`RecordApp.RequestPermission`相同。
@@ -382,7 +389,7 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 本底层具体的开始录音实现，参数和`RecordApp.Stop`相同。
 
 
-## 【使用前需修改】配置
+## 配置
 每个底层平台都有一个`platform.Config`配置，这个配置是根据平台的需要什么我们这里面就要给什么；每个`platform.Config`内都有一个`paths`数组，里面包含了此平台初始化时需要加载的相关的实现文件、Recorder核心、编码引擎，可修改这些数组加载自己需要的格式编码引擎。另外还有一个全局配置`RecordAppBaseFolder`。
 
 ### 【全局变量】window.RecordAppBaseFolder
@@ -397,13 +404,15 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 
 
 ### 【配置】RecordApp.Platforms.Native.Config
-修改这个配置会有点复杂，可以参考[app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)中的演示有效的配置。
+修改这个配置会有点复杂，可以参考[app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)中的演示有效的配置，并提供相应的App原生实现；或者你直接copy这个演示配置文件改改，然后Android、IOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift`，即可正常使用。
+
+注：Android可以不实现App原生接口，仅IOS App实现原生接口；因为Android可以通过开启WebView的H5录音权限来进行H5录音，不过H5的麦克风获取似乎没有原生来的稳定，具体的H5权限开启请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节。
 
 使用App原生录音，必需提供配置中的`IsApp`、`JsBridgeRequestPermission`、`JsBridgeStart`、`JsBridgeStop`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
 
 
 ### 【配置】RecordApp.Platforms.Weixin(IOS-Weixin).Config
-修改这个配置会有点复杂，可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置。
+修改这个配置会有点复杂，可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置；或者你直接copy这个演示配置文件改改，提供后端接口后即可正常使用。
 
 使用微信录音，必需提供配置中的`WxReady`、`DownWxMedia`方法，可选提供`Enable`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
 

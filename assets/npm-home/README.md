@@ -44,7 +44,7 @@ npm install recorder-core
 
 @@Ref README.WaveView.Codes@@
 
-【附】部分扩展使用效果图（[在线运行观看](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)）：
+【附】部分扩展使用效果图（[在线运行观看](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)）：
 
 ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.gif)
 

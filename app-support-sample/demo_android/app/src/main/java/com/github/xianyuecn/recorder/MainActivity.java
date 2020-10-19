@@ -260,7 +260,7 @@ public class MainActivity extends Activity {
 
         webView.setBackgroundColor(0xffff6600);
 
-        String url="https://xiangyuecn.github.io/Recorder/app-support-sample/";
+        String url="https://xiangyuecn.gitee.io/recorder/app-support-sample/";
         webView.loadUrl(url);
     }
 
