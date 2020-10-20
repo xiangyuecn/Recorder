@@ -54,7 +54,7 @@ RecordApp默认未开启App内原生录音支持，可开启后在App环境中�
 **方式一**：使用script标签引入
 
 ``` html
-<!-- 可选的独立配置文件，提供这些文件时可免去修改app.js源码。
+<!-- 可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置必须放到app.js之前。
     【注意】：使用时应该使用自己编写的文件，而不是直接使用这个参考用的文件 -->
 <!-- 可选开启native支持的相关配置 -->
 <script src="app-support-sample/native-config.js"></script>
@@ -90,7 +90,13 @@ RecordApp默认未开启App内原生录音支持，可开启后在App环境中�
 
 通过npm进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可 [​](?Ref=ImportCode&Start)
 ``` javascript
-/********先加载RecordApp需要用到的支持文件*********/
+//可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置文件需要自己编写，参考https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample 目录内的这两个演示用的配置文件代码。
+//你可以直接copy /app-support-sample 目录内的两个演示配置文件改改后，就能正常使用了
+import '你的配置文件目录/native-config.js' //可选开启native支持的相关配置
+import '你的配置文件目录/ios-weixin-config.js' //可选开启ios weixin支持的相关配置
+
+
+/********加载RecordApp需要用到的支持文件*********/
 //必须引入的app核心文件，换成require也是一样的。注意：app.js会自动往window下挂载名称为RecordApp对象，全局可调用window.RecordApp，也许可自行调整相关源码清除全局污染
 import RecordApp from 'recorder-core/src/app-support/app'
 //可选开启Native支持，需要引入此文件
@@ -98,12 +104,10 @@ import 'recorder-core/src/app-support/app-native-support'
 //可选开启IOS上微信录音支持，需要引入此文件
 import 'recorder-core/src/app-support/app-ios-weixin-support'
 
-//这里放置可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置文件需要自己编写，参考https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample 目录内的这两个测试用的配置文件代码。
-        //import '你的配置文件目录/native-config.js' //可选开启native支持的相关配置
-        //import '你的配置文件目录/ios-weixin-config.js' //可选开启ios weixin支持的相关配置
 
-/*********然后加载Recorder需要的文件***********/
-//必须引入的核心。所有文件都需要自行引入，否则app.js会尝试用script来请求需要的这些文件，进而导致错误，引入后会检测到组件已自动加载，就不会去请求了
+/*********加载Recorder需要的文件***********/
+//必须引入的核心，所有需要的文件都应当引入，引入后会检测到组件已自动加载
+//不引入也可以，app.js会去用script动态加载，应确保app.js内BaseFolder目录的正确性(参阅RecordAppBaseFolder)，否则会导致404 js加载失败
 import 'recorder-core'
 
 //需要使用到的音频格式编码引擎的js文件统统加载进来
@@ -400,7 +404,7 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 可提供文件基础目录`BaseFolder`，用来自动定位加载类库，此目录可以是`src/`或者`/dist/`，必须`/`结尾；目录内应该包含`recorder-core.js、engine`等。实际取值需自行根据自己的网站目录调整，或者加载`app.js`前，设置此全局变量。
 
 ### 【Event】window.OnRecordAppInstalled()
-可提供这个全局的回调函数用来配置`RecordApp`，在`app.js`内代码执行完毕时会尝试回调此方法，免得`RecordAppBaseFolder`要在`app.js`之前定义，其他配置又要在之后定义的麻烦。使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。
+可提供这个全局的回调函数用来对`RecordApp`进行配置，在`app.js`文件的代码加载完毕时会尝试回调此方法，此方法是用来避免`RecordAppBaseFolder`属性要在`app.js`之前定义，其他配置又要在此js之后定义的麻烦；意思就是允许你在html文件开头编写配置，其他任意位置引入`app.js`。本回调的使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。
 
 
 ### 【配置】RecordApp.Platforms.Default.Config
