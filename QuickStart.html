@@ -337,10 +337,27 @@ function reclog(s,color){
 	elem.insertBefore(div,elem.firstChild);
 	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
 };
+window.onerror=function(message, url, lineNo, columnNo, error){
+	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
+	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+};
 
 reclog("Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音"+unescape("%uD83D%uDCAA"),"#f60;font-weight:bold;font-size:24px");
 reclog("RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view"+unescape("%uD83C%uDF89"),"#0b1;font-weight:bold;font-size:24px");
 reclog(Tips);
+</script>
+
+<script>
+if(/mobile/i.test(navigator.userAgent)){
+	//移动端加载控制台组件
+	var elem=document.createElement("script");
+	elem.setAttribute("type","text/javascript");
+	elem.setAttribute("src","https://cdn.bootcss.com/eruda/1.5.4/eruda.min.js");
+	$("head")[0].appendChild(elem);
+	elem.onload=function(){
+		eruda.init();
+	};
+};
 </script>
 
 <!-- 加载打赏挂件 -->
