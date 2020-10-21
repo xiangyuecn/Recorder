@@ -353,7 +353,7 @@ if(/mobile/i.test(navigator.userAgent)){
 	var elem=document.createElement("script");
 	elem.setAttribute("type","text/javascript");
 	elem.setAttribute("src","https://cdn.bootcss.com/eruda/1.5.4/eruda.min.js");
-	$("head")[0].appendChild(elem);
+	document.body.appendChild(elem);
 	elem.onload=function(){
 		eruda.init();
 	};
