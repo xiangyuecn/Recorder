@@ -48,6 +48,20 @@ public class RecordAppJsBridge {
             self.runScriptFn?(code);
         }
     }
+    public func runScript_JsBridge(_ commJs:String,_ funCall:String,_ postMessage:String){
+        //如果顶层window没有JsBridge的请求对象，就通过postMessage进行转发，可能是iframe跨域
+        runScript("(function(){\n" +
+                commJs +
+                "\n;if(window['" + RecordAppJsBridge.JsRequestName + "']){\n" +
+                    funCall +
+                "\n}else{" +
+                    "\nvar iframes=document.querySelectorAll('iframe');" +
+                    "\nfor(var i=0;i<iframes.length;i++){" +
+                        "\niframes[i].contentWindow.postMessage(" + postMessage + ",'*')" +
+                    "\n}" +
+                "\n}\n})()"
+        );
+    }
     public func close(){
         Log=nil;
         microphoneUsesPermissionFn=nil;
@@ -155,7 +169,12 @@ public class RecordAppJsBridge {
             __callback(false);
         }
         private func __callback(_ isExecCall:Bool){
-            jsBridge?.runScript(RecordAppJsBridge.JsRequestName+".Call("+Code.ToJson(json)+")");
+            jsBridge?.runScript_JsBridge(
+                    "var json=" + Code.ToJson(json) + ";" +
+                            "var postMsg={type:'" + RecordAppJsBridge.JsRequestName + "',action:'Call',data:json};"
+                    , RecordAppJsBridge.JsRequestName + ".Call(json);"
+                    , "postMsg"
+            );
             
             if !isExecCall && !isAsync {
                 jsBridge?.Log?.e(Request.LogTag,action+"不是异步方法，但调用了回调");
@@ -472,7 +491,12 @@ return [
                         readTotal+=d1.count;
                         duration=readTotal/(sampleRateSrc/1000)/2;
                         sendCount+=1;
-                        main.runScript(RecordAppJsBridge.JsRequestName+".Record(\"\(d1.base64EncodedString())\",\(sampleRateSrc))");
+                        main.runScript_JsBridge(
+                        "var b64=\"" + d1.base64EncodedString() + "\";" +
+                                "var sampleRate=\(sampleRateSrc);" +
+                                "var postMsg={type:'" + RecordAppJsBridge.JsRequestName + "',action:'Record',data:{pcmDataBase64:b64,sampleRate:sampleRate}};"
+                        , RecordAppJsBridge.JsRequestName + ".Record(b64,sampleRate)"
+                        , "postMsg" );
                         
                         if(!firstLog){
                             main.Log.i(RecordApis.LogTag, "获取到了第一段录音数据：len:\(d1.count) bufferLen:\(bufferLen) sampleRate:\(sampleRateSrc)");

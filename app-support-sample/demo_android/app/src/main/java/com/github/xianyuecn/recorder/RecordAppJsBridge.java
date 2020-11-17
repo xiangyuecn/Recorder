@@ -93,6 +93,20 @@ public class RecordAppJsBridge implements Closeable {
             }
         });
     }
+    public void runScript_JsBridge(String commJs,String funCall, String postMessage){
+        //如果顶层window没有JsBridge的请求对象，就通过postMessage进行转发，可能是iframe跨域
+        runScript("(function(){\n"
+                +commJs
+                +"\n;if(window['"+JsRequestName+"']){\n"
+                    +funCall
+                +"\n}else{"
+                    +"\nvar iframes=document.querySelectorAll('iframe');"
+                    +"\nfor(var i=0;i<iframes.length;i++){"
+                        +"\niframes[i].contentWindow.postMessage("+postMessage+",'*')"
+                    +"\n}"
+                +"\n}\n})()"
+        );
+    }
 
 
 
@@ -276,7 +290,12 @@ public class RecordAppJsBridge implements Closeable {
             __callback(false);
         }
         private void __callback(boolean isExecCall){
-            jsBridge.runScript(JsRequestName+".Call(" + json.toString() + ");");
+            jsBridge.runScript_JsBridge(
+                    "var json="+ json.toString()+";"
+                            +"var postMsg={type:'"+JsRequestName+"',action:'Call',data:json};"
+                    , JsRequestName+".Call(json);"
+                    , "postMsg"
+            );
 
             if(!isExecCall && !isAsync){
                 jsBridge.Log.e(LogTag,action+"不是异步方法，但调用了回调");
@@ -666,7 +685,13 @@ public class RecordAppJsBridge implements Closeable {
                     logStreamVal.write(data, 0, data.length);
                 }
                 sendCount++;
-                main.runScript(JsRequestName+".Record(\""+ Base64.encodeToString(data, Base64.NO_WRAP)+"\","+sampleRate+")");
+                main.runScript_JsBridge(
+                        "var b64=\""+ Base64.encodeToString(data, Base64.NO_WRAP)+"\";"
+                                +"var sampleRate="+sampleRate+";"
+                                +"var postMsg={type:'"+JsRequestName+"',action:'Record',data:{pcmDataBase64:b64,sampleRate:sampleRate}};"
+                        , JsRequestName+".Record(b64,sampleRate)"
+                        , "postMsg"
+                );
 
                 if(!firstLog){
                     main.Log.i(LogTag, "获取到了第一段录音数据：len:"+data.length+" lenSrc:"+count+" bufferLen:"+bufferLen+" sampleRateReq:"+sampleRateReq+" sampleRateSrc:"+sampleRateSrc+" sampleRateCallback:"+sampleRate);

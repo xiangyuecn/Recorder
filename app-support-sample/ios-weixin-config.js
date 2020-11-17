@@ -5,6 +5,8 @@ app-support/app.js中IOS-Weixin测试用的配置例子，用于支持ios的微�
 
 此文件需要在app.js之前进行加载，【注意】【本文件需要修改后才能用到你的网站】
 
+支持在iframe中使用，但不支持在跨域。
+
 https://github.com/xiangyuecn/Recorder
 */
 (function(){
@@ -16,9 +18,9 @@ https://github.com/xiangyuecn/Recorder
 /**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
 window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.gitee.io/recorder/src/";
 
-/**【需修改】请使用自己的微信JsSDK签名接口、素材下载功能接口，不能用这个，微信【强制】要【绑安全域名】，别的站用不了。下面ajax相关调用的请求参数、和响应结果格式也需要调整为自己的格式。
-后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
-后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
+/**【需修改】请使用自己的网站后端一个接口地址去实现：微信JsSDK签名、微信录音素材下载两个功能；不能用下面这个演示地址，微信【强制】要【绑安全域名】，别的站用不了。如果你要调整请求的参数、或者响应结果格式、或用两个接口地址，需要修改下面对应的ajax调用。
+【微信文档】后端签名接口参考：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法。
+【微信文档】后端素材下载接口参考: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
 **/
 var MyWxApi=window.PageSet_RecordAppWxApi||"https://jiebian.life/api/weixin/git_record"; /*本例子提供的这个api接口：
 			会实现两个功能，ajax POST请求参数如下(都是两个参数，完整细节看下面ajax调用):
@@ -40,14 +42,17 @@ var MyWxApi=window.PageSet_RecordAppWxApi||"https://jiebian.life/api/weixin/git_
 
 //Install Begin：在RecordApp准备好时执行这些代码
 window.OnRecordAppInstalled=window.IOS_Weixin_RecordApp_Config=function(){
-console.log("ios-weixin-config install");
-
 window.IOS_Weixin_RecordApp_Config=null;
 window.Native_RecordApp_Config&&Native_RecordApp_Config();//如果native-config.js也引入了的话，也需要初始化
 
 var App=RecordApp;
+var CLog=App.CLog;
 var platform=App.Platforms.Weixin;
 var config=platform.Config;
+
+CLog("ios-weixin-config init");
+
+
 
 var win=window.top;//微信JsSDK让顶层去加载，免得iframe各种麻烦
 
@@ -58,7 +63,7 @@ if(isIOS){
 	//如果你是在 history.pushState 修改了地址之后加载的本js，就更惨了，此初始化url将不准确，因此你可以在页面首次加载时立即设置Bad_WeixinIOSH5HistoryInitLocation变量为那时的location.href
 	
 	setTimeout(function(){
-	console.warn("1970-2020年 IOS内微信不认 history.pushState 产生的新地址，如果签名地址不是页面加载时的地址，可能会导致问题（如果哪天又认了，恭喜核弹已起爆），当前签名使用的地址为："+win[sbwxKey]);
+	CLog("IOS内微信不认 history.pushState 产生的新地址，如果签名地址不是页面加载时的地址，可能会导致签名失败，当前签名使用的地址为："+win[sbwxKey],3);
 	},5000);
 };
 
@@ -99,6 +104,12 @@ config.DownWxMedia=function(param,success,fail){
 	fail: fn(msg) 下载出错回调
 	*/
 	
+	var failCall=function(err){
+		CLog(err,1);
+		fail(err);
+	};
+	
+	CLog("下载微信素材...",param);
 	ajax(MyWxApi,{
 		action:"wxdown"
 		,mediaID:param.mediaId
@@ -106,10 +117,17 @@ config.DownWxMedia=function(param,success,fail){
 		,transform_type:param.transform_type
 		,transform_bitRate:param.transform_bitRate
 		,transform_sampleRate:param.transform_sampleRate
-	},function(data){
-		success(data.v);
+	},function(data,raw){
+		var mime=data.mime,b64=data.data;
+		if(!mime || !b64 || (b64.length||1)%4!=0 ){
+			CLog("下载错误",1,raw);
+			failCall("微信音频素材下载接口返回非预定义json数据");
+		}else{
+			CLog("成功下载微信音频素材"+mime+" ≈"+(b64.length/4*3)+"b");
+			success(data);
+		};
 	},function(msg){
-		fail("下载音频失败："+msg);
+		failCall("微信音频素材下载失败："+msg);
 	});
 };
 /*********接口实现END*************/
@@ -127,12 +145,15 @@ var ajax=function(url,data,True,False){
 	xhr.onreadystatechange=function(){
 		if(xhr.readyState==4){
 			if(xhr.status==200){
-				var o=JSON.parse(xhr.responseText);
-				if(o.c){
-					False(o.m);
+				try{
+					var o=JSON.parse(xhr.responseText);
+				}catch(e){};
+				
+				if(o.c!==0 || !o.v){
+					False(o.m||"接口返回非预定义json数据");
 					return;
 				};
-				True(o);
+				True(o.v,o);
 			}else{
 				False("请求失败["+xhr.status+"]");
 			}
@@ -150,7 +171,9 @@ var ajax=function(url,data,True,False){
 
 
 /*********JsSDK*************/
+//本方法不一定是当前页面执行，如果是iframe将交给top层执行，因此必须能独立运行
 var InitJsSDK=function(App,MyWxApi,ajax){
+	var CLog=App.CLog;
 	var wxOjbK=function(call){
 		if(errMsg){
 			call(null,errMsg);
@@ -184,12 +207,12 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 			wxOjbK(arr[i]);
 		};
 	};
-	App.Js([{url:"https://res.wx.qq.com/open/js/jweixin-1.4.0.js",check:function(){return !window.wx||!wx.config}}],function(){
-		console.log("weixin jssdk加载好了");
+	App.Js([{url:"https://res.wx.qq.com/open/js/jweixin-1.6.0.js",check:function(){return !window.wx||!wx.config}}],function(){
+		CLog("weixin jssdk加载好了");
 		jsEnd();
 	},function(msg){
 		errMsg="加载微信JsSDK失败，请刷新页面："+msg;
-		console.error("weixin jssdk加载失败:"+msg);
+		CLog("weixin jssdk加载失败:"+msg,1);
 		jsEnd();
 	},window);
 	
@@ -197,6 +220,7 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 	
 	//等等完成签名
 	var wxConfigStatus=0;
+	var wxConfigInt=0;
 	var wxConfigErr="";
 	var wxConfigCalls=[];
 	var wxConfig=function(True,False){
@@ -209,11 +233,15 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 		};
 		wxConfigCalls.push({t:True,f:False});
 		var end=function(err){
+			clearTimeout(wxConfigInt);
 			if(wxConfigStatus<5){			
 				wxConfigErr=err?"微信config失败，请刷新页面重试："+err:"";
 				wxConfigStatus=err?5:6;
-				for(var i=0;i<wxConfigCalls.length;i++){
-					var o=wxConfigCalls[i];
+				
+				var arr=wxConfigCalls;
+				wxConfigCalls=[];
+				for(var i=0;i<arr.length;i++){
+					var o=arr[i];
 					if(err){
 						o.f(wxConfigErr);
 					}else{
@@ -226,6 +254,9 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 			return;
 		};
 		wxConfigStatus=1;
+		wxConfigInt=setTimeout(function(){
+			end("微信JsSDK签名超时");
+		},30000);
 		
 		var config=function(data){
 			wx.config({
@@ -241,20 +272,27 @@ var InitJsSDK=function(App,MyWxApi,ajax){
 ).split(",")
 			});
 			wx.error(function(res){
-				console.error("wx.config",res);
-				end(res.errMsg);
+				CLog("wx.error",1,res);
+				end("wx.error:"+res.errMsg);
 			});
 			wx.ready(function(){
-				console.log("微信JsSDK签名配置完成");
+				CLog("微信JsSDK签名配置完成");
 				end();
 			});
 		};
+		
+		
 		var href=window.Bad_WeixinIOSH5HistoryInitLocation||location.href;
 		ajax(MyWxApi,{
 			action:"sign"
 			,url:href.replace(/#.*/g,"")
-		},function(data){
-			config(data.v);
+		},function(data,raw){
+			CLog("微信签名接口结果",raw);
+			if(!data.appid){
+				end("微信签名接口返回非预定义json数据");
+			}else{
+				config(data);
+			};
 		},end);
 	};
 };

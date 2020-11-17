@@ -29,7 +29,7 @@
 
 
 ## 数据交互
-swift收到js发起的prompt弹框请求，解析弹框携带的数据参数，并调用参数中接口对应的swift方法，同步执行完后把数据返回给prompt弹框，如果方法是异步的，将在异步操作完成后swift将调用网页的js方法`AppJsBridgeRequest.Call`将数据异步返回。
+swift收到js发起的prompt弹框请求，解析弹框携带的数据参数，并调用参数中接口对应的swift方法，同步执行完后把数据返回给prompt弹框，如果方法是异步的，将在异步操作完成后swift将调用网页的js方法`AppJsBridgeRequest.Call`将数据异步返回（如果是跨域的iframe中发起的异步调用，数据将会使用postMessage来转发返回）。
 
 
 ## 录音接口

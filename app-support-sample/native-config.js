@@ -7,6 +7,8 @@ app-support/app.js中Native测试用的配置例子，用于调用App的原生�
 
 此文件需要在app.js之前进行加载，【注意】【如果你App原生层实现不是用的demo中提供的接口文件，需自行重写本配置代码】
 
+支持在iframe中使用（含跨域）。
+
 https://github.com/xiangyuecn/Recorder
 */
 (function(){
@@ -19,15 +21,16 @@ window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyue
 
 //Install Begin：在RecordApp准备好时执行这些代码
 window.OnRecordAppInstalled=window.Native_RecordApp_Config=function(){
-console.log("native-config install");
-
 window.Native_RecordApp_Config=null;
 window.IOS_Weixin_RecordApp_Config&&IOS_Weixin_RecordApp_Config();//如果ios-weixin-config.js也引入了的话，也需要初始化
 
 
 var App=RecordApp;
+var CLog=App.CLog;
 var platform=App.Platforms.Native;
 var config=platform.Config;
+
+CLog("native-config init");
 
 
 
@@ -42,9 +45,15 @@ var config=platform.Config;
 var JsBridgeName="RecordAppJsBridge";
 
 var AppJsBridgeRequest=window.AppJsBridgeRequest=function(action,args,call){
-	var p=GetParent();
-	if(p!=window && p.AppJsBridgeRequest){//让iframe上层去处理，直到top层
-		return p.AppJsBridgeRequest(action,args,call);
+	var p=window.top;
+	var pfn=0;
+	try{//让顶层window去处理，如果跨域无权限就算了
+		pfn=p.AppJsBridgeRequest;
+	}catch(e){
+		CLog("检测到跨域iframe，AppJsBridgeRequest将由Native通过执行postMessage转发来兼容数据的返回",3);
+	};
+	if(pfn && pfn!=AppJsBridgeRequest){
+		return pfn(action,args,call);
 	};
 	
 	args||(args={});
@@ -72,15 +81,6 @@ var AppJsBridgeRequest=window.AppJsBridgeRequest=function(action,args,call){
 	
 	return val;//同步返回结果，异步返回会走AppJsBridgeRequest.Call
 };
-var GetParent=function(){
-	try{
-		var p=window.parent;
-		p.x;
-		return p;
-	}catch(e){
-		return window;
-	};
-};
 var Callbacks=[""];
 
 //app异步回调
@@ -95,6 +95,36 @@ AppJsBridgeRequest.Call=function(msg){
 //app事件回调
 AppJsBridgeRequest.Record=function(pcmDataBase64,sampleRate){
 	NativeRecordReceivePCM(pcmDataBase64,sampleRate);
+};
+
+//尝试注入顶层window，用于接收Native回调数据，此处特殊处理一下，省得跨域的iframe无权限
+//本JsBridge因为多了异步回调方法，因此对NativeRecordReceivePCM封装了一层，没有用它自带的postMessage转发兼容实现，其实这里的代码和它的代码是一样的。
+try{
+	window.top.AppJsBridgeRequest=AppJsBridgeRequest;
+}catch(e){
+	var tipsFn=function(){
+		CLog("检测到跨域iframe，AppJsBridgeRequest无法注入到顶层，已监听postMessage，Native通过执行postMessage转发来兼容数据返回",3);
+		if(window.parent!=window.top){
+			CLog("RecordApp Native Config示例不支持跨域iframe超过1层，因为没有处理中间的iframe的window的postMessage转发",1);
+		};
+	};
+	setTimeout(tipsFn,8000);
+	tipsFn();
+	
+	addEventListener("message",function(e){//纯天然，无需考虑origin
+		var data=e.data;
+		if(data&&data.type=="AppJsBridgeRequest"){
+			var action=data.action;
+			data=data.data;
+			if(action=="Call"){
+				AppJsBridgeRequest.Call(data);
+			}else if(action=="Record"){
+				AppJsBridgeRequest.Record(data.pcmDataBase64, data.sampleRate);
+			}else{
+				CLog("AppJsBridgeRequest未知postMessage："+action,3);
+			};
+		};
+	});
 };
 /******JsBridge简单实现 End*******/
 

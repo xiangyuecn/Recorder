@@ -13,12 +13,15 @@ JsBridge可以是自己实现的交互方式 或 别人提供的框架。因为�
 
 本文件源码可以不用改动，因为需要改动的地方已放到了app.js的Native.Config中了；最终实际实现可参考app-support-sample目录内的配置文件，另外此目录内还有Android和IOS的demo项目，copy源码改改就能用。
 
+支持在iframe中使用，但如果是跨域要特殊处理。
+
 https://github.com/xiangyuecn/Recorder
 */
 (function(){
 "use strict";
 
 var App=RecordApp;
+var CLog=App.CLog;
 var platform=App.Platforms.Native;
 var config=platform.Config;
 
@@ -29,10 +32,10 @@ platform.IsInit=true;
 pcmDataBase64: base64<Int16[]>字符串 当前单声道录音缓冲PCM片段，正常情况下为上次回调本接口开始到现在的录音数据，Int16[]二进制数组需要编码成base64字符串
 sampleRate：123456 录制音频实际的采样率
 */
-var onRecFn=window.NativeRecordReceivePCM=window.top.NativeRecordReceivePCM=function(pcmDataBase64,sampleRate){//无视iframe
+var onRecFn=window.NativeRecordReceivePCM=function(pcmDataBase64,sampleRate){//无视iframe
 	var rec=onRecFn.rec;
 	if(!rec){
-		console.error("未开始录音，但收到Native PCM数据");
+		CLog("未开始录音，但收到Native PCM数据",3);
 		return;
 	};
 	if(!rec._appStart){
@@ -53,6 +56,24 @@ var onRecFn=window.NativeRecordReceivePCM=window.top.NativeRecordReceivePCM=func
 	
 	rec.envIn(pcm,sum);
 };
+//尝试注入顶层window，用于接收Native回调数据，此处特殊处理一下，省得跨域的iframe无权限
+try{
+	window.top.NativeRecordReceivePCM=onRecFn;
+}catch(e){
+	var tipsFn=function(){
+		CLog("检测到跨域iframe，NativeRecordReceivePCM无法注入到顶层，已监听postMessage转发兼容传输数据，请自行实现将top层接收到数据转发到本iframe（不限层），不然无法接收到录音数据",3);
+	};
+	setTimeout(tipsFn,8000);
+	tipsFn();
+	
+	addEventListener("message",function(e){//纯天然，无需考虑origin
+		var data=e.data;//{type:"",data:{pcmDataBase64:"",sampleRate:16000}}
+		if(data&&data.type=="NativeRecordReceivePCM"){
+			data=data.data;
+			onRecFn(data.pcmDataBase64, data.sampleRate);
+		};
+	});
+};
 
 
 /*******实现统一接口，以下方法参数请参考app.js RecordApp中的同名方法*******/
@@ -72,7 +93,7 @@ platform.Start=function(set,success,fail){
 };
 platform.Stop=function(success,fail){
 	var failCall=function(msg){
-		fail(msg);
+		fail("录音失败[Native]："+msg);
 		onRecFn.rec=null;
 		App.__Rec=null;
 	};
@@ -85,7 +106,7 @@ platform.Stop=function(success,fail){
 			return;
 		};
 		
-		console.log("rec encode start: pcm:"+rec.recSize+" src:"+rec.srcSampleRate+" set:"+JSON.stringify(onRecFn.param));
+		CLog("rec encode start: pcm:"+rec.recSize+" src:"+rec.srcSampleRate+" set:"+JSON.stringify(onRecFn.param));
 		
 		var end=function(){
 			//把可能变更的配置写回去
@@ -99,8 +120,9 @@ platform.Stop=function(success,fail){
 			return;
 		};
 		rec.stop(function(blob,duration){
-			console.log("rec encode end")
+			CLog("rec encode end")
 			end();
+			App._SRec=rec;
 			success(blob,duration);
 			App.__Rec=null;
 		},function(msg){

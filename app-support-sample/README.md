@@ -206,7 +206,7 @@ function createDelayDialog(){
 
 ### 【Android】Hybrid App测试
 
-[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
+[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
 
 ### 【IOS微信】H5测试
 [<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
@@ -270,8 +270,8 @@ IOS其他浏览器||
 
 ## 限制功能
 
-- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）。
-- `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启录音，中间可能会导致短暂的停顿感觉。
+- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）；amr原始的采样率为8000hz，如果设置的采样率高于8000，将会自动提升采样率到设置的值（如16000），但音质不可能会变好。
+- `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启微信JsSDK录音，中间可能会导致短暂的停顿感觉。
 - `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
 - `Android WebView`本身是支持H5录音的(古董版本就算啦)，仅需处理H5网页授权即可，但Android里面使用网页的录音问题可能比原生的录音要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo，如果想使用Android H5录音，请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节来开启网页权限即可。
 
@@ -349,6 +349,8 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 `sampleRate` 缓冲PCM的采样率
 
+注意：此方法会自动注入到top层window，如果是iframe并且跨域了，将无法进行注入，需要top层使用postMessage来转发数据给iframe，详细请看`app-native-support.js`中`addEventListener("message"...)`源码；示例App中已实现了对应的postMessage转发操作，集成示例代码即可正常使用。
+
 
 ## 【静态属性】RecordApp.UseLazyLoad
 默认为`true`开启部分非核心组件的延迟加载，不会阻塞`Install`，`Install`后通过`RecordApp.Current.OnLazyReady`事件来确定组件是否已全部加载；如果设为`false`，将忽略组件的延迟加载属性，`Install`时会将所有组件一次性加载完成后才会`Install`成功。
@@ -371,6 +373,11 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 获取底层平台录音过程中会使用用来处理实时数据的Recorder对象实例rec，如果底层录音过程中不实用Recorder进行数据的实时处理，将返回null。除了微信平台外，其他平台均会返回rec，但Start调用前和Stop调用后均会返回null，只有Start后和Stop彻底完成前之间才会返回rec。
 
 rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如：实时清理缓冲，当缓冲被清理，Stop时永远会走fail回调。
+
+## 【静态方法】RecordApp.GetStopUsedRec()
+获取底层平台录音结束时使用的用来转码音频的Recorder对象实例rec。在Stop成功回调时一定会返回rec对象，Stop回调前和Stop回调后均会返回null。除了微信平台外，其他平台返回的rec和GetStartUsedRecOrNull返回的是同一个对象；（注意如果微信平台的素材下载接口实现了服务器端转码，本方法始终会返回null，这种情况算是比较罕见的功能）。
+
+rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如额外的格式转码或数据提取。
 
 ## 【静态属性】RecordApp.Platforms
 支持的平台列表，目前有三个：

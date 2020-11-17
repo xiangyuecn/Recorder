@@ -2,7 +2,7 @@
 
 # :open_book:Android Hybrid App
 
-目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
+目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ；目录内 [app-debug.apk.zip](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
 
 本Demo是对[/app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)配置示例中定义的JsBridge接口的实现。
 
@@ -30,7 +30,7 @@
 
 
 ## 数据交互
-java收到js发起的`RecordAppJsBridge.request`请求，解析请求数据参数，并调用参数中接口对应的java方法，同步执行完后把数据返回给js，如果方法是异步的，将在异步操作完成后java将调用网页的js方法`AppJsBridgeRequest.Call`将数据异步返回。
+java收到js发起的`RecordAppJsBridge.request`请求，解析请求数据参数，并调用参数中接口对应的java方法，同步执行完后把数据返回给js，如果方法是异步的，将在异步操作完成后java将调用网页的js方法`AppJsBridgeRequest.Call`将数据异步返回（如果是跨域的iframe中发起的异步调用，数据将会使用postMessage来转发返回）。
 
 
 ## 录音接口

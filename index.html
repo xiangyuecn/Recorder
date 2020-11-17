@@ -145,7 +145,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2020-10-19 22:44:28";
+var PageLM="2020-11-15 20:51:36";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -349,12 +349,12 @@ RandomKey.idx=0;
 	<span class="lb">测试App :</span>
 	IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
 	
-	，Android Demo App：<a href="https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+	，Android Demo App：<a href="https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
 </div>
 	
 <div class="mainBox">
 	<span class="lb">iframe兼容性 :</span> <button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
-	测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，跨域时未设置相应策略权限永远是拒绝的
+	测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载Recorder，iframe里面使用top.Recorder；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况，H5录音在跨域时未设置相应策略权限永远是拒绝的
 </div>
 	
 <div class="mainBox">
@@ -885,10 +885,7 @@ reclog('已启用Extensions：'
 
 
 function goiframe(){
-	$(".demoHead").hide();
-	$(".demoMain").html(''
-		+'<div>IFrame测试，提示：`RecordApp测试`可以模拟跨域，跨域时未设置相应策略权限永远是拒绝的</div>'
-		+'<iframe src="?t='+Date.now()+'" style="width:98%;height:'+($(window).height()-100)+'px; border:4px solid #0B1"></iframe>');
+	location.href="assets/ztest_iframe.html#iframeUrl=/index.html";
 };
 if(window.top!=window){
 	var isSelf=false;

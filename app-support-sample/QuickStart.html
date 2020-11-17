@@ -17,9 +17,9 @@ console.log(Tips);
 <script>
 /********将此处后端API地址改成你的地址即可开始测试**********/
 
-/**【需修改】请使用自己的微信JsSDK签名接口、素材下载功能接口，不能用这个空的默认值，微信【强制】要【绑安全域名】，别的站用不了。
-后端签名接口参考文档：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法
-后端素材下载接口参考文档: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
+/**【需修改】请使用自己的网站后端一个接口地址去实现：微信JsSDK签名、微信录音素材下载两个功能；不能用这个空的默认值，微信【强制】要【绑安全域名】，别的站用不了。此接口地址是用在ios-weixin-config.js中的，如果你要调整请求的参数、或者响应结果格式、或用两个接口地址，需要修改此js中对应的ajax调用。
+【微信文档】后端签名接口参考：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法。
+【微信文档】后端素材下载接口参考: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
 **/
 var PageSet_RecordAppWxApi="";
 /*这个api接口：

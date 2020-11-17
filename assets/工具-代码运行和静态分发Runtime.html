@@ -765,7 +765,7 @@ $(function(){
 			.replace(/\+/g,"-")
 			.replace(/\//g,"_")
 			.replace(/=/g,".");
-		var url="https://xiangyuecn.github.io/Recorder/assets/"+encodeURIComponent("工具-代码运行和静态分发Runtime")+".html#sha1="+sha1+"&shareCode=v1_"+encodeURIComponent(urlb64);
+		var url="https://xiangyuecn.gitee.io/recorder/assets/"+encodeURIComponent("工具-代码运行和静态分发Runtime")+".html#sha1="+sha1+"&shareCode=v1_"+encodeURIComponent(urlb64);
 		
 		Runtime.Log('<textarea style="width:300px;height:80px">'+url+'</textarea>');
 		Runtime.Log("已分发，url大小"+url.length+"b，<a href='"+url+"' target='_blank'>地址</a> <a href='https://www.ft12.com/' target='_blank'>短网址</a>",2);
@@ -1103,6 +1103,7 @@ var demos=[
 ,{n:"【Demo库】【文件合并】-mp3多个片段文件合并",k:"lib.merge.mp3_merge"}
 ,{n:"【Demo库】【文件合并】-wav多个片段文件合并",k:"lib.merge.wav_merge"}
 
+//,{n:"【教程】实时语音识别（语音转文字）",k:"teach.realtime.asr"}
 ,{n:"【教程】实时多路音频混音",k:"teach.realtime.mix_multiple"}
 ,{n:"【教程】变速变调音频转换",k:"teach.sonic.transform"}
 ,{n:"【教程】DTMF（电话拨号按键信号）解码、编码",k:"teach.dtmf.decode_and_encode"}
@@ -1115,7 +1116,7 @@ var demos=[
 var markdown=[];
 for(var i=0;i<demos.length;i++){
 	var o=demos[i];
-	markdown.push((i+1)+'. ['+o.n+'](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
+	markdown.push((i+1)+'. ['+o.n+'](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
 	AddDemoCode(199-i,"",o.n,null,o.k);
 };
 

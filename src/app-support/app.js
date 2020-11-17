@@ -243,6 +243,7 @@ Default.Stop=function(success,fail){
 	};
 	appRec.stop(function(blob,duration){
 		end();
+		App._SRec=appRec;
 		success(blob,duration);
 		App.__Rec=null;
 	},stopFail);
@@ -252,6 +253,26 @@ Default.Stop=function(success,fail){
 
 
 
+//带时间的日志输出，CLog(msg,errOrLogMsg, logMsg...) err为数字时代表日志类型1:error 2:log默认 3:warn，否则当做内容输出，第一个参数不能是对象因为要拼接时间，后面可以接无数个输出参数
+var CLog=function(msg,err){
+	var now=new Date();
+	var t=("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2)
+		+"."+("00"+now.getMilliseconds()).substr(-3);
+	var arr=["["+t+" RecordApp]["+(App.Current&&App.Current.Key||"?")+"]"+msg];
+	var a=arguments;
+	var i=2,fn=console.log;
+	if(typeof(err)=="number"){
+		fn=err==1?console.error:err==3?console.warn:fn;
+	}else{
+		i=1;
+	};
+	for(;i<a.length;i++){
+		arr.push(a[i]);
+	};
+	fn.apply(console,arr);
+};
+
 
 
 
@@ -260,8 +281,9 @@ Default.Stop=function(success,fail){
 
 
 var App={
-LM:"2020-5-16 18:35:30"
+LM:"2020-11-15 21:36:11"
 ,Current:0
+,CLog:CLog
 ,IsWx:IsWx
 ,BaseFolder:BaseFolder
 ,UseLazyLoad:true //默认为true开启部分非核心组件的延迟加载，不会阻塞Install，Install后通过RecordApp.Current.OnLazyReady事件来确定组件是否已全部加载；如果设为false，将忽略组件的延迟加载属性，Install时会将所有组件一次性加载完成后才会Install成功
@@ -358,7 +380,7 @@ fail: fn(msg) 初始化失败
 		};
 		
 		var jsArr=readConfigPaths(platform);
-		console.log("Install "+platform.Key+"...",jsArr);
+		CLog("Install "+platform.Key+"...",jsArr);
 		
 		//加载需要的支持js文件
 		App.Js(jsArr,function(){
@@ -366,7 +388,7 @@ fail: fn(msg) 初始化失败
 			end();
 		},function(msg){
 			msg="初始化js库失败："+msg;
-			console.log(msg,platform);
+			CLog(msg,platform);
 			fail(msg);
 		});
 	};
@@ -408,7 +430,7 @@ fail: fn(msg) 初始化失败
 		
 		var loadNext=function(loadEnd){
 			if(loadEnd){
-				console.log("Lazy Load:"+statusKey);
+				CLog("Lazy Load:"+statusKey);
 			};
 			var callBinds=function(key,err){
 				var fns=data[key];
@@ -432,13 +454,13 @@ fail: fn(msg) 初始化失败
 			data[msgKey]="";
 			data[statusKey]=2;
 			var jsArr=first?jsLazyStart:jsLazyStop;
-			console.log("Lazy Load..."+statusKey,jsArr);
+			CLog("Lazy Load..."+statusKey,jsArr);
 			App.Js(jsArr,function(){
 				data[statusKey]=3;
 				loadNext(1);
 			},function(msg){
 				msg="加载js库失败["+statusKey+"]："+msg;
-				console.log(msg,platform);
+				CLog(msg,platform);
 				data[statusKey]=1;
 				data[msgKey]=msg;
 				loadNext(1);
@@ -477,8 +499,8 @@ fail: fn(msg) 初始化失败
 		tryLazyLoad(cur,1);
 		
 		//已获取支持的底层平台
-		console.log("Install Success");
 		App.Current=cur;
+		CLog("Install Success");
 		success();
 	};
 	
@@ -495,6 +517,14 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 ,GetStartUsedRecOrNull:function(){
 	return App.__Rec||null;
 }
+/*
+获取底层平台录音结束时使用的用来转码音频的Recorder对象实例rec。在Stop成功回调时一定会返回rec对象，Stop回调前和Stop回调后均会返回null。除了微信平台外，其他平台返回的rec和GetStartUsedRecOrNull返回的是同一个对象；（注意如果微信平台的素材下载接口实现了服务器端转码，本方法始终会返回null，这种情况算是比较罕见的功能）。
+
+rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如额外的格式转码或数据提取。
+*/
+,GetStopUsedRec:function(){
+	return App._SRec||null;
+}
 
 
 /*
@@ -503,20 +533,22 @@ success:fn() 有权限时回调
 fail:fn(errMsg,isUserNotAllow) 没有权限或者不能录音时回调，如果是用户主动拒绝的录音权限，除了有错误消息外，isUserNotAllow=true，方便程序中做不同的提示，提升用户主动授权概率
 */
 ,RequestPermission:function(success,fail){
+	var failCall=function(errMsg,isUserNotAllow){
+		isUserNotAllow=!!isUserNotAllow;
+		CLog("录音权限请求失败："+errMsg+",isUserNotAllow:"+isUserNotAllow,1);
+		fail&&fail(errMsg,isUserNotAllow);
+	};
+	CLog("RequestPermission...");
 	App.Install(function(){
 		var cur=App.Current;
-		console.log("开始请求"+cur.Key+"录音权限");
+		CLog("开始请求录音权限");
 		
 		cur.RequestPermission(function(){
-			console.log("录音权限请求成功");
+			CLog("录音权限请求成功");
 			success&&success();
-		},function(errMsg,isUserNotAllow){
-			console.log("录音权限请求失败："+errMsg+",isUserNotAllow:"+isUserNotAllow);
-			fail&&fail(errMsg,isUserNotAllow);
-		});
+		},failCall);
 	},function(err){
-		console.log("Install失败",err);
-		fail&&fail(err);
+		failCall("Install失败："+err);
 	});
 }
 /*
@@ -533,11 +565,18 @@ success:fn() 打开录音时回调
 fail:fn(errMsg) 开启录音出错时回调
 */
 ,Start:function(set,success,fail){
+	var failCall=function(msg){
+		CLog("开始录音失败："+msg,1);
+		fail&&fail(msg);
+	};
+	CLog("Start...");
+	
 	var cur=App.Current;
 	if(!cur){
-		fail&&fail("需先调用RequestPermission");
+		failCall("需先调用RequestPermission");
 		return;
 	};
+	
 	set||(set={});
 	var obj={
 		type:"mp3"
@@ -553,32 +592,31 @@ fail:fn(errMsg) 开启录音出错时回调
 	var checkRec=Recorder(set);
 	var checkMsg=checkRec.envCheck({envName:cur.Key,canProcess:cur.CanProcess()});
 	if(checkMsg){
-		fail&&fail("不能录音："+checkMsg);
+		failCall("不能录音："+checkMsg);
 		return;
 	};
+	
+	//重置Stop时的rec
+	App._SRec=0;
 	
 	var readyWait=0;
 	cur.LazyAtStart(function(err){
 		if(readyWait){
-			console.warn("Start Wait Ready "+(Date.now()-readyWait)+"ms");
+			CLog("Start Wait Ready "+(Date.now()-readyWait)+"ms",3);
 		};
 		readyWait=1;
 		
-		var failCall=function(msg){
-			console.log("开始录音失败："+msg);
-			fail&&fail(msg);
-		};
 		if(err){
 			failCall(err);
 		}else{
 			cur.Start(set,function(){
-				console.log("开始录音",set);
+				CLog("开始录音",set);
 				success&&success();
 			},failCall);
 		};
 	});
 	if(!readyWait){
-		console.warn("Start Wait Ready...");
+		CLog("Start Wait Ready...",3);
 	};
 	readyWait=Date.now();
 }
@@ -594,34 +632,39 @@ fail:fn(errMsg) 录音出错时回调
 本方法可以用来清理持有的资源，如果不提供success参数=null时，将不会进行音频编码操作，只进行清理完可能持有的资源后走fail回调
 */
 ,Stop:function(success,fail){
+	var failCall=function(msg){
+		CLog("结束录音失败："+msg,1);
+		App._SRec=0;//干掉未释放的Stop的rec，并防止fail回调中被读取
+		fail&&fail(msg);
+	};
+	CLog("Stop...");
+	var t1=Date.now();
+
 	var cur=App.Current;
 	if(!cur){
-		fail&&fail("需先调用RequestPermission");
+		failCall("需先调用RequestPermission");
 		return;
 	};
 	
 	var readyWait=0;
 	cur.LazyAtStop(function(err){
 		if(readyWait){
-			console.warn("Stop Wait Ready "+(Date.now()-readyWait)+"ms");
+			CLog("Stop Wait Ready "+(Date.now()-readyWait)+"ms",3);
 		};
 		readyWait=1;
 		
-		var failCall=function(msg){
-			console.log("结束录音失败："+msg);
-			fail&&fail(msg);
-		};
 		if(err){
 			failCall(err);
 		}else{
 			cur.Stop(!success?null:function(blob,duration){
-				console.log("结束录音"+blob.size+"b "+duration+"ms",blob);
+				CLog("结束录音 耗时"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
 				success(blob, duration);
+				App._SRec=0;//清理掉Stop时的rec
 			},failCall);
 		};
 	});
 	if(!readyWait){
-		console.warn("Stop Wait Ready...");
+		CLog("Stop Wait Ready...",3);
 	};
 	readyWait=Date.now();
 }

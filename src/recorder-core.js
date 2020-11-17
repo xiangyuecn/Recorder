@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2020-5-17 08:21:54";
+var LM="2020-11-15 21:36:11";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -45,7 +45,7 @@ Recorder.IsOpen=function(){
 Recorder.BufferSize=4096;
 //销毁已持有的所有全局资源，当要彻底移除Recorder时需要显式的调用此方法
 Recorder.Destroy=function(){
-	console.log("Recorder Destroy");
+	CLog("Recorder Destroy");
 	for(var k in DestroyList){
 		DestroyList[k]();
 	};
@@ -247,6 +247,32 @@ Recorder.PowerLevel=function(pcmAbsSum,pcmLength){
 };
 
 
+
+
+//带时间的日志输出，CLog(msg,errOrLogMsg, logMsg...) err为数字时代表日志类型1:error 2:log默认 3:warn，否则当做内容输出，第一个参数不能是对象因为要拼接时间，后面可以接无数个输出参数
+var CLog=function(msg,err){
+	var now=new Date();
+	var t=("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2)
+		+"."+("00"+now.getMilliseconds()).substr(-3);
+	var arr=["["+t+" Recorder]"+msg];
+	var a=arguments;
+	var i=2,fn=console.log;
+	if(typeof(err)=="number"){
+		fn=err==1?console.error:err==3?console.warn:fn;
+	}else{
+		i=1;
+	};
+	for(;i<a.length;i++){
+		arr.push(a[i]);
+	};
+	fn.apply(console,arr);
+};
+Recorder.CLog=CLog;
+
+
+
+
 var ID=0;
 function initFn(set){
 	this.id=++ID;
@@ -290,22 +316,34 @@ Recorder.prototype=initFn.prototype={
 	open:function(True,False){
 		var This=this;
 		True=True||NOOP;
-		False=False||NOOP;
+		var failCall=function(errMsg,isUserNotAllow){
+			isUserNotAllow=!!isUserNotAllow;
+			CLog("录音open失败："+errMsg+",isUserNotAllow:"+isUserNotAllow,1);
+			False&&False(errMsg,isUserNotAllow);
+		};
 		
 		var ok=function(){
+			CLog("open成功");
 			True();
 			
 			This._SO=0;//解除stop对open中的start调用的阻止
 		};
 		var codeFail=function(code,msg){
+			try{//跨域的优先检测一下
+				window.top.a;
+			}catch(e){
+				failCall('无权录音(跨域，请尝试给iframe添加麦克风访问策略，如allow="camera;microphone")');
+				return;
+			};
+			
 			if(/Permission|Allow/i.test(code)){
-				False("用户拒绝了录音权限",true);
+				failCall("用户拒绝了录音权限",true);
 			}else if(window.isSecureContext===false){
-				False("无权录音(需https)");
+				failCall("无权录音(需https)");
 			}else if(/Found/i.test(code)){//可能是非安全环境导致的没有设备
-				False(msg+"，无可用麦克风");
+				failCall(msg+"，无可用麦克风");
 			}else{
-				False(msg);
+				failCall(msg);
 			};
 		};
 		
@@ -324,7 +362,7 @@ Recorder.prototype=initFn.prototype={
 				}else{
 					err="open被中断";
 				};
-				False(err);
+				failCall(err);
 				return true;
 			};
 		};
@@ -343,7 +381,7 @@ Recorder.prototype=initFn.prototype={
 		//环境配置检查
 		var checkMsg=This.envCheck({envName:"H5",canProcess:true});
 		if(checkMsg){
-			False("不能录音："+checkMsg);
+			failCall("不能录音："+checkMsg);
 			return;
 		};
 		
@@ -361,13 +399,13 @@ Recorder.prototype=initFn.prototype={
 					Connect();
 					ok();
 				}else{
-					False("录音功能无效：无音频流");
+					failCall("录音功能无效：无音频流");
 				};
 			},100);
 		};
 		var f2=function(e){
 			var code=e.name||e.message||e.code+":"+e;
-			console.error(e);
+			CLog("请求录音权限错误",1,e);
 			
 			codeFail(code,"无法录音："+code);
 		};
@@ -387,7 +425,7 @@ Recorder.prototype=initFn.prototype={
 		This._O=0;
 		if(This._O_!=Lock.O){
 			//唯一资源Stream的控制权已交给新对象，这里不能关闭。此处在每次都弹权限的浏览器内可能存在泄漏，新对象被拒绝权限可能不会调用close，忽略这种不处理
-			console.warn("close被忽略");
+			CLog("close被忽略",3);
 			call();
 			return;
 		};
@@ -406,6 +444,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		
 		Recorder.Stream=0;
+		CLog("close");
 		call();
 	}
 	
@@ -514,7 +553,7 @@ Recorder.prototype=initFn.prototype={
 			var addTime=now-tsInPrev.t-pcmTime;//距离上次输入丢失这么多ms
 			if(addTime>pcmTime/5){//丢失超过本帧的1/5
 				var fixOpen=!set.disableEnvInFix;
-				console.warn("["+now+"]"+(fixOpen?"":"未")+"补偿"+addTime+"ms");
+				CLog("["+now+"]"+(fixOpen?"":"未")+"补偿"+addTime+"ms",3);
 				This.envInFix+=addTime;
 				
 				//用静默进行补偿
@@ -610,7 +649,7 @@ Recorder.prototype=initFn.prototype={
 			};
 			
 			if(hasClear){
-				console.warn("未进入异步前不能清除buffers");
+				CLog("未进入异步前不能清除buffers",3);
 			}else{
 				//还原size，异步结束后再统计仅修改后的size，如果发生clear要原样加回来
 				if(engineCtx){
@@ -630,10 +669,10 @@ Recorder.prototype=initFn.prototype={
 	//开始录音，需先调用open；只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误
 	,start:function(){
 		if(!Recorder.IsOpen()){
-			console.error("未open");
+			CLog("未open",1);
 			return;
 		};
-		console.log("["+Date.now()+"]Start");
+		CLog("开始录音");
 		
 		var This=this,set=This.set,ctx=Recorder.Ctx;
 		This._stop();
@@ -643,7 +682,7 @@ Recorder.prototype=initFn.prototype={
 		//检查open过程中stop是否已经调用过
 		if(This._SO&&This._SO+1!=This._S){//上面调用过一次 _stop
 			//open未完成就调用了stop，此种情况终止start。也应尽量避免出现此情况
-			console.warn("start被中断");
+			CLog("start被中断",3);
 			return;
 		};
 		This._SO=0;
@@ -654,7 +693,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		if(ctx.state=="suspended"){
 			ctx.resume().then(function(){
-				console.log("ctx resume");
+				CLog("ctx resume");
 				end();
 			});
 		}else{
@@ -666,6 +705,7 @@ Recorder.prototype=initFn.prototype={
 		var This=this;
 		if(This.state){
 			This.state=2;
+			CLog("pause");
 			delete Recorder.Stream._call[This.id];
 		};
 	}
@@ -674,6 +714,7 @@ Recorder.prototype=initFn.prototype={
 		var This=this;
 		if(This.state){
 			This.state=1;
+			CLog("resume");
 			This.envResume();
 			
 			Recorder.Stream._call[This.id]=function(pcm,sum){
@@ -710,7 +751,7 @@ Recorder.prototype=initFn.prototype={
 	*/
 	,stop:function(True,False,autoClose){
 		var This=this,set=This.set,t1;
-		console.log("["+Date.now()+"]Stop "+(This.envInLast?This.envInLast-This.envInFirst+"ms 补"+This.envInFix+"ms":"-"));
+		CLog("Stop "+(This.envInLast?This.envInLast-This.envInFirst+"ms 补"+This.envInFix+"ms":"-"));
 		
 		var end=function(){
 			This._stop();//彻底关掉engineCtx
@@ -719,13 +760,14 @@ Recorder.prototype=initFn.prototype={
 			};
 		};
 		var err=function(msg){
+			CLog("结束录音失败："+msg,1);
 			False&&False(msg);
 			end();
 		};
 		var ok=function(blob,duration){
-			console.log("["+Date.now()+"]结束 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
+			CLog("结束录音 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
 			if(set.takeoffEncodeChunk){//接管了输出，此时blob长度为0
-				console.warn("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据");
+				CLog("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据",3);
 			}else if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
 				err("生成的"+set.type+"无效");
 				return;
@@ -783,7 +825,7 @@ Recorder.prototype=initFn.prototype={
 		var res=chunk.data;
 		var duration=Math.round(res.length/set.sampleRate*1000);
 		
-		console.log("采样"+size+"->"+res.length+" 花:"+(Date.now()-t1)+"ms");
+		CLog("采样"+size+"->"+res.length+" 花:"+(Date.now()-t1)+"ms");
 		
 		setTimeout(function(){
 			t1=Date.now();
@@ -827,7 +869,7 @@ Recorder.Traffic=function(){
 			
 			var img=new Image();
 			img.src=imgUrl;
-			console.log("Traffic Analysis Image: Recorder.TrafficImgUrl="+Recorder.TrafficImgUrl);
+			CLog("Traffic Analysis Image: Recorder.TrafficImgUrl="+Recorder.TrafficImgUrl);
 		};
 	};
 };

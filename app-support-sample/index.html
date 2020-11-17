@@ -183,7 +183,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2020-10-19 22:44:28";
+var PageLM="2020-11-15 20:51:36";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -303,6 +303,10 @@ RandomKey.idx=0;
 		</div>
 	</div>
 	<div class="pd">
+		<button onclick="recstop2()" class="batEnc">批量编码</button>
+		<input type="text" class="bits" value="8 to 96 step 8">kbps 测试音质用的，除比特率外其他参数可调整
+	</div>
+	<div class="pd">
 		<div style="border:1px solid #ccc;display:inline-block"><div style="height:100px;width:300px;" class="recwave"></div></div>
 		
 		<span style="font-size:0">
@@ -334,7 +338,12 @@ RandomKey.idx=0;
 	<span class="lb">测试App :</span>
 	IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
 	
-	，Android Demo App：<a href="https://xiangyuecn.gitee.io/recorder/app-support-sample/demo_android/app-debug.apk.zip" download="app-debug.apk">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+	，Android Demo App：<a href="https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
+</div>
+	
+<div class="mainBox">
+	<span class="lb">iframe兼容性 :</span> <button onclick="goiframe()">把页面放到IFrame里面测试权限请求</button>
+	测试在iframe里面请求录音权限的兼容性。最佳实践应该是让window.top(不适用于跨域)去加载RecordApp，iframe里面使用top.RecordApp；此测试未遵照此最佳实践，以模拟跨域iframe和同域下的复杂真实情况；H5录音在跨域时未设置相应策略权限永远是拒绝的；Native使用了postMessage转发兼容方案
 </div>
 
 <div class="mainBox">
@@ -578,7 +587,7 @@ function recstopX(){
 		}
 	);
 };
-var recblob={};
+var recblob={},stopRec;
 function recstop(call){
 	var set=curSet;
 	recstopFn(call,true,function(err,blob,time){
@@ -638,6 +647,7 @@ function recstopFn(call,isClick,endCall,rec){
 	
 	RecordApp.Stop(function(blob,time){
 		endCall("",blob,time);
+		stopRec=RecordApp.GetStopUsedRec();
 		
 		var wxData=setData.DownWxMediaData;//微信JsSDK 下载到的音频源文件
 		if(wxData){
@@ -685,6 +695,57 @@ var formatMs=function(ms,all){
 		+(all||f>0||m>0?("0"+m).substr(-2)+"″":"")
 		+("00"+ms%1000).substr(-3);
 	return s;
+};
+function recstop2(){
+	reclog("使用RecordApp.GetStopUsedRec()方法，我们可以在停止录音时，得到RecordApp编码用的rec对象，因此可以进行二次编码。",2);
+	
+	var rec=stopRec;
+	if(!rec||!rec.buffers){
+		reclog("需先录个音",1);
+		return;
+	};
+	
+	var type=$("[name=type]:checked").val();
+	var sample=+$(".sample").val();
+	var bits=/(\d+)\s+to\s+(\d+)\s+step\s+(\d+)\s*/i.exec($(".bits").val());
+	if(!bits){
+		reclog("码率列表有误，需要? to ? step ?结构");
+		return;
+	};
+	reclog("开始批量编码，请勿进行其他操作~");
+	
+	rec.set.type=type;
+	rec.set.sampleRate=sample;
+	
+	var list=[];
+	for(var i=+bits[1];i<+bits[2]+1;i+=+bits[3]){
+		list.push(i);
+	};
+	if(rec.set.type=="wav"){
+		list=[8,16];
+	};
+	
+	
+	var i=-1;
+	var bak=rec.set.bitRate;
+	var run=function(){
+		i++;
+		if(i>=list.length){
+			rec.set.bitRate=bak;
+			reclog("批量编码完成");
+			return;
+		};
+		rec.set.bitRate=list[i];
+		rec.isMock=1;
+		var t1=Date.now();
+		rec.stop(function(blob,time){
+			addRecLog(time,"已编码",blob,rec.set,t1);
+			run();
+		},function(s){
+			reclog("失败："+s);
+		});
+	};
+	run();
 };
 function recplay(key){
 	var o=recblob[key];
@@ -782,6 +843,13 @@ reclog('已启用Extensions：'
 	+'、'+extensionsInfo.SurferView
 	+'、'+extensionsInfo.Histogram);
 
+function goiframe(){
+	location.href=
+	/*=:=*/ "../assets/ztest_iframe.html#iframeUrl=/app-support-sample/index.html"
+	/*<@ "https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/ztest_iframe.html#iframeUrl="
+	+encodeURIComponent("https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/index.html")
+	@>*/;
+};
 if(window.top!=window){
 	var isSelf=false;
 	try{
@@ -789,7 +857,7 @@ if(window.top!=window){
 		isSelf=true;
 	}catch(e){};
 	
-	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略H5录音权限永远是拒绝的")+"</span>");
+	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略H5录音权限永远是拒绝的，Native使用了postMessage转发兼容方案")+"</span>");
 };
 
 
