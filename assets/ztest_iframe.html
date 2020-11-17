@@ -39,7 +39,8 @@ var viewIframe=function(url,allow){
 	document.querySelector(".box").innerHTML='<iframe src="'+url+'" '+(allow?'allow="camera;microphone"':'')+' class="iframe" style="width:98%;height:85vh; border:4px solid #0B1"></iframe>';
 };
 
-var iframeUrl=decodeURIComponent((/[?&#]iframeUrl=((https?:|\/)[^&#]+)/i.exec(location.href)||[])[1]||"");
+var iframeUrl=decodeURIComponent((/[?&#]iframeUrl=((https?(:|%3A)|\/)[^&#]+)/i.exec(location.href)||[])[1]||"");
+console.log("iframeUrl: "+iframeUrl);
 if(!iframeUrl){
 	reclog('提供的iframeUrl参数无效',1);	
 }else{
