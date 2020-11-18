@@ -30,11 +30,16 @@ window.onerror=function(message, url, lineNo, columnNo, error){
 	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
 };
 
-reclog("IFrame测试，location: "+location.href.replace(/./g,function(a){return "&#"+a.charCodeAt(0)+";"}));
-reclog('提示：`RecordApp测试`可以模拟跨域，跨域时未设置iframe相应策略H5录音权限永远是拒绝的（allow="camera;microphone"）<button onclick="setAllow(1)">设置H5策略</button> <button onclick="setAllow()">清除H5策略</button>',2);
+reclog("IFrame测试，location: "+location.href.replace(/./g,function(a){return "&#"+a.charCodeAt(0)+";"})+' ，如果你点击了iframe中的任何链接，需点击一下此按钮（比如清除RecordApp注入的对象）：<button onclick="clearPage()">重置本页面环境</button>');
+reclog('提示：`RecordApp测试`可以模拟跨域，跨域时未设置iframe相应策略H5录音权限永远是拒绝的（allow="camera;microphone"）<button onclick="setAllow(1)">重新打开网页并设置H5策略</button> <button onclick="setAllow()">清除H5策略</button>',2);
 </script>
 
 <script>
+var clearPage=function(){
+	window.NativeRecordReceivePCM=null;//干掉RecordApp Native注入到顶层的对象
+	window.AppJsBridgeRequest=null;//干掉RecordApp示例配置Native注入到顶层的对象
+	reclog("本页面环境已重置，已尝试清除RecordApp注入到本页面的对象");
+};
 var viewIframe=function(url,allow){
 	document.querySelector(".box").innerHTML='<iframe src="'+url+'" '+(allow?'allow="camera;microphone"':'')+' class="iframe" style="width:98%;height:85vh; border:4px solid #0B1"></iframe>';
 };
@@ -49,6 +54,11 @@ if(!iframeUrl){
 }
 
 var setAllow=function(set){
+	if(set){
+		iframeUrl=prompt("iframe地址（可以跨域）",iframeUrl)||iframeUrl;
+	};
+	clearPage();
+	
 	viewIframe(iframeUrl,set);
 	reclog(set?'已设置iframe的allow属性为"camera;microphone"':"已清除iframe的allow属性");
 };
