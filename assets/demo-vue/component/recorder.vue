@@ -51,6 +51,18 @@ a:hover{
 .ctrlBtn{
     margin-top:10px;
 }
+.pd{
+	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
 </style>
 
 
@@ -141,12 +153,20 @@ a:hover{
 
 
 <script>
+//加载必须要的core，demo简化起见采用的直接加载类库，实际使用时应当采用异步按需加载
 import Recorder from 'recorder-core'
+//需要使用到的音频格式编码引擎的js文件统统加载进来，这些引擎文件会比较大
+import 'recorder-core/src/engine/mp3'
+import 'recorder-core/src/engine/mp3-engine'
+//可选的扩展
+import 'recorder-core/src/extensions/waveview'
 
 module.exports={
     data(){
         return {
-            type:"mp3"
+            Rec:Recorder
+            
+            ,type:"mp3"
             ,bitRate:16
             ,sampleRate:16000
 

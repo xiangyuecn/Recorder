@@ -11,14 +11,15 @@
 **Recorder H5** ：
 [ [H5在线测试](https://xiangyuecn.gitee.io/recorder/) ]
 [ [H5 QuickStart](https://xiangyuecn.gitee.io/recorder/QuickStart.html) ]
-[ [vue+webpack测试](https://xiangyuecn.gitee.io/recorder/assets/demo-vue) ]
+[ [H5 vue](https://xiangyuecn.gitee.io/recorder/assets/demo-vue) ]
 
 
 
 **RecordApp** ：
 [ [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx) ]
-[ [RecordApp QuickStart](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html) ]
-[ [Android、IOS App 源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
+[ [App QuickStart](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html) ]
+[ [App vue](https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html) ]
+[ [Android、IOS App源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
 
 
 

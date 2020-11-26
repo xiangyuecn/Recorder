@@ -21,6 +21,8 @@
 
 [在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
 
+提供了一个vue版的demo，在 [/assets/demo-vue](https://github.com/xiangyuecn/Recorder/tree/master/assets/demo-vue) 目录中，[在线测试](https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html)。
+
 
 # :open_book:快速使用
 

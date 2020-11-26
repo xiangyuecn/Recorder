@@ -3,14 +3,18 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<link rel="shortcut icon" type="image/png" href="../icon.png">
+<link rel="shortcut icon" type="image/png" DEF="/*=:=*/" href="../icon.png"
+	DEF="/*<@ href='https://xiangyuecn.gitee.io/recorder/assets/icon.png' @>*/">
 
-<title>Recorder H5 vue+webpack测试</title>
+<title>RecordApp vue+webpack测试</title>
 </head>
 
 <body>
     <div class="rootView"></div>
-    <script src="dist/index.js"></script>
+	<script
+		DEF="/*=:=*/" src="dist/recordapp.js"
+		DEF="/*<@ src='https://xiangyuecn.gitee.io/recorder/assets/demo-vue/dist/recordapp.js' @>*/"
+	></script>
 
 	<!-- 控制台组件 -->
     <script>
@@ -32,7 +36,7 @@
 	</script>
 	
 	<!-- 加载打赏挂件 -->
-	<script src="../zdemo.widget.donate.js"></script>
+	<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/zdemo.widget.donate.js"></script>
 	<script>
 	var donateView=document.createElement("div");
 	document.querySelector(".mainLog").appendChild(donateView);

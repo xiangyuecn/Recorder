@@ -168,9 +168,9 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	
 	//采样 https://www.cnblogs.com/blqw/p/3782420.html
 	var step=pcmSampleRate/newSampleRate;
-	if(step>1){//新采样高于录音采样不处理，省去了插值处理，直接抽样
+	if(step>1){//新采样低于录音采样，进行抽样
 		size=Math.floor(size/step);
-	}else{
+	}else{//新采样高于录音采样不处理，省去了插值处理
 		step=1;
 		newSampleRate=pcmSampleRate;
 	};
@@ -195,7 +195,13 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 			var before = Math.floor(i);
 			var after = Math.ceil(i);
 			var atPoint = i - before;
-			res[idx]=o[before]+(o[after]-o[before])*atPoint;
+			
+			var beforeVal=o[before];
+			var afterVal=after<il ? o[after]
+				: (//后个点越界了，查找下一个数组
+					(pcmDatas[index+1]||[beforeVal])[0]||0
+				);
+			res[idx]=beforeVal+(afterVal-beforeVal)*atPoint;
 			
 			idx++;
 			i+=step;//抽样
