@@ -152,7 +152,7 @@ a:hover{
 	</div>
 	
 	<div class="mainBox">
-		<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。</div>
+		<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦；支持8位、16位、24位的PCM源文件。比如加工一下Android AudioRecord(44100)采集的音频。</div>
 		
 		<div style="color:#F90;padding-top:12px">.wav（raw pcm format）文件可以反复拖入，只不过前44字节wav头会被删除而已</div>
 		<div style="color:#0b1">一次拖入多个文件时将按文件名排序，然后合并成一个wav文件，音频参数以第一个为准</div>
@@ -232,7 +232,7 @@ function readFile(files){
 			setVal(".in_bitRate",info.bitRate);
 			setVal(".in_numChannels",info.numChannels);
 			setVal(".in_new_sampleRate",info.sampleRate);
-			setVal(".in_new_bitRate",info.bitRate);
+			setVal(".in_new_bitRate",Math.min(info.bitRate,16));
 			setVal(".in_new_numChannels",info.numChannels);
 			return;
 		};
@@ -254,6 +254,8 @@ function readFile(files){
 			//读取文件名中的信息
 			if(/(\d+)hz/i.test(file.name) && !pathInfo.sampleRate){
 				pathInfo.sampleRate=+RegExp.$1;
+			}else if(/\b(\d+)k(hz)?\b/i.test(file.name) && !pathInfo.sampleRate){
+				pathInfo.sampleRate=+RegExp.$1*1000;
 			};
 			if(/(\d+)(kbps|bit)/i.test(file.name) && !pathInfo.bitRate){
 				pathInfo.bitRate=+RegExp.$1;
@@ -317,21 +319,21 @@ var createWavClick=function(){
 		list.prepend?list.prepend(div):list.appendChild(div);
 	};
 	
-	var getVal=function(cls,def,name,min,max,t){
+	var getVal=function(cls,def,name,min,max,range){
 		var val=+document.querySelector(cls).value||def;
-		if(t&&(val!=min&&val!=max) || !t&&(val<min||val>max)){
-			throw new Error("乱填"+name+"："+val);
+		if(range&&range.indexOf(+val)==-1 || !range&&(val<min||val>max)){
+			throw new Error("乱填"+name+"："+val+(range?"，"+name+"取值范围："+JSON.stringify(range):""));
 		}
 		return val;
 	};
 	try{
 		var sampleRate=getVal(".in_sampleRate",0,"采样率",6000,9999999999);
-		var bitRate=getVal(".in_bitRate",0,"位数",8,16,true);
-		var numChannels=getVal(".in_numChannels",0,"声道数",1,2,true);
+		var bitRate=getVal(".in_bitRate",0,"位数",0,0,[8,16,24]);
+		var numChannels=getVal(".in_numChannels",0,"声道数",0,0,[1,2]);
 		
 		var sampleRateNew=getVal(".in_new_sampleRate",sampleRate,"新采样率",6000,9999999999);
-		var bitRateNew=getVal(".in_new_bitRate",bitRate,"新位数",8,16,true);
-		var numChannelsNew=getVal(".in_new_numChannels",numChannels,"新声道数",1,2,true);
+		var bitRateNew=getVal(".in_new_bitRate",Math.min(bitRate,16),"新位数",0,0,[8,16]);
+		var numChannelsNew=getVal(".in_new_numChannels",numChannels,"新声道数",0,0,[1,2]);
 		
 		var subA=getVal(".in_new_start",0,"截取开始时间",0,9999999999);
 		var subB=getVal(".in_new_end",0,"截取结束时间",0,9999999999);
@@ -343,14 +345,23 @@ var createWavClick=function(){
 	
 	if(bitRate==16){
 		var res=new Int16Array(arr.buffer);
-	}else{
+	}else if(bitRate==8){
 		var res=new Int16Array(arr.length);
 		//8位转成16位
 		for(var j=0;j<arr.length;j++){
 			var b=arr[j];
 			res[j]=(b-128)<<8;
 		};
-	};
+	}else if(bitRate==24){
+		var res=new Int16Array(arr.length/3);
+		for(var i=0,j=0;j<arr.length;){
+			//24bit pcm转成浮点数
+			var n=((arr[j++] | (arr[j++]<<8) | (arr[j++]<<16))<<8)>>8;
+			n=n/16777216;
+			//浮点数转成16位
+			res[i++]=n*0x7FFF;
+		};
+	}
 	
 	
 	var resA=res;
