@@ -356,6 +356,7 @@ var createWavClick=function(){
 		var res=new Int16Array(arr.length/3);
 		for(var i=0,j=0;j<arr.length;){
 			//24bit pcm转成浮点数
+			//https://www.codeproject.com/articles/501521/how-to-convert-between-most-audio-formats-in-net
 			var n=((arr[j++] | (arr[j++]<<8) | (arr[j++]<<16))<<8)>>8;
 			n=n/16777216;
 			//浮点数转成16位
