@@ -15,19 +15,19 @@
 
 
 
-**RecordApp** ：
-[ [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx) ]
-[ [App QuickStart](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html) ]
-[ [App vue](https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html) ]
-[ [Android、IOS App源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
-
-
-
 **工具集** ：
 [ [Recorder代码运行和静态分发](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html) ]
 [ [裸(RAW、WAV)PCM转WAV播放测试和转码](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html) ]
 [ [无用户操作测试](https://xiangyuecn.gitee.io/recorder/assets/ztest_no_user_operation.html) ]
 [ [Can I Use查看浏览器支持情况](https://caniuse.com/#search=getUserMedia) ]
+
+
+
+**RecordApp**[即将废弃] ：
+[ [RecordApp测试](https://jiebian.life/web/h5/github/recordapp.aspx) ]
+[ [App QuickStart](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html) ]
+[ [App vue](https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html) ]
+[ [Android、IOS App源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
 
 
 
@@ -929,7 +929,7 @@ public void onPermissionRequest(PermissionRequest request) {
 # :open_book:IOS Hybrid App中录音示例
 IOS 14.3+：新版本IOS WKWebView已支持H5录音，但作者还未测试，暂时不提供实现方法，请自行对接。
 
-IOS 11.0-14.3：纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含IOS App源码。
+IOS 11.0-14.2：纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含IOS App源码。
 
 
 
