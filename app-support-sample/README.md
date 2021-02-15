@@ -19,6 +19,8 @@
 
 # :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
 
+**因为从IOS 14.3开始，IOS已开始提供全面的`getUserMedia`支持，本兼容方案会随着IOS老版本的逐渐消失而渐渐失去价值；如果你不打算兼容老版本IOS，请直接使用Recorder，体验强大的H5录音，无需再使用RecordApp编写蹩脚的代码；本兼容方案将逐渐停止支持，并最终彻底被删除。**
+
 [在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
 
 提供了一个vue版的demo，在 [/assets/demo-vue](https://github.com/xiangyuecn/Recorder/tree/master/assets/demo-vue) 目录中，[在线测试](https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html)。
@@ -235,8 +237,10 @@ function createDelayDialog(){
 
 当`IOS`哪天开始全面支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
 
+[2021] IOS 14.3已开始提供全面的`getUserMedia`支持，H5已能在别的浏览器内录音，本方案短期内还是可以用作兼容老版本IOS的方案，到了一定时期本兼容方案将彻底被删除。
 
-> `RecordApp`单纯点来讲就是为了兼容IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
+
+> `RecordApp`单纯点来讲就是为了兼容低版本IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
 
 支持|[Recorder](https://github.com/xiangyuecn/Recorder/)|RecordApp
 -:|:-:|:-:
@@ -246,9 +250,9 @@ Android微信(含小程序)|√|√
 Android Hybrid App|√|√
 Android其他浏览器|未知|未知
 IOS Safari|√|√
-IOS微信(含小程序)||√
-IOS Hybrid App||√
-IOS其他浏览器||
+IOS微信(含小程序)|IOS 14.3+|√
+IOS Hybrid App|IOS 14.3+|√
+IOS其他浏览器|IOS 14.3+|IOS 14.3+
 开发难度|简单|复杂
 第三方依赖|无|依赖微信公众号
 

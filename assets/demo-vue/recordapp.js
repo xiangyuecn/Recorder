@@ -46,8 +46,8 @@ var root=new Vue({
 
 //皮一下，这种难看调用逻辑验证
 var mainRef=root.$refs.mainView;
-mainRef.reclog('<span style="color:#f60;font-weight:bold;font-size:24px">Recorder H5使用简单，功能丰富，支持PC、Android，但IOS上仅Safari支持录音'+unescape("%uD83D%uDCAA")+"</span>");
-mainRef.reclog('<span style="color:#0b1;font-weight:bold;font-size:24px">RecordApp除Recorder支持的外，支持Hybrid App，IOS上支持微信网页和小程序web-view'+unescape("%uD83C%uDF89")+"</span>");
+mainRef.reclog('<span style="color:#f60;font-weight:bold;font-size:24px">RecordApp[即将废弃] 除Recorder支持的外，支持Hybrid App，低版本IOS上支持微信网页和小程序web-view'+unescape("%uD83C%uDF89")+"</span>");
+mainRef.reclog('<span style="color:#0b1;font-weight:bold;font-size:24px">Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+'+unescape("%uD83D%uDCAA")+"</span>");
 
 mainRef.reclog(`<span style="color:green">绿油油的一大片，真有食欲</span>${unescape('%uD83D%uDE02')} 当前浏览器<span style="color:${mainRef.Rec.Support()?'green">支持录音':'red">不支持录音'}</span>`);
 

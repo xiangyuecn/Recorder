@@ -3,7 +3,7 @@
 
 # :open_book:Recorder用于html5录音
 
-[​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.gitee.io/recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：~~UC系内核（典型的支付宝），大部分国产手机厂商自研套壳娱乐浏览器，IOS上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
+[​](?Ref=Desc&Start)[在线测试](https://xiangyuecn.gitee.io/recorder/)，支持大部分已实现`getUserMedia`的移动端、PC端浏览器；主要包括：Chrome、Firefox、Safari、IOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信)；不支持：~~UC系内核（典型的支付宝），大部分国产手机厂商自研套壳娱乐浏览器，低版本IOS(11.0-14.2)上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
 
 
 
@@ -39,9 +39,9 @@ mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如�
 
 mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器(raw pcm format录音文件超大)，压缩后的recorder.wav.min.js不足5kb。录音得到的mp3(CBR)、wav(PCM)，均可简单拼接小的二进制录音片段文件来生成长的音频文件，具体参考下面这两种编码器的详细介绍。
 
-如需在Hybrid App内使用（支持IOS、Android），或提供IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
+如需在Hybrid App内使用（支持IOS、Android），或提供低版本IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
 
-*IOS、国产厂商自研套壳娱乐浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
+*低版本IOS兼容、国产厂商自研套壳娱乐浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
 
 <p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/icon.png" alt="Recorder logo"></a></p>
 
@@ -245,7 +245,7 @@ $.ajax({
 ## 【附】问题排查
 - 打开[Demo页面](https://xiangyuecn.gitee.io/recorder/)试试看，是不是也有同样的问题。
 - 检查是不是在https之类的安全环境下调用的。
-- 检查是不是IOS系统，确认[caniuse](https://caniuse.com/#search=getUserMedia)IOS对`getUserMedia`的支持情况。
+- 检查是不是低版本IOS系统，确认[caniuse](https://caniuse.com/#search=getUserMedia)IOS对`getUserMedia`的支持情况。
 - 检查上面第1步是否把框架加载到位，在[Demo页面](https://xiangyuecn.gitee.io/recorder/)有应该加载哪些js的提示。
 - 提交Issue，热心网友帮你解答。
 
@@ -300,7 +300,7 @@ $.ajax({
 
 浏览器Audio Media[兼容性](https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats#Browser_compatibility)mp3最好，wav还行，其他要么不支持播放，要么不支持编码；因此本库最佳推荐使用mp3、wav格式，代码也是优先照顾这两种格式。
 
-**特别注**：`IOS(11.X、12.X、13.X)`上只有`Safari`支持`getUserMedia`，IOS上其他浏览器均不支持，唯一有点卵用的Safari `getUserMedia` 底层实现bug奇多（严重关切他们团队水准，临时工少发工资了吧），参考下面的已知问题。
+**特别注**：低版本`IOS(11.X、12.X、13.X)`上只有`Safari`支持`getUserMedia`，低版本IOS上其他浏览器均不支持，唯一有点卵用的Safari `getUserMedia` 底层实现bug奇多（严重关切他们团队水准，临时工少发工资了吧），参考下面的已知问题。
 
 **特别注**：大部分国产手机厂商的浏览器（系统浏览器，都用的UC内核？）虽然支持`getUserMedia`方法，但并不能使用，表现为直接返回拒绝或者干脆没有任何回调；UC系列目测全部阵亡（含支付宝）。
 
@@ -310,7 +310,7 @@ $.ajax({
 
 **特别注**：如果在`iframe`里面调用的录音功能，并且和上层的网页是不同的域（跨域了），如果未设置相应策略，权限永远是被拒绝的，[参考此处](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)。另外如果要在`非跨域的iframe`里面使用，最佳实践应该是让window.top去加载Recorder（异步加载js），iframe里面使用top.Recorder，免得各种莫名其妙（比如微信里面的各种渣渣功能，搞多了就习惯了）。
 
-> 如果需要最大限度的兼容IOS（仅增加微信支持），可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
+> 如果需要最大限度的兼容低版本IOS（仅增加微信支持），可以使用`RecordApp`，它已包含`Recorder`，源码在`src/app-support`、`app-support-sample`中，但此兼容库需要服务器端提供微信JsSDK的签名、下载素材接口，涉及微信公众（订阅）号的开发。
 
 支持|Recorder|[RecordApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)
 -:|:-:|:-:
@@ -320,9 +320,9 @@ Android微信(含小程序)|√|√
 Android Hybrid App|√|√
 Android其他浏览器|未知|未知
 IOS Safari|√|√
-IOS微信(含小程序)||√
-IOS Hybrid App||√
-IOS其他浏览器||
+IOS微信(含小程序)|IOS 14.3+|√
+IOS Hybrid App|IOS 14.3+|√
+IOS其他浏览器|IOS 14.3+|IOS 14.3+
 开发难度|简单|复杂
 第三方依赖|无|依赖微信公众号
 
@@ -331,7 +331,7 @@ IOS其他浏览器||
 
 
 ## 已知问题
-*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X（13.X）` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
+*2018-09-19* [caniuse](https://caniuse.com/#search=getUserMedia) 注明`IOS` `11.X - 12.X（13.X）` 上 只有`Safari`支持调用`getUserMedia`，其他App下WKWebView(UIWebView?)([相关资料](https://forums.developer.apple.com/thread/88052))均不支持（2021-2-15 IOS 14.3+已无此问题）。经用户测试验证IOS 12上chrome、UC都无法录音，部分IOS 12 Safari可以获取到并且能正常录音，但部分不行，原因未知，参考[ios 12 支不支持录音了](https://www.v2ex.com/t/490695)。在IOS上不支持录音的环境下应该采用其他解决方案，参考`案例演示`、`关于微信JsSDK`部分。
 
 *2019-02-28* [issues#14](https://github.com/xiangyuecn/Recorder/issues/14) 如果`getUserMedia`返回的[`MediaStreamTrack.readyState == "ended"`，`"ended" which indicates that the input is not giving any more data and will never provide new data.`](https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamTrack) ，导致无法录音。如果产生这种情况，目前在`rec.open`方法调用时会正确检测到，并执行`fail`回调。造成`issues#14` `ended`原因是App源码中`AndroidManifest.xml`中没有声明`android.permission.MODIFY_AUDIO_SETTINGS`权限，导致腾讯X5不能正常录音。
 
@@ -927,7 +927,9 @@ public void onPermissionRequest(PermissionRequest request) {
 
 
 # :open_book:IOS Hybrid App中录音示例
-纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含IOS App源码。
+IOS 14.3+：新版本IOS WKWebView已支持H5录音，但作者还未测试，暂时不提供实现方法，请自行对接。
+
+IOS 11.0-14.3：纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含IOS App源码。
 
 
 
@@ -962,7 +964,9 @@ public void onPermissionRequest(PermissionRequest request) {
 
 [2019]大动干戈，仅为兼容IOS而生，不得不向大厂低头，我还是为兼容而去兼容了IOS微信，对不支持录音的IOS微信`浏览器`、`小程序web-view`进行了兼容，使用微信JsSDK来录音，并以前未开源的兼容代码基础上重写了`RecordApp`，源码在`app-support-sample`、`src/app-support`内。
 
-最后：如果要兼容IOS，可以自行接入JsSDK或使用`RecordApp`（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
+[2021]IOS 14.3已开始提供全面的`getUserMedia`支持，H5已能在别的浏览器内录音，微信JsSDK可以只当做老版本IOS兼容的方案，慢慢放到箱底了，可喜可贺。
+
+最后：如果要兼容低版本IOS，可以自行接入JsSDK或使用`RecordApp`（没有公众号开个订阅号又不要钱），基本上可以忽略兼容性问题，就是麻烦点。
 
 
 # :star:捐赠
