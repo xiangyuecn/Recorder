@@ -11,6 +11,8 @@ DemoFragment.PlayBuffer(store,buffer,sampleRate)
 		
 调用本方法前，应当确保Recorder.Support()是支持的。
 本方法默认会缓冲播放，如果缓冲未满将不会进行播放，小片段偶尔播放应当禁用此特性store.PlayBufferDisable=true。
+
+升级：新增的 BufferStreamPlayer 扩展(src/extensions/buffer_stream.player.js)，完全包含了本功能，并且播放音质效果更佳，可参考 teach.realtime.decode_buffer_stream_player.js 中的示例；不过对于仅仅播放PCM数据，本方法还是不错的选择，简单小巧。
 ******************/
 (
 window.DemoFragment||(window.DemoFragment={})

@@ -17,14 +17,14 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2020-11-15 21:36:11";
+var LM="2021-08-03 20:01:03";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
 var Recorder=function(set){
 	return new initFn(set);
 };
-//是否已经打开了录音，所有工作都已经准备好了，就等接收音频数据了
+//是否已经打开了全局的麦克风录音，所有工作都已经准备好了，就等接收音频数据了
 Recorder.IsOpen=function(){
 	var stream=Recorder.Stream;
 	if(stream){
@@ -46,6 +46,8 @@ Recorder.BufferSize=4096;
 //销毁已持有的所有全局资源，当要彻底移除Recorder时需要显式的调用此方法
 Recorder.Destroy=function(){
 	CLog("Recorder Destroy");
+	Disconnect();//断开可能存在的全局Stream、资源
+	
 	for(var k in DestroyList){
 		DestroyList[k]();
 	};
@@ -80,16 +82,22 @@ Recorder.Support=function(){
 		
 		Recorder.BindDestroy("Ctx",function(){
 			var ctx=Recorder.Ctx;
-			ctx&&ctx.close&&ctx.close();
+			if(ctx&&ctx.close){//能关掉就关掉，关不掉就保留着
+				ctx.close();
+				Recorder.Ctx=0;
+			};
 		});
 	};
 	return true;
 };
-/*初始化H5音频采集连接，因为Stream是全局的，Safari上断开后就无法再次进行连接使用，表现为静音，因此使用全部使用全局处理避免调用到disconnect；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。*/
-var Connect=function(){
-	var ctx=Recorder.Ctx,stream=Recorder.Stream;
+/*初始化H5音频采集连接。如果自行提供了sourceStream将只进行一次简单的连接处理。如果是普通麦克风录音，此时的Stream是全局的，Safari上断开后就无法再次进行连接使用，表现为静音，因此使用全部使用全局处理避免调用到disconnect；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。*/
+var Connect=function(streamStore){
+	streamStore=streamStore||Recorder;
+	var bufferSize=streamStore.BufferSize||Recorder.BufferSize;
+	
+	var ctx=Recorder.Ctx,stream=streamStore.Stream;
 	var media=stream._m=ctx.createMediaStreamSource(stream);
-	var process=stream._p=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,Recorder.BufferSize,1,1);//单声道，省的数据处理复杂
+	var process=stream._p=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
 	
 	media.connect(process);
 	process.connect(ctx.destination);
@@ -117,13 +125,28 @@ var Connect=function(){
 		};
 	};
 };
-var Disconnect=function(){
-	var stream=Recorder.Stream;
-	if(stream._m){
-		stream._m.disconnect();
-		stream._p.disconnect();
-		stream._p.onaudioprocess=stream._p=stream._m=null;
+var Disconnect=function(streamStore){
+	streamStore=streamStore||Recorder;
+	var isGlobal=streamStore==Recorder;
+	
+	var stream=streamStore.Stream;
+	if(stream){
+		if(stream._m){
+			stream._m.disconnect();
+			stream._p.disconnect();
+			stream._p.onaudioprocess=stream._p=stream._m=null;
+		};
+		
+		if(isGlobal){//全局的时候，要把流关掉（麦克风），直接提供的流不处理
+			var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
+			for(var i=0;i<tracks.length;i++){
+				var track=tracks[i];
+				track.stop&&track.stop();
+			};
+			stream.stop&&stream.stop();
+		};
 	};
+	streamStore.Stream=0;
 };
 
 /*对pcm数据的采样率进行转换
@@ -298,6 +321,16 @@ function initFn(set){
 		,onProcess:NOOP //fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd) buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段；powerLevel：当前缓冲的音量级别0-100，bufferDuration：已缓冲时长，bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）；newBufferIdx:本次回调新增的buffer起始索引；asyncEnd:fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。onProcess返回值：如果返回true代表开启异步模式，在某些大量运算的场合异步是必须的，必须在异步处理完成时调用asyncEnd(不能真异步时需用setTimeout包裹)，在onProcess执行后新增的buffer会全部替换成空数组，因此本回调开头应立即将newBufferIdx到本次回调结尾位置的buffer全部保存到另外一个数组内，处理完成后写回buffers中本次回调的结尾位置。
 		
 		//*******高级设置******
+		//,sourceStream:MediaStream Object
+				//可选直接提供一个媒体流，从这个流中录制、实时处理音频数据（当前Recorder实例独享此流）；不提供时为普通的麦克风录音，由getUserMedia提供音频流（所有Recorder实例共享同一个流）
+				//比如：audio、video标签dom节点的captureStream方法返回的流；WebRTC中的remote流；自己创建的流等
+				//注意：流内必须至少存在一条音轨(Audio Track)，比如audio标签必须等待到可以开始播放后才会有音轨，否则open会失败
+		
+		//,audioTrackSet:{ deviceId:"",groupId:"", autoGainControl:true, echoCancellation:true, noiseSuppression:true }
+				//getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
+				//由于麦克风是全局共享的，所以新配置后需要close掉以前的再重新open
+				//更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+		
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
 		
 		//,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出
@@ -313,14 +346,24 @@ function initFn(set){
 	this.set=o;
 	
 	this._S=9;//stop同步锁，stop可以阻止open过程中还未运行的start
+	this.Sync={O:9,C:9};//和Recorder.Sync一致，只不过这个是非全局的，仅用来简化代码逻辑，无实际作用
 };
 //同步锁，控制对Stream的竞争；用于close时中断异步的open；一个对象open如果变化了都要阻止close，Stream的控制权交个新的对象
 Recorder.Sync={/*open*/O:9,/*close*/C:9};
 
 Recorder.prototype=initFn.prototype={
+	//流相关的数据存储在哪个对象里面；如果提供了sourceStream，数据直接存储在当前对象中，否则存储在全局
+	_streamStore:function(){
+		if(this.set.sourceStream){
+			return this;
+		}else{
+			return Recorder;
+		}
+	}
+	
 	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
-	open:function(True,False){
-		var This=this;
+	,open:function(True,False){
+		var This=this,streamStore=This._streamStore();
 		True=True||NOOP;
 		var failCall=function(errMsg,isUserNotAllow){
 			isUserNotAllow=!!isUserNotAllow;
@@ -334,6 +377,59 @@ Recorder.prototype=initFn.prototype={
 			
 			This._SO=0;//解除stop对open中的start调用的阻止
 		};
+		
+		
+		//同步锁
+		var Lock=streamStore.Sync;
+		var lockOpen=++Lock.O,lockClose=Lock.C;
+		This._O=This._O_=lockOpen;//记住当前的open，如果变化了要阻止close，这里假定了新对象已取代当前对象并且不再使用
+		This._SO=This._S;//记住open过程中的stop，中途任何stop调用后都不能继续open中的start
+		var lockFail=function(){
+			//允许多次open，但不允许任何一次close，或者自身已经调用了关闭
+			if(lockClose!=Lock.C || !This._O){
+				var err="open被取消";
+				if(lockOpen==Lock.O){
+					//无新的open，已经调用了close进行取消，此处应让上次的close明确生效
+					This.close();
+				}else{
+					err="open被中断";
+				};
+				failCall(err);
+				return true;
+			};
+		};
+		
+		//环境配置检查
+		var checkMsg=This.envCheck({envName:"H5",canProcess:true});
+		if(checkMsg){
+			failCall("不能录音："+checkMsg);
+			return;
+		};
+		
+		
+		//***********已直接提供了音频流************
+		if(This.set.sourceStream){
+			if(!Recorder.Support()){
+				failCall("不支持此浏览器从流中获取录音");
+				return;
+			};
+			
+			Disconnect(streamStore);//可能已open过，直接先尝试断开
+			This.Stream=This.set.sourceStream;
+			This.Stream._call={};
+			
+			try{
+				Connect(streamStore);
+			}catch(e){
+				failCall("从流中打开录音失败："+e.message);
+				return;
+			}
+			ok();
+			return;
+		};
+		
+		
+		//***********打开麦克风得到全局的音频流************
 		var codeFail=function(code,msg){
 			try{//跨域的优先检测一下
 				window.top.a;
@@ -353,28 +449,8 @@ Recorder.prototype=initFn.prototype={
 			};
 		};
 		
-		//同步锁
-		var Lock=Recorder.Sync;
-		var lockOpen=++Lock.O,lockClose=Lock.C;
-		This._O=This._O_=lockOpen;//记住当前的open，如果变化了要阻止close，这里假定了新对象已取代当前对象并且不再使用
-		This._SO=This._S;//记住open过程中的stop，中途任何stop调用后都不能继续open中的start
-		var lockFail=function(){
-			//允许多次open，但不允许任何一次close，或者自身已经调用了关闭
-			if(lockClose!=Lock.C || !This._O){
-				var err="open被取消";
-				if(lockOpen==Lock.O){
-					//无新的open，已经调用了close进行取消，此处应让上次的close明确生效
-					This.close();
-				}else{
-					err="open被中断";
-				};
-				failCall(err);
-				return true;
-			};
-		};
 		
-		
-		//如果已打开就不要再打开了
+		//如果已打开并且有效就不要再打开了
 		if(Recorder.IsOpen()){
 			ok();
 			return;
@@ -383,14 +459,7 @@ Recorder.prototype=initFn.prototype={
 			codeFail("","此浏览器不支持录音");
 			return;
 		};
-		
-		//环境配置检查
-		var checkMsg=This.envCheck({envName:"H5",canProcess:true});
-		if(checkMsg){
-			failCall("不能录音："+checkMsg);
-			return;
-		};
-		
+				
 		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
 		var f1=function(stream){
 			Recorder.Stream=stream;
@@ -415,7 +484,7 @@ Recorder.prototype=initFn.prototype={
 			
 			codeFail(code,"无法录音："+code);
 		};
-		var pro=Recorder.Scope.getUserMedia({audio:true},f1,f2);
+		var pro=Recorder.Scope.getUserMedia({audio:This.set.audioTrackSet||true},f1,f2);
 		if(pro&&pro.then){
 			pro.then(f1)[True&&"catch"](f2); //fix 关键字，保证catch压缩时保持字符串形式
 		};
@@ -424,10 +493,10 @@ Recorder.prototype=initFn.prototype={
 	,close:function(call){
 		call=call||NOOP;
 		
-		var This=this;
+		var This=this,streamStore=This._streamStore();
 		This._stop();
 		
-		var Lock=Recorder.Sync;
+		var Lock=streamStore.Sync;
 		This._O=0;
 		if(This._O_!=Lock.O){
 			//唯一资源Stream的控制权已交给新对象，这里不能关闭。此处在每次都弹权限的浏览器内可能存在泄漏，新对象被拒绝权限可能不会调用close，忽略这种不处理
@@ -437,19 +506,8 @@ Recorder.prototype=initFn.prototype={
 		};
 		Lock.C++;//获得控制权
 		
-		var stream=Recorder.Stream;
-		if(stream){
-			Disconnect();
-			
-			var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
-			for(var i=0;i<tracks.length;i++){
-				var track=tracks[i];
-				track.stop&&track.stop();
-			};
-			stream.stop&&stream.stop();
-		};
+		Disconnect(streamStore);
 		
-		Recorder.Stream=0;
 		CLog("close");
 		call();
 	}
@@ -674,13 +732,22 @@ Recorder.prototype=initFn.prototype={
 	
 	//开始录音，需先调用open；只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误
 	,start:function(){
-		if(!Recorder.IsOpen()){
+		var This=this,ctx=Recorder.Ctx;
+		
+		var isOpen=1;
+		if(This.set.sourceStream){//直接提供了流，仅判断是否调用了open
+			if(!This.Stream){
+				isOpen=0;
+			}
+		}else if(!Recorder.IsOpen()){//监测全局麦克风是否打开并且有效
+			isOpen=0;
+		};
+		if(!isOpen){
 			CLog("未open",1);
 			return;
 		};
 		CLog("开始录音");
 		
-		var This=this,set=This.set,ctx=Recorder.Ctx;
 		This._stop();
 		This.state=0;
 		This.envStart(null,ctx.sampleRate);
@@ -712,7 +779,7 @@ Recorder.prototype=initFn.prototype={
 		if(This.state){
 			This.state=2;
 			CLog("pause");
-			delete Recorder.Stream._call[This.id];
+			delete This._streamStore().Stream._call[This.id];
 		};
 	}
 	/*恢复录音*/
@@ -723,7 +790,7 @@ Recorder.prototype=initFn.prototype={
 			CLog("resume");
 			This.envResume();
 			
-			Recorder.Stream._call[This.id]=function(pcm,sum){
+			This._streamStore().Stream._call[This.id]=function(pcm,sum){
 				if(This.state==1){
 					This.envIn(pcm,sum);
 				};

@@ -49,6 +49,7 @@ function Run_minify(){
 	minify("../dist/recorder-core.js",["recorder-core.js"]);
 	minify("../dist/engine/mp3.js",["engine/mp3.js","engine/mp3-engine.js"]);
 	minify("../dist/engine/wav.js",["engine/wav.js"]);
+	minify("../dist/engine/pcm.js",["engine/pcm.js"]);
 
 	minify("../dist/engine/beta-webm.js",["engine/beta-webm.js"]);
 	minify("../dist/engine/beta-ogg.js",["engine/beta-ogg.js","engine/beta-ogg-engine.js"]);
@@ -61,6 +62,7 @@ function Run_minify(){
 	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);
 	minify("../dist/extensions/dtmf.encode.js",["extensions/dtmf.encode.js"]);
 	minify("../dist/extensions/dtmf.decode.js",["extensions/dtmf.decode.js"]);
+	minify("../dist/extensions/buffer_stream.player.js",["extensions/buffer_stream.player.js"]);
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };

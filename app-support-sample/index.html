@@ -183,7 +183,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2021-2-15 17:38:39";
+var PageLM="2021-08-03 21:16:50";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -266,9 +266,10 @@ RandomKey.idx=0;
 		<span class="lb">类型 :</span>
 		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" class="initType" checked>mp3</label>
 		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
+		<label><input type="radio" name="type" value="pcm" engine="pcm" addload="wav">pcm</label>
 		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine">ogg(beta)</label>
 		<label><input type="radio" name="type" value="webm" engine="beta-webm">webm(beta)</label>
-		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine,wav">amr(beta)</label>
+		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine" addload="wav">amr(beta)</label>
 	</div>
 	<div class="pd">
 		<span class="lb">提示 :</span> <span class="typeTips">-</span>
@@ -775,11 +776,19 @@ function recplay(key){
 		var wav=Recorder[o.set.type+"2wav"];
 		if(wav){
 			logmsg("正在转码成wav...");
-			wav(o.blob,function(blob){
+			var wavData=o.blob;
+			if(o.set.type=="pcm"){
+				wavData={
+					sampleRate:o.set.sampleRate
+					,bitRate:o.set.bitRate
+					,blob:o.blob
+				};
+			};
+			wav(wavData,function(blob){
 				end(blob);
 				logmsg("已转码成wav播放");
 			},function(msg){
-				logmsg("转码成wav失败："+msg);
+				logmsg('<span style="color:red">转码成wav失败：'+msg+'</span>');
 			});
 		}else{
 			end(o.blob);
@@ -931,14 +940,25 @@ $(function(){
 function loadEngine(input){
 	if(input.length&&input[0].nodeName=="INPUT"){
 		var type=input.val();
-		var engines=input.attr("engine").split(",");
+		var srcs=input.attr("engine").split(",");
+		var adds=input.attr("addload");
+		if(adds){
+			adds=adds.split(",");
+		};
+		
+		var engines=[].concat(srcs, adds||[]);
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
-			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"+(type=="wav"?"#0b1'>wav转码超快":Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)":"red'>仅支持标准UI线程转码")+"</span>，"+enc.testmsg];
+			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"
+				+(type=="wav"?"#0b1'>wav转码超快"
+				:type=="pcm"?"#0b1'>pcm转码超快"
+				:Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)"
+				:"red'>仅支持标准UI线程转码")
+			+"</span>，"+enc.testmsg];
 			tips.push('<div style="color:green">');
 			tips.push("【使用"+type+"录音需要在app.js Platforms.Default内注册】：");
 			tips.push("src/recorder-core.js, src/engine/");
-			tips.push(engines.join(".js, src/engine/"));
+			tips.push(srcs.join(".js, src/engine/"));
 			tips.push(".js</div>");
 			
 			$(".typeTips").html(tips.join(""));

@@ -1,23 +1,27 @@
 /******************
-《【教程】实时转码并上传-通用版》
+《【教程】【音频流】实时转码并上传-通用版》
 作者：高坚果
 时间：2019-10-22 23:04:49
 
-通过onProcess回调可实现录音的实时处理；mp3和wav格式拥有极速转码特性，能做到边录音边转码；涉及Recorder两个核心方法：mock、SampleData。
+通过onProcess回调可实现录音的实时处理；mp3、wav、pcm格式拥有极速转码特性，能做到边录音边转码，流式的将数据进行上传；涉及Recorder两个核心方法：mock、SampleData。
 
 如果不需要获得最终结果，可实时清理缓冲数据，避免占用过多内存，想录多久就录多久。
 
-【拼接小技巧】测试结束后，可执行mp3、wav合并的demo代码，把所有片段拼接到一个文件
+【拼接小技巧】测试结束后，可执行mp3、wav合并的demo代码，把所有片段拼接到一个文件。
 
-【mp3拼接】mp3格式因为lamejs采用的CBR编码，因此后端接收到了mp3片段后，通过简单的二进制拼接就能得到完整的长mp3；前端、后端实现拼接都可以参考mp3合并的demo代码。
+【mp3拼接】mp3格式因为lamejs采用的CBR编码，因此后端接收到了mp3片段后，通过简单的二进制拼接就能得到完整的长mp3，和pcm的拼接相同；前端、后端实现拼接都可以参考mp3合并的demo代码。
 
-【wav拼接】本库wav格式音频是用44字节wav头+PCM数据来构成的，因此只需要将所有片段去掉44字节后，通过简单的二进制拼接就能得到完整的长pcm数据，最后在加上44字节wav头就能得到完整的wav音频文件；前端、后端实现拼接都可以参考wav合并的demo代码。
+【wav拼接】本库wav格式音频是用44字节wav头+PCM数据来构成的，因此只需要将所有片段去掉44字节后，通过简单的二进制拼接就能得到完整的长pcm数据，最后在加上新的44字节wav头就能得到完整的wav音频文件；前端、后端实现拼接都可以参考wav合并的demo代码。
 
-【引入杂音、停顿问题】除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）；
-wav格式最终拼接出来的音频音质比mp3的要好很多，因为wav拼接出来的PCM数据和录音得到的PCM数据是相同的；
+【pcm拼接】两个参数相同的pcm文件直接二进制拼接在一起即可成为长的pcm文件，和mp3的拼接相同。
+
+【引入杂音、停顿问题】除wav、pcm外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）；
+wav、pcm格式最终拼接出来的音频音质比mp3的要好很多，因为wav拼接出来的PCM数据和录音得到的PCM数据是相同的；
 但mp3拼接出来的就不一样了，因为每次mp3编码时都会引入首尾的静默数据，使音频时长略微变长，这部分静默数据听起来就像有杂音和停顿一样，在实时转码间隔很短的情况下尤其明显（比如50ms），但只要转码间隔比较大时（比如500ms），mp3的这种停顿就会感知不到，音质几乎可以达到和wav一样。
 
-仅使用mp3格式时，请参考更优良的《【教程】实时转码并上传-MP3专版》采用的takeoffEncodeChunk实现，不会有停顿导致的杂音。
+仅使用mp3格式时，请参考更优良的《【教程】【音频流】实时转码并上传-mp3专版》采用的takeoffEncodeChunk实现，不会有停顿导致的杂音。
+
+【接收端要实时播放?】上传过来的数据都是一小段一小段的数据片段文件，接收端可以进行缓冲，实时的解码成PCM进行播放，可以参考《【教程】【音频流】实时解码播放音频片段》使用BufferStreamPlayer扩展来播放。
 ******************/
 var testOutputWavLog=false;//本测试如果是输出mp3，就顺带打一份wav的log，录音后执行mp3、wav合并的demo代码可对比音质
 var testSampleRate=16000;
@@ -69,7 +73,7 @@ var RealTimeSendTry=function(rec,isClose){
 	for(var i=realTimeSendTryChunk?realTimeSendTryChunk.index:0;i<chunk.index;i++){
 		rec.buffers[i]=null;
 	};
-	realTimeSendTryChunk=chunk;
+	realTimeSendTryChunk=chunk;//此时的chunk.data就是原始的音频pcm数据，直接保存即为pcm文件、加个wav头即为wav文件、丢给mp3编码器转一下码即为mp3文件
 	
 	//没有新数据，或结束时的数据量太小，不能进行mock转码
 	if(chunk.data.length==0 || isClose&&chunk.data.length<2000){
@@ -86,7 +90,7 @@ var RealTimeSendTry=function(rec,isClose){
 	};
 	realTimeSendTryEncBusy++;
 	
-	//通过mock方法实时转码成mp3、wav
+	//通过mock方法实时转码成mp3、wav；pcm格式可以不经过此操作，直接发送chunk.data
 	var encStartTime=Date.now();
 	var recMock=Recorder({
 		type:realTimeSendTryType
@@ -174,12 +178,14 @@ Runtime.Import([
 	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
 	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
 	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
+	,{url:RootFolder+"/src/engine/pcm.js",check:function(){return !Recorder.prototype.pcm}}
 ]);
 
 //显示控制按钮
 Runtime.Ctrls([
 	{name:"开始录音和传输mp3",click:"recStartMp3"}
 	,{name:"开始录音和传输wav",click:"recStartWav"}
+	,{name:"开始录音和传输pcm",click:"recStartPcm"}
 	,{name:"停止录音",click:"recStop"}
 ]);
 
@@ -191,6 +197,9 @@ function recStartMp3(){
 };
 function recStartWav(){
 	recStart("wav");
+};
+function recStartPcm(){
+	recStart("pcm");
 };
 function recStart(type){
 	if(rec){

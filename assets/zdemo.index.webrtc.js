@@ -7,7 +7,11 @@ Recorder.Support();//激活Recorder.Ctx
 
 /*********注入界面******************/
 (function(){
-	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制</span>；参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】实时转码并上传-mp3专版</a>。");
+	reclog("<span style='font-size:50px;color:#0b1'>↑↑↑按上面的步骤使用↑↑↑</span>");
+	
+	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制</span>；参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】【音频流】实时转码并上传-mp3专版</a>。");
+	
+	reclog("<span style='color:#0b1'>BufferStreamPlayer扩展：是专门用来实时播放音频片段文件的，但本例子的解码播放还未升级使用此扩展；源码在 src/extensions/buffer_stream.player.js ，参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player'>【教程】【音频流】实时解码播放音频片段</a>。</span>");
 	
 	var i=0;
 	reclog(['已开启实时编码传输模拟'
@@ -20,7 +24,7 @@ Recorder.Support();//激活Recorder.Ctx
 	,(++i)+'. 复制设备B"本机信息"到设备A的"远程信息"中，设备A中点击确定连接'
 	,(++i)+'. 连接已建立，任何一方都可随时开始录音，并且数据都会发送给另外一方'
 	,''
-	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了。两个播放模式的音质wav算是勉强最好，MP3差点。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外MP3编码出来的音频的播放时间比PCM原始数据要长一些，这个地方需要注意（本例子默认采用的是onProcess+mock实现，因此会有停顿杂音，如果开启takeoffEncodeChunk实现就无此限制，参考下面日志里的链接）。'
+	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了（后面编写了BufferStreamPlayer扩展，对音频片段的播放支持更好，参考下面的日志）。两个播放模式的音质wav算是勉强最好，MP3差点。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外MP3编码出来的音频的播放时间比PCM原始数据要长一些，这个地方需要注意（本例子默认采用的是onProcess+mock实现，因此会有停顿杂音，如果开启takeoffEncodeChunk实现就无此限制，参考下面日志里的链接）。'
 	,''
 	,'<span style="color:red">本demo仅支持局域网</span>（无需服务器支持），采用WebRTC P2P传输数据，如果要支持公网访问会异常复杂，实际使用时用WebSocket来进行数据传输数据会简单很多'
 	,''
@@ -31,6 +35,8 @@ Recorder.Support();//激活Recorder.Ctx
 	,'本功能主要目的在于验证H5录音实时转码、传输的可行性，并验证实时转码mp3格式小片段文件接收后的可播放性。结果：单纯的接收播放移动端和pc端并无太大差异，如果同时录音和同时播放，移动端性能低下设备卡顿明显，原因在于播放方法中有个6毫秒的暴力定时器（最开始1毫秒卡的动都动不了），换合理的播放方法应该可以做到比较完美。'
 	,'**************</div>'
 	].join("<br>"));
+	
+	reclog("<span style='font-size:50px;color:#0b1'>↓↓↓按下面的步骤使用↓↓↓</span>");
 	
 	$(".webrtcView").html([""
 ,'<div class="webrtcSend">'

@@ -166,7 +166,7 @@ a:hover{
 <script>
 var hideBG=function(hide){
 	localStorage["hideBG"]=hide?"1":"";
-	$("body").css("backgroundImage",hide?"":"url(https://diygod.me/images/header-leg.jpg)");
+	$("body").css("backgroundImage",hide?"":"url(header-leg__diygod.me.jpg)");
 	$(".hideBG").html(hide?"显示":"不再显示").attr("onclick","hideBG("+(hide?0:1)+")");
 };
 hideBG(localStorage["hideBG"]);
@@ -595,6 +595,8 @@ $(function(){
 			,dataType:"text"
 			,success:function(data){
 				setVal(data);
+				
+				Runtime.Log("注意：编辑框内的代码是由本工具提供的运行环境支持，如果要copy代码到其他html内使用，需要把Runtime相关的调用删除或使用别的代码代替。","#f60");
 				
 				var rn=(/《(.+?)》/.exec(data)||[])[1]||"";
 				if(name){
@@ -1097,8 +1099,12 @@ var demos=[
 ,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
 ,{n:"【Demo库】【格式转换】-amr格式转成其他格式",k:"lib.transform.amr2other"}
 
-,{n:"【教程】实时转码并上传-通用版",k:"teach.realtime.encode_transfer"}
-,{n:"【教程】实时转码并上传-mp3专版",k:"teach.realtime.encode_transfer_mp3"}
+,{n:"【教程】【音频流】实时转码并上传-通用版",k:"teach.realtime.encode_transfer"}
+,{n:"【教程】【音频流】实时转码并上传-mp3专版",k:"teach.realtime.encode_transfer_mp3"}
+
+
+,{n:"【教程】【音频流】实时解码播放音频片段",k:"teach.realtime.decode_buffer_stream_player"}
+,{n:"【教程】实时录制处理audio、video标签的captureStream流",k:"teach.source_stream.capture_stream"}
 
 ,{n:"【Demo库】【文件合并】-mp3多个片段文件合并",k:"lib.merge.mp3_merge"}
 ,{n:"【Demo库】【文件合并】-wav多个片段文件合并",k:"lib.merge.wav_merge"}

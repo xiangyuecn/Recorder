@@ -145,7 +145,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2021-2-15 17:38:39";
+var PageLM="2021-08-03 21:16:50";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -225,9 +225,10 @@ RandomKey.idx=0;
 		<span class="lb">类型 :</span> <span class="types">
 		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" min="/recorder.mp3.min" class="initType" checked>mp3</label>
 		<label><input type="radio" name="type" value="wav" engine="wav" min="/recorder.wav.min">wav</label>
+		<label><input type="radio" name="type" value="pcm" engine="pcm" min=",pcm" addload="wav">pcm</label>
 		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine" min=",beta-ogg">ogg(beta)</label>
 		<label><input type="radio" name="type" value="webm" engine="beta-webm" min=",beta-webm">webm(beta)</label>
-		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine,wav" min=",beta-amr">amr(beta)</label>
+		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine" min=",beta-amr" addload="wav">amr(beta)</label>
 		</span>
 		<label><input type="checkbox" class="loadMinJs">请求压缩版</label>
 	</div>
@@ -296,9 +297,46 @@ RandomKey.idx=0;
 
 <div class="mainBox">
 	<div>
+		<span class="lb">切换麦克风 :</span>
+		<select class="trackSet_device"></select>
+		从未请求过录音权限时，可能无法正常拉取设备列表，打开一次录音后可尝试
+		<button onclick="trackSetQueryDeviceList()">重新拉取设备</button>
+	</div>
+	<div>
+		<span class="lb">noiseSuppression :</span>
+		<select class="trackSet_noise">
+			<option value="">不设置</option>
+			<option value="1">true</option>
+			<option value="2">false</option>
+		</select>
+		降噪配置开关
+	</div>
+	<div>
+		<span class="lb">echoCancellation :</span>
+		<select class="trackSet_aec">
+			<option value="">不设置</option>
+			<option value="1">true</option>
+			<option value="2">false</option>
+		</select>
+		回声消除配置开关
+	</div>
+	<div>
+		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效
+	</div>
+	
+	<div style="margin-top:12px;">
+		<span class="lb">Destroy :</span>
+		<button onclick="callDestroy()">调用Recorder.Destroy()</button>
+		Destroy会关闭所有的全局资源，包括AudioContext，当录音出现问题时，可尝试Destroy一下重试
+	</div>
+</div>
+
+<div class="mainBox">
+	<div>
 		<span class="lb">变速变调 :</span> 
 		<button onclick="resetSonicCtrl()">重置变速变调</button>
-		实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）</div>
+		实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）
+	</div>
 	<div class="sonicCtrlBox" style="margin:5px 0 0">
 		<style>
 			.sonicCtrlBox span{display:inline-block;width:80px;text-align:right;}
@@ -438,6 +476,32 @@ function recopen(){
 		reclog("已禁用设备卡顿时音频输入丢失补偿，可以通过别的程序大量占用CPU来模拟设备卡顿，然后录音听听未补偿时的播放效果，然后再试试不禁用的效果");
 	};
 	
+	var audioTrackSet=null;
+	var trackSet_device=$(".trackSet_device").val();
+	var trackSet_noise=$(".trackSet_noise").val();
+	var trackSet_aec=$(".trackSet_aec").val();
+	if(trackSet_device || trackSet_noise || trackSet_aec){
+		audioTrackSet={};
+		if(trackSet_device){
+			var device=DeviceList[+trackSet_device];
+			audioTrackSet.deviceId=device.deviceId;
+			audioTrackSet.groupId=device.groupId;
+		}
+		if(trackSet_noise){
+			audioTrackSet.noiseSuppression=+trackSet_noise==1;
+		}
+		if(trackSet_aec){
+			audioTrackSet.echoCancellation=+trackSet_aec==1;
+		}
+		
+		if(rec){//如果有老的，close掉才会生效
+			recclose();
+		}
+		reclog("已启用audioTrackSet配置："+JSON.stringify(audioTrackSet));
+	}else if(rec && rec.set.audioTrackSet){
+		recclose();
+	};
+	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
 	
@@ -447,6 +511,7 @@ function recopen(){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
+		,audioTrackSet:audioTrackSet
 		,disableEnvInFix:disableEnvInFixSet
 		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
 			//优先进行pcm处理，可能会发生数据修改，对于需要大量运算的处理需要开启异步模式，onProcess返回true即可开启，异步操作完成后必须回调asyncEnd
@@ -525,7 +590,7 @@ function recopen(){
 		});
 	},function(e,isUserNotAllow){
 		dialogCancel();
-		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e);
+		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e,1);
 	});
 	
 	window.waitDialogClick=function(){
@@ -558,6 +623,37 @@ var dialogCancel=function(){
 	$(".waitDialog").remove();
 };
 //弹框End
+
+var callDestroy=function(){
+	Recorder.Destroy();
+	reclog("已执行Recorder.Destroy()");
+};
+
+//拉取麦克风设备列表
+var DeviceList=[];
+var trackSetQueryDeviceList=function(){
+	var end=function(list,err){
+		DeviceList=list;
+		
+		var opts=['<option value="">'+(list.length?'不设置':err)+'</option>'];
+		for(var i=0;i<list.length;i++){
+			var o=list[i];
+			if(o.deviceId && o.kind=="audioinput"){
+				var name=o.label||((i+1)+"# 无名称，可能是因为从来没有打开过录音");
+				opts.push('<option value="'+i+'">'+name+'</option>');
+			}
+		}
+		$(".trackSet_device").html(opts.join(" "))
+	};
+	if(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices){
+		navigator.mediaDevices.enumerateDevices().then(end)["catch"](function(e){
+			end([],"拉取失败："+e.message);
+		});
+	}else{
+		end([],"此浏览器不支持拉取设备列表");
+	}
+};
+trackSetQueryDeviceList();
 
 
 function recclose(){
@@ -694,7 +790,7 @@ function recstop2(){
 	for(var i=+bits[1];i<+bits[2]+1;i+=+bits[3]){
 		list.push(i);
 	};
-	if(rec.set.type=="wav"){
+	if(/^(wav|pcm)$/.test(rec.set.type)){
 		list=[8,16];
 	};
 	
@@ -746,11 +842,19 @@ function recplay(key){
 		var wav=Recorder[o.set.type+"2wav"];
 		if(wav){
 			logmsg("正在转码成wav...");
-			wav(o.blob,function(blob){
+			var wavData=o.blob;
+			if(o.set.type=="pcm"){
+				wavData={
+					sampleRate:o.set.sampleRate
+					,bitRate:o.set.bitRate
+					,blob:o.blob
+				};
+			};
+			wav(wavData,function(blob){
 				end(blob);
 				logmsg("已转码成wav播放");
 			},function(msg){
-				logmsg("转码成wav失败："+msg);
+				logmsg('<span style="color:red">转码成wav失败：'+msg+'</span>');
 			});
 		}else{
 			end(o.blob);
@@ -1144,8 +1248,15 @@ function loadEngine(input){
 		var type=input.val();
 		var srcs=input.attr("engine").split(",");
 		var mins=input.attr("min").split(",");
+		var adds=input.attr("addload");
 		for(var i=0;i<srcs.length;i++){
 			srcs[i]="src/engine/"+srcs[i]+".js";
+		};
+		if(adds){
+			adds=adds.split(",");
+			for(var i=0;i<adds.length;i++){
+				adds[i]="src/engine/"+adds[i]+".js";
+			};
 		};
 		for(var i=0;i<mins.length;i++){
 			var v=mins[i];
@@ -1161,13 +1272,18 @@ function loadEngine(input){
 		};
 		
 		var minjs=$(".loadMinJs")[0].checked;
-		var engines=minjs?mins:srcs;
+		var engines=[].concat(minjs?mins:srcs, adds||[]);
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
-			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"+(type=="wav"?"#0b1'>wav转码超快":Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)":"red'>仅支持标准UI线程转码")+"</span>，"+enc.testmsg];
+			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"
+				+(type=="wav"?"#0b1'>wav转码超快"
+				:type=="pcm"?"#0b1'>pcm转码超快"
+				:Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)"
+				:"red'>仅支持标准UI线程转码")
+			+"</span>，"+enc.testmsg];
 			tips.push('<div style="color:green;padding-left:50px">');
 			tips.push("使用"+type+"录音需要加载的js：");
-			tips.push("<br>【压缩版】："+mins.join("，"))
+			tips.push("<br>【压缩版】："+mins.join(", "))
 			tips.push("<br>【源文件】：src/recorder-core.js, "+srcs.join(", "));
 			tips.push("</div>");
 			
