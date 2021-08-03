@@ -388,7 +388,7 @@ var load=function(name,bgName,call){
 	xhr.send();
 };
 var loadAll=function(){
-	load("movie-一代宗师-此一时彼一时.mp4",0,function(){
+	load("movie-一代宗师-此一时彼一时.mp4.webm",0,function(){
 		Runtime.Log("模拟用的音频素材已准备完毕，可以开始操作了",2);
 	});
 };

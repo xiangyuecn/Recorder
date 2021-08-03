@@ -56,7 +56,7 @@ var audioStart=function(){
 	sourceStart("audio",RootFolder+"/assets/audio/music-阿刁-张韶涵.mp3");
 };
 var videoStart=function(){
-	sourceStart("video",RootFolder+"/assets/audio/movie-一代宗师-此一时彼一时.mp4");
+	sourceStart("video",RootFolder+"/assets/audio/movie-一代宗师-此一时彼一时.mp4.webm");
 };
 var fileStart=function(type,file){
 	if(!file.files.length){
