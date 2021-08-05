@@ -327,7 +327,7 @@ function initFn(set){
 				//注意：流内必须至少存在一条音轨(Audio Track)，比如audio标签必须等待到可以开始播放后才会有音轨，否则open会失败
 		
 		//,audioTrackSet:{ deviceId:"",groupId:"", autoGainControl:true, echoCancellation:true, noiseSuppression:true }
-				//getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
+				//普通麦克风录音时getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
 				//由于麦克风是全局共享的，所以新配置后需要close掉以前的再重新open
 				//更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
 		

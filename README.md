@@ -437,7 +437,7 @@ set={
                 //注意：流内必须至少存在一条音轨(Audio Track)，比如audio标签必须等待到可以开始播放后才会有音轨，否则open会失败
         
         //,audioTrackSet:{ deviceId:"",groupId:"", autoGainControl:true, echoCancellation:true, noiseSuppression:true }
-                //getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
+                //普通麦克风录音时getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
                 //由于麦克风是全局共享的，所以新配置后需要close掉以前的再重新open
                 //更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
                 
@@ -460,9 +460,9 @@ set={
 
 注意：此方法回调是可能是同步的（异常、或者已持有资源时）也可能是异步的（浏览器弹出权限请求时）；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音。
 
-另外：麦克风录音时，因为此方法会调起用户授权请求，如果仅仅想知道浏览器是否支持录音（比如：如果浏览器不支持就走另外一套录音方案），应使用`Recorder.Support()`方法。
+另外：普通的麦克风录音时，因为此方法会调起用户授权请求，如果仅仅想知道浏览器是否支持录音（比如：如果浏览器不支持就走另外一套录音方案），应使用`Recorder.Support()`方法。
 
-**注意：打开录音后，如果未调用close关闭，可能会影响audio音频的播放，表现为移动端audio播放有明显的杂音（麦克风的电流音？），因此如果你录音后有别的操作，尽量录完音就立即调用close关闭录音。**
+**注意：打开普通麦克风录音后，如果未调用close关闭，可能会影响audio音频的播放，表现为移动端audio播放有明显的杂音（麦克风的电流音？），因此如果你录音后有别的操作，尽量录完音就立即调用close关闭录音。**
 
 > **特别注**: 鉴于UC系浏览器（大部分老旧国产手机厂商系统浏览器）大概率表面支持录音但永远不会有任何回调、或者此浏览器支持第三种情况（用户忽略 并且 此浏览器认为此种情况不需要回调 并且程序员完美实现了）；如果当前环境是移动端，可以在调用此方法`8秒`后如果未收到任何回调，弹出一个自定义提示框（只需要一个按钮），提示内容范本：`录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~`，按钮文本：`忽略`；当用户点击了按钮，直接手动执行`fail`逻辑，因为此时浏览器压根就没有弹移动端特有的模态话权限请求对话框；但如果收到了回调（可能是同步的，因此弹框必须在`rec.open`调用前准备好随时取消），需要把我们弹出的提示框自动关掉，不需要用户做任何处理。pc端的由于不是模态化的请求对话框，可能会被用户误点，所以尽量要判断一下是否是移动端。
 
@@ -474,7 +474,7 @@ set={
 ### 【方法】rec.close(success)
 关闭释放录音资源，释放完成后会调用`success()`回调。如果正在录音或者stop调用未完成前调用了close将会强制终止当前录音。
 
-注意：麦克风录音时，如果创建了多个Recorder对象并且调用了open（应避免同时有多个对象进行了open），只有最后一个新建的才有权限进行实际的资源释放（和多个对象close调用顺序无关），浏览器或设备的系统才会不再显示正在录音的提示。
+注意：普通的麦克风录音时（所有Recorder实例共享同一个流），如果创建了多个Recorder对象并且调用了open（应避免同时有多个对象进行了open），只有最后一个新建的才有权限进行实际的资源释放（和多个对象close调用顺序无关），浏览器或设备的系统才会不再显示正在录音的提示；直接提供的流 set.sourceStream 无此问题（当前Recorder实例独享此流）。
 
 ### 【方法】rec.start()
 开始录音，需先调用`open`；未close之前可以反复进行调用开始新的录音。
@@ -552,7 +552,7 @@ function transformOgg(pcmData){
 判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
 
 ### 【静态方法】Recorder.IsOpen()
-由于Recorder持有的麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能。
+由于Recorder持有的普通麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能。
 
 ### 【静态方法】Recorder.Destroy()
 销毁已持有的所有全局资源（AudioContext、Worker），当要彻底移除Recorder时需要显式的调用此方法。大部分情况下不调用Destroy也不会造成问题。
@@ -563,7 +563,7 @@ function transformOgg(pcmData){
 设置为空字符串后将不参与统计，大部分情况下无需关闭统计，如果你网页的url私密性要求很高，请在调用Recorder之前将此url设为空字符串；本功能于2019-11-09添加，[点此](https://www.51.la/?20469973)前往51la查看统计概况。
 
 ### 【静态属性】Recorder.BufferSize
-麦克风录音时全局的AudioContext缓冲大小，默认值为4096。会影响H5录音时的onProcess调用速率，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
+普通的麦克风录音时全局的AudioContext缓冲大小，默认值为4096。会影响H5录音时的onProcess调用速率，相对于AudioContext.sampleRate=48000时，4096接近12帧/s，调节此参数可生成比较流畅的回调动画。
 
 取值256, 512, 1024, 2048, 4096, 8192, or 16384
 
@@ -1092,9 +1092,15 @@ npm start
 ``` java
 @Override
 public void onPermissionRequest(PermissionRequest request) {
-    ...此处应包裹一层系统权限请求
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        request.grant(request.getResources());
+        //录音是敏感权限，必须app先有录音权限后，网页才会有录音权限，伪代码：
+        App的系统录音权限请求()
+            .用户已授权(()->{
+                request.grant(request.getResources());
+            })
+            .用户拒绝授权(()->{
+                request.deny();
+            })
     }
 }
 ```
