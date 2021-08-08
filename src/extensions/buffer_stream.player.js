@@ -26,6 +26,10 @@ BufferStreamPlayer可以用于：
 
 	//不要播放了就调用stop停止播放，关闭所有资源
 	stream.stop();
+	
+
+
+注意：已知Firefox的AudioBuffer没法动态修改数据，所以对于带有这种特性的浏览器将采用先缓冲后再播放（类似assets/runtime-codes/fragment.playbuffer.js），音质会相对差一点；其他浏览器测试Android、IOS、Chrome无此问题；start方法中有一大段代码给浏览器做了特性检测并进行兼容处理。
 */
 (function(){
 "use strict";
@@ -101,6 +105,10 @@ fn.prototype=BufferStreamPlayer.prototype={
 		This.audioBuffer=0;
 		This.pcmBuffer=[[],[]];//未推入audioBuffer的pcm数据缓冲
 		
+		var fail=function(msg){
+			False&&False("浏览器不支持打开BufferStreamPlayer"+(msg?"："+msg:""));
+		};
+		
 		var support=1;
 		if(!Recorder.Support()){
 			support=0;
@@ -111,12 +119,12 @@ fn.prototype=BufferStreamPlayer.prototype={
 			}
 		};
 		if(!support){
-			False&&False("浏览器不支持打开BufferStreamPlayer");
+			fail("");
 			return;
 		};
 		
 		
-		setTimeout(function(){//强转成异步，统一调用代码行为
+		var end=function(){
 			//创建MediaStream
 			var dest=Recorder.Ctx.createMediaStreamDestination();
 			dest.channelCount=1;
@@ -124,20 +132,67 @@ fn.prototype=BufferStreamPlayer.prototype={
 						
 			True&&True();
 			
-			This._inputProcess();//处理未start前的input调用
-		});
-		
-		//定时在没有input输入时，将未写入buffer的数据写进去
-		This._writeInt=setInterval(function(){
-			if(This.audioBuffer){
-				This._writeBuffer();
+			This._inputProcess();//处理未完成start前的input调用
+			
+			//定时在没有input输入时，将未写入buffer的数据写进去
+			if(!badAB){
+				This._writeInt=setInterval(function(){
+					This._writeBuffer();
+				},500);
+			}else{
+				console.warn("BufferStreamPlayer：此浏览器的AudioBuffer实现不支持动态特性，采用兼容模式");
+				This._writeInt=setInterval(function(){
+					This._writeBad();
+				},10);//定时调用进行数据写入播放
 			}
-		},500);
+		};
+		
+		var badAB=BufferStreamPlayer.BadAudioBuffer;
+		if(This.__abTest || badAB!=null){
+			setTimeout(end); //应当setTimeout一下强转成异步，统一调用代码时的行为
+		}else{
+			//浏览器实现检测，已知Firefox的AudioBuffer没法在_writeBuffer中动态修改数据；检测方法：直接新开一个，输入一段测试数据，看看能不能拿到流中的数据
+			var testStream=BufferStreamPlayer({ play:false,sampleRate:8000 });
+			testStream.__abTest=1;
+			testStream.start(function(){
+				var testRec=Recorder({
+					type:"unknown"
+					,sourceStream:testStream.getMediaStream()
+					,onProcess:function(buffers){	
+						var bf=buffers[buffers.length-1],all0=1;
+						for(var i=0;i<bf.length;i++){
+							if(bf[i]!=0){ all0=0; break; }
+						}
+						if(all0 && buffers.length<5){
+							return;//再等等看，最长约等500ms
+						}
+						testRec.close();
+						testStream.stop();
+						
+						//全部是0就是浏览器不行，要缓冲一次性播放进行兼容
+						badAB=all0;
+						BufferStreamPlayer.BadAudioBuffer=badAB;
+						end();
+					}
+				});
+				testRec.open(function(){
+					testRec.start();
+				},fail);
+			},fail);
+			
+			//随机生成1秒的数据，rec有一次回调即可
+			var data=new Int16Array(8000);
+			for(var i=0;i<8000;i++){
+				data[i]=~~(Math.random()*0x7fff*2-0x7fff);
+			}
+			testStream.input(data);
+		}
 	}
 	/**停止播放，关闭所有资源**/
 	,stop:function(){
 		var This=this;
 		clearInterval(This._writeInt);
+		This.inputQueue=0;
 		
 		if(This._src){
 			(window.URL||webkitURL).revokeObjectURL(This._src);
@@ -155,7 +210,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 	
 	
 	
-	/**输入任意格式的音频数据，未start前调用会等到start成功后生效
+	/**输入任意格式的音频数据，未完成start前调用会等到start成功后生效
 		anyData: any 具体类型取决于：
 			set.decode为false时:
 				未提供set.transform，数据必须是pcm[Int16,...]，此时的set必须提供sampleRate；
@@ -170,10 +225,16 @@ fn.prototype=BufferStreamPlayer.prototype={
 	,input:function(anyData){
 		var This=this,set=This.set;
 		var inputN=++This.inputN;
+		if(!This.inputQueue){
+			throw new Error("未调用start方法");
+		}
 		
 		if(set.decode){
 			//先解码
-			BufferStreamPlayer.DecodeAudio(anyData, function(data){
+			DecodeAudio(anyData, function(data){
+				if(!This.inputQueue)return;//stop了
+				
+				FadeInOut(data.data, data.sampleRate);//解码后的数据进行一下淡入淡出处理，减少爆音
 				This._input2(inputN, data.data, data.sampleRate);
 			},function(err){
 				This._inputErr(err, inputN);
@@ -188,6 +249,8 @@ fn.prototype=BufferStreamPlayer.prototype={
 		
 		if(set.transform){
 			set.transform(anyData, sampleRate, function(pcm, sampleRate2){
+				if(!This.inputQueue)return;//stop了
+				
 				sampleRate=sampleRate2||sampleRate;
 				This._input3(inputN, pcm, sampleRate);
 			},function(err){
@@ -265,12 +328,23 @@ fn.prototype=BufferStreamPlayer.prototype={
 			pcms[1]=pcm;
 		}
 		
-		if(!This.audioBuffer){
-			This._createBuffer(true);
+		if(!BufferStreamPlayer.BadAudioBuffer){
+			if(!This.audioBuffer){
+				This._createBuffer(true);
+			}else{
+				This._writeBuffer();
+			}
 		}else{
-			This._writeBuffer();
+			This._writeBad();
 		}
 	}
+	
+	
+	
+	
+	
+	
+	/****************正常的播放处理****************/
 	//创建播放buffer
 	,_createBuffer:function(init){
 		var This=this,set=This.set;
@@ -310,6 +384,9 @@ fn.prototype=BufferStreamPlayer.prototype={
 		var buffer=This.audioBuffer;
 		var sampleRate=This.bufferSampleRate;
 		var oldAudioBufferIdx=This.audioBufferIdx;
+		if(!buffer){
+			return;
+		}
 		
 		//计算已播放的量，可能已播放过头了，卡了没有数据
 		var playSize=Math.floor((Date.now()-This._createBufferTime)/1000*sampleRate);
@@ -376,6 +453,104 @@ fn.prototype=BufferStreamPlayer.prototype={
 			return;
 		}
 		
+		//截取数据并写入到audioBuffer中
+		This.audioBufferIdx=This._subWrite(buffer,pcmSize,This.audioBufferIdx,speed);
+	}
+	
+	
+	/****************兼容播放处理，播放音质略微差点****************/
+	,_writeBad:function(){
+		var This=this,set=This.set;
+		var buffer=This.audioBuffer;
+		var sampleRate=This.bufferSampleRate;
+		var ctx=Recorder.Ctx;
+		
+		//正在播放，5ms不能结束就等待播放完，定时器是10ms
+		if(buffer){
+			var ms=buffer.length/sampleRate*1000;
+			if(Date.now()-This._createBufferTime<ms-5){
+				return;
+			}
+		}
+		
+		//这次最大能写入多少；限制到800ms
+		var maxSize=~~(0.8*sampleRate);
+		var st=set.PlayBufferDisable?0:sampleRate/1000*300;//缓冲播放，不然间隔太短接续爆音明显
+		
+		var pcms=This.pcmBuffer;
+		var pcm0=pcms[0],pcm1=pcms[1];
+		var allSize=pcm0.length+pcm1.length;
+		if(allSize==0 || allSize<st){//无可用数据 不够缓冲量，退出
+			return;
+		}
+		
+		var pcmSize=0,speed=1;
+		var realMode=set.realtime;
+		while(realMode){
+			//************实时模式************
+			//计算当前堆积的量
+			var dSize=pcm0.length;
+			
+			//堆积的在300ms内按正常播放
+			if(dSize<0.3 *sampleRate){
+				realMode=false;//切换成顺序播放
+				break;
+			}
+			
+			//堆积的太多，要加速播放了，最多播放积压最后3秒的量，超过的直接丢弃
+			var pcmNs=3*sampleRate;
+			if(pcm0.length>pcmNs){//丢弃超过秒数的
+				pcm0=pcm0.subarray(pcm0.length-pcmNs);
+				pcms[0]=pcm0;
+			}
+			
+			speed=1.6;//倍速，重采样
+			//计算要截取出来量
+			pcmSize=Math.min(maxSize, Math.floor((pcm0.length+pcm1.length)/speed));
+			break;
+		}
+		if(!realMode){
+			//*******按顺序取数据播放*********
+			//计算要截取出来量
+			pcmSize=Math.min(maxSize, pcm0.length+pcm1.length);
+		}
+		if(!pcmSize){
+			return;
+		}
+		
+		//新建buffer，一次性完整播放当前的数据
+		buffer=ctx.createBuffer(1,pcmSize,sampleRate);
+		
+		//截取数据并写入到audioBuffer中
+		This._subWrite(buffer,pcmSize,0,speed);
+		
+		//首尾进行1ms的淡入淡出 大幅减弱爆音
+		FadeInOut(buffer.getChannelData(0), sampleRate);
+		
+		var source=ctx.createBufferSource();
+		source.channelCount=1;
+		source.buffer=buffer;
+		source.connect(This._dest);
+		if(set.play){//播放出声音
+			source.connect(ctx.destination);
+		}
+		source.start();//古董 source.noteOn(0) 不支持onended 放弃支持
+		
+		This.bufferSource=source;
+		This.audioBuffer=buffer;
+		This._createBufferTime=Date.now();
+	}
+	
+	
+	
+	
+	
+	
+	,_subWrite:function(buffer, pcmSize, offset, speed){
+		var This=this;
+		var pcms=This.pcmBuffer;
+		var pcm0=pcms[0],pcm1=pcms[1];
+		
 		//截取数据
 		var pcm=new Int16Array(pcmSize);
 		var i=0,n=0;
@@ -404,17 +579,29 @@ fn.prototype=BufferStreamPlayer.prototype={
 		
 		//写入到audioBuffer中
 		var channel=buffer.getChannelData(0);
-		for(var i=0,n=This.audioBufferIdx;i<pcmSize;i++,n++){
-			channel[n]=pcm[i]/0x7FFF;
+		for(var i=0;i<pcmSize;i++,offset++){
+			channel[offset]=pcm[i]/0x7FFF;
 		}
-		This.audioBufferIdx=n;
+		return offset;
 	}
 	
 };
 
 
+
+/**pcm数据进行首尾1ms淡入淡出处理，播放时可以大幅减弱爆音**/
+var FadeInOut=BufferStreamPlayer.FadeInOut=function(arr,sampleRate){
+	var sd=sampleRate/1000*1;
+	for(var i=0;i<sd;i++){
+		arr[i]*=i/sd;
+	}
+	for(var l=arr.length,i=l-sd;i<l;i++){
+		arr[i]*=(l-i)/sd;
+	}
+};
+
 /**解码音频文件成pcm**/
-BufferStreamPlayer.DecodeAudio=function(arrayBuffer,True,False){
+var DecodeAudio=BufferStreamPlayer.DecodeAudio=function(arrayBuffer,True,False){
 	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 		False&&False("浏览器不支持音频解码");
 		return;

@@ -5,6 +5,8 @@
 
 Recorder支持处理audio、video标签dom节点的captureStream方法返回的流，只需提供set.sourceStream配置参数即可，对流内音频的录制和对麦克风录制没有区别；因此Recorder所有的实时处理功能都能在这个流上进行操作，比如：对正在播放的音频进行可视化绘制、变速变调。
 
+captureStream方法目前是一个实验特性，并不是所有新浏览器都能支持的；另外不推荐带浏览器前缀使用，行为可能不一致（如mozCaptureStream）；参考文档: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/captureStream
+
 除了可以处理captureStream得到的流，其他的MediaStream流（只要至少有一条音轨）均是按同样的方法进行录音和处理。
 ******************/
 
