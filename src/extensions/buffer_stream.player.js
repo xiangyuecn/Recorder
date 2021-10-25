@@ -591,11 +591,11 @@ fn.prototype=BufferStreamPlayer.prototype={
 
 /**pcm数据进行首尾1ms淡入淡出处理，播放时可以大幅减弱爆音**/
 var FadeInOut=BufferStreamPlayer.FadeInOut=function(arr,sampleRate){
-	var sd=sampleRate/1000*1;
+	var sd=sampleRate/1000*1;//浮点数，arr是Int16或者Float32
 	for(var i=0;i<sd;i++){
 		arr[i]*=i/sd;
 	}
-	for(var l=arr.length,i=l-sd;i<l;i++){
+	for(var l=arr.length,i=~~(l-sd);i<l;i++){
 		arr[i]*=(l-i)/sd;
 	}
 };

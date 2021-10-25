@@ -132,6 +132,9 @@ import 'recorder-core/src/extensions/waveview'
 [​](?Ref=Codes&Start)然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
 ``` javascript
 //var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于权限请求前执行，因为回调不确定是同步还是异步的
+//RecordApp.AlwaysUseWeixinJS=true; 在微信内强制总是使用微信的JsSDK接口录音，这样也方便于Android微信上进行调试，或者统一使用微信JsSDK来录音
+//RecordApp.AlwaysAppUseJS=true; App里面总是使用H5网页版录音，可用于测试App里面的网页兼容性
+
 //请求录音权限
 RecordApp.RequestPermission(function(){
     //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
@@ -362,6 +365,13 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 默认为`true`开启部分非核心组件的延迟加载，不会阻塞`Install`，`Install`后通过`RecordApp.Current.OnLazyReady`事件来确定组件是否已全部加载；如果设为`false`，将忽略组件的延迟加载属性，`Install`时会将所有组件一次性加载完成后才会`Install`成功。
 
 此配置只有在组件是通过RecordApp自动加载时才会有效，如果组件是手动引入的时不会生效；会影响的组件有：`RecordApp.Platforms`的`Config.paths`中标记了`lazyBeforeStart=1`、`lazyBeforeStop=1`的js；`lazyBeforeStart`标记的js会在`Start`调用前完成加载，否则会阻塞`Start`，`lazyBeforeStop`标记的js会在`Stop`调用前完成加载，否则会阻塞`Stop`。
+
+
+## 【静态属性】RecordApp.AlwaysUseWeixinJS
+默认为`false`，设为`true`时：在微信内强制总是使用微信的JsSDK接口录音，这样也方便于Android微信上进行调试，或者统一使用微信JsSDK来录音。
+
+## 【静态属性】RecordApp.AlwaysAppUseJS
+默认为`false`，设为`true`时：App里面总是使用H5网页版录音，可用于测试App里面的网页兼容性。
 
 
 ## 【静态属性】RecordApp.Current

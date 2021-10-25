@@ -3,9 +3,14 @@
 
 # :open_book:Recorder用于html5录音
 
-[​](?Ref=Desc&Start)支持在大部分已实现`getUserMedia`的移动端、PC端浏览器录音，主要包括：Chrome、Firefox、Safari、IOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信)、大部分2021年后更新的Android手机自带浏览器；不支持：~~UC系内核（典型的支付宝），大部分未更新的老旧国产手机自带浏览器，低版本IOS(11.0-14.2)上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
+[​](?Ref=Desc&Start)支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、IOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信)、大部分2021年后更新的Android手机自带浏览器；不支持：~~UC系内核（典型的支付宝），大部分未更新的老旧国产手机自带浏览器，低版本IOS(11.0-14.2)上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
 
 支持对任意`MediaStream`进行音频录制、实时处理，包括：`getUserMedia返回的流`、`WebRTC中的remote流`、`audio、video标签的captureStream方法返回的流`、`自己创建的流` 等等。
+
+提供多个扩展功能支持：拥有丰富的音频可视化、变速变调处理、音频流播放等；搭配上强大的实时处理支持，可用于各种网页应用：从简单的录音，到复杂的实时语音识别（ASR），甚至音频相关的游戏，都能从容应对。
+
+音频文件的播放：可直接使用常规的`Audio HTML标签`来播放完整的音频文件，参考文档下面的【快速使用】部分，有播放例子；上传了的录音直接将音频链接赋值给`audio.src`即可播放；本地的`blob音频文件`可通过`URL.createObjectURL`来生成本地链接赋值给`audio.src`即可播放，或者将blob对象直接赋值给`audio.srcObject`（兼容性没有src高）。实时的音频片段文件播放，可以使用本库自带的`BufferStreamPlayer`扩展来播放，简单高效，或者采用别的途径播放。
+
 
 [​](?)
 
@@ -36,6 +41,8 @@
 
 [​](?)
 
+[​](?)
+
 录音默认输出mp3格式，另外可选wav、pcm格式；有限支持ogg(beta)、webm(beta)、amr(beta)格式；支持任意格式扩展（前提有相应编码器）。
 
 > mp3默认16kbps的比特率，2kb每秒的录音大小，音质还可以（如果使用8kbps可达到1kb每秒，不过音质太渣）。主要用于语音录制，双声道语音没有意义，特意仅对单声道进行支持。mp3、wav、pcm格式支持边录边转码，录音结束时转码速度极快，支持实时转码成小片段文件和实时传输，demo中已实现一个语音通话聊天，下面有介绍；其他格式录音结束时可能需要花费比较长的时间进行转码。
@@ -43,7 +50,9 @@
 > mp3使用lamejs编码(CBR)，压缩后的recorder.mp3.min.js文件150kb左右（开启gzip后54kb）。如果对录音文件大小没有特别要求，可以仅仅使用录音核心+wav编码器(raw pcm format录音文件超大)，压缩后的recorder.wav.min.js不足5kb。录音得到的mp3(CBR)、wav(PCM)，均可简单拼接小的二进制录音片段文件来生成长的音频文件，具体参考下面这两种编码器的详细介绍。
 
 
-> 如需在Hybrid App内使用（支持IOS、Android），或提供低版本IOS微信的支持，请参阅[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录。
+[​](?)
+
+> 如需在Hybrid App内使用（支持IOS、Android），或提供低版本IOS微信的支持，请参阅下面的App中录音示例，参考示例代码给网页授予录音权限，或直接由App底层提供接口给H5调用（[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录内有源码）。
 > 
 > *低版本IOS兼容、老旧国产手机自带浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
 
@@ -66,9 +75,10 @@
 9. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
 10. [【教程】实时多路音频混音](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
 11. [【教程】变速变调音频转换](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
-12. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
-13. [【Demo库】PCM采样率提升](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
-14. [【测试】音频可视化相关扩展测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
+12. [【教程】新录音从老录音接续、或录制中途插入音频](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.env_in.follow)
+13. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
+14. [【Demo库】PCM采样率提升](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
+15. [【测试】音频可视化相关扩展测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
 
 
 ### App Demo
@@ -177,8 +187,9 @@ var recOpen=function(success){//一般在显示出录音按钮或相关的录音
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
         ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //录音实时回调，大约1秒调用12次本回调
-            //可利用extensions/waveview.js扩展实时绘制波形
+            //可实时绘制波形（extensions目录内的waveview.js、wavesurfer.view.js、frequency.histogram.view.js扩展功能）
             //可利用extensions/sonic.js扩展实时变速变调，此扩展计算量巨大，onProcess需要返回true开启异步模式
+            //可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
         }
     });
 
@@ -422,13 +433,14 @@ set={
     ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd)
                 //返回值：onProcess如果返回true代表开启异步模式，在某些大量运算的场合异步是必须的，必须在异步处理完成时调用asyncEnd(不能真异步时需用setTimeout包裹)；返回其他值或者不返回为同步模式（需避免在回调内执行耗时逻辑）；如果开启异步模式，在onProcess执行后新增的buffer会全部替换成空数组，因此本回调开头应立即将newBufferIdx到本次回调结尾位置的buffer全部保存到另外一个数组内，处理完成后写回buffers中本次回调的结尾位置。
                 //buffers=[[Int16,...],...]：缓冲的PCM数据，为从开始录音到现在的所有pcm片段，每次回调可能增加0-n个不定量的pcm片段。
+                    //注意：buffers数据的采样率为bufferSampleRate，它和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers原始数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输；修改或替换buffers内的数据将会改变最终生成的音频内容（注意不能改变第一维数组长度），比如简单有限的实现实时静音、降噪、混音等处理，详细参考下面的rec.buffers
                 //powerLevel：当前缓冲的音量级别0-100。
                 //bufferDuration：已缓冲时长。
-                //bufferSampleRate：缓冲使用的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）。
+                //bufferSampleRate：buffers缓存数据的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）。
                 //newBufferIdx:本次回调新增的buffer起始索引。
                 //asyncEnd：fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
-                //注意，buffers数据的采样率和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers原始数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输；修改或替换buffers内的数据将会改变最终生成的音频内容（注意不能改变第一维数组长度），比如简单有限的实现实时静音、降噪、混音等处理，详细参考下面的rec.buffers
+                //如果需要实时上传（发送）之类的，可以配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm，或使用mock方法将新数据连续的转码成其他格式，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
     
     //*******高级设置******
         //,sourceStream:MediaStream Object
@@ -514,8 +526,18 @@ buffers中的PCM数据为浏览器采集的原始音频数据，采样率为浏�
 浏览器提供的原始采样率，只有start或mock调用后才会有值，此采样率就是rec.buffers数据的采样率。
 
 
+### 【方法】rec.envIn(pcmData,pcmAbsSum)
+本方法是一个内部使用的最为核心方法，如果你不知道用途，请勿随意调用，配套的有私有方法`envStart(mockEnvInfo,sampleRate)`（私有方法请自行阅读源码），这两方法控制着录音的开启、实时音频输入逻辑，起到隔离平台环境差异的作用（Recorder、RecordApp共享使用了本机制，实现了录音过程和平台环境无关）。
+
+通过调用本方法，会在当前正在录制的录音中追加进新的pcm数据，每次调用本方法都会触发onProcess回调；从而可以做到：在录音过程中插入音频数据、在新的录音中注入之前老的录音的buffers数据可以做到接续录音 等业务逻辑，可参考上面的Demo片段列表中的`新录音从老录音接续、或录制中途插入音频`例子。
+
+`pcmData`：`[Int16,...]` 为一维数组，pcm音频数据的采样率必须是`rec.srcSampleRate` （如果不是，请用`Recorder.SampleData()`方法先转换好）
+
+`pcmAbsSum`：pcmData所有采样的绝对值的和，用来传递给`Recorder.PowerLevel`方法计算音量百分比，最终是给onProcess使用，如果不需要计算音量百分比，直接给0即可。
+
+
 ### 【方法】rec.mock(pcmData,pcmSampleRate)
-模拟一段录音数据，后面可以调用stop进行编码。需提供pcm数据 `pcmData` `=` `[Int16,...]` 为一维数组，和pcm数据的采样率 `pcmSampleRate`。
+模拟一段录音数据，后面直接调用stop进行编码得到音频文件。需提供pcm数据 `pcmData` `=` `[Int16,...]` 为一维数组，和pcm数据的采样率 `pcmSampleRate`。调用本方法后无需调用也无法调用open、close、start等方法，只能调用stop，如果之前已经开始了录音，前面的录音数据全部会被丢弃；本方法主要用于音频转码。
 
 提示：在录音实时回调中配合`Recorder.SampleData()`方法使用效果更佳，可实时生成小片段语音文件。
 
