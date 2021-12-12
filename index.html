@@ -888,7 +888,9 @@ function recdown(key){
 		downA.href=(window.URL||webkitURL).createObjectURL(o.blob);
 		downA.download=name;
 		$("."+cls).prepend(downA);
-		//downA.click(); 某些软件内会跳转页面到恶心推广页
+		if(!/mobile/i.test(navigator.userAgent)){
+			downA.click(); //某些软件内会跳转页面到恶心推广页
+		}
 	};
 };
 function recdown64(key, cls){

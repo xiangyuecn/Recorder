@@ -8,7 +8,7 @@
   
   Traffic:
   <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
-  <a title="cnpm" href="https://npm.taobao.org/package/recorder-core"><img src="https://img.shields.io/badge/cnpm-available-1690CD" alt="cnpm"></a><a title="cnpm" href="https://npm.taobao.org/package/recorder-core"><img src="https://npm.taobao.org/badge/d/recorder-core.svg" alt="cnpm"></a>
+  <a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://img.shields.io/badge/cnpm-available-1690CD" alt="cnpm"></a><a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://npmmirror.com/badge/d/recorder-core.svg" alt="cnpm"></a>
   <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://data.jsdelivr.com/v1/package/gh/xiangyuecn/Recorder/badge" alt="JsDelivr CDN"></a>
   <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="cnpm"></a>
 

@@ -129,7 +129,7 @@ npm publish
 //查询当前配置的源
 npm get registry
 //设置成淘宝源
-npm config set registry http://registry.npm.taobao.org/
+npm config set registry http://registry.npmmirror.com/
 //换成原来的源
 npm config set registry https://registry.npmjs.org/
 ```
