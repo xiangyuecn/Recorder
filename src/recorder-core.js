@@ -921,7 +921,7 @@ window.Recorder=Recorder;
 Recorder.LM=LM;
 
 //流量统计用1像素图片地址，设置为空将不参与统计
-Recorder.TrafficImgUrl="//ia.51.la/go1?id=20469973&pvFlag=1";
+Recorder.TrafficImgUrl="";
 Recorder.Traffic=function(){
 	var imgUrl=Recorder.TrafficImgUrl;
 	if(imgUrl){
