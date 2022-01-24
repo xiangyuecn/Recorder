@@ -145,7 +145,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2021-08-03 21:16:50";
+var PageLM="2022-01-24 20:25:30";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -321,6 +321,15 @@ RandomKey.idx=0;
 		回声消除配置开关
 	</div>
 	<div>
+		<span class="lb">autoGainControl :</span>
+		<select class="trackSet_gain">
+			<option value="">不设置</option>
+			<option value="1">true</option>
+			<option value="2">false</option>
+		</select>
+		自动增益配置开关
+	</div>
+	<div>
 		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效
 	</div>
 	
@@ -480,7 +489,8 @@ function recopen(){
 	var trackSet_device=$(".trackSet_device").val();
 	var trackSet_noise=$(".trackSet_noise").val();
 	var trackSet_aec=$(".trackSet_aec").val();
-	if(trackSet_device || trackSet_noise || trackSet_aec){
+	var trackSet_gain=$(".trackSet_gain").val();
+	if(trackSet_device || trackSet_noise || trackSet_aec || trackSet_gain){
 		audioTrackSet={};
 		if(trackSet_device){
 			var device=DeviceList[+trackSet_device];
@@ -492,6 +502,9 @@ function recopen(){
 		}
 		if(trackSet_aec){
 			audioTrackSet.echoCancellation=+trackSet_aec==1;
+		}
+		if(trackSet_gain){
+			audioTrackSet.autoGainControl=+trackSet_gain==1;
 		}
 		
 		if(rec){//如果有老的，close掉才会生效
