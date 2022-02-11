@@ -40,7 +40,13 @@ var PageSet_RecordAppWxApi="";
 
 /**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置**/
 var PageSet_RecordAppBaseFolder = "https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/";//使用dist目录内的文件小2/3
+
+//自己使用时应当自己把源码clone下来，然后通过src="/src/app-support/app.js"引入，为了方便copy文件测试起见，使用了JsDelivr CDN，这玩意不一定能正常访问
+var onBadCDN=function(){
+	document.querySelector(".badCDN").innerHTML="cdn.jsdelivr.net可能不稳定，未能检测到js被成功加载。<br>如果页面异常，请复制本页面源码到本地测试，并且批量替换掉 https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/ 为 https://xiangyuecn.gitee.io/recorder/ 就能正常测试了";
+};
 </script>
+<div class="badCDN" style="font-size: 50px;text-align: center;color: #f60;"></div>
 
 <!--【1.1】加载独立配置文件，免得修改app.js-->
 <!-- 可选开启ios weixin支持的相关配置 -->
@@ -53,7 +59,7 @@ var PageSet_RecordAppBaseFolder = "https://cdn.jsdelivr.net/gh/xiangyuecn/Record
 【1.2】引入框架文件，app.js会自动加载实现文件、Recorder核心、编码引擎，需确保PageSet_RecordAppBaseFolder目录正确
 注意自己使用时应当自己把源码clone下来，然后通过src="/src/app-support/app.js"引入，这里为了方便copy文件测试起见，使用了JsDelivr CDN。
 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/app-support/app.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/app-support/app.js" onerror="onBadCDN()"></script>
 
 
 <script>
@@ -96,13 +102,14 @@ RecordApp.Install(function(){
 <div class="main">
 	<div class="mainBox">
 		<span style="font-size:32px;color:#f60;">RecordApp QuickStart: 快速入门</span>
-		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
+		<a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
+		| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
 		
 		<div style="padding-top:10px;color:#666">
 			更多Demo：
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/">Recorder H5</a>
-			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx">RecordApp</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html">Recorder QuickStart</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
+			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx" target="_blank">RecordApp</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">Recorder QuickStart</a>
 		</div>
 	</div>
 	
