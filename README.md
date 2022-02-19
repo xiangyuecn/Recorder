@@ -1141,9 +1141,9 @@ public void onPermissionRequest(PermissionRequest request) {
 
 
 # :open_book:IOS Hybrid App中录音示例
-IOS 14.3+：新版本IOS WKWebView已支持H5录音，但作者还未测试，暂时不提供实现方法，请自行对接。已知：App有了录音权限后，H5请求录音权限时会弹出网页授期确认对话框，已知iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，为什么15+才支持：应该是低版本iOS脑残。
+iOS 14.3+：新版本iOS WKWebView已支持H5录音，但作者还未测试，暂时不提供实现方法，请自行对接。已知：App有了录音权限后，H5请求录音权限时会弹出网页授权确认对话框，已知iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，为什么15+才支持：应该是低版本iOS脑残。
 
-IOS 11.0-14.2：纯粹的H5录音在IOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含IOS App源码。
+iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含iOS App源码。
 
 
 
