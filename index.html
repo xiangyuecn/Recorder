@@ -145,12 +145,18 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2022-01-24 20:25:30";
+var PageLM="2022-03-03 19:28:16";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
 };
 RandomKey.idx=0;
+
+//乐此不疲，古董浏览器，仅保证基本的可执行不代码异常
+if(!Date.now)Date.now=function(){return new Date().getTime()};
+if(!window.localStorage){window.localStorage={
+	loadMinJs:/loadMinJs/.test(location.href)?"1":"0"
+}};
 </script>
 <script src="assets/ztest-jquery.min-1.9.1.js"></script>
 
@@ -204,9 +210,8 @@ RandomKey.idx=0;
 		<a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
 		| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
 		
-		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">在线编辑和运行</a>
+		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
 		| <a href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue" target="_blank">H5 vue</a>
-		| <a href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html" target="_blank">App vue</a>
 		
 		<div style="margin-top:6px;">
 			<span class="lb">QuickStart :</span>
@@ -258,6 +263,10 @@ RandomKey.idx=0;
 		<span style="display: inline-block;">
 			<button onclick="recpause()">暂停</button>
 			<button onclick="recresume()">继续</button>
+		</span>
+		<span style="display: inline-block;">
+			<button onclick="recPlayLast()">播放</button>
+			<button onclick="recUploadLast()">上传</button>
 		</span>
 	</div>
 	
@@ -335,6 +344,20 @@ RandomKey.idx=0;
 		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效
 	</div>
 	
+	<div style="margin-top:12px;">
+		<span class="lb">ConnectEnableWorklet :</span>
+		<select class="enableWorklet">
+			<option value="1">默认</option>
+			<option value="2">禁用</option>
+		</select>
+		音频采集连接方式：默认会启用AudioWorklet，禁用后使用ScriptProcessor
+		；<span style="color:#f60">设置后需重新打开录音</span>
+		<span style="font-size:12px">
+		；AudioWorklet导致某些浏览器崩溃
+		<a href="assets/ztest_chrome_bug_AudioWorkletNode.html" target="_blank">测试</a>
+		(坑已填好)
+		</span>
+	</div>
 	<div style="margin-top:12px;">
 		<span class="lb">Destroy :</span>
 		<button onclick="callDestroy()">调用Recorder.Destroy()</button>
@@ -421,7 +444,7 @@ RandomKey.idx=0;
 
 <div class="mainBox">
 	<span class="lb">视频播放测试 :</span>
-	<button onclick="$('.videoTest').show().html('<video controls webkit-playsinline playsinline x5-video-player-type=\'h5\' src=\'https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/audio/movie-sexy-rabbit-baby.mp4\' style=\'width:240px;height:160px\'></'+'video>').find('video')[0].play()">播放mp4</button>
+	<button onclick="$('.videoTest').show().html('<video controls webkit-playsinline playsinline x5-video-player-type=\'h5\' src=\'assets/audio/movie-一代宗师-此一时彼一时.mp4.webm\' style=\'width:370px;height:160px\'></'+'video>').find('video')[0].play()">播放mp4</button>
 	
 	Video对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/84">issues#84</a>）；IOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音，但并未再现。
 	<button onclick="$('.videoTest').show()">显示video</button>
@@ -433,17 +456,23 @@ RandomKey.idx=0;
 <div class="mainBox">
 	<span class="lb">浏览器环境情况 :</span>
 	<pre class="recinfoCode">
-AudioContext:${!!window.AudioContext}
-webkitAudioContext:${!!window.webkitAudioContext}
+AudioContext:${"AudioContext" in window}
+webkitAudioContext:${"webkitAudioContext" in window}
 mediaDevices:${!!navigator.mediaDevices}
-mediaDevices.getUserMedia:${!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)}
+mediaDevices.getUserMedia:${!!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)}
 navigator.getUserMedia:${!!navigator.getUserMedia}
 navigator.webkitGetUserMedia:${!!navigator.webkitGetUserMedia}
+AudioContext.scriptProcessor:{{
+						"createScriptProcessor" in (Recorder.Ctx||{})
+					 || "createJavaScriptNode" in (Recorder.Ctx||{})
+					}}
+AudioContext.audioWorklet:{{"audioWorklet" in (Recorder.Ctx||{})}}
+AudioWorkletNode:${"AudioWorkletNode" in window}
 
 URL:${location.href.replace(/#.+/g,"")}
 UA:${navigator.userAgent}
 
-Recorder库修改时间（有可能修改了忘改）:${Recorder.LM}
+Recorder库修改时间（有可能修改了忘改）：${Recorder.LM}
 本页面修改时间（有可能修改了忘改）：${PageLM}
 </pre>
 	
@@ -486,6 +515,12 @@ function recopen(){
 	if(disableEnvInFixSet){
 		reclog("已禁用设备卡顿时音频输入丢失补偿，可以通过别的程序大量占用CPU来模拟设备卡顿，然后录音听听未补偿时的播放效果，然后再试试不禁用的效果");
 	};
+	
+	var enableWorklet=+$(".enableWorklet").val()==1;
+	Recorder.ConnectEnableWorklet=enableWorklet;
+	if(!enableWorklet){
+		reclog("已禁用AudioWorklet，将使用ScriptProcessor");
+	}
 	
 	var audioTrackSet=null;
 	var trackSet_device=$(".trackSet_device").val();
@@ -767,7 +802,7 @@ function recstopFn(call,isClick,endCall,rec){
 var recLogLast;
 var addRecLog=function(time,tag,blob,set,t1){
 	var id=RandomKey(16);
-	recLogLast={blob:blob,set:$.extend({},set),time:time};
+	recLogLast={blob:blob,set:$.extend({},set),time:time,key:id};
 	recblob[id]=recLogLast;
 	reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 };
@@ -889,6 +924,64 @@ function recplay2(elem,name){
 	
 	recplay(key);
 };
+function recPlayLast(){
+	if(!recLogLast){
+		reclog("请先录音，然后停止后再播放",1);
+		return;
+	};
+	recplay(recLogLast.key);
+};
+function recUploadLast(){
+	if(!recLogLast){
+		reclog("请先录音，然后停止后再上传",1);
+		return;
+	};
+	var blob=recLogLast.blob;
+	
+	//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
+	//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+	var api="https://xx.xx/test_request";
+	var onreadystatechange=function(title){
+		return function(){
+			if(xhr.readyState==4){
+				if(xhr.status==200){
+					reclog(title+"上传成功",2);
+				}else{
+					reclog(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。", "#d8c1a0");
+					
+					console.error(title+"上传失败",xhr.status,xhr.responseText);
+				};
+			};
+		};
+	};
+	reclog("开始上传到"+api+"，请求稍后...","#f60");
+
+	/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
+	var reader=new FileReader();
+	reader.onloadend=function(){
+		var postData="";
+		postData+="mime="+encodeURIComponent(blob.type);//告诉后端，这个录音是什么格式的，可能前后端都固定的mp3可以不用写
+		postData+="&upfile_b64="+encodeURIComponent((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result)||[])[1]) //录音文件内容，后端进行base64解码成二进制
+		//...其他表单参数
+		
+		var xhr=new XMLHttpRequest();
+		xhr.open("POST", api);
+		xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+		xhr.onreadystatechange=onreadystatechange("上传方式一【Base64】");
+		xhr.send(postData);
+	};
+	reader.readAsDataURL(blob);
+
+	/***方式二：使用FormData用multipart/form-data表单上传文件***/
+	var form=new FormData();
+	form.append("upfile",blob,"recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+	//...其他表单参数
+	
+	var xhr=new XMLHttpRequest();
+	xhr.open("POST", api);
+	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
+	xhr.send(form);
+};
 function recdown(key){
 	var o=recblob[key];
 	if(o){
@@ -964,8 +1057,6 @@ var DecodeAudio=function(fileName,arrayBuffer,True,False){
 
 
 
-$(".recinfoCode").text($(".recinfoCode").text().replace(/\$\{(.+?)\}/g,function(a,b){return eval(b)}));
-
 var s="https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/";
 var extensionsInfo={
 	WaveView:'<b>WaveView</b> (<a href="'+s+'waveview.js">waveview.js</a> 动态波形)'
@@ -1007,6 +1098,10 @@ reclog('已启用Extensions：'
 	+'、'+extensionsInfo.DTMF);
 
 
+
+$(".recinfoCode").text($(".recinfoCode").text().replace(/\$\{(.+?)\}|\{\{([\S\s]+?)\}\}/g,function(a,b,c){return eval(b||c)}));
+	
+	
 function goiframe(){
 	location.href="assets/ztest_iframe.html#iframeUrl=/index.html";
 };
@@ -1329,6 +1424,13 @@ function loadEngine(input){
 				var elem=document.createElement("script");
 				elem.setAttribute("type","text/javascript");
 				elem.setAttribute("src",engines[i]);
+				if(!("onload" in elem)){//IsLoser 古董浏览器
+					elem.onreadystatechange=function(){
+						if(elem.readyState=="loaded"){
+							load();
+						}
+					}
+				};
 				elem.onload=function(){
 					load();
 				};

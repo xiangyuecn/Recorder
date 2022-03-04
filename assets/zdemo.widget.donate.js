@@ -23,7 +23,7 @@ var Fn=function(set){
 	DonateWidget.cur=This;
 	
 	This.view();
-	document.body.addEventListener("click",function(e){
+	window.addEventListener&&document.body.addEventListener("click",function(e){
 		if(/button/i.test(e.target.tagName) || /btn/i.test(e.target.className)){
 			try{
 				This.dialog();
@@ -66,7 +66,7 @@ Fn.prototype=DonateWidget.prototype={
 		
 		var zIndex=1;
 		var all=document.querySelectorAll("*");
-		for(var i=0;i<all.length;i++){
+		for(var i=0;window.getComputedStyle&&i<all.length;i++){
 			var v=+getComputedStyle(all[i]).zIndex||0;
 			if(v>zIndex){
 				zIndex=v+1;
@@ -84,8 +84,9 @@ Fn.prototype=DonateWidget.prototype={
 		this._render(!_f,!!_f,fixedElem.querySelector(".DonateWidget_dialogRender"));
 	}
 	,_render:function(isDialog,isFloat,elem){
-		var title="",times=["2020/01/25","2021/02/12","2022/02/01","2023/01/22","2024-02-10"];//大年初一
-		var now=Date.now();
+		var title="",times=["2023/01/22","2024/02/10","2025/01/29","2026/02/17","2027/02/06","2028/01/26","2029/02/13","2030/02/03"];//大年初一
+		//调试: DonateWidgetDateNow=function(){return new Date("2030/02/17").getTime()};DonateWidget.SetDisable(0)
+		var now=(window.DonateWidgetDateNow||Date.now)();
 		for(var i=0;!title&&i<times.length;i++){
 			var time=new Date(times[i]).getTime();
 			var td=Math.ceil((time-now)/24/60/60/1000);
@@ -93,11 +94,13 @@ Fn.prototype=DonateWidget.prototype={
 				if(td>0){
 					title="剩余"+td+"天就过年了，给大伙拜个早年吧~ 赏包辣条？";
 				}else{
-					title="春节快乐，给大伙拜年啦~";
-					if(td>-15){
-						title+=" 赏个红包？";
+					title="";
+					if(td>-14){
+						title+="新年快乐，给大伙拜年啦~ 赏个红包？";
+					}else if(td==-14){
+						title+="元宵节快乐~ 赏个红包？";
 					}else{
-						title+=" 赏包辣条？";
+						title+="新年快乐，给大伙拜个晚年~ 赏包辣条？";
 					};
 				};
 			};

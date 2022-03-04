@@ -260,7 +260,7 @@ var CLog=function(msg,err){
 		+":"+("0"+now.getSeconds()).substr(-2)
 		+"."+("00"+now.getMilliseconds()).substr(-3);
 	var arr=["["+t+" RecordApp]["+(App.Current&&App.Current.Key||"?")+"]"+msg];
-	var a=arguments;
+	var a=arguments,console=window.console||{};
 	var i=2,fn=console.log;
 	if(typeof(err)=="number"){
 		fn=err==1?console.error:err==3?console.warn:fn;
@@ -270,8 +270,13 @@ var CLog=function(msg,err){
 	for(;i<a.length;i++){
 		arr.push(a[i]);
 	};
-	fn.apply(console,arr);
+	if(IsLoser){//古董浏览器，仅保证基本的可执行不代码异常
+		fn&&fn("[IsLoser]"+arr[0],arr.length>1?arr:"");
+	}else{
+		fn.apply(console,arr);
+	};
 };
+var IsLoser=true;try{IsLoser=!console.log.apply;}catch(e){};
 
 
 
@@ -281,7 +286,7 @@ var CLog=function(msg,err){
 
 
 var App={
-LM:"2020-11-15 21:36:11"
+LM:"2022-03-03 18:58:07"
 ,Current:0
 ,CLog:CLog
 ,IsWx:IsWx
@@ -672,6 +677,7 @@ fail:fn(errMsg) 录音出错时回调
 };
 
 window.RecordApp=App;
+CLog("【提醒】因为iOS 14.3+已无需本兼容方案即可实现H5录音，所以RecordApp正逐渐失去存在的意义；如果你不打算兼容老版本iOS，请直接使用简单强大的Recorder H5即可。",3);
 
 OnInstalled&&OnInstalled();
 

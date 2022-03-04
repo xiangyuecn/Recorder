@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2021-08-03 20:01:03";
+var LM="2022-03-05 01:21:20";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -90,6 +90,12 @@ Recorder.Support=function(){
 	};
 	return true;
 };
+
+
+/*启用AudioWorklet来进行音频采集连接（如果浏览器支持的话），禁用后将使用过时的ScriptProcessor来连接（如果还在的话）*/
+var ConnectEnableWorklet="ConnectEnableWorklet";
+Recorder[ConnectEnableWorklet]=true;
+
 /*初始化H5音频采集连接。如果自行提供了sourceStream将只进行一次简单的连接处理。如果是普通麦克风录音，此时的Stream是全局的，Safari上断开后就无法再次进行连接使用，表现为静音，因此使用全部使用全局处理避免调用到disconnect；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。*/
 var Connect=function(streamStore){
 	streamStore=streamStore||Recorder;
@@ -97,15 +103,16 @@ var Connect=function(streamStore){
 	
 	var ctx=Recorder.Ctx,stream=streamStore.Stream;
 	var media=stream._m=ctx.createMediaStreamSource(stream);
-	var process=stream._p=(ctx.createScriptProcessor||ctx.createJavaScriptNode).call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
-	
-	media.connect(process);
-	process.connect(ctx.destination);
-	
 	var calls=stream._call;
-	process.onaudioprocess=function(e){
+	
+	//浏览器回传的音频数据处理
+	var exec=function(e,workletArr){
+		if(workletArr && !isWorklet){
+			CLog(audioWorklet+"多余回调",3);
+			return;
+		};
 		for(var k0 in calls){//has item
-			var o=e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
+			var o=workletArr||e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
 			var size=o.length;
 			
 			var pcm=new Int16Array(size);
@@ -124,6 +131,150 @@ var Connect=function(streamStore){
 			return;
 		};
 	};
+	
+	//古董级别的 createScriptProcessor 处理，低版本浏览器兼容
+	var oldFn=ctx.createScriptProcessor||ctx.createJavaScriptNode;
+	var oldScript=function(){
+		isWorklet=stream.isWorklet=false;
+		_Disconn_n(stream);
+		CLog("Connect采用老的"+scriptProcessor+"，"+(Recorder[ConnectEnableWorklet]?"但已":"可")+"设置"+recTxt+"."+ConnectEnableWorklet+"=true尝试启用"+audioWorklet+"新方式",3);
+		
+		var process=stream._p=oldFn.call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
+		
+		media.connect(process);
+		process.connect(ctx.destination);
+		
+		process.onaudioprocess=function(e){ exec(e); };
+	};
+	
+	//尝试开启AudioWorklet处理
+	var isWorklet=stream.isWorklet=!oldFn || Recorder[ConnectEnableWorklet];
+	var scriptProcessor="ScriptProcessor";//一堆字符串名字，有利于压缩js
+	var audioWorklet="audioWorklet";
+	var recTxt="Recorder";
+	var recAudioWorklet=recTxt+" "+audioWorklet;
+	var RecProc="RecProc";
+	var AwNode=window.AudioWorkletNode;
+	if(!(isWorklet && ctx[audioWorklet] && AwNode)){
+		oldScript();//不支持，直接使用老的
+		return;
+	};
+	var clazzUrl=function(){
+		var xf=function(f){return f.toString().replace(/^function|DEL_/g,"").replace(/\$RA/g,recAudioWorklet)};
+		var clazz='class '+RecProc+' extends AudioWorkletProcessor{';
+			clazz+="constructor "+xf(function(option){
+				DEL_super(option);
+				var This=this,bufferSize=option.processorOptions.bufferSize;
+				This.bufferSize=bufferSize;
+				This.buffer=new Float32Array(bufferSize*2);//乱给size搞乱缓冲区不管
+				This.pos=0;
+				This.port.onmessage=function(e){
+					if(e.data.kill){
+						This.kill=true;
+						console.log("$RA kill call");
+					}
+				};
+				console.log("$RA .ctor call", option);
+			});
+			
+			clazz+="process "+xf(function(input,b,c){//需要等到ctx激活后才会有回调
+				var This=this,bufferSize=This.bufferSize;
+				var buffer=This.buffer,pos=This.pos;
+				input=(input[0]||[])[0]||[];
+				if(input.length){
+					buffer.set(input,pos);
+					pos+=input.length;
+					
+					var len=~~(pos/bufferSize)*bufferSize;
+					if(len){
+						this.port.postMessage({ val: buffer.subarray(0,len) });
+						
+						var more=buffer.subarray(len,pos);
+						buffer=new Float32Array(bufferSize*2);
+						buffer.set(more);
+						pos=more.length;
+						This.buffer=buffer;
+					}
+					This.pos=pos;
+				}
+				return !This.kill;
+			});
+		clazz+='}'
+			+'try{'
+				+'registerProcessor("'+RecProc+'", '+RecProc+')'
+			+'}catch(e){'
+				+'console.error("'+recAudioWorklet+'注册失败",e)'
+			+'}';
+		//URL.createObjectURL 本地有些浏览器会报 Not allowed to load local resource，直接用dataurl
+		return "data:text/javascript;base64,"+btoa(unescape(encodeURIComponent(clazz)));
+	};
+	
+	var awNext=function(){//可以继续，没有调用断开
+		return isWorklet && stream._na;
+	};
+	var badInt;
+	var nodeAlive=stream._na=function(){
+		//start时会调用，只要没有收到数据就断定AudioWorklet有问题，恢复用老的
+		if(badInt!==""){//没有回调过数据
+			clearTimeout(badInt);
+			badInt=setTimeout(function(){
+				badInt=0;
+				CLog(audioWorklet+"未返回任何音频，恢复使用"+scriptProcessor,3);
+				awNext()&&oldFn&&oldScript();//未来没有老的，可能是误判
+			},500);
+		};
+	};
+	var createNode=function(){
+		if(!awNext())return;
+		var node=stream._n=new AwNode(ctx, RecProc, {
+			processorOptions:{bufferSize:bufferSize}
+		});
+		media.connect(node);
+		node.connect(ctx.destination);//老版本浏览器必须连接
+		node.port.onmessage=function(e){
+			if(badInt){
+				clearTimeout(badInt);badInt="";
+			};
+			exec(0,e.data.val);
+		};
+		CLog("Connect采用"+audioWorklet+"方式，设置"+recTxt+"."+ConnectEnableWorklet+"=false可恢复老式"+scriptProcessor);
+	};
+	
+	//如果start时的resume和下面的构造node同时进行，将会导致部分浏览器崩溃，源码assets中 ztest_chrome_bug_AudioWorkletNode.html 可测试。所以，将所有代码套到resume里面（不管catch），避免出现这个问题
+	ctx.resume()[calls&&"finally"](function(){//注释掉这行 观摩浏览器崩溃 STATUS_ACCESS_VIOLATION
+		if(!awNext())return;
+		if(ctx[RecProc]){
+			createNode();
+			return;
+		};
+		var url=clazzUrl();
+		ctx[audioWorklet].addModule(url).then(function(e){
+			if(!awNext())return;
+			ctx[RecProc]=1;
+			createNode();
+			if(badInt){//重新计时
+				nodeAlive();
+			};
+		})[calls&&"catch"](function(e){ //fix 关键字，保证catch压缩时保持字符串形式
+			CLog(audioWorklet+".addModule失败",1,e);
+			awNext()&&oldScript();
+		});
+	});
+};
+var ConnAlive=function(streamStore){
+	var stream=(streamStore||Recorder).Stream;
+	
+	if(stream._na){//检查AudioWorklet连接是否有效，无效就回滚到老的ScriptProcessor
+		stream._na();
+	};
+};
+var _Disconn_n=function(stream){
+	stream._na=null;
+	if(stream._n){
+		stream._n.port.postMessage({kill:true});
+		stream._n.disconnect();
+		stream._n=null;
+	};
 };
 var Disconnect=function(streamStore){
 	streamStore=streamStore||Recorder;
@@ -133,9 +284,13 @@ var Disconnect=function(streamStore){
 	if(stream){
 		if(stream._m){
 			stream._m.disconnect();
-			stream._p.disconnect();
-			stream._p.onaudioprocess=stream._p=stream._m=null;
+			stream._m=null;
 		};
+		if(stream._p){
+			stream._p.disconnect();
+			stream._p.onaudioprocess=stream._p=null;
+		};
+		_Disconn_n(stream);
 		
 		if(isGlobal){//全局的时候，要把流关掉（麦克风），直接提供的流不处理
 			var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
@@ -284,8 +439,9 @@ var CLog=function(msg,err){
 	var t=("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2)
 		+"."+("00"+now.getMilliseconds()).substr(-3);
-	var arr=["["+t+" Recorder]"+msg];
-	var a=arguments;
+	var recID=this&&this.envIn&&this.envCheck&&this.id;
+	var arr=["["+t+" Recorder"+(recID?":"+recID:"")+"]"+msg];
+	var a=arguments,console=window.console||{};
 	var i=2,fn=console.log;
 	if(typeof(err)=="number"){
 		fn=err==1?console.error:err==3?console.warn:fn;
@@ -295,8 +451,13 @@ var CLog=function(msg,err){
 	for(;i<a.length;i++){
 		arr.push(a[i]);
 	};
-	fn.apply(console,arr);
+	if(IsLoser){//古董浏览器，仅保证基本的可执行不代码异常
+		fn&&fn("[IsLoser]"+arr[0],arr.length>1?arr:"");
+	}else{
+		fn.apply(console,arr);
+	};
 };
+var IsLoser=true;try{IsLoser=!console.log.apply;}catch(e){};
 Recorder.CLog=CLog;
 
 
@@ -352,8 +513,10 @@ function initFn(set){
 Recorder.Sync={/*open*/O:9,/*close*/C:9};
 
 Recorder.prototype=initFn.prototype={
+	CLog:CLog
+	
 	//流相关的数据存储在哪个对象里面；如果提供了sourceStream，数据直接存储在当前对象中，否则存储在全局
-	_streamStore:function(){
+	,_streamStore:function(){
 		if(this.set.sourceStream){
 			return this;
 		}else{
@@ -367,12 +530,12 @@ Recorder.prototype=initFn.prototype={
 		True=True||NOOP;
 		var failCall=function(errMsg,isUserNotAllow){
 			isUserNotAllow=!!isUserNotAllow;
-			CLog("录音open失败："+errMsg+",isUserNotAllow:"+isUserNotAllow,1);
+			This.CLog("录音open失败："+errMsg+",isUserNotAllow:"+isUserNotAllow,1);
 			False&&False(errMsg,isUserNotAllow);
 		};
 		
 		var ok=function(){
-			CLog("open成功");
+			This.CLog("open ok id:"+This.id);
 			True();
 			
 			This._SO=0;//解除stop对open中的start调用的阻止
@@ -480,7 +643,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		var f2=function(e){
 			var code=e.name||e.message||e.code+":"+e;
-			CLog("请求录音权限错误",1,e);
+			This.CLog("请求录音权限错误",1,e);
 			
 			codeFail(code,"无法录音："+code);
 		};
@@ -500,7 +663,7 @@ Recorder.prototype=initFn.prototype={
 		This._O=0;
 		if(This._O_!=Lock.O){
 			//唯一资源Stream的控制权已交给新对象，这里不能关闭。此处在每次都弹权限的浏览器内可能存在泄漏，新对象被拒绝权限可能不会调用close，忽略这种不处理
-			CLog("close被忽略",3);
+			This.CLog("close被忽略（因为同时open了多个rec，只有最后一个会真正close）",3);
 			call();
 			return;
 		};
@@ -508,7 +671,7 @@ Recorder.prototype=initFn.prototype={
 		
 		Disconnect(streamStore);
 		
-		CLog("close");
+		This.CLog("close");
 		call();
 	}
 	
@@ -617,7 +780,7 @@ Recorder.prototype=initFn.prototype={
 			var addTime=now-tsInPrev.t-pcmTime;//距离上次输入丢失这么多ms
 			if(addTime>pcmTime/5){//丢失超过本帧的1/5
 				var fixOpen=!set.disableEnvInFix;
-				CLog("["+now+"]"+(fixOpen?"":"未")+"补偿"+addTime+"ms",3);
+				This.CLog("["+now+"]"+(fixOpen?"":"未")+"补偿"+addTime+"ms",3);
 				This.envInFix+=addTime;
 				
 				//用静默进行补偿
@@ -713,7 +876,7 @@ Recorder.prototype=initFn.prototype={
 			};
 			
 			if(hasClear){
-				CLog("未进入异步前不能清除buffers",3);
+				This.CLog("未进入异步前不能清除buffers",3);
 			}else{
 				//还原size，异步结束后再统计仅修改后的size，如果发生clear要原样加回来
 				if(engineCtx){
@@ -743,19 +906,19 @@ Recorder.prototype=initFn.prototype={
 			isOpen=0;
 		};
 		if(!isOpen){
-			CLog("未open",1);
+			This.CLog("未open",1);
 			return;
 		};
-		CLog("开始录音");
+		This.CLog("开始录音");
 		
 		This._stop();
-		This.state=0;
+		This.state=0;//0未录音 1录音中 2暂停 3等待ctx激活
 		This.envStart(null,ctx.sampleRate);
 		
 		//检查open过程中stop是否已经调用过
 		if(This._SO&&This._SO+1!=This._S){//上面调用过一次 _stop
 			//open未完成就调用了stop，此种情况终止start。也应尽量避免出现此情况
-			CLog("start被中断",3);
+			This.CLog("start被中断",3);
 			return;
 		};
 		This._SO=0;
@@ -765,9 +928,13 @@ Recorder.prototype=initFn.prototype={
 			This.resume();
 		};
 		if(ctx.state=="suspended"){
+			This.CLog("wait ctx resume...");
+			This.state=3;//此状态下 不管其他切换动作对state的改变
 			ctx.resume().then(function(){
-				CLog("ctx resume");
-				end();
+				This.CLog("ctx resume");
+				if(This.state==3){
+					end();
+				};
 			});
 		}else{
 			end();
@@ -778,7 +945,7 @@ Recorder.prototype=initFn.prototype={
 		var This=this;
 		if(This.state){
 			This.state=2;
-			CLog("pause");
+			This.CLog("pause");
 			delete This._streamStore().Stream._call[This.id];
 		};
 	}
@@ -787,14 +954,16 @@ Recorder.prototype=initFn.prototype={
 		var This=this;
 		if(This.state){
 			This.state=1;
-			CLog("resume");
+			This.CLog("resume");
 			This.envResume();
 			
-			This._streamStore().Stream._call[This.id]=function(pcm,sum){
+			var store=This._streamStore();
+			store.Stream._call[This.id]=function(pcm,sum){
 				if(This.state==1){
 					This.envIn(pcm,sum);
 				};
 			};
+			ConnAlive(store);//AudioWorklet只会在ctx激活后运行
 		};
 	}
 	
@@ -824,7 +993,7 @@ Recorder.prototype=initFn.prototype={
 	*/
 	,stop:function(True,False,autoClose){
 		var This=this,set=This.set,t1;
-		CLog("Stop "+(This.envInLast?This.envInLast-This.envInFirst+"ms 补"+This.envInFix+"ms":"-"));
+		This.CLog("stop "+(This.envInLast?This.envInLast-This.envInFirst+"ms 补"+This.envInFix+"ms":"-"));
 		
 		var end=function(){
 			This._stop();//彻底关掉engineCtx
@@ -833,14 +1002,14 @@ Recorder.prototype=initFn.prototype={
 			};
 		};
 		var err=function(msg){
-			CLog("结束录音失败："+msg,1);
+			This.CLog("结束录音失败："+msg,1);
 			False&&False(msg);
 			end();
 		};
 		var ok=function(blob,duration){
-			CLog("结束录音 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
+			This.CLog("结束录音 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
 			if(set.takeoffEncodeChunk){//接管了输出，此时blob长度为0
-				CLog("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据",3);
+				This.CLog("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据",3);
 			}else if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
 				err("生成的"+set.type+"无效");
 				return;
@@ -849,8 +1018,9 @@ Recorder.prototype=initFn.prototype={
 			end();
 		};
 		if(!This.isMock){
-			if(!This.state){
-				err("未开始录音");
+			var isCtxWait=This.state==3;
+			if(!This.state || isCtxWait){
+				err("未开始录音"+(isCtxWait?"，开始录音前无用户交互导致AudioContext未运行":""));
 				return;
 			};
 			This._stop(true);
@@ -861,7 +1031,7 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		if(!This.buffers[0]){
-			err("音频被释放");
+			err("音频buffers被释放");
 			return;
 		};
 		if(!This[set.type]){
@@ -898,7 +1068,7 @@ Recorder.prototype=initFn.prototype={
 		var res=chunk.data;
 		var duration=Math.round(res.length/set.sampleRate*1000);
 		
-		CLog("采样"+size+"->"+res.length+" 花:"+(Date.now()-t1)+"ms");
+		This.CLog("采样"+size+"->"+res.length+" 花:"+(Date.now()-t1)+"ms");
 		
 		setTimeout(function(){
 			t1=Date.now();

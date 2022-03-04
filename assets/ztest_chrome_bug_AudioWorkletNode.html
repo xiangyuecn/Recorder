@@ -1,0 +1,95 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+<title>搞崩溃浏览器: Chrome AudioContext resume AudioWorkletNode audioWorklet addModule 崩溃 STATUS_ACCESS_VIOLATION</title>
+</head>
+
+<body>
+<div class="logs" style="font-size:20px;"></div>
+
+<script>
+var elem=document.querySelector(".logs");
+var timeStr=function(){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2)
+		+"."+("00"+now.getMilliseconds()).substr(-3);
+	return t;
+};
+var log=function(msg,color){
+	msg="["+timeStr()+"]"+msg;
+	var div=document.createElement("div");
+	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">'+msg+"</div>";
+	elem.prepend(div);
+	console.log(msg);
+};
+log('【被audioWorklet搞崩浏览器】已知Chrome 90 80容易崩（100%崩），<span style="color:#0b1">老版本Chrome 60 70测的不会崩，FireFox不会崩</span>。Chrome崩溃要点：suspended状态下的AudioContext，在audioWorklet.addModule+构造AudioWorkletNode未完成时，同时进行resume调用，在恢复到running状态那一刻，浏览器崩溃了 错误代码：STATUS_ACCESS_VIOLATION',"#f90");
+log("请打开控制台进行观摩，不然崩溃后看不到页面内容");
+log("代码开始执行...");
+</script>
+
+
+
+
+<script>
+var clazz='class Test extends AudioWorkletProcessor{\
+	constructor(option){\
+		super();\
+		console.log(".ctor",option);\
+	}\
+	process(input,output,param){\
+		console.log("process 123");\
+		return true;\
+	}\
+}\
+registerProcessor("testProc",Test);';
+
+//URL.createObjectURL chrome本地会报 Not allowed to load local resource，直接dataurl，Firefox没有这个问题
+//var url=URL.createObjectURL(new Blob([clazz], {type:"text/javascript"}));
+var url="data:text/javascript;base64,"+btoa(unescape(encodeURIComponent(clazz)));
+
+
+var ctx=new AudioContext();
+log("1 ctx.state="+ctx.state);//此时是suspended
+
+var isClick=0;
+addEventListener("click",function(e){
+	if(isClick)return;
+	isClick=1;
+	log("2 ctx.state="+ctx.state);//此时还是suspended
+	
+	ctx.resume().then(function(){
+		log("4 ctx.state="+ctx.state);//此时是running
+	});
+	
+	//要是放到resume的回调是没有问题的，这里同时进行操作就有问题了
+	ctx.audioWorklet.addModule(url).then(function(){
+		log("3 ctx.state="+ctx.state);//此时还是suspended
+		var timer=setInterval(function(){//计时，好看崩溃时间点
+			console.log("["+timeStr()+"]等你崩...");
+		},1);
+		
+		log("开始构造AudioWorkletNode，等待浏览器崩溃1...");
+		new AudioWorkletNode(ctx, "testProc", {
+			processorOptions:{abc:123}
+		});
+		log("构造时没崩溃，等待浏览器崩溃2...");
+		setTimeout(function(){
+			log("完成，浏览器正常，没有崩溃",2);
+			clearInterval(timer);
+			ctx.close();
+		},300);
+	}).catch(function(e){
+		console.error("addModule",e);
+	});
+});
+
+log("请随便点击一下页面，激活AudioContext","red;font-size:30px");
+</script>
+
+</body>
+</html>

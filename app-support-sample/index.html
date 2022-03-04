@@ -183,12 +183,16 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2021-08-03 21:16:50";
+var PageLM="2022-03-03 19:30:37";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
 };
 RandomKey.idx=0;
+
+//乐此不疲，古董浏览器，仅保证基本的可执行不代码异常
+if(!Date.now)Date.now=function(){return new Date().getTime()};
+if(!window.localStorage){window.localStorage={}};
 </script>
 <script
 	DEF="/*=:=*/" src="../assets/ztest-jquery.min-1.9.1.js"
@@ -250,13 +254,13 @@ RandomKey.idx=0;
 		<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample" target="_blank">GitHub</a>
 		| <a href="https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample" target="_blank">Gitee</a>
 		
-		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">在线编辑和运行</a>
+		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
 		| <a href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue" target="_blank">H5 vue</a>
-		| <a href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html" target="_blank">App vue</a>
+		| <a href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html" target="_blank" style="text-decoration: line-through">App vue</a>
 	</div>
 	<div style="margin-top:6px;">
 		<span class="lb">QuickStart :</span>
-		<a href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html" target="_blank">/app-support-sample/QuickStart.html</a>
+		<a href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html" target="_blank" style="text-decoration: line-through">/app-support-sample/QuickStart.html</a>
 		<span style="font-size:12px;color:#999">(Copy+后端微信接口即可使用，更适合入门学习)</span>
 	</div>
 </div>
@@ -980,6 +984,13 @@ function loadEngine(input){
 				var elem=document.createElement("script");
 				elem.setAttribute("type","text/javascript");
 				elem.setAttribute("src",PageSet_RecordAppBaseFolder+"engine/"+engines[i]+".js");
+				if(!("onload" in elem)){//IsLoser 古董浏览器
+					elem.onreadystatechange=function(){
+						if(elem.readyState=="loaded"){
+							load();
+						}
+					}
+				};
 				elem.onload=function(){
 					load();
 				};

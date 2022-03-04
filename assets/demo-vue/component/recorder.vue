@@ -31,7 +31,7 @@ a:hover{
 }
 
 
-.mainBtn{
+.btns button{
     display: inline-block;
     cursor: pointer;
     border: none;
@@ -39,17 +39,14 @@ a:hover{
     background: #0b1;
     color:#fff;
     padding: 0 15px;
-    margin-right:20px;
+    margin:3px 20px 3px 0;
     line-height: 36px;
     height: 36px;
     overflow: hidden;
     vertical-align: middle;
 }
-.mainBtn:active{
+.btns button:active{
     background: #0a1;
-}
-.ctrlBtn{
-    margin-top:10px;
 }
 .pd{
 	padding:0 0 6px 0;
@@ -71,7 +68,7 @@ a:hover{
     <slot name="top"></slot>
 
     <div class="mainBox">
-        <div>
+        <div class="pd">
             类型：{{ type }}
             <span style="margin:0 20px">
             比特率: <input type="text" v-model="bitRate" style="width:60px"> kbps
@@ -79,11 +76,24 @@ a:hover{
             采样率: <input type="text" v-model="sampleRate" style="width:60px"> hz
         </div>
 
-        <div>
-            <button class="mainBtn ctrlBtn" @click="recOpen">打开录音，请求权限</button>
-            <button class="mainBtn ctrlBtn" @click="recStart">开始录音</button>
-            <button class="mainBtn ctrlBtn" @click="recStop">结束录音，并释放资源</button>
-        </div>
+		<div class="btns">
+			<div>
+				<button @click="recOpen">打开录音,请求权限</button>
+				<button @click="recClose">关闭录音,释放资源</button>
+			</div>
+			
+			<button @click="recStart">录制</button>
+			<button @click="recStop" style="margin-right:80px">停止</button>
+			
+			<span style="display: inline-block;">
+				<button @click="recPause">暂停</button>
+				<button @click="recResume">继续</button>
+			</span>
+			<span style="display: inline-block;">
+				<button @click="recPlayLast">播放</button>
+				<button @click="recUploadLast">上传</button>
+			</span>
+		</div>
     </div>
 
     <div class="mainBox">
@@ -212,8 +222,18 @@ module.exports={
                 This.reclog("打开失败：权限请求被忽略，用户主动点击的弹窗",1);
             };
         }
+		,recClose:function(){
+            var rec=this.rec;
+            this.rec=null;
+			if(rec){
+				rec.close();
+				this.reclog("已关闭");
+			}else{
+				this.reclog("未打开录音",1);
+			};
+		}
         ,recStart:function(){
-            if(!this.rec){
+            if(!this.rec||!Recorder.IsOpen()){
                 this.reclog("未打开录音",1);
                 return;
             }
@@ -222,15 +242,28 @@ module.exports={
             var set=this.rec.set;
             this.reclog("录制中："+set.type+" "+set.sampleRate+"hz "+set.bitRate+"kbps");
         }
+		,recPause:function(){
+			if(this.rec&&Recorder.IsOpen()){
+				this.rec.pause();
+			}else{
+				this.reclog("未打开录音",1);
+			};
+		}
+		,recResume:function(){
+			if(this.rec&&Recorder.IsOpen()){
+				this.rec.resume();
+			}else{
+				this.reclog("未打开录音",1);
+			};
+		}
         ,recStop:function(){
-            var This=this;
-            var rec=This.rec;
-            This.rec=null;
-            if(!rec){
+            if(!(this.rec&&Recorder.IsOpen())){
                 This.reclog("未打开录音",1);
                 return;
             }
-
+			
+            var This=this;
+            var rec=This.rec;
             rec.stop(function(blob,duration){
                 This.reclog("已录制:","",{
                     blob:blob
@@ -238,9 +271,73 @@ module.exports={
                     ,rec:rec
                 });
             },function(s){
-                This.reclog("结束出错："+s,1);
-            },true);//自动close
+                This.reclog("录音失败："+s,1);
+            });
         }
+		
+		
+		
+		
+		
+		,recPlayLast:function(){
+			if(!this.recLogLast){
+				this.reclog("请先录音，然后停止后再播放",1);
+				return;
+			};
+			this.recplay(this.recLogLast.idx);
+		}
+		,recUploadLast:function(){
+			if(!this.recLogLast){
+				this.reclog("请先录音，然后停止后再上传",1);
+				return;
+			};
+			var This=this;
+			var blob=this.recLogLast.res.blob;
+			
+			//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
+			//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
+			var api="https://xx.xx/test_request";
+			var onreadystatechange=function(title){
+				return function(){
+					if(xhr.readyState==4){
+						if(xhr.status==200){
+							This.reclog(title+"上传成功",2);
+						}else{
+							This.reclog(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。", "#d8c1a0");
+							
+							console.error(title+"上传失败",xhr.status,xhr.responseText);
+						};
+					};
+				};
+			};
+			This.reclog("开始上传到"+api+"，请求稍后...","#f60");
+
+			/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
+			var reader=new FileReader();
+			reader.onloadend=function(){
+				var postData="";
+				postData+="mime="+encodeURIComponent(blob.type);//告诉后端，这个录音是什么格式的，可能前后端都固定的mp3可以不用写
+				postData+="&upfile_b64="+encodeURIComponent((/.+;\s*base64\s*,\s*(.+)$/i.exec(reader.result)||[])[1]) //录音文件内容，后端进行base64解码成二进制
+				//...其他表单参数
+				
+				var xhr=new XMLHttpRequest();
+				xhr.open("POST", api);
+				xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+				xhr.onreadystatechange=onreadystatechange("上传方式一【Base64】");
+				xhr.send(postData);
+			};
+			reader.readAsDataURL(blob);
+
+			/***方式二：使用FormData用multipart/form-data表单上传文件***/
+			var form=new FormData();
+			form.append("upfile",blob,"recorder.mp3"); //和普通form表单并无二致，后端接收到upfile参数的文件，文件名为recorder.mp3
+			//...其他表单参数
+			
+			var xhr=new XMLHttpRequest();
+			xhr.open("POST", api);
+			xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
+			xhr.send(form);
+		}
 
 
 
@@ -252,7 +349,7 @@ module.exports={
 
 
         ,reclog:function(msg,color,res){
-            this.logs.splice(0,0,{
+			var obj={
                 idx:this.logs.length
                 ,msg:msg
                 ,color:color
@@ -261,7 +358,11 @@ module.exports={
                 ,playMsg:""
                 ,down:0
                 ,down64Val:""
-            });
+            };
+			if(res&&res.blob){
+				this.recLogLast=obj;
+			};
+            this.logs.splice(0,0,obj);
         }
         ,recplay:function(idx){
             var This=this;

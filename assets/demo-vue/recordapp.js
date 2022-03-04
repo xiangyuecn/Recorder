@@ -12,14 +12,15 @@ var root=new Vue({
 <MainView ref="mainView">
     <template #top>
         <div class="mainBox">
-            <span style="font-size:32px;color:#0b1;">RecordApp vue+webpack测试</span>
-            <a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
+            <span style="font-size:32px;color:#0b1;text-decoration: line-through">RecordApp vue+webpack测试</span>
+            <a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
+			| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
             
             <div style="padding-top:10px;color:#666">
 			    更多Demo：
-                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/">Recorder H5</a>
-                <a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx">RecordApp</a>
-                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue">Recorder vue</a>
+                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
+                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue" target="_blank">Recorder vue</a>
+                <a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx" target="_blank" style="text-decoration: line-through">RecordApp</a>
             </div>
         </div>
     </template>

@@ -13,13 +13,15 @@ var root=new Vue({
     <template #top>
         <div class="mainBox">
             <span style="font-size:32px;color:#0b1;">Recorder H5 vue+webpack测试</span>
-            <a href="https://github.com/xiangyuecn/Recorder">GitHub >></a>
+            <a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
+			| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
             
             <div style="padding-top:10px;color:#666">
 			    更多Demo：
-                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/">Recorder H5</a>
-                <a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx">RecordApp</a>
-                <a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html">RecordApp vue</a>
+                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
+                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">H5 QuickStart</a>
+				<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
+                <a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx" target="_blank" style="text-decoration: line-through">RecordApp</a>
             </div>
         </div>
     </template>
@@ -54,7 +56,7 @@ mainRef.reclog(`<span style="color:green">绿油油的一大片，真有食欲</
 var logMeta=function(n,v){
     mainRef.reclog('<span style="color:#f60">'+n+":</span> <span style='color:#999'>"+v+"</span>");
 };
-logMeta(`本页面修改时间（有可能修改了忘改）`,'2020-11-25 21:43:09');
+logMeta(`本页面修改时间（有可能修改了忘改）`,'2022-03-03 21:52:39');
 logMeta(`Recorder库修改时间（有可能修改了忘改）`,mainRef.Rec.LM);
 logMeta(`UA`,navigator.userAgent);
 logMeta(`URL`,location.href.replace(/#.*/g,""));
