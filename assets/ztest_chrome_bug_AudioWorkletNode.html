@@ -27,7 +27,7 @@ var log=function(msg,color){
 	elem.prepend(div);
 	console.log(msg);
 };
-log('【被audioWorklet搞崩浏览器】已知Chrome 90 80容易崩（100%崩），<span style="color:#0b1">老版本Chrome 60 70测的不会崩，FireFox不会崩</span>。Chrome崩溃要点：suspended状态下的AudioContext，在audioWorklet.addModule+构造AudioWorkletNode未完成时，同时进行resume调用，在恢复到running状态那一刻，浏览器崩溃了 错误代码：STATUS_ACCESS_VIOLATION',"#f90");
+log('【被audioWorklet搞崩浏览器】发现Chrome 90 80容易崩（100%崩?），<span style="color:#0b1">老版本Chrome 60 70测的不会崩，FireFox不会崩</span>。Chrome崩溃要点：suspended状态下的AudioContext，在audioWorklet.addModule+构造AudioWorkletNode未完成时，同时进行resume调用，在恢复到running状态那一刻，浏览器崩溃了 错误代码：STATUS_ACCESS_VIOLATION',"#f90");
 log("请打开控制台进行观摩，不然崩溃后看不到页面内容");
 log("代码开始执行...");
 </script>
@@ -88,7 +88,12 @@ addEventListener("click",function(e){
 	});
 });
 
-log("请随便点击一下页面，激活AudioContext","red;font-size:30px");
+if(ctx.state=="running"){
+	log("state已是running，这次应该不会崩，刷新一下页面看看state=suspended时容易崩",2);
+}else{
+	log("state是"+ctx.state+"，感觉这次要崩","#fa0");
+}
+log("请随便点击一下页面，"+(ctx.state=="running"?"AudioContext已是running状态，应该不会崩":"激活AudioContext，感觉要崩"),"red;font-size:30px");
 </script>
 
 </body>
