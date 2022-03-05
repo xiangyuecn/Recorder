@@ -13,9 +13,9 @@
     "html5",
     "mp3",
     "wav",
-	"ASR",
-	"语音识别",
-	"语音转文字",
+    "ASR",
+    "语音识别",
+    "语音转文字",
     "DTMF",
     "recording",
     "webrtc"

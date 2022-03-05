@@ -914,10 +914,10 @@ if(/mobile/i.test(navigator.userAgent)){
 	//移动端加载控制台组件
 	var elem=document.createElement("script");
 	elem.setAttribute("type","text/javascript");
-	elem.setAttribute("src","https://cdn.bootcdn.net/ajax/libs/eruda/1.5.4/eruda.min.js");
-	$("head")[0].appendChild(elem);
+	elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+	document.body.appendChild(elem);
 	elem.onload=function(){
-		eruda.init();
+		new VConsole();
 	};
 };
 </script>
@@ -1031,8 +1031,7 @@ if(isInstall){
 </script>
 
 <!-- 加载打赏挂件 -->
-<script DEF="/*=:=*/" src="../assets/zdemo.widget.donate.js"
-	DEF="/*<@ crossorigin='anonymous' src='https://xiangyuecn.gitee.io/recorder/assets/zdemo.widget.donate.js' @>*/"></script>
+<script src="https://xiangyuecn.gitee.io/recorder/assets/zdemo.widget.donate.js"></script>
 <script>
 DonateWidget({
 	log:function(msg){reclog(msg)}

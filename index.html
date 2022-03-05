@@ -293,7 +293,7 @@ if(!window.localStorage){window.localStorage={
 	</div>
 	<div class="pd">
 		<label><input type="checkbox" class="autoStopSet">开始录制后定时</label>
-		<input type="text" class="autoStopTime" value="30000" style="width:60px">ms自动停止录音
+		<input type="text" class="autoStopTime" value="60000" style="width:60px">ms自动停止录音，定时录音
 	</div>
 	<div class="pd webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
@@ -1136,7 +1136,7 @@ reclog('已启用Extensions：'
 
 
 
-var workletTips='注意：由于AudioWorklet内部<a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process" target="_blank">1秒会产生375次回调</a>，在移动端可能会有性能问题导致浏览器回调丢失，进而导致录音数据、时长变短，PC端似乎无此影响，可通过定时30秒录音来检测影响（如果短了300ms以上即为有问题）；在无明显优势好处的前提下，暂不建议启用。';
+var workletTips='注意：由于AudioWorklet内部<a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process" target="_blank">1秒会产生375次回调</a>，在移动端可能会有性能问题导致浏览器回调丢失，进而导致录音数据、时长变短，PC端似乎无此影响，可通过定时1分钟录音来检测影响（如果短了1秒以上即为有问题）；在无明显优势好处的前提下，暂不建议启用。';
 $(".workletSetTips").html(workletTips);
 $(".enableWorkletSet").bind("change",function(){
 	localStorage["RecEnableWorklet"]=this.checked?"1":"";
@@ -1369,10 +1369,10 @@ if(/mobile/i.test(navigator.userAgent)){
 	//移动端加载控制台组件
 	var elem=document.createElement("script");
 	elem.setAttribute("type","text/javascript");
-	elem.setAttribute("src","https://cdn.bootcdn.net/ajax/libs/eruda/1.5.4/eruda.min.js");
-	$("head")[0].appendChild(elem);
+	elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+	document.body.appendChild(elem);
 	elem.onload=function(){
-		eruda.init();
+		new VConsole();
 	};
 };
 </script>

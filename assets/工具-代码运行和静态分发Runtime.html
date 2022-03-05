@@ -1137,6 +1137,19 @@ console.log("\n\n\n"+markdown.join("\n")+"\n\n\n");
 
 
 
+<script>
+if(/mobile/i.test(navigator.userAgent)){
+	//移动端加载控制台组件
+	var elem=document.createElement("script");
+	elem.setAttribute("type","text/javascript");
+	elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+	document.body.appendChild(elem);
+	elem.onload=function(){
+		new VConsole();
+	};
+};
+</script>
+
 <!-- 加载打赏挂件 -->
 <script src="zdemo.widget.donate.js"></script>
 <script>
