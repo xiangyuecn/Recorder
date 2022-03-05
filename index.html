@@ -57,7 +57,7 @@ console.log(
 body{
 	word-wrap: break-word;
 	background:#f5f5f5 center top no-repeat;
-    background-size: auto 680px;
+	background-size: auto 680px;
 }
 pre{
 	white-space:pre-wrap;
@@ -291,6 +291,10 @@ if(!window.localStorage){window.localStorage={
 			<span class="recwaveChoice" key="Histogram3">H...3</span>
 		</span>
 	</div>
+	<div class="pd">
+		<label><input type="checkbox" class="autoStopSet">开始录制后定时</label>
+		<input type="text" class="autoStopTime" value="30000" style="width:60px">ms自动停止录音
+	</div>
 	<div class="pd webrtcBox">
 		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
@@ -344,20 +348,6 @@ if(!window.localStorage){window.localStorage={
 		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效
 	</div>
 	
-	<div style="margin-top:12px;">
-		<span class="lb">ConnectEnableWorklet :</span>
-		<select class="enableWorklet">
-			<option value="1">默认</option>
-			<option value="2">禁用</option>
-		</select>
-		音频采集连接方式：默认会启用AudioWorklet，禁用后使用ScriptProcessor
-		；<span style="color:#f60">设置后需重新打开录音</span>
-		<span style="font-size:12px">
-		；AudioWorklet导致某些浏览器崩溃
-		<a href="assets/ztest_chrome_bug_AudioWorkletNode.html" target="_blank">测试</a>
-		(坑已填好)
-		</span>
-	</div>
 	<div style="margin-top:12px;">
 		<span class="lb">Destroy :</span>
 		<button onclick="callDestroy()">调用Recorder.Destroy()</button>
@@ -413,9 +403,29 @@ if(!window.localStorage){window.localStorage={
 		</div>
 	</div>
 </div>
-	
+
 <div class="mainBox">
-	<span class="lb">丢失补偿 :</span> <label><input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）</label>
+	<span class="lb">启用AudioWorklet :</span>
+	<label>
+		<input type="checkbox" class="enableWorkletSet">启用
+		<span style="color:#f60">设置后需重新打开录音</span>
+	</label>
+	
+	<div>音频采集连接方式：未启用时使用ScriptProcessor（默认），启用时使用AudioWorklet；通过设置Recorder.ConnectEnableWorklet=true启用。</div>
+	<div>
+		已知：AudioWorklet在一定条件下会导致某些浏览器崩溃
+		<a href="assets/ztest_chrome_bug_AudioWorkletNode.html" target="_blank">测试</a>
+		(坑已填好)。
+	</div>
+	<div class="workletSetTips" style="color:#f60"></div>
+</div>
+
+<div class="mainBox">
+	<span class="lb">丢失补偿 :</span>
+	<label>
+		<input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）
+		；<span style="color:#f60">设置后需重新打开录音</span>
+	</label>
 	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
 </div>
 	
@@ -507,6 +517,7 @@ function recopen(){
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
 	
+	cancelAutoStop();
 	window.waveStore={};
 	window.sonicAsync=null;
 	window.takeoffChunks=[];
@@ -516,10 +527,10 @@ function recopen(){
 		reclog("已禁用设备卡顿时音频输入丢失补偿，可以通过别的程序大量占用CPU来模拟设备卡顿，然后录音听听未补偿时的播放效果，然后再试试不禁用的效果");
 	};
 	
-	var enableWorklet=+$(".enableWorklet").val()==1;
+	var enableWorklet=$(".enableWorkletSet")[0].checked;
 	Recorder.ConnectEnableWorklet=enableWorklet;
-	if(!enableWorklet){
-		reclog("已禁用AudioWorklet，将使用ScriptProcessor");
+	if(enableWorklet){
+		reclog("已启用AudioWorklet，"+workletTips,"#f60");
 	}
 	
 	var audioTrackSet=null;
@@ -707,6 +718,7 @@ trackSetQueryDeviceList();
 
 
 function recclose(){
+	cancelAutoStop();
 	if(rec){
 		rec.close(function(){
 			reclog("已关闭");
@@ -716,6 +728,7 @@ function recclose(){
 	};
 };
 function recstart(call){
+	cancelAutoStop();
 	call||(call=function(msg){
 		msg&&reclog(msg,1);
 	});
@@ -727,12 +740,35 @@ function recstart(call){
 		
 		takeoffChunks=[];
 		
+		//定时停止
+		var autoStop=$(".autoStopSet")[0].checked;
+		if(autoStop){
+			var time=+$(".autoStopTime").val()||0;
+			if(time<100){
+				reclog("定时不能小于100ms",1);
+				return;
+			};
+			autoStopTimer=setTimeout(function(){
+				autoStopTimer=0;
+				reclog("定时时间到，开始自动调用停止...");
+				recstop();
+			},time);
+		};
+		
 		rec.start();
 		var set=rec.set;
-		reclog("录制中："+set.type+" "+set.sampleRate+"hz "+set.bitRate+"kbps");
+		reclog((autoStop?"定时"+time+"ms":"")+"录制中："+set.type+" "+set.sampleRate+"hz "+set.bitRate+"kbps");
 		call();
 	}else{
 		call("未打开录音");
+	};
+};
+var autoStopTimer;
+var cancelAutoStop=function(){
+	if(autoStopTimer){
+		reclog("已取消定时停止",1);
+		clearTimeout(autoStopTimer);
+		autoStopTimer=0;
 	};
 };
 function recpause(){
@@ -773,6 +809,7 @@ function recstop(call){
 	});
 };
 function recstopFn(call,isClick,endCall,rec){
+	cancelAutoStop();
 	call||(call=function(msg){
 		msg&&reclog(msg,1);
 	});
@@ -1096,6 +1133,14 @@ reclog('已启用Extensions：'
 	+'、'+extensionsInfo.Histogram
 	+'、'+extensionsInfo.Sonic
 	+'、'+extensionsInfo.DTMF);
+
+
+
+var workletTips='注意：由于AudioWorklet内部<a href="https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process" target="_blank">1秒会产生375次回调</a>，在移动端可能会有性能问题导致浏览器回调丢失，进而导致录音数据、时长变短，PC端似乎无此影响，可通过定时30秒录音来检测影响（如果短了300ms以上即为有问题）；在无明显优势好处的前提下，暂不建议启用。';
+$(".workletSetTips").html(workletTips);
+$(".enableWorkletSet").bind("change",function(){
+	localStorage["RecEnableWorklet"]=this.checked?"1":"";
+})[0].checked=localStorage["RecEnableWorklet"]=="1";
 
 
 

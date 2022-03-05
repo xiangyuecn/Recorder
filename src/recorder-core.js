@@ -17,7 +17,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 //兼容环境
-var LM="2022-03-05 01:21:20";
+var LM="2022-03-05 11:53:19";
 var NOOP=function(){};
 //end 兼容环境 ****从以下开始copy源码*****
 
@@ -92,9 +92,9 @@ Recorder.Support=function(){
 };
 
 
-/*启用AudioWorklet来进行音频采集连接（如果浏览器支持的话），禁用后将使用过时的ScriptProcessor来连接（如果还在的话）*/
+/*是否启用AudioWorklet特性来进行音频采集连接（如果浏览器支持的话），默认禁用，禁用后将使用过时的ScriptProcessor来连接（如果方法还在的话），当前AudioWorklet的实现在移动端没有ScriptProcessor稳健*/
 var ConnectEnableWorklet="ConnectEnableWorklet";
-Recorder[ConnectEnableWorklet]=true;
+Recorder[ConnectEnableWorklet]=false;
 
 /*初始化H5音频采集连接。如果自行提供了sourceStream将只进行一次简单的连接处理。如果是普通麦克风录音，此时的Stream是全局的，Safari上断开后就无法再次进行连接使用，表现为静音，因此使用全部使用全局处理避免调用到disconnect；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。*/
 var Connect=function(streamStore){
@@ -132,12 +132,19 @@ var Connect=function(streamStore){
 		};
 	};
 	
-	//古董级别的 createScriptProcessor 处理，低版本浏览器兼容
+	var scriptProcessor="ScriptProcessor";//一堆字符串名字，有利于压缩js
+	var audioWorklet="audioWorklet";
+	var recTxt="Recorder";
+	var recAudioWorklet=recTxt+" "+audioWorklet;
+	var RecProc="RecProc";
+	
+	//古董级别的 ScriptProcessor 处理，目前所有浏览器均兼容，虽然是过时的方法，但更稳健，移动端性能比AudioWorklet强
 	var oldFn=ctx.createScriptProcessor||ctx.createJavaScriptNode;
+	var oldIsBest="。由于"+audioWorklet+"内部1秒375次回调，在移动端可能会有性能问题导致回调丢失录音变短，PC端无影响，暂不建议开启"+audioWorklet+"。";
 	var oldScript=function(){
 		isWorklet=stream.isWorklet=false;
 		_Disconn_n(stream);
-		CLog("Connect采用老的"+scriptProcessor+"，"+(Recorder[ConnectEnableWorklet]?"但已":"可")+"设置"+recTxt+"."+ConnectEnableWorklet+"=true尝试启用"+audioWorklet+"新方式",3);
+		CLog("Connect采用老的"+scriptProcessor+"，"+(Recorder[ConnectEnableWorklet]?"但已":"可")+"设置"+recTxt+"."+ConnectEnableWorklet+"=true尝试启用"+audioWorklet+oldIsBest,3);
 		
 		var process=stream._p=oldFn.call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
 		
@@ -149,14 +156,9 @@ var Connect=function(streamStore){
 	
 	//尝试开启AudioWorklet处理
 	var isWorklet=stream.isWorklet=!oldFn || Recorder[ConnectEnableWorklet];
-	var scriptProcessor="ScriptProcessor";//一堆字符串名字，有利于压缩js
-	var audioWorklet="audioWorklet";
-	var recTxt="Recorder";
-	var recAudioWorklet=recTxt+" "+audioWorklet;
-	var RecProc="RecProc";
 	var AwNode=window.AudioWorkletNode;
 	if(!(isWorklet && ctx[audioWorklet] && AwNode)){
-		oldScript();//不支持，直接使用老的
+		oldScript();//被禁用 或 不支持，直接使用老的
 		return;
 	};
 	var clazzUrl=function(){
@@ -177,6 +179,7 @@ var Connect=function(streamStore){
 				console.log("$RA .ctor call", option);
 			});
 			
+			//https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process 每次回调128个采样数据，1秒375次回调，高频导致移动端性能问题，结果就是回调次数缺斤少两，进而导致丢失数据，PC端似乎没有性能问题
 			clazz+="process "+xf(function(input,b,c){//需要等到ctx激活后才会有回调
 				var This=this,bufferSize=This.bufferSize;
 				var buffer=This.buffer,pos=This.pos;
@@ -187,7 +190,7 @@ var Connect=function(streamStore){
 					
 					var len=~~(pos/bufferSize)*bufferSize;
 					if(len){
-						this.port.postMessage({ val: buffer.subarray(0,len) });
+						this.port.postMessage({ val: buffer.slice(0,len) });
 						
 						var more=buffer.subarray(len,pos);
 						buffer=new Float32Array(bufferSize*2);
@@ -237,7 +240,7 @@ var Connect=function(streamStore){
 			};
 			exec(0,e.data.val);
 		};
-		CLog("Connect采用"+audioWorklet+"方式，设置"+recTxt+"."+ConnectEnableWorklet+"=false可恢复老式"+scriptProcessor);
+		CLog("Connect采用"+audioWorklet+"方式，设置"+recTxt+"."+ConnectEnableWorklet+"=false可恢复老式"+scriptProcessor+oldIsBest,3);
 	};
 	
 	//如果start时的resume和下面的构造node同时进行，将会导致部分浏览器崩溃，源码assets中 ztest_chrome_bug_AudioWorkletNode.html 可测试。所以，将所有代码套到resume里面（不管catch），避免出现这个问题

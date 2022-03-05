@@ -596,13 +596,15 @@ function transformOgg(pcmData){
 *这个属性在旧版Recorder中是放在已废弃的set.bufferSize中，后面因为兼容处理Safari上MediaStream断开后就无法再次进行连接使用的问题（表现为静音），把MediaStream连接也改成了全局只连接一次，因此set.bufferSize就移出来变成了Recorder的属性*
 
 ### 【静态属性】Recorder.ConnectEnableWorklet
-音频采集连接方式：是否要启用AudioWorklet (AudioWorkletNode) 来进行连接，默认为true启用；设为false禁用后将使用过时的ScriptProcessor (AudioContext.createScriptProcessor) 来连接。
+音频采集连接方式：是否要启用AudioWorklet (AudioWorkletNode) 来进行连接；默认为false禁用，禁用后将使用过时的ScriptProcessor (AudioContext.createScriptProcessor) 来连接。
 
-如果浏览器不支持AudioWorklet，将只会使用老的ScriptProcessor来进行音频采集连接；如果浏览器已停止支持ScriptProcessor，将永远会尝试启用AudioWorklet而忽略此配置值。
+启用后如果浏览器不支持AudioWorklet，将只会使用老的ScriptProcessor来进行音频采集连接；如果浏览器已停止支持ScriptProcessor，将永远会尝试启用AudioWorklet而忽略此配置值。
 
-*未雨绸缪，目前只需要ScriptProcessor就能做到100%兼容所有浏览器；以后就算只能用AudioWorklet时，也还是需要保留ScriptProcessor用来支持老浏览器；默认为启用的目的是让代码更经得起考验。*
+*未雨绸缪，目前只需要ScriptProcessor就能做到100%兼容所有浏览器；以后就算只能用AudioWorklet时，也还是需要保留ScriptProcessor用来支持老浏览器；所以默认为禁用，现在实现AudioWorklet的目的是让代码更经得起考验。*
 
 *导致浏览器崩溃：某些浏览器的AudioWorklet和AudioContext的resume一起作用时会产生崩溃现象，错误代码：STATUS_ACCESS_VIOLATION；此坑已填好，[复现测试页面](https://xiangyuecn.gitee.io/recorder/assets/ztest_chrome_bug_AudioWorkletNode.html)*
+
+**注意：由于AudioWorklet内部[1秒会产生375次回调](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process)，在移动端可能会有性能问题导致浏览器回调丢失，进而导致录音数据、时长变短，PC端似乎无此影响，可通过定时30秒录音来检测影响（如果短了300ms以上即为有问题）；在无明显优势好处的前提下，暂不建议启用。**
 
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option)
 对pcm数据的采样率进行转换，配合mock方法使用效果更佳，比如实时转换成小片段语音文件。
