@@ -162,7 +162,17 @@ function Step_LoadVers(){
 			return;
 		};
 		console.log("版本号列表",vers);
-		args_ver=args_ver||vers[0];
+		
+		var defaultVer=vers[0];//有些页面可以指定版本号
+		if(urlInfo.path=="/"){
+			defaultVer=vers[vers.length-1];
+		}else if(urlInfo.path=="/QuickStart.html"){
+			defaultVer="1.0.20032600";
+		};
+		if(vers.indexOf(defaultVer)==-1){
+			defaultVer=vers[0];
+		};
+		args_ver=args_ver||defaultVer;
 		rootUrl="https://cdn.jsdelivr.net/gh/"+urlInfo.owner+"/"+urlInfo.repo+"@"+args_ver;
 		
 		var elem=document.querySelector(".OldVer_Ver");
