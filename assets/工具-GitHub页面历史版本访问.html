@@ -195,7 +195,7 @@ function Step_LoadPage(){
 	reclog("正在拉取 ver:"+args_ver+" 页面... [sync]"+ToA(url));
 	Load(url,function(html){
 		var title=(/>([^<>]+)<\/title>/.exec(html)||[])[1]||"";
-		if(title)document.title=title;
+		if(title)document.title="[版本:"+args_ver+"] "+title;
 		reclog("拉取成功【"+title.replace(/<|'|"/g,"")+"】，已开始执行原始页面内容。",2);
 		
 		html=html.replace(/<!DOCTYPE.*?>/ig,"");
