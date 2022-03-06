@@ -1,0 +1,261 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="https://xiangyuecn.gitee.io/recorder/assets/icon.png">
+
+<title>GitHub页面历史版本访问-简易版工具</title>
+
+</head>
+
+<body>
+<div style="padding:10px;background:#fff;border-bottom:4px solid #f60;position:relative;">
+	<div title="是有多无聊才会写出这个页面，想学吗？Ctrl+U查看源码！"
+		style="cursor:zoom-in;position:absolute;left:12px;bottom:0px;font-size:12px;color:#f60">
+		<script>
+		/*是有多无聊才会写出这个页面，真查看源码，是想学吗？*/
+		var s=unescape('%uD83D%uDC97');document.write(s+s+"后会有期 at 2022-03-06"+s+s);
+		</script>
+	</div>
+	
+	<span style="font-size:24px;margin-right:50px;color:#f60">GitHub页面历史版本访问-简易版工具</span>
+	
+	<span style="margin-right:20px;display:inline-block">
+		仓库路径：
+		<input class="OldVer_Url" placeholder="格式：user:repo,path" style="height:24px;width:min(340px, 70vw)">
+	</span>
+	<span style="margin-right:20px;display:inline-block">
+		版本：
+		<select class="OldVer_Ver" style="height:30px;width:200px"></select>
+	</span>
+	<span>
+		<button style="padding:5px 30px" onclick="OldVerReload()">加载</button>
+	</span>
+</div>
+<div class="OldVer_LogsElem" style="padding:20px">
+	<div class="OldVer_Logs" style="border:1px solid #f60;background:#fff;padding:10px"></div>
+</div>
+
+<script>
+(function(){
+
+window.OldVerReload=function(){
+	var url=document.querySelector(".OldVer_Url").value;
+	var ver=document.querySelector(".OldVer_Ver").value;
+	if(url && !parseUrl(url)){
+		alert("仓库路径无效");
+		return;
+	}
+	location.href="#ver="+encodeURIComponent(ver)+"&url="+encodeURIComponent(url);
+	location.reload();
+};
+
+//xss!
+var args_url=decodeURIComponent((/\burl=([^&#]+)/.exec(location.href)||[])[1]||"xiangyuecn:Recorder,/");
+var args_ver=decodeURIComponent((/\bver=([^&#]+)/.exec(location.href)||[])[1]||"");
+document.querySelector(".OldVer_Url").value=args_url;
+
+var parseUrl=function(url){
+	var m=/([^:]+):([^,]+),(.+)/i.exec(url);
+	if(!m)return null;
+	return {
+		owner:m[1]
+		,repo:m[2]
+		,path:m[3]||"/"
+		,url:"https://"+m[1]+".github.io/"+m[2]+m[3]
+	};
+};
+var urlInfo=parseUrl(args_url)||{};
+var rootUrl="";
+
+reclog("地址解析："+JSON.stringify(urlInfo),urlInfo.repo?2:1);
+reclog("本工具支持简单处理 GitHub 页面的历史版本页面的访问展示，当前处理的地址为："+ToA(urlInfo.url)+" 指定的版本号："+(args_ver||"未指定"));
+reclog("如果JsDelivr CDN无法访问，本工具将无法运行","#f60");
+
+
+//简单拦截处理地址
+var oldAppend=HTMLElement.prototype.appendChild;
+HTMLElement.prototype.appendChild=function(elem){
+	if(elem.nodeName=="SCRIPT" && elem.getAttribute("src")){
+		elem.setAttribute("src",replaceSrc("node.script",elem.getAttribute("src")));
+	}else if(elem.nodeName=="LINK" && elem.getAttribute("href")){
+		elem.setAttribute("href",replaceSrc("node.link",elem.getAttribute("href")));
+	}
+	return oldAppend.apply(this,arguments);
+};
+var oldOpen=XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open=function(m,u){
+	var a=[];a.push.apply(a,arguments);
+	a[1]=replaceSrc("xhr."+m,u);
+	return oldOpen.apply(this,a);
+};
+function replaceSrc(tag,src){
+	if(!urlInfo._dir){
+		urlInfo._dir=urlInfo.path.replace(/\/[^\/]+$/g,"/");
+		urlInfo._locDir=location.href.replace(/[\?#].*/g,"").replace(/\/[^\/]+$/g,"/");
+		urlInfo._locRoot=urlInfo._locDir.replace(/\/assets\//ig,"/");
+		console.log("urlInfo",urlInfo);
+	};
+	var dir=urlInfo._dir;
+	var val,m;
+	if(/^([\w:-]+)?\/\//.test(src)){//完整地址
+		val=src;
+		//当前url下的地址
+		if(src.toLowerCase().indexOf(urlInfo._locRoot.toLowerCase())==0){
+			val=rootUrl+"/"+src.substr(urlInfo._locRoot.length);
+		};
+	}else if(/^[\w-]+:/.test(src)){//dataurl
+		val=src;
+	}else if(/^\//.test(src)){//绝对地址
+		val=rootUrl+src;
+	}else if(/^\.+/.test(src)){//上级目录
+		var exp=/^\.+\/?(.*)/;
+		while(m=exp.exec(src)){
+			src=m[1];
+			dir=dir.replace(/\/[^\/]+\/$/,"/");
+		};
+		val=rootUrl+dir+src;
+	}else{//当前目录
+		val=rootUrl+dir+src;
+	};
+	console.log((val==src?"未":"")+"替换"+tag,src+(val==src?"":" -> "+val));
+	return val;
+};
+function replaceHtmlAllSrc(html){
+	html=replaceHtml_node(html,"link","href");
+	html=replaceHtml_node(html,"script","src");
+	return html;
+};
+function replaceHtml_node(html,tag,key){
+	var exp=new RegExp("(<"+tag+"[^>]+"+key+"\\s*=\\s*[\"'])([^>]+?)([\"'][^>]*>)","ig");
+	html=html.replace(exp,function(a,b,c,d){
+		return b+replaceSrc("html."+tag,c)+d;
+	});
+	return html;
+};
+
+
+
+function Step_LoadVers(){
+	if(!urlInfo.repo || !urlInfo.owner){
+		reclog("地址无效",1);
+		return;
+	}
+	var url="https://cdn.jsdelivr.net/gh/"+urlInfo.owner+"/"+urlInfo.repo+"/";
+	reclog('正在拉取版本号列表... [sync]'+ToA(url));
+	Load(url,function(txt){
+		txt=txt.replace(/\r|\n/g,"");
+		var m=/<select[^>]*versions\b.+?<\/select/.exec(txt);
+		if(!m){
+			reclog("版本号页面已拉取，但提取列表失败，正则表达式未匹配");
+			return;
+		};
+		txt=m[0];
+		var exp=/<option.+?@([^"]+)"/g,vers=[],opts=[];
+		while(m=exp.exec(txt)){
+			vers.push(m[1]);
+			opts.push('<option value="'+m[1]+'">'+m[1]+'</option>');
+		};
+		if(!vers.length){
+			reclog("版本号页面已拉取，但未发现任何版本号，可能是此仓库没有任何Releases");
+			return;
+		};
+		console.log("版本号列表",vers);
+		args_ver=args_ver||vers[0];
+		rootUrl="https://cdn.jsdelivr.net/gh/"+urlInfo.owner+"/"+urlInfo.repo+"@"+args_ver;
+		
+		var elem=document.querySelector(".OldVer_Ver");
+		elem.innerHTML=opts.join(" ");
+		elem.value=args_ver;
+		
+		reclog("版本号列表加载完成，发现"+vers.length+"个版本",2);
+		reclog('<span style="font-size:24px">要不要查看 ver:'+args_ver+' 的README.md？<button onclick="OldVerLoadReadme()">拉取README.md</button></span>',"#ffa0a0");
+		Step_LoadPage();
+	},function(err){
+		reclog("拉取列表失败："+err);
+	},true);
+};
+
+function Step_LoadPage(){
+	var url=rootUrl+urlInfo.path;
+	if(/\/$/.test(url)){
+		url+="index.html";
+	};
+	reclog("正在拉取 ver:"+args_ver+" 页面... [sync]"+ToA(url));
+	Load(url,function(html){
+		var title=(/>([^<>]+)<\/title>/.exec(html)||[])[1]||"";
+		if(title)document.title=title;
+		reclog("拉取成功【"+title.replace(/<|'|"/g,"")+"】，已开始执行原始页面内容。",2);
+		
+		html=html.replace(/<!DOCTYPE.*?>/ig,"");
+		html=replaceHtmlAllSrc(html);
+		document.write(html);
+		
+		var logsElem=document.querySelector(".OldVer_LogsElem");
+		for(var i=0;i<60;i++)
+			setTimeout(function(){ !abortLogsEnd&&document.body.appendChild(logsElem); },i*1000);
+	},function(err){
+		reclog("拉取页面失败："+err);
+	},true);
+};
+
+
+var abortLogsEnd=0;
+window.OldVerLoadReadme=function(){
+	abortLogsEnd=true;
+	var url=rootUrl+"/README.md";
+	reclog("正在拉取 ver:"+args_ver+" README.md... [async]"+ToA(url));
+	Load(url,function(txt){
+		var id="a"+Math.random().toString(16).substr(2);
+		reclog("已拉取 ver:"+args_ver+' 的README.md ： <div><textarea class="'+id+'" style="width:90%;height:90vh"></textarea></div>');
+		document.querySelector("."+id).value=txt;
+	},function(err){
+		reclog("拉取README失败："+err);
+	});
+};
+
+
+
+
+
+
+
+function reclog(s,color){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	var div=document.createElement("div");
+	var elem=document.querySelector(".OldVer_Logs");
+	elem.prepend(div);
+	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
+};
+function ToA(url,txt){
+	return '<a href="'+url+'" target="_blank">'+(txt||url)+'</a>';
+};
+
+function Load(url,True,False,sync){
+	var xhr=new XMLHttpRequest();
+	oldOpen.call(xhr,"GET", url, !sync);
+	if(!sync)xhr.timeout=30000;
+	xhr.onreadystatechange=function(){
+		if(xhr.readyState==4){
+			if(xhr.status<200 || xhr.status>299){
+				var msg="请求失败["+xhr.status+"]";
+				console.error(msg+" "+url,xhr);
+				False&&False(msg);
+			}else{
+				True&&True(xhr.responseText);
+			}
+		}
+	};
+	xhr.send();
+};
+
+Step_LoadVers();
+})();
+</script>
+
+</body>
+</html>
