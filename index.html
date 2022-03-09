@@ -363,7 +363,7 @@ if(!window.localStorage){window.localStorage={
 		<button onclick="resetSonicCtrl()">重置变速变调</button>
 		实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）
 	</div>
-	<div class="sonicCtrlBox" style="margin:5px 0 0">
+	<div class="sonicCtrlBox" style="margin:5px 0 0;position: relative;">
 		<style>
 			.sonicCtrlBox span{display:inline-block;width:80px;text-align:right;}
 			.sonicCtrlBox input{text-align:right;}
@@ -377,6 +377,11 @@ if(!window.localStorage){window.localStorage={
 		<div><span>播放反馈:</span><input class="sonicCtrlInput sonicCtrlPlay" style="width:60px"> 不播放 <input type="range" class="sonicCtrlRange" min="0" max="1" step="1" value="1">实时播放反馈</div>
 		
 		<div style="margin-top:10px"><button onclick="sonicRecTransform()">重新转换当前录音</button></div>
+		
+		<div class="sonicCtrlBoxMask" style="position:absolute;top:0;left:0;width:100%;height:100%;background: rgba(0,0,0,.2);text-align: center;">
+			<div style="padding-top:50px;font-size: 30px;color: #fff;">挡住！防止滑块被误触</div>
+			<div><button onclick="sonicCtrlBoxMaskClose()">打开编辑</button></div>
+		</div>
 	</div>
 </div>
 
@@ -588,7 +593,7 @@ function recopen(){
 				};
 			};
 			//变速变调
-			var beginAsync=sonicProcess(buffers,sampleRate,newBufferIdx,asyncEnd);
+			var beginAsync=sonicProcess(rec,buffers,sampleRate,newBufferIdx,asyncEnd);
 			
 			$(".recpowerx").css("width",powerLevel+"%");
 			$(".recpowert").text(formatMs(duration,1)+" / "+powerLevel);
@@ -739,6 +744,7 @@ function recstart(call){
 		
 		sonicAsync&&sonicAsync.flush();//丢弃不管，省的去同步麻烦
 		sonicAsync=null;
+		rec.sonicTips="";
 		
 		takeoffChunks=[];
 		
@@ -1192,6 +1198,12 @@ var resetSonicCtrl=function(){
 	$(".sonicCtrlRange").val(1).change();
 	$(".sonicCtrlBufferRange").val(200).change();
 };
+var sonicCtrlBoxMaskClose=function(){
+	$(".sonicCtrlBoxMask").hide();
+};
+if(!/mobile/i.test(navigator.userAgent)){
+	sonicCtrlBoxMaskClose();
+};
 var sonicRecTransform=function(){
 	if(!rec||!rec.buffers){
 		reclog("请先录音",1);
@@ -1210,7 +1222,7 @@ var sonicRecTransform=function(){
 	
 	var srcBuffers=rec.buffers;
 	var buffers=[];
-	var idx=-1;
+	var idx=-1,logScope={};
 	var run=function(){
 		idx++;
 		if(idx>=srcBuffers.length){
@@ -1223,7 +1235,7 @@ var sonicRecTransform=function(){
 		};
 		
 		buffers.push(Recorder.SampleData([srcBuffers[idx]],rec.srcSampleRate,sampleRate).data);
-		var beginAsync=sonicProcess(buffers,sampleRate,idx,run);
+		var beginAsync=sonicProcess(logScope,buffers,sampleRate,idx,run);
 		if(!beginAsync){
 			reclog("不存在变速变调设置，或不能开启转换",1);
 		};
@@ -1232,11 +1244,15 @@ var sonicRecTransform=function(){
 	run();
 };
 var sonicInfo;
-var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
+var sonicProcess=function(logScope,buffers,sampleRate,newBufferIdx,asyncEnd){
 	if(sonicCtrlSet.pitch==1
 		&&sonicCtrlSet.rate==1
 		&&sonicCtrlSet.speed==1
 		&&sonicCtrlSet.volume==1){//不存在变速变调设置
+		if(logScope.sonicTips){
+			logScope.sonicTips="";
+			reclog("已停用整变速变调","#aaa");
+		}
 		return;
 	};
 	
@@ -1252,6 +1268,15 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 			reclog("不能开启Sonic.Async，浏览器不支持WebWorker操作，降级不变速变调",1);
 			return;
 		};
+	};
+	
+	var sonicTips="Pitch="+sonicCtrlSet.pitch
+		+", Speed="+sonicCtrlSet.speed
+		+", Rate="+sonicCtrlSet.rate
+		+", Volume="+sonicCtrlSet.volume;
+	if(logScope.sonicTips!=sonicTips){
+		reclog((logScope.sonicTips?"已修改":"已开启")+"变速变调："+sonicTips,"#aaa");
+		logScope.sonicTips=sonicTips;
 	};
 	
 	sonicAsync.setPitch(sonicCtrlSet.pitch);
@@ -1287,7 +1312,11 @@ var sonicProcess=function(buffers,sampleRate,newBufferIdx,asyncEnd){
 			
 			//实时播放反馈
 			if(sonicCtrlSet.play&&window.DemoFragment&&DemoFragment.PlayBuffer){
-				DemoFragment.PlayBuffer(sonicInfo,pcm,sampleRate);
+				try{
+					DemoFragment.PlayBuffer(sonicInfo,pcm,sampleRate);
+				}catch(e){//在古董浏览器里面可能会开启播放失败
+					console.error("sonic -> DemoFragment.PlayBuffer错误，无法实时播放反馈",e);
+				}
 			};
 			
 			asyncEnd();//完成处理必须进行回调

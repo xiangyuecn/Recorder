@@ -114,7 +114,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 			};
 		};
 		var pv0 =-1, pv1=-1;
-		if(v0>600 && v1<1600 && Math.abs(p0-p1)<2.5){//高低频的幅度相差不能太大，此值是先给个大值再多次【测试】(下面一个log)得出来的
+		if(v0>600 && v1<1700 && Math.abs(p0-p1)<2.5){//高低频的幅度相差不能太大，此值是先给个大值再多次【测试】(下面一个log)得出来的
 			//波形匹配度：两个峰值之间应当是深V型曲线，如果出现大幅杂波，可以直接排除掉
 			var isV=1;
 			//先找出谷底

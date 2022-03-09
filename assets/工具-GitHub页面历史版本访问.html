@@ -11,16 +11,23 @@
 
 <body>
 <div style="font-size:16px;line-height:1.4">
-<div style="padding:10px;background:#fff;border-bottom:4px solid #f60;border-radius: 8px;position:relative;">
-	<div title="是有多无聊才会写出这个页面，想学吗？Ctrl+U查看源码！"
-		style="cursor:zoom-in;position:absolute;left:12px;bottom:0px;font-size:12px;color:#f60">
-		<script>
-		/*是有多无聊才会写出这个页面，真查看源码，是想学吗？*/
-		var s=unescape('%uD83D%uDC97');document.write(s+s+"后会有期 at 2022-03-06"+s+s);
-		</script>
+<div style="padding:10px;padding-bottom:5px;background:#fff;border-bottom:4px solid #f60;border-radius: 8px;position:relative;">
+	<div style="display:inline-block;vertical-align:middle;margin-right:50px;line-height:1">
+		<div style="font-size:24px;color:#f60">GitHub页面历史版本访问-简易版工具</div>
+		
+		<div style="font-size:12px;margin-top:5px">
+			<span title="是有多无聊才会写出这个页面，想学吗？Ctrl+U查看源码！"
+				style="cursor:zoom-in;color:#f60;margin-right:115px">
+				<script>
+				/*是有多无聊才会写出这个页面，真查看源码，是想学吗？*/
+				var s=unescape('%uD83D%uDC97');document.write(s+s+"后会有期 at 2022-03-06"+s+s);
+				</script>
+			</span>
+			
+			<a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
+			| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
+		</div>
 	</div>
-	
-	<span style="font-size:24px;margin-right:50px;color:#f60">GitHub页面历史版本访问-简易版工具</span>
 	
 	<span style="margin-right:20px;display:inline-block">
 		仓库路径：
@@ -92,7 +99,7 @@ var inVerTxt="_InVer_";
 var rootUrl="";
 
 console.log("urlInfo",urlInfo);
-reclog('<span style="font-weight:bold">本工具支持简单处理 GitHub 页面的历史版本页面的访问展示</span>'
+reclog('<span style="font-weight:bold">本工具支持简单处理 GitHub Pages 的历史版本页面的访问展示</span>'
 	+'；<span style="color:#f60">如果JsDelivr CDN无法访问，本工具将无法运行</span>'
 	+'；【用法】：仓库路径中填写 <span style="color:#cb05ff">GitHub 用户名 + : + 仓库名 + 可选@（@Release版本号、@提交Hash、@分支名称） + , + /文件路径</span> （仓库路径中填写的@值比选择的版本号优先级高），版本可以先不选，然后点击加载。首次加载好后，可以切换版本号（或明确在仓库路径中指定分支、某次提交）来查看不同历史的页面效果。');
 reclog("当前处理的地址为："+ToA(urlInfo.url)+" 指定的版本号："+(args_ver||"未指定"));
@@ -113,6 +120,9 @@ XMLHttpRequest.prototype.open=function(m,u){
 	var a=[];a.push.apply(a,arguments);
 	a[1]=replaceSrc("xhr."+m,u);
 	return oldOpen.apply(this,a);
+};
+XMLHttpRequest.prototype.setRequestHeader=function(k,v){
+	console.warn("xhr阻止添加请求头:"+k+"="+v);//沙雕jQuery会添加X-Requested-With
 };
 function replaceSrc(tag,src){
 	if(!urlInfo._dir){
