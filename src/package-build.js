@@ -123,7 +123,19 @@ function deleteFolder(path,deep){
 
 
 
-
+function MDAbsImg(txt,baseUrl){//简单的图片地址 相对路径改成绝对路径
+	return txt.replace(/\!\[\]\((.+?)\)/g,function(a,url){
+		var folder=baseUrl;
+		if(!/^https?:/i.test(url)){
+			while(/^\.\.\/(.*)$/.test(url)){
+				url=RegExp.$1;
+				folder=folder.replace(/\/[^\/]+\/$/,"/");
+			}
+			url=folder+url;
+		}
+		return '![]('+url+')';
+	});
+};
 
 function Run_npm(){
 	console.log("\x1B[33m%s\x1B[0m","制作作者需要上传的npm包文件...");
@@ -138,6 +150,10 @@ function Run_npm(){
 	var rootREADME=fs.readFileSync("../README.md","utf-8");
 	var appREADME=fs.readFileSync("../app-support-sample/README.md","utf-8");
 	var npmREADME=fs.readFileSync(npmHome+"/README.md","utf-8");
+	rootREADME=MDAbsImg(rootREADME,"https://xiangyuecn.gitee.io/recorder/");
+	appREADME=MDAbsImg(appREADME,"https://xiangyuecn.gitee.io/recorder/app-support-sample/");
+	npmREADME=MDAbsImg(npmREADME,"https://xiangyuecn.gitee.io/recorder/");
+	
 	var npmPackage=fs.readFileSync(npmHome+"/package.json","utf-8");
 	var hashHistory=fs.readFileSync(npmHome+"/hash-history.txt","utf-8");
 	var versionPatch=fs.existsSync(npmHome+"/version.patch.txt")&&fs.readFileSync(npmHome+"/version.patch.txt","utf-8")||"";

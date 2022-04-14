@@ -358,6 +358,22 @@ if(!window.localStorage){window.localStorage={
 </div>
 
 <div class="mainBox">
+	<span class="lb">启用AudioWorklet :</span>
+	<label>
+		<input type="checkbox" class="enableWorkletSet">启用
+		<span style="color:#f60">设置后需重新打开录音</span>
+	</label>
+	
+	<div>音频采集连接方式：未启用时使用ScriptProcessor（默认），启用时使用AudioWorklet；通过设置Recorder.ConnectEnableWorklet=true启用。</div>
+	<div>
+		已知：AudioWorklet在一定条件下会导致某些浏览器崩溃
+		<a href="assets/ztest_chrome_bug_AudioWorkletNode.html" target="_blank">测试</a>
+		(坑已填好)。
+	</div>
+	<div class="workletSetTips" style="color:#f60"></div>
+</div>
+
+<div class="mainBox">
 	<div>
 		<span class="lb">变速变调 :</span> 
 		<button onclick="resetSonicCtrl()">重置变速变调</button>
@@ -386,6 +402,15 @@ if(!window.localStorage){window.localStorage={
 </div>
 
 <div class="mainBox">
+	<span class="lb">丢失补偿 :</span>
+	<label>
+		<input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）
+		；<span style="color:#f60">设置后需重新打开录音</span>
+	</label>
+	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
+</div>
+
+<div class="mainBox">
 	<div>
 		<span class="lb">DTMF电话按键信号 :</span> 
 		DTMF解码、编码扩展，可以方便的处理电话拨号按键信号，用于：电话录音软解，软电话实时提取DTMF按键信号、实时发送DTMF按键信号等。下面拨号盘可在录音时往录音文件中添加按键信息：
@@ -409,31 +434,6 @@ if(!window.localStorage){window.localStorage={
 			<button onclick="sendDTMFKeysClick()">发送*#1234567890#*</button>
 		</div>
 	</div>
-</div>
-
-<div class="mainBox">
-	<span class="lb">启用AudioWorklet :</span>
-	<label>
-		<input type="checkbox" class="enableWorkletSet">启用
-		<span style="color:#f60">设置后需重新打开录音</span>
-	</label>
-	
-	<div>音频采集连接方式：未启用时使用ScriptProcessor（默认），启用时使用AudioWorklet；通过设置Recorder.ConnectEnableWorklet=true启用。</div>
-	<div>
-		已知：AudioWorklet在一定条件下会导致某些浏览器崩溃
-		<a href="assets/ztest_chrome_bug_AudioWorkletNode.html" target="_blank">测试</a>
-		(坑已填好)。
-	</div>
-	<div class="workletSetTips" style="color:#f60"></div>
-</div>
-
-<div class="mainBox">
-	<span class="lb">丢失补偿 :</span>
-	<label>
-		<input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）
-		；<span style="color:#f60">设置后需重新打开录音</span>
-	</label>
-	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
 </div>
 	
 <div class="mainBox">

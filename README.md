@@ -36,7 +36,7 @@
 [ [Android、IOS App源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample) ]
 
 
-> [<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo.png" width="100px">](https://xiangyuecn.gitee.io/recorder/) 扫一扫在线测试，`github.io`可访问性太不尽人意，所以使用`gitee.io`镜像库的速度快多了。
+> [<img src="https://xiangyuecn.gitee.io/recorder/assets/demo.png" width="100px">](https://xiangyuecn.gitee.io/recorder/) 扫一扫在线测试，`github.io`可访问性太不尽人意，所以使用`gitee.io`镜像库的速度快多了。
 
 
 [​](?)
@@ -89,7 +89,7 @@ Android Demo App ：
 IOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios) 自行编译
 
 ### 小程序WebView
-使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
+使用到这个库用于祝福语音的录制，已开通网页版和微信小程序版。专门针对IOS的微信中进行了兼容处理，IOS上微信环境中调用的微信的api（小程序、公众号api）。小程序地址：[<img src="https://xiangyuecn.gitee.io/recorder/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)；网页地址：[<img src="https://xiangyuecn.gitee.io/recorder/assets/jiebian.life-web.png" width="100px">](https://jiebian.life/t/a)
 
 > 如果你的项目用到了这个库也想展示到这里，可以发个isuse，注明使用介绍和访问方式，我们收录在这里。
 
@@ -111,7 +111,7 @@ IOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 [​](?)
 
 
-<p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/icon.png" alt="Recorder logo"></a></p>
+<p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://xiangyuecn.gitee.io/recorder/assets/icon.png" alt="Recorder logo"></a></p>
 
 <p align="center">
   Basic:
@@ -329,7 +329,7 @@ $.ajax({
 
 欢迎加QQ群：781036591，纯小写口令：`recorder`
 
-<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
+<img src="https://xiangyuecn.gitee.io/recorder/assets/qq_group_781036591.png" width="220px">
 
 
 
@@ -415,7 +415,7 @@ IOS其他浏览器|IOS 14.3+|IOS 14.3+
 
 # :open_book:方法文档
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_caller.png)
+![](assets/use_caller.png)
 
 ### 【构造】rec=Recorder(set)
 
@@ -741,7 +741,7 @@ Recorder({type:"aac"})
 
 【附】部分扩展使用效果图（[在线运行观看](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)）：
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.gif)
+![](assets/use_wave.gif)
 
 
 ## `WaveView`扩展
@@ -890,7 +890,8 @@ BufferStreamPlayer可以通过input方法一次性输入整个音频文件，或
 
 ### 可以用于
 1. Recorder onProcess等实时处理中，将实时处理好的音频片段转直接换成MediaStream，此流可以作为WebRTC的local流发送到对方，或播放出来；
-2. 接收到的音频片段文件的实时播放，比如：WebSocket接收到的录音片段文件播放、WebRTC remote流（Recorder支持对这种流进行实时处理）实时处理后的播放。
+2. 接收到的音频片段文件的实时播放，比如：WebSocket接收到的录音片段文件播放、WebRTC remote流（Recorder支持对这种流进行实时处理）实时处理后的播放；
+3. 单个音频文件的实时播放处理，比如：播放一段音频，并同时进行可视化绘制（其实自己解码+播放绘制比直接调用这个更有趣，但这个省事、配套功能多点）。
 
 ### BufferStreamPlayer文档
 ``` javascript
@@ -922,9 +923,9 @@ var stream=Recorder.BufferStreamPlayer({
 //创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频
 stream.start(()=>{
     //如果不要默认的播放，可以设置set.play为false，这种情况下只拿到MediaStream来用
-    stream.getMediaStream() //通过getMediaStream方法得到MediaStream流，此流可以作为WebRTC的local流发送到对方，或者自己拿来作为audio.srcObject来播放（有提供更简单的getAudioSrc方法）；未start时调用此方法将会抛异常
+    stream.getMediaStream() //通过getMediaStream方法得到MediaStream流，此流可以作为WebRTC的local流发送到对方，或者直接拿来赋值给audio.srcObject来播放（和赋值audio.src作用一致）；未start时调用此方法将会抛异常
     
-    stream.getAudioSrc() //得到MediaStream流的字符串播放地址，可赋值给audio标签的src，直接播放音频；未start时调用此方法将会抛异常
+    stream.getAudioSrc() //【已过时】超低版本浏览器中得到MediaStream流的字符串播放地址，可赋值给audio标签的src，直接播放音频；未start时调用此方法将会抛异常；新版本浏览器已停止支持将MediaStream转换成url字符串，调用本方法新浏览器会抛异常，因此在不需要兼容不支持srcObject的超低版本浏览器时，请直接使用getMediaStream然后赋值给auido.srcObject来播放
 },(errMsg)=>{
     //start失败，无法播放
 });
@@ -1174,7 +1175,7 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 
 另外除wav外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意（如果类型支持，实时处理时使用`takeoffEncodeChunk`选项可完全避免此问题）。
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_webrtc.png)
+![](assets/use_webrtc.png)
 
 
 # :open_book:工具：代码运行和静态分发Runtime
@@ -1182,13 +1183,13 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 
 我们不传输、不存储数据，我们只是代码的可靠搬运工。看图：
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_runtime.gif)
+![](assets/use_runtime.gif)
 
 
 # :open_book:工具：裸(RAW、WAV)PCM转WAV播放测试和转码
 [在线访问](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E8%A3%B8PCM%E8%BD%ACWAV%E6%92%AD%E6%94%BE%E6%B5%8B%E8%AF%95.html)，本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦。比如加工一下Android AudioRecord(44100)采集的音频。源码在`assets/工具-裸PCM转WAV播放测试.html`;
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_pcm_tool.png)
+![](assets/use_pcm_tool.png)
 
 
 
@@ -1217,4 +1218,4 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 
 您也可以使用支付宝或微信打赏作者：
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-alipay.png)  ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-weixin.png)
+![](assets/donate-alipay.png)  ![](assets/donate-weixin.png)

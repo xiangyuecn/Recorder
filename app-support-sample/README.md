@@ -193,12 +193,12 @@ function createDelayDialog(){
 
 欢迎加QQ群：781036591，纯小写口令：`recorder`
 
-<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
+<img src="https://xiangyuecn.gitee.io/recorder/assets/qq_group_781036591.png" width="220px">
 
 
 ## 【截图】运行效果图
 
-<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_ios.gif" width="360px"> <img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_android.gif" width="360px">
+<img src="https://xiangyuecn.gitee.io/recorder/assets/use_native_ios.gif" width="360px"> <img src="https://xiangyuecn.gitee.io/recorder/assets/use_native_android.gif" width="360px">
 
 
 
@@ -216,12 +216,12 @@ function createDelayDialog(){
 [demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
 
 ### 【IOS微信】H5测试
-[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
+[<img src="https://xiangyuecn.gitee.io/recorder/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
 
 此demo页面为代理页面（[源](https://xiangyuecn.gitee.io/recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io|gitee.io`上访问将导致`JsSDK`无法调用。
 
 ### 【IOS微信】小程序WebView测试
-[<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
+[<img src="https://xiangyuecn.gitee.io/recorder/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
 
 1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
 2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
@@ -288,7 +288,7 @@ IOS其他浏览器|IOS 14.3+|IOS 14.3+
 
 # :open_book:方法文档
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_caller.png)
+![](../assets/use_caller.png)
 
 ## 【静态方法】RecordApp.RequestPermission(success,fail)
 请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法，用于准备好必要的环境；请求权限后如果不使用了，不管有没有调用`Start`，至少要调用一次`Stop`来清理可能持有的资源。
@@ -460,4 +460,4 @@ rec中的方法不一定都能使用，主要用来获取内部缓冲用的，�
 
 您也可以使用支付宝或微信打赏作者：
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-alipay.png)  ![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/donate-weixin.png)
+![](../assets/donate-alipay.png)  ![](../assets/donate-weixin.png)

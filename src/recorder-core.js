@@ -341,8 +341,12 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		frameSize=option.frameType=="mp3"?1152:1;
 	};
 	
+	var nLen=pcmDatas.length;
+	if(index>nLen+1){
+		CLog("SampleData似乎传入了未重置chunk "+index+">"+nLen,3);
+	};
 	var size=0;
-	for(var i=index;i<pcmDatas.length;i++){
+	for(var i=index;i<nLen;i++){
 		size+=pcmDatas[i].length;
 	};
 	size=Math.max(0,size-Math.floor(offset));
@@ -365,7 +369,7 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		idx++;
 	};
 	//处理数据
-	for (var nl=pcmDatas.length;index<nl;index++) {
+	for (;index<nLen;index++) {
 		var o=pcmDatas[index];
 		var i=offset,il=o.length;
 		while(i<il){
@@ -607,7 +611,7 @@ Recorder.prototype=initFn.prototype={
 			if(/Permission|Allow/i.test(code)){
 				failCall("用户拒绝了录音权限",true);
 			}else if(window.isSecureContext===false){
-				failCall("无权录音(需https)");
+				failCall("浏览器禁止不安全页面录音，可开启https解决");
 			}else if(/Found/i.test(code)){//可能是非安全环境导致的没有设备
 				failCall(msg+"，无可用麦克风");
 			}else{
@@ -865,7 +869,18 @@ Recorder.prototype=initFn.prototype={
 			};
 		};
 		//实时回调处理数据，允许修改或替换上次回调以来新增的数据 ，但是不允许修改已处理过的，不允许增删第一维数组 ，允许将第二维数组任意修改替换成空数组也可以
-		var asyncBegin=set.onProcess(buffers,powerLevel,duration,bufferSampleRate,bufferFirstIdx,asyncEnd);
+		var asyncBegin=0,procTxt="rec.set.onProcess";
+		try{
+			asyncBegin=set.onProcess(buffers,powerLevel,duration,bufferSampleRate,bufferFirstIdx,asyncEnd);
+		}catch(e){
+			//此错误显示不要用CLog，这样控制台内相同内容不会重复打印
+			console.error(procTxt+"回调出错是不允许的，需保证不会抛异常",e);
+		};
+		
+		var slowT=Date.now()-now;
+		if(slowT>30){
+			This.CLog(procTxt+"低性能，耗时"+slowT+"ms",3);
+		};
 		
 		if(asyncBegin===true){
 			//开启了异步模式，onProcess已接管buffers新数据，立即清空，避免出现未处理的数据

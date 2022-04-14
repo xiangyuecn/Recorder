@@ -14,7 +14,7 @@
 
 
 ## 【截图】
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_android.gif)
+![](../../assets/use_native_android.gif)
 
 
 ## 【限制】

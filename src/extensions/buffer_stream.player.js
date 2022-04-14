@@ -7,16 +7,17 @@ BufferStreamPlayer可以通过input方法一次性输入整个音频文件，或
 
 BufferStreamPlayer可以用于：
 	1. Recorder onProcess等实时处理中，将实时处理好的音频片段转直接换成MediaStream，此流可以作为WebRTC的local流发送到对方，或播放出来；
-	2. 接收到的音频片段文件的实时播放，比如：WebSocket接收到的录音片段文件播放、WebRTC remote流（Recorder支持对这种流进行实时处理）实时处理后的播放。
+	2. 接收到的音频片段文件的实时播放，比如：WebSocket接收到的录音片段文件播放、WebRTC remote流（Recorder支持对这种流进行实时处理）实时处理后的播放；
+	3. 单个音频文件的实时播放处理，比如：播放一段音频，并同时进行可视化绘制（其实自己解码+播放绘制比直接调用这个更有趣，但这个省事、配套功能多点）。
 
 调用示例：
 	var stream=Recorder.BufferStreamPlayer(set)
 	//创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频
 	stream.start(()=>{
 		//如果不要默认的播放，可以设置set.play为false，这种情况下只拿到MediaStream来用
-		stream.getMediaStream() //通过getMediaStream方法得到MediaStream流，此流可以作为WebRTC的local流发送到对方，或者自己拿来作为audio.srcObject来播放（有提供更简单的getAudioSrc方法）；未start时调用此方法将会抛异常
+		stream.getMediaStream() //通过getMediaStream方法得到MediaStream流，此流可以作为WebRTC的local流发送到对方，或者直接拿来赋值给audio.srcObject来播放（和赋值audio.src作用一致）；未start时调用此方法将会抛异常
 		
-		stream.getAudioSrc() //得到MediaStream流的字符串播放地址，可赋值给audio标签的src，直接播放音频；未start时调用此方法将会抛异常
+		stream.getAudioSrc() //【已过时】超低版本浏览器中得到MediaStream流的字符串播放地址，可赋值给audio标签的src，直接播放音频；未start时调用此方法将会抛异常；新版本浏览器已停止支持将MediaStream转换成url字符串，调用本方法新浏览器会抛异常，因此在不需要兼容不支持srcObject的超低版本浏览器时，请直接使用getMediaStream然后赋值给auido.srcObject来播放
 	},(errMsg)=>{
 		//start失败，无法播放
 	});
@@ -75,9 +76,11 @@ var fn=function(set){
 	}
 };
 fn.prototype=BufferStreamPlayer.prototype={
-	/**获取MediaStream的audio播放地址，未start将会抛异常**/
+	/**【已过时】获取MediaStream的audio播放地址，新版浏览器、未start将会抛异常**/
 	getAudioSrc:function(){
+		console.warn("getAudioSrc方法已过时：请直接使用getMediaStream然后赋值给audio.srcObject，仅允许在不支持srcObject的浏览器中调用本方法赋值给audio.src以做兼容");
 		if(!this._src){
+			//新版chrome调用createObjectURL会直接抛异常了 https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#using_object_urls_for_media_streams
 			this._src=(window.URL||webkitURL).createObjectURL(this.getMediaStream());
 		}
 		return this._src;

@@ -12,7 +12,7 @@
 
 
 ## 【截图】
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_native_ios.gif)
+![](../../assets/use_native_ios.gif)
 
 
 ## 【限制】

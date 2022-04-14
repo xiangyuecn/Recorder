@@ -46,7 +46,7 @@ npm install recorder-core
 
 【附】部分扩展使用效果图（[在线运行观看](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)）：
 
-![](https://gitee.com/xiangyuecn/Recorder/raw/master/assets/use_wave.gif)
+![](assets/use_wave.gif)
 
 
 ## WaveSurferView的调用方式
@@ -55,6 +55,10 @@ npm install recorder-core
 
 ## FrequencyHistogramView的调用方式
 引入`src/extensions/frequency.histogram.view.js`+`lib.fft.js`，再通过Recorder.FrequencyHistogramView调用即可，音频可视化频率直方图显示，详细的使用请参考下面详细的README。
+
+
+## BufferStreamPlayer的调用方式
+引入`src/extensions/buffer_stream.player.js`，在通过Recorder.BufferStreamPlayer调用即可，用于实时播放录音片段文件、把片段文件转换成MediaStream流，详细的使用请参考下面详细的README。
 
 
 ## Sonic的调用方式
