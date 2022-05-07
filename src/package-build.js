@@ -63,6 +63,7 @@ function Run_minify(){
 	minify("../dist/extensions/dtmf.encode.js",["extensions/dtmf.encode.js"]);
 	minify("../dist/extensions/dtmf.decode.js",["extensions/dtmf.decode.js"]);
 	minify("../dist/extensions/buffer_stream.player.js",["extensions/buffer_stream.player.js"]);
+	minify("../dist/extensions/asr.aliyun.short.js",["extensions/asr.aliyun.short.js"]);
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };

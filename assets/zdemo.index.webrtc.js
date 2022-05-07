@@ -2,16 +2,31 @@
 参考https://blog.csdn.net/zhhaogen/article/details/54908455
 	https://blog.csdn.net/caoshangpa/article/details/53306992
 */
-Recorder.Support();//激活Recorder.Ctx
 
 
 /*********注入界面******************/
 (function(){
+
+reclog("请稍后，正在加载需要的js...");
+loadJsList([//加载依赖的js
+	{url:"src/extensions/buffer_stream.player.js"
+		,check:function(){return !Recorder.BufferStreamPlayer}}
+	,{url:"assets/runtime-codes/fragment.touch_button.js"
+		,check:function(){return !window.DemoFragment||!DemoFragment.BindTouchButton}}
+],function(){
+	reclog("需要的js加载完成");
+	jsLoadEnd();
+	bindTouch();
+},function(err){
+	reclog(err,1);
+});
+
+var jsLoadEnd=function(){
 	reclog("<span style='font-size:50px;color:#0b1'>↑↑↑按上面的步骤使用↑↑↑</span>");
 	
-	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav格式外发送间隔尽量不要低于编码速度速度，除wav外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制</span>；参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】【音频流】实时转码并上传-mp3专版</a>。");
+	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav、pcm格式外发送间隔尽量不要低于编码速度速度，除wav、pcm外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制（在上面勾选“接管编码器输出”即可开启使用）</span>；参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】【音频流】【上传】实时转码并上传-mp3专版</a>。");
 	
-	reclog("<span style='color:#0b1'>BufferStreamPlayer扩展：是专门用来实时播放音频片段文件的，但本例子的解码播放还未升级使用此扩展；源码在 src/extensions/buffer_stream.player.js ，参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player'>【教程】【音频流】实时解码播放音频片段</a>。</span>");
+	reclog("<span style='color:#0b1'>BufferStreamPlayer扩展：是专门用来实时播放音频片段文件的；源码在 src/extensions/buffer_stream.player.js ，参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player'>【教程】【音频流】【播放】实时解码播放音频片段</a>。</span>");
 	
 	var i=0;
 	reclog(['已开启实时编码传输模拟'
@@ -24,47 +39,50 @@ Recorder.Support();//激活Recorder.Ctx
 	,(++i)+'. 复制设备B"本机信息"到设备A的"远程信息"中，设备A中点击确定连接'
 	,(++i)+'. 连接已建立，任何一方都可随时开始录音，并且数据都会发送给另外一方'
 	,''
-	,'关于传输到对方播放时音质变差（有噪音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了（后面编写了BufferStreamPlayer扩展，对音频片段的播放支持更好，参考下面的日志）。两个播放模式的音质wav算是勉强最好，MP3差点。（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外MP3编码出来的音频的播放时间比PCM原始数据要长一些，这个地方需要注意（本例子默认采用的是onProcess+mock实现，因此会有停顿杂音，如果开启takeoffEncodeChunk实现就无此限制，参考下面日志里的链接）。'
+	,'关于传输到对方播放时音质变差（有杂音）的问题，没找到这种小片段接续播放的现成实现，播放代码都是反复测试出来的，最差也就这样子了（有了BufferStreamPlayer插件加持，对音频片段的播放支持稍微友好很多）。两个播放模式的音质wav、pcm格式是最好的，mp3差很多。（16kbps,16khz）mp3开语音15分钟大概3M的流量，wav 15分钟要37M多流量。另外mp3编码出来的音频的播放时间比PCM原始数据要长一些（解码mp3也会引入静默），这个地方需要注意，可通过调大发送间隔来大幅减轻停顿杂音（但会增加语音延迟）；本例子默认采用的是onProcess+mock实现，因此会有明显的停顿杂音，如果开启takeoffEncodeChunk实现会好很多，在上面勾选上“接管编码器输出”即可开启。'
 	,''
 	,'<span style="color:red">本demo仅支持局域网</span>（无需服务器支持），采用WebRTC P2P传输数据，如果要支持公网访问会异常复杂，实际使用时用WebSocket来进行数据传输数据会简单很多'
-	,''
-	,'IOS就不要用了，12.3.1 Safari还要到设置里面打开WebRTC ICE试验性功能'
-	,''
-	,'PC（设备A）和Android Hybrid App（设备B）进行测试正常，但手机如果作为Peer A未能连接成功。'
-	,''
-	,'本功能主要目的在于验证H5录音实时转码、传输的可行性，并验证实时转码mp3格式小片段文件接收后的可播放性。结果：单纯的接收播放移动端和pc端并无太大差异，如果同时录音和同时播放，移动端性能低下设备卡顿明显，原因在于播放方法中有个6毫秒的暴力定时器（最开始1毫秒卡的动都动不了），换合理的播放方法应该可以做到比较完美。'
 	,'**************</div>'
 	].join("<br>"));
 	
 	reclog("<span style='font-size:50px;color:#0b1'>↓↓↓按下面的步骤使用↓↓↓</span>");
+};
 	
 	$(".webrtcView").html([""
 ,'<div class="webrtcSend">'
-,'<div style="display:inline-block;vertical-align: top;border:1px solid #ddd;margin-top:6px">'
-,'	<div style="color:#06c">（可选）开启H5语音通话（传输数据使用局域网WebRTC P2P）：</div>'
-,'	<div>'
-,'		接收端播放模式：'
-,'		<label><input type="radio" name="webrtcPlayMode" class="webrtcPlayModeDecode" value="decode" checked>解码播放</label>'
-,'		<label><input type="radio" name="webrtcPlayMode" value="audio">Audio连续播放</label>'
+,'<div style="border:1px solid #ddd;margin-top:6px">'
+,'	<div style="background:#f5f5f5;color:#06c;font-weight:bold;border-bottom:1px solid #ddd;padding:10px 5px">H5版语音通话聊天（上面录音时会自动通过局域网WebRTC P2P传输给对方）</div>'
+
+,'	<div style="border-bottom:1px solid #ddd;padding:5px">'
+,'		<div class="webrtcStatus"></div>'
+,'		<div class="webrtcWaveBox" style="display:none;margin-top:5px">'
+,'			<div style="border:1px solid #ccc;display:inline-block"><div style="height:100px;width:300px;" class="webrtcWave"></div></div>'
+,'			<span class="webrtcWaveTime"></span>'
+,'		</div>'
 ,'	</div>'
-,'	<div>'
-,'		本机信息：<textarea class="webrtcLocal" readonly style="width:160px;height:60px"></textarea>'
+
+,'	<div style="color:#888;border-bottom:1px solid #ddd;padding:5px">'
+,'		接收端播放模式：'
+,'		<label><input type="radio" name="webrtcPlayMode" class="webrtcPlayModeDecode" value="decode" checked>BufferStreamPlayer解码播放</label>'
+,'		<label><input type="radio" name="webrtcPlayMode" value="audio">原生Audio播放</label>'
+,'	</div>'
+,'	<div style="border-bottom:1px solid #ddd;padding:5px">'
+,'		本机信息：<textarea class="webrtcLocal" readonly style="width:40%;height:40px;vertical-align: middle;"></textarea>'
 ,'		<input type="button" onclick="webrtcCreate()" value="新建连接">'
 ,'	</div>'
-,'	<div>'
-,'		远程信息：<textarea class="webrtcRemote" style="width:160px;height:60px"></textarea>'
+,'	<div style="padding:5px">'
+,'		远程信息：<textarea class="webrtcRemote" style="width:40%;height:40px;vertical-align: middle;"></textarea>'
 ,'		<input type="button" onclick="webrtcConnect()" value="确定连接">'
 ,'	</div>'
 ,'	<audio class="webrtcPlay1"></audio>'
 ,'	<audio class="webrtcPlay2"></audio>'
-,'	<div class="webrtcStatus"></div>'
 ,'</div>'
 
-,'<div style="display:inline-block;border:1px solid #ddd;margin-top:6px">'
-,'	<div style="color:#06c">（可选）语音和消息（简单演示）：</div>'
+,'<div style="margin-top:15px"><div style="display:inline-block;">'
+,'	<div style="border:1px solid #ddd;background:#f5f5f5;color:#06c;font-weight:bold;padding:10px 5px">发语音和文本消息（简单演示，需先连接）</div>'
 ,'	<div style="border:2px solid #0b1">'
 ,'		<div style="border-bottom:2px solid #0b1; padding:3px;">'
-,'			<div class="webrtcVoiceBtn" style="display: inline-block;padding:12px 0;width:110px;text-align: center;background: #0b1;color: #fff;border-radius: 6px;">按住发语音</div>'
+,'			<div class="webrtcVoiceBtn" style="display: inline-block;padding:12px 0;width:110px;text-align: center;background: #0b1;color: #fff;border-radius: 6px;cursor: pointer;">按住发语音</div>'
 ,'			<textarea class="webrtcMsgInput" style="vertical-align: middle;width:130px;height:40px;padding:0"></textarea>'
 ,'			<input type="button" value="发消息" onclick="webrtcMessageSend()">'
 ,'		</div>'
@@ -94,9 +112,52 @@ Recorder.Support();//激活Recorder.Ctx
 ,'			<div class="webrtcMsgBox" style="overflow: hidden;"></div>'
 ,'		</div>'
 ,'	</div>'
-,'</div>'
+,'</div></div>'
 ,'</div>'
 	].join("\n"));
+	
+	
+//长按发语音
+var bindTouch=function(){
+	window.rtcVoiceStart=false;
+	DemoFragment.BindTouchButton("webrtcVoiceBtn"
+		,"按住发语音"
+		,"松开结束录音"
+		,{upBG:"#0b1",downBG:"#fa0"}
+		,function(cancel){//按下回调
+			rtcVoiceStart=true;
+			
+			//开始录音
+			recstart(function(err){
+				if(err){
+					rtcVoiceStart=false;
+					rtcMsgView("[错误]"+err,false);
+					cancel("录音错误");
+					return;
+				};
+			});
+		}
+		,function(isCancel,isUser){//结束长按回调
+			if(rtcVoiceStart && !isCancel){
+				//结束录音
+				recstop(function(err,data){
+					rtcVoiceStart=false;
+					if(!isUser){
+						rtcMsgView("[事件]touch事件被打断",false);
+						return;
+					};
+					if(err){
+						rtcMsgView("[错误]"+err,false);
+						return;
+					};
+					
+					webrtcVoiceSend(data);
+				});
+			};
+		}
+	);
+};
+
 })();
 
 
@@ -107,11 +168,14 @@ var realTimeSendTryChunk;
 var realTimeSendTryChunks;
 var realTimeSendTryChunkSampleRate;
 var realTimeSendTryTakeoffChunksIdx;
-var realTimeSendTryReset=function(){
+var realTimeSendTryReset=function(recSet){
 	realTimeSendTryTime=0;
+	if(!rtcVoiceStart){//给对方发送重置信号，初始化播放环境
+		webrtcStatusSend("reset",recSet);
+	};
 };
 var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
-	if(rtcVoiceStart){
+	if(rtcVoiceStart){//长按发语音，不实时发送语音
 		realTimeSendTryReset();
 		return;
 	};
@@ -163,6 +227,10 @@ var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
 			webrtcStreamSend(blob,{
 				duration:duration
 				,interval:interval
+				
+				,type:recSet.type
+				,bitRate:recSet.bitRate
+				,sampleRate:chunk.sampleRate
 			});
 			return;
 		};
@@ -229,6 +297,9 @@ var realTimeSendTryStop=function(recSet){
 	if(!realTimeSendTryTime){
 		return;
 	}
+	if(!rtcVoiceStart){//给对方发送结束信号，停止播放
+		webrtcStatusSend("stop");
+	};
 	
 	//借用SampleData函数把二维数据转成一维，采样率转换是次要的
 	var chunk=Recorder.SampleData(realTimeSendTryChunks,realTimeSendTryChunkSampleRate,realTimeSendTryChunkSampleRate);
@@ -244,71 +315,6 @@ var realTimeSendTryStop=function(recSet){
 		reclog("实时编码汇总失败："+err,1);
 	});
 };
-
-
-//按住发语音
-var rtcVoiceStart,rtcVoiceDownEvent,rtcVoiceDownHit;
-$("body").bind("mousedown touchstart",function(e){
-	var elem=$(".webrtcVoiceBtn");
-	if(e.target!=elem[0]){
-		return;
-	};
-	rtcVoiceDownEvent=e;
-	
-	$("body").css("user-select","none");//kill all 免得渣渣浏览器里面复制搜索各种弹，这些浏览器单独给div设置是没有用的
-	
-	rtcVoiceDownHit=setTimeout(function(){
-		rtcVoiceStart=true;
-		
-		//开始录音
-		recstart(function(err){
-			if(err){
-				rtcVoiceStart=false;
-				rtcMsgView("[错误]"+err,false);
-				return;
-			};
-			
-			if(rtcVoiceStart){//也许已经up了
-				elem.css("background","#f60").text("松开结束录音");
-			};
-		});
-	},300);
-}).bind("mouseup touchend touchcancel",function(e){
-	if(rtcVoiceDownHit || rtcVoiceStart){
-		$("body").css("user-select","");
-		clearTimeout(rtcVoiceDownHit);
-		rtcVoiceDownHit=0;
-		
-		if(rtcVoiceStart){
-			rtcVoiceStart=false;
-			$(".webrtcVoiceBtn").css("background","#0b1").text("按住发语音");
-			
-			//结束录音
-			recstop(function(err,data){
-				if(e.type=="touchcancel"){
-					rtcMsgView("[事件]touch事件被打断",false);
-					return;
-				};
-				if(err){
-					rtcMsgView("[错误]"+err,false);
-					return;
-				};
-				
-				webrtcVoiceSend(data);
-			});
-		};
-	};
-}).bind("mousemove touchmove",function(e){
-	if(rtcVoiceDownHit){
-		var a=rtcVoiceDownEvent.originalEvent;
-		var b=e.originalEvent;
-		if(Math.abs(a.screenX-b.screenX)+Math.abs(a.screenY-b.screenY)>3*2){
-			$("body").css("user-select","");
-			clearTimeout(rtcVoiceDownHit);
-			rtcVoiceDownHit=0;
-		};
-	};
-});
 
 
 
@@ -348,6 +354,12 @@ function webrtcStreamSend(blob,info){
 		send(reader.result);
 	};
 	reader.readAsDataURL(blob);
+};
+function webrtcStatusSend(status,info){
+	if(!rtcChannelOpen){
+		return;
+	};
+	rtcChannel.send(status+"##"+JSON.stringify(info||{})+"##");
 };
 
 function webrtcMessageSend(txt){
@@ -398,6 +410,14 @@ function webrtcReceive(data){
 		info.data=new Blob([u8arr.buffer],{type:mime});
 		rtcVoiceView(info,true);
 		return;
+	}else if(type=="reset"){
+		console.log("收到对方发来的reset信号",data);
+		rtcPlayReset(info);
+		return;
+	}else if(type=="stop"){
+		console.log("收到对方发来的stop信号",data);
+		rtcPlayStop();
+		return;
 	};
 	
 	if(type!="stream"){
@@ -405,7 +425,7 @@ function webrtcReceive(data){
 		return;
 	};
 	
-	rtcPlayBuffer.splice(0,0,{mime:mime,data:b64,duration:info.duration});
+	rtcPlayBuffer.splice(0,0,{mime:mime,data:b64,info:info});
 	var maxLen=Math.ceil(1000/info.interval);
 	if(rtcPlayBuffer.length>maxLen){//播放队列延迟太大，直接重置队列
 		rtcRecSkip+=rtcPlayBuffer.length-1;
@@ -458,7 +478,7 @@ var rtcMsgView=function(msg,isIn){
 var rtcVoiceView=function(data,isIn){
 	var id=RandomKey(16);
 	rtcVoiceDatas[id]=data;
-	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'" onclick="rtcVoicePlay(\''+id+'\')">'+rtcMsgTime()+'<span style="color:#06c">语音</span> '+(data.duration/1000).toFixed(2)+'s</div>');
+	$(".webrtcMsgBox").prepend('<div class="'+(isIn?"webrtcMsgIn":"webrtcMsgOut")+'" onclick="rtcVoicePlay(\''+id+'\')" style="cursor: pointer;">'+rtcMsgTime()+'<span style="color:#06c">语音</span> '+(data.duration/1000).toFixed(2)+'s</div>');
 };
 var rtcVoiceDatas={};
 var rtcVoicePlay=function(id){
@@ -474,14 +494,13 @@ var rtcVoicePlay=function(id){
 
 var rtcStatusView=function(){
 	var html=[];
-	var ctrl;
 	if(rtcChannelOpen){
-		ctrl='<input type="button" onclick="webrtcCloseClick()" value="关闭连接">';
+		html.push('<span style="color:#0b1">连接已建立，请在上面进行录音操作，音频数据会实时传送给对方播放（录音切换到wav、pcm格式对方播放的音质会好很多，mp3启用takeoffEncodeChunk也可改善音质）</span> <input type="button" onclick="webrtcCloseClick()" value="关闭连接">');
 	}else{
-		ctrl="<span style='color:#f60'>连接已关闭，停止数据收发</span>";
+		html.push('<span style="color:#f60">连接已关闭，停止数据收发，请重新建立连接</span>');
 	};
 	
-	html.push('<div style="padding-top:10px">发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片 "+ctrl+"</div>");
+	html.push('<div>发送：'+rtcSendMime+" "+rtcSendLen+"b "+rtcSendCount+"片 共"+rtcBitF(rtcSendSize)+" Skip:"+rtcSendSkip+"片</div>");
 	html.push('<div>接收：'+rtcRecMime+" "+rtcRecLen+"b "+rtcRecCount+"片 共"+rtcBitF(rtcRecSize)+" Skip:"+rtcRecSkip+"片 PlayMode:"+rtcPlayMode+"</div>");
 	
 	rtcStatus.html(html.join("\n"));
@@ -496,6 +515,16 @@ var rtcBitF=function(size){
 var rtcSendMime="-",rtcSendLen=0,rtcSendCount=0,rtcSendSize=0,rtcSendSkip=0;
 var rtcRecMime="-",rtcRecLen=0,rtcRecCount=0,rtcRecSize=0,rtcRecSkip=0;
 var rtcStatus=$(".webrtcStatus");
+var webrtcWaveBox=$(".webrtcWaveBox"),webrtcWave=$(".webrtcWave");
+var rtcStatusStepLog=function(msg){
+	rtcStatus.html('<div style="color: #f60;"><span style="font-weight: bold">请操作：</span>'+msg
+		+'</div><div class="rtcStatusStep_Err" style="color:red"></div>');
+	return msg;
+};
+var rtcStatusStepErr=function(msg){
+	$(".rtcStatusStep_Err").html(msg);
+	return msg
+};
 
 
 
@@ -505,102 +534,148 @@ var rtcStatus=$(".webrtcStatus");
 //*****语音流播放*****
 var rtcPlayBuffer=[];
 var rtcPlayModeDecode=$(".webrtcPlayModeDecode")[0];
-var rtcPlayMode="-";
+var rtcPlayMode="-",rtcPlayRecSet;
 var rtcPlay=function(){
 	if(rtcPlayModeDecode.checked){
 		rtcPlayMode="decode";
+		webrtcWaveBox.show();
 		rtcDecodePlay();
 	}else{
 		rtcPlayMode="audio";
+		webrtcWaveBox.hide();
 		rtcAuidoPlay();
 	};
 };
+//重置播放环境，初始化播放器，远端发送reset信号触发调用
+var rtcPlayReset=function(recSet){
+	rtcPlayRecSet=recSet;
+	
+	rtcDecodePlayInit();
+	
+	reclog("对方开始了录音，正在播放传输过来的音频数据...");
+};
+//关闭播放器，远端发送stop信号触发调用
+var rtcPlayStop=function(){
+	rtcDecodePlayStop();
+	
+	var type=Recorder.prototype.wav?"wav":Recorder.prototype.mp3?"mp3":"";
+	reclog("对方结束了录音，正在合成已播放数据汇总文件...");
+	if(!rtcDecPlayBuffers.length){
+		reclog("本端可能未解码播放过，不合成已播放数据汇总文件了","#bbb");
+	}else if(!type){
+		reclog("本端未加载wav或mp3编码器，不合成已播放数据汇总文件了","#bbb");
+	}else{
+		var pcms=[],sampleRate;
+		for(var i=0;i<rtcDecPlayBuffers.length;i++){
+			var o=rtcDecPlayBuffers[i];
+			sampleRate=o.sampleRate;
+			pcms.push(o.pcm);
+		}
+		var pcm=Recorder.SampleData(pcms,sampleRate,sampleRate).data;
+		var recMock=Recorder({
+			type:type
+			,sampleRate:sampleRate
+		});
+		recMock.mock(pcm,sampleRate);
+		var mockT=Date.now();
+		recMock.stop(function(blob,duration){
+			addRecLog(duration,"已播放数据汇总结果",blob,recMock.set,mockT);
+		},function(err){
+			reclog("已播放数据汇总失败："+err,1);
+		});
+	}
+};
 
-//方式一：解码播放
-var rtcDecPlaySource;
-var rtcDecPlayID=0;
-var rtcDecPlayIDCur=0;
-var rtcDecPlayNextTime;
-var rtcDecPlayTime=0;
-var rtcDecPlayTimeSkips=[0,0,0];
-var rtcDecPlayTimeSkip=0;
-var rtcDecodePlay=function(decode){
+
+
+//方式一：解码播放 BufferStreamPlayer
+var rtcDecPlayer,rtcDecPlayRec,rtcDecPlayBuffers=[];
+var rtcDecodePlayStop=function(){
+	rtcDecPlayer&&rtcDecPlayer.stop();
+	rtcDecPlayer=0;
+	rtcDecPlayRec&&rtcDecPlayRec.close();
+	rtcDecPlayRec=0;
+};
+var rtcDecodePlayInit=function(){
+	rtcDecodePlayStop();//先清理了再说
+	rtcDecPlayBuffers=[];
+	
+	//16位pcm无需任何操作就能直接播放，其他格式需要解码
+	var isPcm16=rtcPlayRecSet.type=="pcm" && rtcPlayRecSet.bitRate==16;
+	
+	var player=rtcDecPlayer=new Recorder.BufferStreamPlayer({
+		decode:isPcm16?false:true
+		,onUpdateTime:function(){
+			var n=~~(player.currentTime/1000);
+			var s=n%60;
+			var m=(n-s)/60;
+			n=m+":"+("0"+s).substr(-2);
+			$(".webrtcWaveTime").html(n);
+		}
+		,transform:function(inputData,sampleRate,True,False){
+			if(isPcm16){//原始16位pcm数据，直接播放
+				inputData=new Int16Array(inputData);
+				sampleRate=rtcPlayRecSet.sampleRate;
+				True(inputData, sampleRate);
+			}else{//已解码
+				True(inputData,sampleRate);
+			}
+			rtcDecPlayBuffers.push({//存起来，结束时合并成一个大的，对比音质
+				pcm:inputData,sampleRate:sampleRate
+			});
+		}
+	});
+	player.start(function(){
+		console.log("rtcDecPlayer已初始化");
+		
+		//打开可视化绘制
+		if(player==rtcDecPlayer){
+			var rec=rtcDecPlayRec=Recorder({
+				type:"unknown" //可提供unknown格式，方便清理内存
+				,sourceStream:player.getMediaStream() //明确指定录制处理的流
+				,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
+					if(rec!=rtcDecPlayRec)return;
+					var waveStore=rec.waveStore=rec.waveStore||{};
+					if(!waveStore.init){
+						waveStore.init=true;
+						webrtcWaveBox.show();
+						initWaveStore(waveStore,webrtcWave);
+					};
+					if(waveStore.choice!=recwaveChoiceKey){
+						waveStore.choice=recwaveChoiceKey;
+						webrtcWave.html("").append(waveStore[recwaveChoiceKey].elem);
+					};
+					waveStore[recwaveChoiceKey].input(buffers[buffers.length-1],powerLevel,sampleRate);
+					
+					for(var i=newBufferIdx;i<buffers.length;i++){
+						buffers[i]=null; //因为是unknown格式，buffers和rec.buffers是完全相同的，只需清理buffers就能释放内存，其他格式不一定有此特性。
+					}
+				}
+			});
+			rec.open(function(){
+				if(rec!=rtcDecPlayRec)return;
+				rec.start();
+			});
+		};
+	});
+};
+var rtcDecodePlay=function(){
 	if(!rtcPlayModeDecode.checked){
 		return;
 	};
-	if(rtcPlayBuffer.length<1){
-		return;
-	};
+	while(rtcDecPlayer && rtcPlayBuffer.length){
+		var itm=rtcPlayBuffer.pop(),info=itm.info;
+		if(info.type=="pcm" && info.bitRate!=16){
+			console.warn("rtcDecodePlay未提供支持8位pcm格式的播放（只支持16位的pcm），其实只需要加载pcm编码器，然后调用Recorder.pcm2wav即可转成wav格式播放，但因为这只是一个特例，懒得写代码，所以没有提供支持");
+			rtcRecSkip++;
+			return;
+		}
 	
-	if(!rtcDecPlayTime){
-		setInterval(function(){//暴力计算BufferSource播放时间
-			if(rtcDecPlayNextTime<=Date.now()+3){
-				rtcDecodePlay(1);
-			};
-		},6);
-	}else if(!decode){
-		return;
+		var u8arr=rtcB64ToUInt8(itm.data);
+		rtcDecPlayer.input(u8arr.buffer);
 	};
-	if(rtcDecPlayIDCur!=rtcDecPlayID){
-		return;
-	};
-	rtcDecPlayID++;
-	rtcDecPlayTime=Date.now();
-	
-	var itm=rtcPlayBuffer.pop();
-	var u8arr=rtcB64ToUInt8(itm.data);
-	
-	var ctx=Recorder.Ctx;
-	ctx.decodeAudioData(u8arr.buffer,function(raw){
-		var pcm=raw.getChannelData(0);
-		
-		var sd=pcm.length/raw.sampleRate*1000;
-		var pd=itm.duration;
-		var duration=sd;
-		var arr=pcm;
-		if(pd<sd){//数据变多了，原因在于编码器并不一定精确时间的编码，此处只针对lamejs的mp3进行优化，因为mp3每帧固定时长，结尾可能存在填充
-			duration=pd;
-			
-			//去掉多余的尾部
-			var skip=Math.floor((sd-pd)/1000*raw.sampleRate/2);
-			arr=new Float32Array(pcm.subarray(0,pcm.length-skip));//低版本没有slice
-		}else{
-			//数据少了不管
-		};
-		
-		var buffer=ctx.createBuffer(1,arr.length,raw.sampleRate);
-		buffer.getChannelData(0).set(arr);
-		
-		var source=ctx.createBufferSource();
-		source.channelCount=1;
-		source.buffer=buffer;
-		source.connect(ctx.destination);
-		if(source.start){source.start()}else{source.noteOn(0)};
-		
-		//不关闭上一个，让它继续播放完结尾，衔接起来好些
-		//rtcDecPlaySource&&rtcDecPlaySource.stop();
-		rtcDecPlaySource=source;
-		
-		rtcDecPlayTimeSkips.splice(0,0,Date.now()-rtcDecPlayTime);
-		rtcDecPlayTime=Date.now();
-		
-		if(rtcDecPlayTimeSkips.length>3){
-			rtcDecPlayTimeSkips.length=3;
-		};
-		
-		rtcDecPlayTimeSkip=(rtcDecPlayTimeSkips[0]+rtcDecPlayTimeSkips[1]+rtcDecPlayTimeSkips[2])/3;
-		
-		
-		rtcDecPlayIDCur=rtcDecPlayID;
-		rtcDecPlayNextTime=Date.now()+duration-rtcDecPlayTimeSkip;
-	},function(e){
-		rtcDecPlayIDCur=rtcDecPlayID;
-		rtcDecPlayNextTime=Date.now()+300;
-		
-		console.error("解码失败:"+itm.mime+" "+e.message);
-		rtcRecSkip++;
-	});
 };
+
 
 //方式二：直接audio播放
 var rtcAudioPlay1;
@@ -675,7 +750,13 @@ var rtcAuidoPlay=function(){
 	rtcAudioPlayCur.rtcPlayID=0;
 	
 	rtcAudioPlayTime=Date.now();
-	var itm=rtcPlayBuffer.pop();
+	var itm=rtcPlayBuffer.pop(),info=itm.info;
+	if(info.type=="pcm"){
+		console.warn("rtcAuidoPlay未提供支持pcm格式的播放，其实只需要加载pcm编码器，然后调用Recorder.pcm2wav即可转成wav格式播放，但因为这只是一个特例，懒得写代码，所以没有提供支持");
+		rtcRecSkip++;
+		rtcAudioPlayCur.rtcPlayID=-1;
+		return;
+	}
 	rtcAudioPlayItm=itm;
 	rtcAudioPlayCur.src="data:"+itm.mime+";base64,"+itm.data;
 	rtcAudioPlayCur.play();
@@ -703,7 +784,7 @@ function webrtcInitTry(){
 };
 function webrtcInfoCreate(fn,msg){
 	rtcConn.oniceconnectionstatechange=function(){
-		var state=rtcConn.iceConnectionState;
+		var state=rtcConn&&rtcConn.iceConnectionState;
 		reclog("WebRTC Connect State: "+state);
 		if(state=="disconnected"){
 			rtcConn.close();
@@ -733,16 +814,17 @@ function webrtcInfoCreate(fn,msg){
 	var p=rtcConn[fn](t,f);
 	p&&p.then&&p.then(t)["catch"](f);
 };
+rtcStatusStepLog('先在局域网内两台设备(设备A、设备B)分别打开本页面（同一浏览器打开两个标签页也行），然后在设备A上点击"新建连接"');
 function webrtcCreate(){
 	webrtcInitTry();
 	if(rtcChannel){
-		reclog("连接已创建，请勿重复创建，刷新页面重试",1);
+		reclog(rtcStatusStepErr("连接已创建，请勿重复创建，刷新页面重试"),1);
 		return;
 	};
 	rtcConn.onnegotiationneeded=function(){
-		webrtcInfoCreate("createOffer",'已新建连接，请将本机信息复制到另外一个设备的"远程信息"输入框中，并点击确定连接');
+		webrtcInfoCreate("createOffer",rtcStatusStepLog('已新建连接，请将本机信息复制到另外一个设备的"远程信息"输入框中，并点击确定连接'));
 	};
-	reclog("创建连接中...");
+	reclog(rtcStatusStepLog("创建连接中..."));
 	rtcChannel=rtcConn.createDataChannel("REC RTC");
 };
 function webrtcConnect(){
@@ -752,7 +834,7 @@ function webrtcConnect(){
 	try{
 		var remote=JSON.parse($(".webrtcRemote").val());
 	}catch(e){
-		reclog("请正确输入远程信息："+e.message,1);
+		reclog(rtcStatusStepErr("请正确输入远程信息："+e.message),1);
 		console.error("json解析错误",e);
 		return;
 	};
@@ -796,7 +878,7 @@ function webrtcConnect(){
 	if(isLocal){
 		//对方已确认连接
 		if(remote.type!="answer"){
-			reclog("远程信息不是通过确定连接创建的");
+			reclog(rtcStatusStepErr("远程信息不是通过确定连接创建的"));
 			return;
 		};
 		bind();
@@ -804,7 +886,7 @@ function webrtcConnect(){
 	}else{
 		//新创建远程连接
 		if(remote.type!="offer"){
-			reclog("远程信息不是通过新建连接创建的");
+			reclog(rtcStatusStepErr("远程信息不是通过新建连接创建的"));
 			return;
 		};
 		rtcConn.setRemoteDescription(new RTCSessionDescription(remote));
@@ -813,7 +895,7 @@ function webrtcConnect(){
 			rtcChannel=e.channel;
 			bind();
 		};
-		reclog("远程连接中...");
-		webrtcInfoCreate("createAnswer",'已连接，请将本机信息复制到上一个设备的"远程信息"输入框中，并点击确定连接');
+		reclog(rtcStatusStepLog("远程连接中..."));
+		webrtcInfoCreate("createAnswer",rtcStatusStepLog('已连接，请将本机信息复制到上一个设备的"远程信息"输入框中，并点击确定连接'));
 	};
 };

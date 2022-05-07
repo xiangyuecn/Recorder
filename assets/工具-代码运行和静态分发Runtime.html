@@ -446,7 +446,15 @@ Runtime.LogAudioPlay=function(id){
 		var wav=Recorder[o.set.type+"2wav"];
 		if(wav){
 			logmsg("正在转码成wav...");
-			wav(o.blob,function(blob){
+			var wavData=o.blob;
+			if(o.set.type=="pcm"){
+				wavData={
+					sampleRate:o.set.sampleRate
+					,bitRate:o.set.bitRate
+					,blob:o.blob
+				};
+			};
+			wav(wavData,function(blob){
 				end(blob);
 				logmsg("已转码成wav播放");
 			},function(msg){
@@ -1102,24 +1110,25 @@ var demos=[
 ,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
 ,{n:"【Demo库】【格式转换】-amr格式转成其他格式",k:"lib.transform.amr2other"}
 
-,{n:"【教程】【音频流】实时转码并上传-通用版",k:"teach.realtime.encode_transfer"}
-,{n:"【教程】【音频流】实时转码并上传-mp3专版",k:"teach.realtime.encode_transfer_mp3"}
+,{n:"【教程】【音频流】【上传】实时转码并上传-通用版",k:"teach.realtime.encode_transfer"}
+,{n:"【教程】【音频流】【上传】实时转码并上传-mp3专版",k:"teach.realtime.encode_transfer_mp3"}
+,{n:"【教程】【音频流】【上传】实时转码并上传-pcm固定帧大小",k:"teach.realtime.encode_transfer_frame_pcm"}
 
 
-,{n:"【教程】【音频流】实时解码播放音频片段",k:"teach.realtime.decode_buffer_stream_player"}
+,{n:"【教程】【音频流】【播放】实时解码播放音频片段",k:"teach.realtime.decode_buffer_stream_player"}
+,{n:"【教程】【ASR】实时语音识别、音频文件转文字-阿里云版",k:"teach.realtime.asr.aliyun.short"}
 ,{n:"【教程】实时录制处理audio、video标签的captureStream流",k:"teach.source_stream.capture_stream"}
 
 ,{n:"【Demo库】【文件合并】-mp3多个片段文件合并",k:"lib.merge.mp3_merge"}
 ,{n:"【Demo库】【文件合并】-wav多个片段文件合并",k:"lib.merge.wav_merge"}
 
-//,{n:"【教程】实时语音识别（语音转文字）",k:"teach.realtime.asr"}
 ,{n:"【教程】实时多路音频混音",k:"teach.realtime.mix_multiple"}
 ,{n:"【教程】变速变调音频转换",k:"teach.sonic.transform"}
 ,{n:"【教程】新录音从老录音接续、或录制中途插入音频",k:"teach.env_in.follow"}
 ,{n:"【教程】DTMF（电话拨号按键信号）解码、编码",k:"teach.dtmf.decode_and_encode"}
 
 ,{n:"【Demo库】PCM采样率提升",k:"lib.samplerate.raise"}
-,{n:"【测试】音频可视化相关扩展测试",k:"test.extensions.visualization"}
+,{n:"【测试】音频可视化相关插件测试",k:"test.extensions.visualization"}
 
 ];
 

@@ -86,7 +86,7 @@ a:hover{
 }
 
 
-.btns button{
+.btns button,.mainBtn{
 	display: inline-block;
 	cursor: pointer;
 	border: none;
@@ -100,7 +100,7 @@ a:hover{
 	overflow: hidden;
 	vertical-align: middle;
 }
-.btns button:active{
+.btns button:active,.mainBtn:active{
 	background: #f00;
 }
 
@@ -145,7 +145,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2022-03-03 19:28:16";
+var PageLM="2022-05-07 21:58";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -293,17 +293,21 @@ if(!window.localStorage){window.localStorage={
 			<span class="recwaveChoice" key="Histogram3">H...3</span>
 		</span>
 	</div>
-	<div class="pd">
+	<div class="pd pcmPageHide">
 		<label><input type="checkbox" class="autoStopSet">开始录制后定时</label>
 		<input type="text" class="autoStopTime" value="60000" style="width:60px">ms自动停止录音，定时录音
 	</div>
-	<div class="pd webrtcBox">
-		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
+	<div class="pd pcmPageHide">
+		<label><input type="checkbox" class="takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk），切换后新打开录音生效</label>
+	</div>
+	<div class="pd pcmPageHide">
+		<label><input type="checkbox" class="realTimeSendSet">模拟实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
 		<div class="webrtcView" style="display:none;"></div>
 	</div>
-	<div class="takeoffBox">
-		<label><input type="checkbox" class="takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk），切换后新打开录音生效</label>
+	<div class="pcmPageHide">
+		<label><input type="checkbox" class="asrSet">实时语音识别、音频文件转文字，ASR</label>
+		<div class="asrView" style="display:none;"></div>
 	</div>
 </div>
 	
@@ -377,7 +381,7 @@ if(!window.localStorage){window.localStorage={
 	<div>
 		<span class="lb">变速变调 :</span> 
 		<button onclick="resetSonicCtrl()">重置变速变调</button>
-		实时变速变调控制选项，可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）
+		实时变速变调控制选项（Sonic 插件），可以边录边修改，同一时间应该只控制一个，否则叠加作用；请填写0.1-2.0的数字，1.0为不调整，当然超过2.0也是可以的（需手动输入）
 	</div>
 	<div class="sonicCtrlBox" style="margin:5px 0 0;position: relative;">
 		<style>
@@ -406,6 +410,7 @@ if(!window.localStorage){window.localStorage={
 	<label>
 		<input type="checkbox" class="disableEnvInFixSet">禁用设备卡顿时音频输入丢失补偿功能（通过别的程序大量占用CPU来模拟设备卡顿）
 		；<span style="color:#f60">设置后需重新打开录音</span>
+		；为set中disableEnvInFix配置值
 	</label>
 	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
 </div>
@@ -413,7 +418,7 @@ if(!window.localStorage){window.localStorage={
 <div class="mainBox">
 	<div>
 		<span class="lb">DTMF电话按键信号 :</span> 
-		DTMF解码、编码扩展，可以方便的处理电话拨号按键信号，用于：电话录音软解，软电话实时提取DTMF按键信号、实时发送DTMF按键信号等。下面拨号盘可在录音时往录音文件中添加按键信息：
+		DTMF解码、编码插件，可以方便的处理电话拨号按键信号，用于：电话录音软解，软电话实时提取DTMF按键信号、实时发送DTMF按键信号等。下面拨号盘可在录音时往录音文件中添加按键信息：
 	</div>
 <div>
 <style>
@@ -573,6 +578,8 @@ function recopen(){
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
 	
+	var asrSet=$(".asrSet")[0].checked;
+	
 	var takeoffEncodeChunkSet=$(".takeoffEncodeChunkSet")[0].checked;
 	
 	rec=Recorder({
@@ -609,6 +616,10 @@ function recopen(){
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(rec.set,realTimeSendTime,buffers,sampleRate);
 			};
+			//实时语音识别
+			if(asrSet&&window.asrInput){
+				asrInput(buffers,sampleRate,newBufferIdx);
+			};
 			
 			return beginAsync;//返回true转成异步操作
 		}
@@ -636,26 +647,7 @@ function recopen(){
 		reclog("<span style='color:#0b1'>已打开:"+type+" "+sample+"hz "+bit+"kbps</span>"+typeSize);
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
-		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
-		waveStore.SurferView=Recorder.WaveSurferView({elem:".recwave"});
-		waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".recwave"});
-		waveStore.Histogram2=Recorder.FrequencyHistogramView({
-			elem:".recwave"
-			,lineCount:90
-			,position:0
-			,minHeight:1
-			,stripeEnable:false
-		});
-		waveStore.Histogram3=Recorder.FrequencyHistogramView({
-			elem:".recwave"
-			,lineCount:20
-			,position:0
-			,minHeight:1
-			,fallDuration:400
-			,stripeEnable:false
-			,mirrorEnable:true
-			,linear:[0,"#0ac",1,"#0ac"]
-		});
+		initWaveStore(waveStore,".recwave");
 	},function(e,isUserNotAllow){
 		dialogCancel();
 		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+e,1);
@@ -740,7 +732,7 @@ function recstart(call){
 		msg&&reclog(msg,1);
 	});
 	if(rec&&Recorder.IsOpen()){
-		window.realTimeSendTryReset&&realTimeSendTryReset();
+		window.realTimeSendTryReset&&realTimeSendTryReset(rec.set);
 		
 		sonicAsync&&sonicAsync.flush();//丢弃不管，省的去同步麻烦
 		sonicAsync=null;
@@ -1127,6 +1119,29 @@ if(!$(".recwaveChoice[key="+recwaveChoiceKey+"]").length){
 };
 $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 
+var initWaveStore=function(store,elem){
+	store.WaveView=Recorder.WaveView({elem:elem});
+	store.SurferView=Recorder.WaveSurferView({elem:elem});
+	store.Histogram1=Recorder.FrequencyHistogramView({elem:elem});
+	store.Histogram2=Recorder.FrequencyHistogramView({
+		elem:elem
+		,lineCount:90
+		,position:0
+		,minHeight:1
+		,stripeEnable:false
+	});
+	store.Histogram3=Recorder.FrequencyHistogramView({
+		elem:elem
+		,lineCount:20
+		,position:0
+		,minHeight:1
+		,fallDuration:400
+		,stripeEnable:false
+		,mirrorEnable:true
+		,linear:[0,"#0ac",1,"#0ac"]
+	});
+};
+
 
 if(window.isSecureContext===false){
 	reclog("当前网页不是安全环境（HTTPS），将无法获取录音权限，<a href='https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security'>MDN Privacy and security</a>",1);
@@ -1174,13 +1189,22 @@ $(".realTimeSendSet").bind("change",function(e){
 	var open=e.target.checked;
 	$(".webrtcView")[open?"show":"hide"]();
 	if(open && !window.webrtcCreate){
-		var file="zdemo.index.webrtc.js";
+		var file="assets/zdemo.index.webrtc.js";
 		reclog("正在加载"+file+" ...");
 		
-		var elem=document.createElement("script");
-		elem.setAttribute("type","text/javascript");
-		elem.setAttribute("src",window.webrtcJSPath||("assets/"+file));
-		$("head")[0].appendChild(elem);
+		loadJsList([file]);
+	};
+});
+
+//ASR开关，实时语音识别、音频文件转文字
+$(".asrSet").bind("change",function(e){
+	var open=e.target.checked;
+	$(".asrView")[open?"show":"hide"]();
+	if(open && !window.asrInput){
+		var file="assets/zdemo.index.asr.js";
+		reclog("正在加载"+file+" ...");
+		
+		loadJsList([file]);
 	};
 });
 
@@ -1479,40 +1503,23 @@ function loadEngine(input){
 		};
 		if(!Recorder.prototype[type] || loadEngineState[type]!==minjs){
 			reclog("<span style='color:#f60'>正在加载"+type+"编码器"+(minjs?"压缩版":"源码版")+"，请勿操作...</span>");
-			var i=-1;
-			var load=function(){
-				i++;
-				if(i>=engines.length){
-					loadEngineState[type]=minjs;
-					Recorder.WaveView=WaveViewBak;
-					Recorder.WaveSurferView=WaveSurferViewBak;
-					Recorder.LibFFT=LibFFTBak;
-					Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
-					Recorder.Sonic=SonicBak;
-					Recorder.DTMF_Encode=DTMF_EncodeBak;
-					Recorder.DTMF_EncodeMix=DTMF_EncodeMixBak;
-					Recorder.DTMF_Decode=DTMF_DecodeBak;
-					
-					reclog("<span style='color:#0b1'>"+type+"编码器"+(minjs?"压缩版":"源码版")+"已加载，可以录音了</span>");
-					end();
-					return;
-				}
-				var elem=document.createElement("script");
-				elem.setAttribute("type","text/javascript");
-				elem.setAttribute("src",engines[i]);
-				if(!("onload" in elem)){//IsLoser 古董浏览器
-					elem.onreadystatechange=function(){
-						if(elem.readyState=="loaded"){
-							load();
-						}
-					}
-				};
-				elem.onload=function(){
-					load();
-				};
-				$("head")[0].appendChild(elem);
-			};
-			load();
+			loadJsList(engines,function(){
+				loadEngineState[type]=minjs;
+				Recorder.WaveView=WaveViewBak;
+				Recorder.WaveSurferView=WaveSurferViewBak;
+				Recorder.LibFFT=LibFFTBak;
+				Recorder.FrequencyHistogramView=FrequencyHistogramViewBak;
+				Recorder.Sonic=SonicBak;
+				Recorder.DTMF_Encode=DTMF_EncodeBak;
+				Recorder.DTMF_EncodeMix=DTMF_EncodeMixBak;
+				Recorder.DTMF_Decode=DTMF_DecodeBak;
+				
+				reclog("<span style='color:#0b1'>"+type+"编码器"+(minjs?"压缩版":"源码版")+"已加载，可以录音了</span>");
+				end();
+			},function(err){
+				reclog(err,1);
+				return false;
+			});
 		}else{
 			end();
 		};
@@ -1527,6 +1534,53 @@ var SonicBak=Recorder.Sonic;
 var DTMF_EncodeBak=Recorder.DTMF_Encode;
 var DTMF_EncodeMixBak=Recorder.DTMF_EncodeMix;
 var DTMF_DecodeBak=Recorder.DTMF_Decode;
+
+var loadJsList=function(jsList,True,False,allCheck){//False -> false继续加载，allCheck(urlItem)允许修改url值
+	var rootUrl="";
+	var load=function(idx){
+		if(idx>=jsList.length){
+			True&&True();
+			return;
+		};
+		var itm=jsList[idx];
+		if(typeof(itm)=="string")itm={url:itm};
+		if(itm.check && itm.check()===false){
+			load(idx+1);
+			return;
+		};
+		if(allCheck && allCheck(itm)===false){
+			load(idx+1);
+			return;
+		};
+		var url=itm.url;
+		
+		var elem=document.createElement("script");
+		elem.setAttribute("type","text/javascript");
+		elem.setAttribute("src",(/^\w+:/.test(url)?"":rootUrl)+url);
+		if(!("onload" in elem)){//IsLoser 古董浏览器
+			elem.onreadystatechange=function(){
+				if(elem.readyState=="loaded"){
+					elem.onload();
+				}
+			}
+		};
+		var isload=0;
+		elem.onload=function(){
+			if(!isload){
+				load(idx+1);
+				isload=1;
+			}
+		};
+		elem.onerror=function(e){
+			var v=False&&False("js加载失败:"+(e.message||"-")+"，"+url,1);
+			if(v===false){
+				elem.onload();
+			}
+		};
+		$("head")[0].appendChild(elem);
+	};
+	setTimeout(function(){ load(0) });
+};
 
 (function(){try{
 	var minjs=$(".loadMinJs");
@@ -1545,7 +1599,7 @@ var DTMF_DecodeBak=Recorder.DTMF_Decode;
 
 //pcm测试页面来的
 if(/ispcm=1/.test(location.href)){
-	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox,.webrtcBox,.takeoffBox").hide();
+	$(".demoHead,.gitUrl,.btns,.recpower,.waveBox,.pcmPageHide").hide();
 };
 }catch(e){console.error(e)}})();
 </script>

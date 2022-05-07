@@ -1,5 +1,5 @@
 /******************
-《【教程】【音频流】实时解码播放音频片段》
+《【教程】【音频流】【播放】实时解码播放音频片段》
 作者：高坚果
 时间：2021-08-03 22:08:06
 
@@ -56,6 +56,21 @@ var start=function(){
 		,onInputError:function(errMsg, inputIndex){
 			Runtime.Log("第"+inputIndex+"次的音频片段input输入出错: "+errMsg,1);
 		}
+		,onUpdateTime:function(){
+			$(".streamTime").html(
+				(stream.isStop?'<span style="color:red">已停止</span>':
+				stream.isPause?'<span style="color:#aaa">已暂停</span>':
+				stream.isPlayEnd?'<span style="color:#fa0">缓冲中...</span>'
+								:'<span style="color:#0b1">播放中...</span>')
+				+' '+formatTime(stream.currentTime)
+				+' / 总'+formatTime(stream.duration)
+			);
+		}
+		,onPlayEnd:function(){
+			if(!stream.isStop){
+				Runtime.Log('没有可播放的数据了，缓冲中 或者 已播放完成',"#aaa");
+			};
+		}
 		,transform:function(pcm,sampleRate,True,False){
 			testTransform(pcm,sampleRate,function(pcm,sampleRate){
 				True(pcm,sampleRate);
@@ -94,6 +109,23 @@ var stop=function(){
 	});
 };
 
+
+
+var pause=function(){
+	if(stream){
+		stream.pause();
+		Runtime.Log("已暂停播放");
+	}
+};
+var resume=function(){
+	if(stream){
+		stream.resume();
+		Runtime.Log("已恢复播放");
+	}
+};
+
+
+
 var setRealtimeOn=function(){
 	if(stream){
 		stream.set.realtime=true;
@@ -107,9 +139,11 @@ var setRealtimeOff=function(){
 	}
 };
 
+
+
 //实时的接收到了音频片段文件，通过input方法输入到流里面
 var receiveAudioChunk=function(arrayBuffer){
-	if(stream){
+	if(stream && !testInfo.receivePause){
 		testInfo.count=(testInfo.count||0)+1;
 		var allSize=testInfo.allSize=(testInfo.allSize||0)+arrayBuffer.byteLength;
 		if(allSize<1024*900){
@@ -120,10 +154,19 @@ var receiveAudioChunk=function(arrayBuffer){
 		
 		$(".receiveInfo").html(""
 			+"第"+testInfo.count+"次收到"+testType+"片段"+arrayBuffer.byteLength+"字节"
-			+"，共收到"+allSize);
+			+"，共收到"+allSize
+			+(stream.set.realtime?"，实时模式":"，非实时模式"));
 			
 		stream.input(arrayBuffer);
 	}
+};
+var receivePause=function(){
+	Runtime.Log("已暂停接收，发送过来的数据全部丢弃");
+	testInfo.receivePause=1;
+};
+var receiveResume=function(){
+	Runtime.Log("已恢复接收");
+	testInfo.receivePause=0;
 };
 
 
@@ -131,9 +174,14 @@ var receiveAudioChunk=function(arrayBuffer){
 var rec;
 var recStart=function(){
 	rec=Recorder({
+		//type:"unknown" //可提供unknown格式，方便清理内存
 		sourceStream:stream.getMediaStream() //明确指定录制处理的流
-		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
+		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
 			Runtime.Process.apply(null,arguments);
+			
+			for(var i=newBufferIdx;i<buffers.length;i++){
+				//buffers[i]=null; //因为是unknown格式，buffers和rec.buffers是完全相同的，只需清理buffers就能释放内存，其他格式不一定有此特性。这里并未清理，因为recStop要录音结果
+			}
 		}
 	});
 	
@@ -173,26 +221,40 @@ Runtime.Import([
 
 //显示控制按钮
 Runtime.Ctrls([
-	{name:"WebSocket接收播放mp3",click:"startMp3"}
+	{html:"<div><span class='streamTime' style='margin-right:20px'></span> <span class='receiveInfo'></span></div><hr/>"}
+	
+	,{name:"WebSocket接收播放mp3",click:"startMp3"}
 	,{name:"接收播放wav",click:"startWav"}
 	,{name:"接收播放pcm",click:"startPcm"}
 	
 	,{html:"片段时长<input class='sendInterval' style='width:50px' value='300'>ms<div/>"}
 	
-	,{name:"结束接收停止播放",click:"stop"}
+	,{name:"停止播放",click:"stop"}
+	,{html:"<span style='margin-right:225px'/>"}
+	,{name:"暂停播放",click:"pause"}
+	,{name:"继续播放",click:"resume"}
 	
-	,{html:"<span class='receiveInfo'></span><hr/>"}
+	,{html:"<hr/>"}
 	
 	,{name:"实时模式，卡了就丢",click:"setRealtimeOn"}
 	,{name:"非实时模式，完整播放",click:"setRealtimeOff"}
 	,{html:"<div/>"}
-	,{name:"模拟网络不畅，断网",click:"setNetworkFail"}
+	,{name:"模拟网络不畅，全部缓冲",click:"setNetworkFail"}
 	,{name:"恢复网络",click:"setNetworkOk"}
+	,{html:"<span style='margin-right:30px'/>"}
+	,{name:"暂停网络接收，全部丢弃",click:"receivePause"}
+	,{name:"恢复接收",click:"receiveResume"}
 	
 	,{html:"<hr/>"}
 ]);
 
 
+var formatTime=function(n){//格式化毫秒成 分:秒
+	n=Math.round(n/1000);
+	var s=n%60;
+	var m=(n-s)/60;
+	return m+":"+("0"+s).substr(-2);
+};
 
 
 
@@ -331,7 +393,7 @@ var WS_Close=function(){
 
 var networkOk=true;
 var setNetworkFail=function(){
-	Runtime.Log("模拟网络不畅：直接断网");
+	Runtime.Log("模拟网络不畅：直接断网，等网络恢复后未发送的数据会全部发送");
 	networkOk=false;
 };
 var setNetworkOk=function(){

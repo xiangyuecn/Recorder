@@ -16,14 +16,15 @@ https://github.com/xiangyuecn/Recorder
 }(function(window){
 "use strict";
 
-//兼容环境
-var LM="2022-03-05 11:53:19";
 var NOOP=function(){};
-//end 兼容环境 ****从以下开始copy源码*****
 
 var Recorder=function(set){
 	return new initFn(set);
 };
+Recorder.LM="2022-05-04 20:10";
+var RecTxt="Recorder";
+
+
 //是否已经打开了全局的麦克风录音，所有工作都已经准备好了，就等接收音频数据了
 Recorder.IsOpen=function(){
 	var stream=Recorder.Stream;
@@ -45,7 +46,7 @@ Recorder.IsOpen=function(){
 Recorder.BufferSize=4096;
 //销毁已持有的所有全局资源，当要彻底移除Recorder时需要显式的调用此方法
 Recorder.Destroy=function(){
-	CLog("Recorder Destroy");
+	CLog(RecTxt+" Destroy");
 	Disconnect();//断开可能存在的全局Stream、资源
 	
 	for(var k in DestroyList){
@@ -134,8 +135,7 @@ var Connect=function(streamStore){
 	
 	var scriptProcessor="ScriptProcessor";//一堆字符串名字，有利于压缩js
 	var audioWorklet="audioWorklet";
-	var recTxt="Recorder";
-	var recAudioWorklet=recTxt+" "+audioWorklet;
+	var recAudioWorklet=RecTxt+" "+audioWorklet;
 	var RecProc="RecProc";
 	
 	//古董级别的 ScriptProcessor 处理，目前所有浏览器均兼容，虽然是过时的方法，但更稳健，移动端性能比AudioWorklet强
@@ -144,7 +144,7 @@ var Connect=function(streamStore){
 	var oldScript=function(){
 		isWorklet=stream.isWorklet=false;
 		_Disconn_n(stream);
-		CLog("Connect采用老的"+scriptProcessor+"，"+(Recorder[ConnectEnableWorklet]?"但已":"可")+"设置"+recTxt+"."+ConnectEnableWorklet+"=true尝试启用"+audioWorklet+oldIsBest,3);
+		CLog("Connect采用老的"+scriptProcessor+"，"+(Recorder[ConnectEnableWorklet]?"但已":"可")+"设置"+RecTxt+"."+ConnectEnableWorklet+"=true尝试启用"+audioWorklet+oldIsBest,3);
 		
 		var process=stream._p=oldFn.call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
 		
@@ -240,7 +240,7 @@ var Connect=function(streamStore){
 			};
 			exec(0,e.data.val);
 		};
-		CLog("Connect采用"+audioWorklet+"方式，设置"+recTxt+"."+ConnectEnableWorklet+"=false可恢复老式"+scriptProcessor+oldIsBest,3);
+		CLog("Connect采用"+audioWorklet+"方式，设置"+RecTxt+"."+ConnectEnableWorklet+"=false可恢复老式"+scriptProcessor+oldIsBest,3);
 	};
 	
 	//如果start时的resume和下面的构造node同时进行，将会导致部分浏览器崩溃，源码assets中 ztest_chrome_bug_AudioWorkletNode.html 可测试。所以，将所有代码套到resume里面（不管catch），避免出现这个问题
@@ -447,7 +447,7 @@ var CLog=function(msg,err){
 		+":"+("0"+now.getSeconds()).substr(-2)
 		+"."+("00"+now.getMilliseconds()).substr(-3);
 	var recID=this&&this.envIn&&this.envCheck&&this.id;
-	var arr=["["+t+" Recorder"+(recID?":"+recID:"")+"]"+msg];
+	var arr=["["+t+" "+RecTxt+(recID?":"+recID:"")+"]"+msg];
 	var a=arguments,console=window.console||{};
 	var i=2,fn=console.log;
 	if(typeof(err)=="number"){
@@ -475,7 +475,7 @@ function initFn(set){
 	this.id=++ID;
 	
 	//如果开启了流量统计，这里将发送一个图片请求
-	Recorder.Traffic&&Recorder.Traffic();
+	Traffic();
 	
 	
 	var o={
@@ -702,13 +702,21 @@ Recorder.prototype=initFn.prototype={
 		//envInfo={envName:"H5",canProcess:true}
 		var errMsg,This=this,set=This.set;
 		
+		//检测CPU的数字字节序，TypedArray字节序是个迷，直接拒绝罕见的大端模式，因为找不到这种CPU进行测试
+		var tag="CPU_BE";
+		if(!errMsg && !Recorder[tag] && !new Int8Array(new Int32Array([1]).buffer)[0]){
+			Traffic(tag); //如果开启了流量统计，这里将发送一个图片请求
+			errMsg="不支持"+tag+"架构";
+		};
+		
 		//编码器检查环境下配置是否可用
 		if(!errMsg){
-			if(This[set.type+"_envCheck"]){//编码器已实现环境检查
-				errMsg=This[set.type+"_envCheck"](envInfo,set);
+			var type=set.type;
+			if(This[type+"_envCheck"]){//编码器已实现环境检查
+				errMsg=This[type+"_envCheck"](envInfo,set);
 			}else{//未实现检查的手动检查配置是否有效
 				if(set.takeoffEncodeChunk){
-					errMsg=set.type+"类型不支持设置takeoffEncodeChunk";
+					errMsg=type+"类型"+(This[type]?"":"(未加载编码器)")+"不支持设置takeoffEncodeChunk";
 				};
 			};
 		};
@@ -1100,21 +1108,24 @@ Recorder.prototype=initFn.prototype={
 
 };
 
-if(window.Recorder){
-	window.Recorder.Destroy();
+if(window[RecTxt]){
+	CLog("重复引入"+RecTxt,3);
+	window[RecTxt].Destroy();
 };
-window.Recorder=Recorder;
+window[RecTxt]=Recorder;
 
-//end ****copy源码结束*****
-Recorder.LM=LM;
+
 
 //流量统计用1像素图片地址，设置为空将不参与统计
 Recorder.TrafficImgUrl="//ia.51.la/go1?id=20469973&pvFlag=1";
-Recorder.Traffic=function(){
+var Traffic=Recorder.Traffic=function(report){
+	report=report?"/"+RecTxt+"/Report/"+report:"";
 	var imgUrl=Recorder.TrafficImgUrl;
 	if(imgUrl){
 		var data=Recorder.Traffic;
-		var idf=location.href.replace(/#.*/,"");
+		var m=/^(https?:..[^\/#]*\/?)[^#]*/i.exec(location.href)||[];
+		var host=(m[1]||"http://file/");
+		var idf=(m[0]||host)+report;
 		
 		if(imgUrl.indexOf("//")==0){
 			//给url加上http前缀，如果是file协议下，不加前缀没法用
@@ -1124,13 +1135,16 @@ Recorder.Traffic=function(){
 				imgUrl="http:"+imgUrl;
 			};
 		};
+		if(report){
+			imgUrl=imgUrl+"&cu="+encodeURIComponent(host+report);
+		};
 		
 		if(!data[idf]){
 			data[idf]=1;
 			
 			var img=new Image();
 			img.src=imgUrl;
-			CLog("Traffic Analysis Image: Recorder.TrafficImgUrl="+Recorder.TrafficImgUrl);
+			CLog("Traffic Analysis Image: "+(report||RecTxt+".TrafficImgUrl="+Recorder.TrafficImgUrl));
 		};
 	};
 };

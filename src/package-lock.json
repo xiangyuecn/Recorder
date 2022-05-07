@@ -1,0 +1,29 @@
+{
+  "name": "build",
+  "version": "1.0.0",
+  "lockfileVersion": 1,
+  "requires": true,
+  "dependencies": {
+    "uglify-js": {
+      "version": "3.3.16",
+      "resolved": "https://registry.npmjs.org/uglify-js/-/uglify-js-3.3.16.tgz",
+      "integrity": "sha512-FMh5SRqJRGhv9BbaTffENIpDDQIoPDR8DBraunGORGhySArsXlw9++CN+BWzPBLpoI4RcSnpfGPnilTxWL3Vvg==",
+      "requires": {
+        "commander": "~2.15.0",
+        "source-map": "~0.6.1"
+      },
+      "dependencies": {
+        "commander": {
+          "version": "2.15.1",
+          "resolved": "https://registry.npmjs.org/commander/-/commander-2.15.1.tgz",
+          "integrity": "sha512-VlfT9F3V0v+jr4yxPc5gg9s62/fIVWsd2Bk2iD435um1NlGMYdVCq+MjcXnhYq2icNOizHr1kK+5TI6H0Hy0ag=="
+        },
+        "source-map": {
+          "version": "0.6.1",
+          "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz",
+          "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g=="
+        }
+      }
+    }
+  }
+}

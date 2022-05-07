@@ -183,7 +183,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2022-03-03 19:30:37";
+var PageLM="2022-05-07 22:10";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -329,12 +329,16 @@ if(!window.localStorage){window.localStorage={}};
 		</span>
 	</div>
 	<div class="pd">
-		<label><input type="checkbox" class="realTimeSendSet">模拟准实时编码传输（H5版语音通话聊天）</label>
+		<label><input type="checkbox" class="takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk）</label>
+	</div>
+	<div class="pd">
+		<label><input type="checkbox" class="realTimeSendSet">模拟实时编码传输（H5版语音通话聊天）</label>
 		，发送间隔<input type="text" class="realTimeSend" value="996" style="width:60px">ms
 		<div class="webrtcView" style="display:none;"></div>
 	</div>
 	<div class="">
-		<label><input type="checkbox" class="takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk）</label>
+		<label><input type="checkbox" class="asrSet">实时语音识别、音频文件转文字，ASR</label>
+		<div class="asrView" style="display:none;"></div>
 	</div>
 </div>
 
@@ -522,9 +526,13 @@ function recstart(call){
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
 	var realTimeSendTime=+$(".realTimeSend").val();
-	window.realTimeSendTryReset&&realTimeSendTryReset();
 	if(realTimeSendSet&&!RecordApp.Current.CanProcess()){
 		reclog("当前环境"+RecordApp.Current.Key+"不支持实时回调，不能模拟实时编码传输",1);
+	};
+	
+	var asrSet=$(".asrSet")[0].checked;
+	if(asrSet&&!RecordApp.Current.CanProcess()){
+		reclog("当前环境"+RecordApp.Current.Key+"不支持实时回调，不能进行实时语音识别",1);
 	};
 	
 	var takeoffEncodeChunkSet=$(".takeoffEncodeChunkSet")[0].checked;
@@ -534,7 +542,7 @@ function recstart(call){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
-		,onProcess:function(buffers,powerLevel,duration,sampleRate){
+		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
 			$(".recpowerx").css("width",powerLevel+"%");
 			$(".recpowert").text(formatMs(duration,1)+" / "+powerLevel);
 			
@@ -551,6 +559,10 @@ function recstart(call){
 			if(realTimeSendSet&&window.realTimeSendTry){
 				realTimeSendTry(set,realTimeSendTime,buffers,sampleRate);
 			};
+			//实时语音识别
+			if(asrSet&&window.asrInput){
+				asrInput(buffers,sampleRate,newBufferIdx);
+			};
 		}
 		,takeoffEncodeChunk:!takeoffEncodeChunkSet?null:function(chunkBytes){
 			takeoffChunks.push(chunkBytes);
@@ -561,28 +573,10 @@ function recstart(call){
 	RecordApp.Start(set,function(){
 		curSet=set;
 		reclog(RecordApp.Current.Key+"已打开:"+type+" "+bit+"kbps",2);
+		window.realTimeSendTryReset&&realTimeSendTryReset(set);
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
-		waveStore.WaveView=Recorder.WaveView({elem:".recwave"});
-		waveStore.SurferView=Recorder.WaveSurferView({elem:".recwave"});
-		waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".recwave"});
-		waveStore.Histogram2=Recorder.FrequencyHistogramView({
-			elem:".recwave"
-			,lineCount:90
-			,position:0
-			,minHeight:1
-			,stripeEnable:false
-		});
-		waveStore.Histogram3=Recorder.FrequencyHistogramView({
-			elem:".recwave"
-			,lineCount:20
-			,position:0
-			,minHeight:1
-			,fallDuration:400
-			,stripeEnable:false
-			,mirrorEnable:true
-			,linear:[0,"#0ac",1,"#0ac"]
-		});
+		initWaveStore(waveStore,".recwave");
 		
 		call();
 	},function(err){
@@ -690,9 +684,11 @@ function recstopFn(call,isClick,endCall,rec){
 		call("失败："+s);
 	});
 };
+var recLogLast;
 var addRecLog=function(time,tag,blob,set,t1){
 	var id=RandomKey(16);
-	recblob[id]={blob:blob,set:$.extend({},set),time:time};
+	recLogLast={blob:blob,set:$.extend({},set),time:time,key:id};
+	recblob[id]=recLogLast;
 	reclog(tag+":"+intp(set.bitRate,3)+"kbps "+intp(set.sampleRate,5)+"hz 花"+intp(Date.now()-t1,4)+"ms编码"+intp(blob.size,6)+"b ["+set.type+"]"+formatMs(time)+'ms <button onclick="recdown(\''+id+'\')">下载</button> <button onclick="recplay(\''+id+'\')">播放</button> <span class="p'+id+'"></span> <span class="d'+id+'"></span>');
 };
 var intp=function(s,len){
@@ -857,6 +853,29 @@ if(!$(".recwaveChoice[key="+recwaveChoiceKey+"]").length){
 };
 $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 
+var initWaveStore=function(store,elem){
+	store.WaveView=Recorder.WaveView({elem:elem});
+	store.SurferView=Recorder.WaveSurferView({elem:elem});
+	store.Histogram1=Recorder.FrequencyHistogramView({elem:elem});
+	store.Histogram2=Recorder.FrequencyHistogramView({
+		elem:elem
+		,lineCount:90
+		,position:0
+		,minHeight:1
+		,stripeEnable:false
+	});
+	store.Histogram3=Recorder.FrequencyHistogramView({
+		elem:elem
+		,lineCount:20
+		,position:0
+		,minHeight:1
+		,fallDuration:400
+		,stripeEnable:false
+		,mirrorEnable:true
+		,linear:[0,"#0ac",1,"#0ac"]
+	});
+};
+
 
 reclog("点击录制开始哦");
 reclog('已启用Extensions：'
@@ -889,13 +908,22 @@ $(".realTimeSendSet").bind("change",function(e){
 	var open=e.target.checked;
 	$(".webrtcView")[open?"show":"hide"]();
 	if(open && !window.webrtcCreate){
-		var file="zdemo.index.webrtc.js";
+		var file="assets/zdemo.index.webrtc.js";
 		reclog("正在加载"+file+" ...");
 		
-		var elem=document.createElement("script");
-		elem.setAttribute("type","text/javascript");
-		elem.setAttribute("src",PageSet_RecordAppBaseFolder.replace(/src\/$/,"assets/")+file);
-		$("head")[0].appendChild(elem);
+		loadJsList([file]);
+	};
+});
+
+//ASR开关，实时语音识别、音频文件转文字
+$(".asrSet").bind("change",function(e){
+	var open=e.target.checked;
+	$(".asrView")[open?"show":"hide"]();
+	if(open && !window.asrInput){
+		var file="assets/zdemo.index.asr.js";
+		reclog("正在加载"+file+" ...");
+		
+		loadJsList([file]);
 	};
 });
 </script>
@@ -973,35 +1001,70 @@ function loadEngine(input){
 		};
 		if(!Recorder.prototype[type]){
 			reclog("<span style='color:#f60'>正在加载"+type+"编码器，请勿操作...</span>");
-			var i=-1;
-			var load=function(){
-				i++;
-				if(i>=engines.length){
-					reclog("<span style='color:#0b1'>"+type+"编码器已加载，可以录音了</span>");
-					end();
-					return;
-				}
-				var elem=document.createElement("script");
-				elem.setAttribute("type","text/javascript");
-				elem.setAttribute("src",PageSet_RecordAppBaseFolder+"engine/"+engines[i]+".js");
-				if(!("onload" in elem)){//IsLoser 古董浏览器
-					elem.onreadystatechange=function(){
-						if(elem.readyState=="loaded"){
-							load();
-						}
-					}
-				};
-				elem.onload=function(){
-					load();
-				};
-				$("head")[0].appendChild(elem);
-			};
-			load();
+			loadJsList(engines,function(){
+				reclog("<span style='color:#0b1'>"+type+"编码器已加载，可以录音了</span>");
+				end();
+			},function(err){
+				reclog(err,1);
+				return false;
+			},function(urlItem){
+				urlItem.url="src/engine/"+urlItem.url+".js";
+			});
 		}else{
 			end();
 		};
 	};
 };
+
+
+var loadJsList=function(jsList,True,False,allCheck){//False -> false继续加载，allCheck(urlItem)允许修改url值
+	var rootUrl=PageSet_RecordAppBaseFolder.replace(/src\/$/,"");
+	var load=function(idx){
+		if(idx>=jsList.length){
+			True&&True();
+			return;
+		};
+		var itm=jsList[idx];
+		if(typeof(itm)=="string")itm={url:itm};
+		if(itm.check && itm.check()===false){
+			load(idx+1);
+			return;
+		};
+		if(allCheck && allCheck(itm)===false){
+			load(idx+1);
+			return;
+		};
+		var url=itm.url;
+		
+		var elem=document.createElement("script");
+		elem.setAttribute("type","text/javascript");
+		elem.setAttribute("src",(/^\w+:/.test(url)?"":rootUrl)+url);
+		if(!("onload" in elem)){//IsLoser 古董浏览器
+			elem.onreadystatechange=function(){
+				if(elem.readyState=="loaded"){
+					elem.onload();
+				}
+			}
+		};
+		var isload=0;
+		elem.onload=function(){
+			if(!isload){
+				load(idx+1);
+				isload=1;
+			}
+		};
+		elem.onerror=function(e){
+			var v=False&&False("js加载失败:"+(e.message||"-")+"，"+url,1);
+			if(v===false){
+				elem.onload();
+			}
+		};
+		$("head")[0].appendChild(elem);
+	};
+	setTimeout(function(){ load(0) });
+};
+
+
 function onInstall(){
 	var isApp;
 	RecordApp.Platforms.Native.Config.IsApp(function(v){isApp=v;});
