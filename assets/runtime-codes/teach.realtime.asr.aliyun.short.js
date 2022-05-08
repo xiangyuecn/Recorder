@@ -6,6 +6,12 @@
 通过阿里云语音识别（语音转文字）插件 /src/extensions/asr.aliyun.short.js，可实现实时语音识别、单个语音文件转文字。
 
 只需要后端提供一个Token生成接口，就能进行语音识别，可直接参考或本地运行此NodeJs后端测试程序：/assets/demo-asr/NodeJsServer_asr.aliyun.short.js，配置好代码里的阿里云账号后，在目录内直接命令行执行`node NodeJsServer_asr.aliyun.short.js`即可运行提供本地测试接口。
+
+--------------------
+【关于腾讯云版的对接说明】
+腾讯云一句话语音识别（不支持实时特性），前端基本上没有什么需要做的，仅需让后端提供一个录音文件上传接口（很容易），前端将录制好1分钟内的语音文件直接上传给服务器，由后端调用腾讯云语一句话音识别接口，然后返回结果即可。暂不提供插件、测试代码。
+
+相较于阿里云的一句话语音识别：前端直接对接阿里云很容易（后端对接会很难，音频数据前端直连阿里云，无需走后端），后端对接腾讯云很容易（前端无法直连腾讯云，音频数据必须走后端）；根据自己的业务需求选择合适的云进行对接，避免多走弯路。
 ******************/
 
 var asr;
@@ -263,7 +269,7 @@ var killToken=function(){
 	Runtime.Log("已设置ASR的apiRequest，下一分钟将无法获得Token");
 };
 var killWs=function(){
-	if(!asr && !asr.wsCur){
+	if(!asr || !asr.wsCur){
 		Runtime.Log("未开始语音识别",1);
 		return;
 	}

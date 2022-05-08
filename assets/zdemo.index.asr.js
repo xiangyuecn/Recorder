@@ -43,15 +43,25 @@ $(".asrView").html('<div style="border:1px solid #ddd;margin-top:6px">\
 \
 <div style="border-bottom:1px solid #ddd;padding:10px">\
 	<div style="margin:0 0 6px;font-size:12px">实时识别结果: <span class="recAsrTime"></span></div>\
-	<div class="recAsrTxt" style="padding:15px 10px;min-height:50px;margin-bottom:12px;border:3px dashed #a2a1a1"></div>\
+	<div class="recAsrTxt" style="padding:15px 10px;min-height:50px;border:3px dashed #a2a1a1"></div>\
 </div>\
 \
 \
 <div style="color:#06c;border-bottom:1px solid #ddd;padding:10px 10px">\
-	音频文件转文字\
+	音频文件转文字 [阿里云版] - /src/extensions/asr.aliyun.short.js\
 </div>\
-<div style="padding:10px">\
+<div style="border-bottom:1px solid #ddd;padding:10px">\
 	<button onclick="asrLastRecBlobToText()">将当前录音Blob文件识别成文本</button>\
+</div>\
+\
+<div style="background:#f5f5f5;color:#06c;font-weight:bold;border-bottom:1px solid #ddd;padding:10px 10px">\
+	实时语音识别 [腾讯云版] [其他云]\
+</div>\
+<div style="padding:10px;color:#aaa;font-size:14px">\
+	腾讯云一句话语音识别（不支持实时特性），前端基本上没有什么需要做的，仅需让后端提供一个录音文件上传接口（很容易），前端将录制好1分钟内的语音文件直接上传给服务器，由后端调用腾讯云语一句话音识别接口，然后返回结果即可。暂不提供插件、测试代码。\
+	<div style="margin-top:10px">\
+		相较于阿里云的一句话语音识别：前端直接对接阿里云很容易（后端对接会很难，音频数据前端直连阿里云，无需走后端），后端对接腾讯云很容易（前端无法直连腾讯云，音频数据必须走后端）；根据自己的业务需求选择合适的云进行对接，避免多走弯路。\
+	</div>\
 </div>\
 \
 </div>');
