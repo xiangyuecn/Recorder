@@ -54,16 +54,6 @@ window.DemoFragment||(window.DemoFragment={})
 			elem.addEventListener(type,fn);
 		};
 	};
-	var setCss=function(elem,k,v,ok){
-		var style=elem.style;
-		if(!ok){
-			var k2=k[0].toUpperCase()+k.substr(1);
-			style["webkit"+k2]=v;
-			style["moz"+k2]=v;
-			style["ms"+k2]=v;
-		};
-		style[k]=v;
-	};
 	
 	var btn;
 	var getBtn=function(){
@@ -78,6 +68,9 @@ window.DemoFragment||(window.DemoFragment={})
 			text1=btn.innerText;
 		}
 	};
+	
+	var usStyle=document.createElement("style");//强力禁用所有元素的选择，不然有些沙雕元素可能是设置了auto，某些沙雕浏览器里面长按会选到这些auto的元素
+	usStyle.innerHTML='*{'+['-webkit-','-ms-','-moz-','',''].join('user-select:none !important;')+'}';
 	
 	var body=document.body;
 	var store=DemoFragment.BindTouchButton;
@@ -94,7 +87,7 @@ window.DemoFragment||(window.DemoFragment={})
 		downEvent=e;
 		
 		needUS=true;
-		killUS&&setCss(body,"userSelect","none")//kill all 免得渣渣浏览器里面复制搜索各种弹，这些浏览器单独给div设置是没有用的
+		killUS&&body.appendChild(usStyle);//kill all 免得渣渣浏览器里面复制搜索各种弹，这些浏览器单独给div设置是没有用的
 		
 		var idx=store.downIdx=(store.downIdx||0)+1;
 		downHit=setTimeout(function(){
@@ -104,13 +97,13 @@ window.DemoFragment||(window.DemoFragment={})
 			needUp=true;
 			
 			getBtn();
-			setCss(btn,"background",downBG,1);
+			btn.style.background=downBG;
 			btn.innerText=text2;
 			
 			onStart&&onStart(function(textErr){//可能结束长按了才回调 idx控制时序
 				if(idx==store.downIdx && needCall){//阻止二次进入 或 早已取消
 					if(textErr){
-						setCss(btn,"background",errBG,1);
+						btn.style.background=errBG;
 						btn.innerText=textErr;
 					};
 					cancel(true,false,textErr);
@@ -123,11 +116,11 @@ window.DemoFragment||(window.DemoFragment={})
 	var cancel=function(isCancel,isUser,keepBtn){
 		getBtn();
 		if(!keepBtn){
-			needUS&&killUS&&setCss(body,"userSelect",null);
+			needUS&&killUS&&body.removeChild(usStyle);
 			needUS=0;
 			if(needUp){//恢复按钮为未按状态
 				needUp=0;
-				setCss(btn,"background",upBG,1);
+				btn.style.background=upBG;
 				btn.innerText=text1;
 			}
 		}
@@ -154,11 +147,7 @@ window.DemoFragment||(window.DemoFragment={})
 			var a=downEvent;
 			var b=e;
 			if(Math.abs(a.screenX-b.screenX)+Math.abs(a.screenY-b.screenY)>3*2){
-				killUS&&setCss(body,"userSelect",null);
-				needUS=0;
-				
-				clearTimeout(downHit);
-				downHit=0;
+				cancel();
 			};
 		};
 	});

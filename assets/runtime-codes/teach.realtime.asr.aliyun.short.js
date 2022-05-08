@@ -18,6 +18,8 @@ var fileToText=function(audioBlob,fileName){
 		return;
 	};
 	Runtime.Log("开始识别文件：《"+fileName+"》，asrProcess中已限制最多识别前60*3-5*(3-1)=170秒 ...");
+	$(".recAsrTxt").text("");
+	$(".recAsrTime").html("");
 	
 	var asr2=asr=Recorder.ASR_Aliyun_Short({
 		tokenApi:$(".asrTokenApi").val()
@@ -161,6 +163,8 @@ var asrOnTouchStart=function(cancel){
 		recAsrStatus("上次asr未关闭",1);
 		return;
 	};
+	$(".recAsrTxt").text("");
+	$(".recAsrTime").html("");
 	
 	//创建语音识别对象，每次识别都要新建，asr不能共用
 	var asr2=asr=Recorder.ASR_Aliyun_Short({
@@ -299,21 +303,22 @@ Runtime.Ctrls([
 '}
 	,{html:'<hr/>\
 <div>\
+	<span style="margin-right:170px">\
 	<button class="mainBtn recOpenBtn" onclick="recOpenClick()">单击此处打开 录音+识别 功能</button>\
 	<button class="mainBtn recCloseBtn" onclick="recCloseClick()" style="display:none;">关闭录音</button>\
+	</span>\
+	\
+	<button class="mainBtn asrStartBtns" style="display:none;" onclick="asrStartClick_NoTouch()">免按住开始录音+识别</button>\
+	<button class="mainBtn asrStopBtn" onclick="asrStopClick_NoTouch()" style="display:none;">结束语音识别</button>\
+</div>\
+\
+<div>\
+	<button class="mainBtn recTouchBtn asrStartBtns" style="width:260px;height:60px;line-height:60px;display:none;"></button>\
 </div>\
 \
 <div class="recAsrStatus"></div>\
 \
-<div>\
-	<span class="asrStartBtns" style="display:none;">\
-		<button class="mainBtn recTouchBtn" style="width:260px;height:60px;line-height:60px;margin-right:80px"></button>\
-		\
-		<button class="mainBtn" onclick="asrStartClick_NoTouch()">免按住开始录音+识别</button>\
-	</span>\
-	<button class="mainBtn asrStopBtn" onclick="asrStopClick_NoTouch()" style="display:none;">结束语音识别</button>\
-</div>\
-\
+<hr/>\
 <div style="margin:12px 0 6px;font-size:12px">实时识别结果: <span class="recAsrTime"></span></div>\
 <div class="recAsrTxt" style="padding:15px 10px;min-height:50px;margin-bottom:12px;border:3px dashed #a2a1a1"></div>\
 '}

@@ -29,8 +29,6 @@ $(".asrView").html('<div style="border:1px solid #ddd;margin-top:6px">\
 </div>\
 \
 <div style="border-bottom:1px solid #ddd;padding:10px">\
-	<div class="recAsrStatus"></div>\
-	\
 	<div>\
 		<span class="asrStartBtns">\
 			<button class="mainBtn recTouchBtn" style="width:260px;height:60px;line-height:60px;margin-right:80px"></button>\
@@ -40,7 +38,11 @@ $(".asrView").html('<div style="border:1px solid #ddd;margin-top:6px">\
 		<button onclick="asrStopClick_NoTouch()">结束语音识别</button>\
 	</div>\
 	\
-	<div style="margin:12px 0 6px;font-size:12px">实时识别结果: <span class="recAsrTime"></span></div>\
+	<div class="recAsrStatus"></div>\
+</div>\
+\
+<div style="border-bottom:1px solid #ddd;padding:10px">\
+	<div style="margin:0 0 6px;font-size:12px">实时识别结果: <span class="recAsrTime"></span></div>\
 	<div class="recAsrTxt" style="padding:15px 10px;min-height:50px;margin-bottom:12px;border:3px dashed #a2a1a1"></div>\
 </div>\
 \
@@ -156,6 +158,8 @@ window.asrLastRecBlobToText=function(){
 		return;
 	};
 	reclog("开始识别当前录音Blob文件，asrProcess中已限制最多识别前60*3-5*(3-1)=170秒 ...");
+	$(".recAsrTxt").text("");
+	$(".recAsrTime").html("");
 	
 	var asr2=asr=Recorder.ASR_Aliyun_Short({
 		tokenApi:$(".asrTokenApi").val()
@@ -241,6 +245,9 @@ var asrOnTouchStart=function(cancel){
 	});
 };
 var asrOnTouchStart__=function(cancel){
+	$(".recAsrTxt").text("");
+	$(".recAsrTime").html("");
+	
 	//创建语音识别对象，每次识别都要新建，asr不能共用
 	var asr2=asr=Recorder.ASR_Aliyun_Short({
 		tokenApi:$(".asrTokenApi").val()
