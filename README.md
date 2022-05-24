@@ -134,9 +134,10 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 <p align="center">
   Traffic:
   <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
-  <a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://img.shields.io/badge/cnpm-available-1690CD" alt="cnpm"></a><a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://npmmirror.com/badge/d/recorder-core.svg" alt="cnpm"></a>
-  <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://data.jsdelivr.com/v1/package/gh/xiangyuecn/Recorder/badge" alt="JsDelivr CDN"></a>
-  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="cnpm"></a>
+  <a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://img.shields.io/badge/-cnpm-555" alt="cnpm"></a><a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://npmmirror.com/badge/d/recorder-core.svg" alt="cnpm"></a>
+  <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://img.shields.io/badge/CDN-JsDelivr-f60" alt="JsDelivr CDN"></a>
+  <a title="unpkg CDN" href="https://unpkg.com/recorder-core/"><img src="https://img.shields.io/badge/CDN-unpkg-f60" alt="unpkg CDN"></a>
+  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
 </p>
 
 [​](?RefEnd)
@@ -157,13 +158,13 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 
 **方式一**：使用script标签引入
 
-在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件即可，[JsDelivr CDN](https://www.jsdelivr.com/features)
+在需要录音功能的页面引入压缩好的recorder.xxx.min.js文件即可（CDN：[JsDelivr](https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder)、[unpkg](https://unpkg.com/recorder-core/)）
 ``` html
-<script src="recorder.mp3.min.js"></script> <!--已包含recorder-core和mp3格式支持, CDN: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/recorder.mp3.min.js-->
+<script src="recorder.mp3.min.js"></script> <!--已包含recorder-core和mp3格式支持, CDN不稳定仅供测试: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/recorder.mp3.min.js-->
 ```
 或者直接使用源码（src内的为源码、dist内的为压缩后的），可以引用src目录中的recorder-core.js+相应类型的实现文件，比如要mp3录音：
 ``` html
-<script src="src/recorder-core.js"></script> <!--必须引入的录音核心，CDN: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/recorder-core.js-->
+<script src="src/recorder-core.js"></script> <!--必须引入的录音核心，CDN不稳定仅供测试: https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/recorder-core.js-->
 
 <script src="src/engine/mp3.js"></script> <!--相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可-->
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎（*-engine.js）的话，必须要加上-->
@@ -707,7 +708,7 @@ function transformOgg(pcmData){
     //仅作为返回值
     frameNext:null||[Int16,...] 下一帧的部分数据，frameSize设置了的时候才可能会有
     sampleRate:16000 结果的采样率，<=newSampleRate
-    data:[Int16,...] 转换后的PCM结果(16位小端LE)，为一维数组，可直接new Blob([data],"audio/pcm")生成Blob文件，或者使用mock方法转换成其他音频格式；注意：如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
+    data:[Int16,...] 转换后的PCM结果(16位小端LE)，为一维数组，可直接new Blob([data],{type:"audio/pcm"})生成Blob文件，或者使用mock方法转换成其他音频格式；注意：如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 ```
 

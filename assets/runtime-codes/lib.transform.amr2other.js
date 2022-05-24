@@ -80,8 +80,8 @@ var test=function(amrBlob){
 //加载录音框架
 Runtime.Import([
 	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
-	,{url:"https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
-	,{url:"https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/engine/beta-amr.js",check:function(){return !Recorder.prototype.amr}}
+	,{url:RootFolder+"/dist/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
+	,{url:RootFolder+"/dist/engine/beta-amr.js",check:function(){return !Recorder.prototype.amr}}
 ]);
 
 //显示控制按钮

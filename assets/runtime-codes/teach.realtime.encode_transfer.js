@@ -98,7 +98,7 @@ var RealTimeSendTry=function(buffers,bufferSampleRate,isClose){
 	};
 	realTimeSendTryEncBusy++;
 	
-	//通过mock方法实时转码成mp3、wav；16位pcm格式可以不经过此操作，直接发送new Blob([pcm],"audio/pcm") 要8位的就必须转码
+	//通过mock方法实时转码成mp3、wav；16位pcm格式可以不经过此操作，直接发送new Blob([pcm.buffer],{type:"audio/pcm"}) 要8位的就必须转码
 	var encStartTime=Date.now();
 	var recMock=Recorder({
 		type:realTimeSendTryType

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<link rel="shortcut icon" type="image/png" href="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/icon.png">
+<link rel="shortcut icon" type="image/png" href="assets/icon.png">
 
 <title>Recorder H5 QuickStart: 快速入门</title>
 <script>
@@ -13,12 +13,46 @@ console.log(Tips);
 </head>
 
 <body>
+<!-- ↓↓↓这部分代码无关紧要，可全部删掉，选择CDN线路用的↓↓↓ -->
+<base href="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/" />
 <script>
-var onBadCDN=function(){
-	document.querySelector(".badCDN").innerHTML="cdn.jsdelivr.net可能不稳定，未能检测到js被成功加载。<br>如果页面异常，请复制本页面源码到本地测试，并且批量替换掉 https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/ 为 https://xiangyuecn.gitee.io/recorder/ 就能正常测试了";
+console.warn("本页面的js资源采用的CDN链接，这些CDN并不稳定，仅供测试用");
+var setCDNUrl=function(url){
+	var old=document.querySelector("base");
+	if(old)old.parentNode.removeChild(old);
+	if(!url)return;
+	var base=document.createElement("base");
+	base.setAttribute("href",url);
+	document.head.appendChild(base);
+	console.warn("已切换CDN线路",url);
 };
+var useCDN={};
+var intBadCDN=setTimeout(function(){ onBadCDN() },10000);
+var onOKCDN=function(){ clearTimeout(intBadCDN) };
+var onBadCDN=function(){
+	clearTimeout(intBadCDN);
+	var cdn=useCDN.cdn;
+	var url=!cdn?"https://unpkg.com/recorder-core/":
+		/unpkg/i.test(cdn)?"https://xiangyuecn.gitee.io/recorder/":"";
+	if(!url){ setCDNUrl(""); return;}
+	location.hash="#useCDN="+encodeURIComponent(JSON.stringify({
+		time:Date.now()
+		,cdn:url
+	}));
+	location.reload();
+};
+if(/useCDN=([^&#]+)/.test(location.href)){
+	useCDN=JSON.parse(decodeURIComponent(RegExp.$1));
+	if(Date.now()-useCDN.time<60000){
+		setCDNUrl(useCDN.cdn);
+	}else{ useCDN={}; }
+	location.hash="";
+}
 </script>
 <div class="badCDN" style="font-size: 50px;text-align: center;color: #f60;"></div>
+<!-- ↑↑↑这部分代码无关紧要，可全部删掉，选择CDN线路用的↑↑↑ -->
+
+
 
 
 <!--
@@ -28,15 +62,17 @@ var onBadCDN=function(){
 -->
 
 <!-- 【1.1】引入核心文件 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/recorder-core.js" onerror="onBadCDN()"></script>
+<script src="改成你clone的源码目录/../src/recorder-core.js" onerror="!window.onBadCDN||onBadCDN()" onload="!window.onOKCDN||onOKCDN()"></script>
 
 <!-- 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/engine/mp3.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/engine/mp3-engine.js"></script>
+<script src="改成你clone的源码目录/../src/engine/mp3.js"></script>
+<script src="改成你clone的源码目录/../src/engine/mp3-engine.js"></script>
 
 <!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/extensions/frequency.histogram.view.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/src/extensions/lib.fft.js"></script>
+<script src="改成你clone的源码目录/../src/extensions/frequency.histogram.view.js"></script>
+<script src="改成你clone的源码目录/../src/extensions/lib.fft.js"></script>
+
+<script>window.setCDNUrl&&setCDNUrl("");//清除CDN地址</script>
 
 
 <!-- 【2】构建界面 -->
@@ -352,9 +388,18 @@ window.onerror=function(message, url, lineNo, columnNo, error){
 
 reclog("RecordApp[即将废弃] 除Recorder支持的外，支持Hybrid App，低版本IOS上支持微信网页和小程序web-view"+unescape("%uD83C%uDF89"),"#f60;font-weight:bold;font-size:24px");
 reclog("Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+"+unescape("%uD83D%uDCAA"),"#0b1;font-weight:bold;font-size:24px");
-reclog('本页面修改时间（有可能修改了忘改）：2022-03-03 21:48:53',"#999");
-reclog('Recorder库修改时间（有可能修改了忘改）：'+Recorder.LM,"#999");
+reclog('本页面修改时间（有可能修改了忘改）：2022-05-24 19:31:18',"#999");
+reclog('Recorder库修改时间（有可能修改了忘改）：'+(window.Recorder&&Recorder.LM),"#999");
 reclog(Tips);
+
+if(window.useCDN && useCDN.cdn){
+	reclog('本页面的js资源采用的CDN不稳定，已切换到：'+useCDN.cdn,'#f60');
+}
+if(window.Recorder){
+	reclog('页面已准备好，请先点击打开录音，然后点击录制',2);
+}else{
+	reclog("js文件加载失败，请刷新重试！","#f00;font-size:50px");
+}
 </script>
 
 <script>

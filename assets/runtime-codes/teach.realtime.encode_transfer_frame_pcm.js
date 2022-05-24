@@ -111,7 +111,7 @@ var RealTimeSendTry=function(buffers,bufferSampleRate,isClose){
 		return;
 	};
 	
-	//16位pcm格式可以不经过mock转码，直接发送new Blob([pcm],"audio/pcm") 但8位的就必须转码，通用起见，均转码处理，pcm转码速度极快
+	//16位pcm格式可以不经过mock转码，直接发送new Blob([pcm.buffer],{type:"audio/pcm"}) 但8位的就必须转码，通用起见，均转码处理，pcm转码速度极快
 	var number=++realTimeSendTryNumber;
 	var encStartTime=Date.now();
 	var recMock=Recorder({
