@@ -104,6 +104,10 @@ var Connect=function(streamStore){
 	
 	var ctx=Recorder.Ctx,stream=streamStore.Stream;
 	var media=stream._m=ctx.createMediaStreamSource(stream);
+	var ctxDest=ctx.destination,cmsdTxt="createMediaStreamDestination";
+	if(ctx[cmsdTxt]){
+		ctxDest=ctx[cmsdTxt]();
+	};
 	var calls=stream._call;
 	
 	//浏览器回传的音频数据处理
@@ -149,7 +153,7 @@ var Connect=function(streamStore){
 		var process=stream._p=oldFn.call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
 		
 		media.connect(process);
-		process.connect(ctx.destination);
+		process.connect(ctxDest);
 		
 		process.onaudioprocess=function(e){ exec(e); };
 	};
@@ -233,7 +237,7 @@ var Connect=function(streamStore){
 			processorOptions:{bufferSize:bufferSize}
 		});
 		media.connect(node);
-		node.connect(ctx.destination);//老版本浏览器必须连接
+		node.connect(ctxDest);//老版本浏览器必须连接
 		node.port.onmessage=function(e){
 			if(badInt){
 				clearTimeout(badInt);badInt="";
@@ -632,15 +636,20 @@ Recorder.prototype=initFn.prototype={
 				
 		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
 		var f1=function(stream){
-			Recorder.Stream=stream;
-			stream._call={};//此时is open，但并未connect，是允许绑定接收数据的
-			if(lockFail())return;
-			
 			//https://github.com/xiangyuecn/Recorder/issues/14 获取到的track.readyState!="live"，刚刚回调时可能是正常的，但过一下可能就被关掉了，原因不明。延迟一下保证真异步。对正常浏览器不影响
 			setTimeout(function(){
+				stream._call={};
+				var oldStream=Recorder.Stream;
+				if(oldStream){
+					Disconnect(); //直接断开已存在的，旧的Connect未完成会自动终止
+					stream._call=oldStream._call;
+				};
+				Recorder.Stream=stream;
 				if(lockFail())return;
 				
 				if(Recorder.IsOpen()){
+					if(oldStream)This.CLog("发现同时多次调用open",1);
+					
 					Connect();
 					ok();
 				}else{
@@ -886,7 +895,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		
 		var slowT=Date.now()-now;
-		if(slowT>30){
+		if(slowT>10 && This.envInFirst-now>1000){ //1秒后开始onProcess性能监测
 			This.CLog(procTxt+"低性能，耗时"+slowT+"ms",3);
 		};
 		
@@ -1019,7 +1028,7 @@ Recorder.prototype=initFn.prototype={
 	*/
 	,stop:function(True,False,autoClose){
 		var This=this,set=This.set,t1;
-		This.CLog("stop "+(This.envInLast?This.envInLast-This.envInFirst+"ms 补"+This.envInFix+"ms":"-"));
+		This.CLog("stop 和start时差"+(This.envInLast?This.envInLast-This.envInFirst+"ms 补偿"+This.envInFix+"ms":"-"));
 		
 		var end=function(){
 			This._stop();//彻底关掉engineCtx
@@ -1033,7 +1042,7 @@ Recorder.prototype=initFn.prototype={
 			end();
 		};
 		var ok=function(blob,duration){
-			This.CLog("结束录音 编码"+(Date.now()-t1)+"ms 音频"+duration+"ms/"+blob.size+"b");
+			This.CLog("结束录音 编码花"+(Date.now()-t1)+"ms 音频时长"+duration+"ms 文件大小"+blob.size+"b");
 			if(set.takeoffEncodeChunk){//接管了输出，此时blob长度为0
 				This.CLog("启用takeoffEncodeChunk后stop返回的blob长度为0不提供音频数据",3);
 			}else if(blob.size<Math.max(100,duration/2)){//1秒小于0.5k？
