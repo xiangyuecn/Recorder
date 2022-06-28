@@ -2,8 +2,9 @@
 《【测试】音频可视化相关插件测试》
 作者：高坚果
 时间：2020-1-17 11:59:47
+源码：https://github.com/xiangyuecn/Recorder
 
-本测试将测试Recorder所有音频可视化相关的插件。
+本测试将测试Recorder所有音频可视化相关的插件；大部分可视化插件均可以移植到其他语言环境，比如：Android、iOS、小程序原生实现，如需定制可联系作者。
 ******************/
 var waveConfigs={
 	WaveView:[

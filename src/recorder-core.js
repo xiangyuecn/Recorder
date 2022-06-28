@@ -21,7 +21,7 @@ var NOOP=function(){};
 var Recorder=function(set){
 	return new initFn(set);
 };
-Recorder.LM="2022-05-04 20:10";
+Recorder.LM="2022-06-26 18:37";
 var RecTxt="Recorder";
 
 
@@ -111,19 +111,18 @@ var Connect=function(streamStore){
 	var calls=stream._call;
 	
 	//浏览器回传的音频数据处理
-	var exec=function(e,workletArr){
-		if(workletArr && !isWorklet){
+	var onReceive=function(float32Arr,fromWorklet){
+		if(fromWorklet && !isWorklet){
 			CLog(audioWorklet+"多余回调",3);
 			return;
 		};
 		for(var k0 in calls){//has item
-			var o=workletArr||e.inputBuffer.getChannelData(0);//块是共享的，必须复制出来
-			var size=o.length;
+			var size=float32Arr.length;
 			
 			var pcm=new Int16Array(size);
 			var sum=0;
 			for(var j=0;j<size;j++){//floatTo16BitPCM 
-				var s=Math.max(-1,Math.min(1,o[j]));
+				var s=Math.max(-1,Math.min(1,float32Arr[j]));
 				s=s<0?s*0x8000:s*0x7FFF;
 				pcm[j]=s;
 				sum+=Math.abs(s);
@@ -155,7 +154,16 @@ var Connect=function(streamStore){
 		media.connect(process);
 		process.connect(ctxDest);
 		
-		process.onaudioprocess=function(e){ exec(e); };
+		var _DsetTxt="_D220626",_Dset=Recorder[_DsetTxt];if(_Dset)CLog("Use "+RecTxt+"."+_DsetTxt,3);
+		process.onaudioprocess=function(e){
+			var arr=e.inputBuffer.getChannelData(0);
+			if(_Dset){//临时调试用的参数，未来会被删除
+				arr=new Float32Array(arr);//块是共享的，必须复制出来
+				setTimeout(function(){ onReceive(arr) });//立即退出回调，试图减少对浏览器录音的影响
+			}else{
+				onReceive(arr);
+			};
+		};
 	};
 	
 	//尝试开启AudioWorklet处理
@@ -226,8 +234,10 @@ var Connect=function(streamStore){
 			clearTimeout(badInt);
 			badInt=setTimeout(function(){
 				badInt=0;
-				CLog(audioWorklet+"未返回任何音频，恢复使用"+scriptProcessor,3);
-				awNext()&&oldFn&&oldScript();//未来没有老的，可能是误判
+				if(awNext()){
+					CLog(audioWorklet+"未返回任何音频，恢复使用"+scriptProcessor,3);
+					oldFn&&oldScript();//未来没有老的，可能是误判
+				};
 			},500);
 		};
 	};
@@ -242,7 +252,7 @@ var Connect=function(streamStore){
 			if(badInt){
 				clearTimeout(badInt);badInt="";
 			};
-			exec(0,e.data.val);
+			onReceive(e.data.val,1);
 		};
 		CLog("Connect采用"+audioWorklet+"方式，设置"+RecTxt+"."+ConnectEnableWorklet+"=false可恢复老式"+scriptProcessor+oldIsBest,3);
 	};

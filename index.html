@@ -62,6 +62,12 @@ body{
 pre{
 	white-space:pre-wrap;
 }
+label,label *{
+	cursor: pointer;
+}
+label:hover{
+	color:#06c;
+}
 a{
 	text-decoration: none;
 	color:#06c;
@@ -145,7 +151,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2022-05-07 21:58";
+var PageLM="2022-06-26 18:53";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -413,6 +419,22 @@ if(!window.localStorage){window.localStorage={
 		；为set中disableEnvInFix配置值
 	</label>
 	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
+	
+	<div style="margin-top:12px;">
+		<span class="lb">临时调试选项 :</span>
+		<div><label>
+			<input type="checkbox" class="debugSet_D220626">
+			Recorder._D220626=true：ScriptProcessor立即退出回调，试图减少对浏览器录音的影响，有可能减少杂音，效果有待测试
+		</label></div>
+		<div><span style="color:#f60">以上参数设置后需重新打开录音</span>；这些参数仅供调试用，未来会被删除。</div>
+	</div>
+	
+	
+	<div style="margin-top:12px;">
+		<span class="lb">暴力测试 :</span>
+		<button onclick="testMultipleOpen5()">同时打开5个录音（并发调用open）</button>
+		，每个会录5秒，打开浏览器控制台查看日志
+	</div>
 </div>
 
 <div class="mainBox">
@@ -525,6 +547,9 @@ window.onerror=function(message, url, lineNo, columnNo, error){
 <script>
 var rec;
 function recopen(){
+	if(rec&&Recorder.IsOpen()){//如果有老的，close掉重新开新的
+		recclose();
+	};
 	var type=$("[name=type]:checked").val();
 	var bit=+$(".bit").val();
 	var sample=+$(".sample").val();
@@ -544,6 +569,12 @@ function recopen(){
 	if(enableWorklet){
 		reclog("已启用AudioWorklet，"+workletTips,"#f60");
 	}
+	
+	var debugSet_D220626=$(".debugSet_D220626")[0].checked;
+	Recorder._D220626=debugSet_D220626;
+	if(debugSet_D220626){
+		reclog("已启用临时调试选项：Recorder._D220626=true","#f60");
+	};
 	
 	var audioTrackSet=null;
 	var trackSet_device=$(".trackSet_device").val();
@@ -567,12 +598,7 @@ function recopen(){
 			audioTrackSet.autoGainControl=+trackSet_gain==1;
 		}
 		
-		if(rec){//如果有老的，close掉才会生效
-			recclose();
-		}
 		reclog("已启用audioTrackSet配置："+JSON.stringify(audioTrackSet));
-	}else if(rec && rec.set.audioTrackSet){
-		recclose();
 	};
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
@@ -1181,6 +1207,28 @@ if(window.top!=window){
 	}catch(e){};
 	
 	reclog("<span style='color:#f60'>当前页面处在在iframe中，但故意未进行任何处理，"+(isSelf?"当前是同域":"并且已发生跨域，未设置相应策略权限永远是拒绝的")+"</span>");
+};
+
+
+//暴力测试：同时打开5个录音，定时录5秒
+var testMultipleOpen5=function(){
+	if(rec)rec.close();
+	for(var i=0;i<5;i++){(function(i){
+		var rec=Recorder({type:"mp3"
+			,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+				Recorder.CLog(i+1,0,duration,buffers.length,newBufferIdx);
+			}
+		});
+		rec.open(function(){
+			rec.start();
+			setTimeout(function(){
+				var t1=Date.now();
+				rec.stop(function(blob,duration){
+					addRecLog(duration, "第"+(i+1)+"个",blob,rec.set,t1);
+				},null,true);
+			},5000);
+		});
+	})(i)}
 };
 
 

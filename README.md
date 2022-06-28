@@ -149,7 +149,7 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 
 你可以通过阅读和运行[QuickStart.html](https://xiangyuecn.gitee.io/recorder/QuickStart.html)文件来快速入门学习，直接将`QuickStart.html`copy到你的(https、localhost)网站中，无需其他文件，就能正常开始测试了；**注意：需要在https、localhost等[安全环境](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)下才能进行录音。**
 
-> https环境搭建最佳实践：建议给自己的域名申请一个泛域名通配符证书（*.xxx.com），然后线上、本地开发均可使用此证书；本地开发环境直接分配一个二级域名（dev.xxx.com、local.xxx.com、192_168_1_123.xxx.com）解析A记录到电脑局域网的IP地址（192.168.1.123、127.0.0.1），方便本地开发跨端调试（本地如何配置https请针对自己的开发环境自行搜索，很容易）。
+> https环境搭建最佳实践：建议给自己的域名申请一个泛域名通配符证书（*.xxx.com），然后线上、本地开发均可使用此证书；本地开发环境直接分配一个二级域名（dev.xxx.com、local.xxx.com、192-168-1-123.xxx.com）解析A记录到电脑局域网的IP地址（192.168.1.123、127.0.0.1），方便本地开发跨端调试（本地如何配置https请针对自己的开发环境自行搜索，很容易）。
 > 
 > 泛域名通配符证书推荐在线免费申请：[ZeroSSL](https://zerossl.com/)、[Let’s Encrypt](https://letsencrypt.org/)；不建议自己生成根证书来签发域名证书，一个是流程复杂，每个设备均要导入根证书，致命的是很多现代浏览器不再信任用户目录下导入的根证书（Android）。
 
@@ -744,6 +744,8 @@ function transformOgg(pcmData){
 # :open_book:Extensions - 插件文档
 在`src/extensions`目录内为插件支持库，这些插件库默认都没有合并到生成代码中，需单独引用(`dist`或`src`中的)才能使用。
 
+【可移植】大部分可视化插件均可以移植到其他语言环境，比如：Android、iOS、小程序原生实现，如需定制可联系作者。
+
 【附】部分插件使用效果图（[在线运行观看](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)）：
 
 ![](assets/use_wave.gif)
@@ -754,7 +756,7 @@ function transformOgg(pcmData){
 [​](?)
 
 ## WaveView插件
-[waveview.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/waveview.js)，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此插件参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中。
+[waveview.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/waveview.js)，4kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此插件参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
 
 此插件是在录音时`onProcess`回调中使用；`Recorder.BufferSize`会影响绘制帧率，默认配置的大概12帧/s比较流畅。基础使用方法：[​](?Ref=WaveView.Codes&Start)
 ``` javascript
@@ -806,7 +808,7 @@ set={
 [​](?)
 
 ## WaveSurferView插件
-[wavesurfer.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/wavesurfer.view.js)，7kb大小源码，音频可视化波形显示，具体样子参考演示地址页面。
+[wavesurfer.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/wavesurfer.view.js)，7kb大小源码，音频可视化波形显示，具体样子参考演示地址页面；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
 
 此插件的使用方式和`WaveView`插件完全相同，请参考上面的`WaveView`来使用；本插件的波形绘制直接简单的使用PCM的采样数值大小来进行线条的绘制，同一段音频绘制出的波形和Audition内显示的波形外观上几乎没有差异。
 
@@ -848,7 +850,7 @@ set={
 [​](?)
 
 ## FrequencyHistogramView插件
-[frequency.histogram.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/frequency.histogram.view.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)，12kb大小源码，音频可视化频率直方图显示，具体样子参考演示地址页面。此插件核心算法参考Java开源库[jmp123](https://sourceforge.net/projects/jmp123/files/)的代码编写的，`jmp123`版本`0.3`；直方图特意优化主要显示0-5khz语音部分，其他高频显示区域较小，不适合用来展示音乐频谱。
+[frequency.histogram.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/frequency.histogram.view.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)，12kb大小源码，音频可视化频率直方图显示，具体样子参考演示地址页面。此插件核心算法参考Java开源库[jmp123](https://sourceforge.net/projects/jmp123/files/)的代码编写的，`jmp123`版本`0.3`；直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可自行修改源码恢复成完整的线性频谱，或修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
 
 此插件的使用方式和`WaveView`插件完全相同，请参考上面的`WaveView`来使用；请注意：必须同时引入`lib.fft.js`才能正常工作。
 
