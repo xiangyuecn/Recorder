@@ -11,19 +11,7 @@ var root=new Vue({
     ,template:`
 <MainView ref="mainView">
     <template #top>
-        <div class="mainBox">
-            <span style="font-size:32px;color:#0b1;">Recorder H5 vue+webpack测试</span>
-            <a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
-			| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
-            
-            <div style="padding-top:10px;color:#666">
-			    更多Demo：
-                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
-                <a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">H5 QuickStart</a>
-				<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
-                <a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx" target="_blank" style="text-decoration: line-through">RecordApp</a>
-            </div>
-        </div>
+        <div class="topHead"></div>
     </template>
 
     <template #bottom>

@@ -19,7 +19,8 @@
 **Recorder H5** ：
 [ [H5在线测试](https://xiangyuecn.gitee.io/recorder/) ]
 [ [H5 QuickStart](https://xiangyuecn.gitee.io/recorder/QuickStart.html) ]
-[ [H5 vue](https://xiangyuecn.gitee.io/recorder/assets/demo-vue) ]
+[ [H5 vue](https://xiangyuecn.gitee.io/recorder/assets/demo-vue/) ]
+[ [H5 ts](https://xiangyuecn.gitee.io/recorder/assets/demo-ts/) ]
 
 
 
