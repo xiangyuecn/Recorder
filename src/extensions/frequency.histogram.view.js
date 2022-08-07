@@ -14,6 +14,7 @@ https://sourceforge.net/projects/jmp123/files/
 var FrequencyHistogramView=function(set){
 	return new fn(set);
 };
+var ViewTxt="FrequencyHistogramView";
 var fn=function(set){
 	var This=this;
 	var o={
@@ -78,6 +79,9 @@ var fn=function(set){
 	var scale=set.scale;
 	var width=set.width*scale;
 	var height=set.height*scale;
+	if(!width || !height){
+		throw new Error(ViewTxt+"无宽高");
+	}
 	
 	var thisElem=This.elem=document.createElement("div");
 	var lowerCss=["","transform-origin:0 0;","transform:scale("+(1/scale)+");"];
@@ -332,7 +336,7 @@ fn.prototype=FrequencyHistogramView.prototype={
 		set.onDraw(frequencyData,sampleRate);
 	}
 };
-Recorder.FrequencyHistogramView=FrequencyHistogramView;
+Recorder[ViewTxt]=FrequencyHistogramView;
 
 	
 })();

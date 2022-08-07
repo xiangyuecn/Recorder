@@ -233,6 +233,18 @@ function Run_npm(){
 		});
 	});
 	
+	
+	var writeDTS=function(path,val){
+		fs.writeFileSync(npmFiles+path,val);
+		console.log("已生成"+npmFiles+path);
+	};
+	var recDTS='declare let Recorder : any;\nexport default Recorder;';
+	writeDTS("/index.d.ts", recDTS);
+	writeDTS("/recorder.mp3.min.d.ts", recDTS);
+	writeDTS("/recorder.wav.min.d.ts", recDTS);
+	writeDTS("/src/app-support/app.d.ts", 'declare let RecordApp : any;\nexport default RecordApp;');
+	
+	
 	//记录代码是否有变更
 	var sha1=sha1Obj.digest("hex");
 	var hashArr=JSON.parse(hashHistory||"[]");

@@ -144,7 +144,7 @@ a:hover{
 	</div>
 	
 	<div class="mainBox mainLogBox">
-		<audio class="LogAudioPlayer" style="width:100%"></audio>
+		<audio class="LogAudioPlayer" controls style="display:none;width:100%"></audio>
 		<div class="mainLog"></div>
 	</div>
 	
@@ -422,7 +422,7 @@ Runtime.CodeRunClick=function(isImport){
 
 Runtime.LogAudioPlay=function(id){
 	var audio=$(".LogAudioPlayer")[0];
-	audio.controls=true;
+	audio.style.display="inline-block";
 	if(!(audio.ended || audio.paused)){
 		audio.pause();
 	};
@@ -598,7 +598,7 @@ $(function(){
 		
 		edit.refresh();
 	};
-	var loadDemoCode=function(key,name){
+	var loadDemoCode=function(key,name,end){
 		var path="runtime-codes/"+key+".js";
 		Runtime.Log("正在加载"+path+"...");
 		$.ajax({
@@ -618,19 +618,27 @@ $(function(){
 				}else{
 					Runtime.Log("已加载《"+(rn||path)+"》源码，可运行查看效果",2);
 				};
+				
+				end&&end();
 			}
 			,error:function(){
 				Runtime.Log("加载指定的"+path+'失败，请到<a href="https://github.com/xiangyuecn/Recorder/tree/master/assets/runtime-codes" target="_blank">/assets/runtime-codes</a>目录内查阅源码',1);
 			}
 		});
 	};
-	Runtime.UseDemoCode=function(id){
+	Runtime.UseDemoCode=function(id,click){
+		var end=function(){
+			if(click){
+				$("html,body").animate({scrollTop:$(".mainCodeBtn").offset().top-200},300);
+			}
+		};
 		var o=DemoCodeList[id];
 		if(o.code){
 			setVal(o.code);
 			Runtime.Log("已在编辑框内显示了《"+(id+1)+". "+DemoCodeList[id].name+"》Demo的源码，可运行查看效果");
+			end();
 		}else{
-			loadDemoCode(o.jsn,(id+1)+". "+o.name);
+			loadDemoCode(o.jsn,(id+1)+". "+o.name, end);
 		};
 	};
 	
@@ -647,7 +655,7 @@ $(function(){
 			href="";
 		};
 		href&&(href+='"');
-		html.push('<div style="padding:8px 0">'+(i+1)+'. <a '+href+' onclick="Runtime.UseDemoCode('+i+');return false">'+o.name+'</a></div>');
+		html.push('<div style="padding:8px 0">'+(i+1)+'. <a '+href+' onclick="Runtime.UseDemoCode('+i+',1);return false">'+o.name+'</a></div>');
 	};
 	$(".demoList").html(html.join("\n"));
 	
@@ -1106,7 +1114,7 @@ function recStop(){
 (function(){
 var demos=[
 
-{n:"【Demo库】【格式转换】-mp3格式转成其他格式",k:"lib.transform.mp32other"}
+{n:"【Demo库】【格式转换】-mp3等格式解码转成其他格式",k:"lib.transform.mp32other"}
 ,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
 ,{n:"【Demo库】【格式转换】-amr格式转成其他格式",k:"lib.transform.amr2other"}
 
@@ -1128,6 +1136,7 @@ var demos=[
 ,{n:"【教程】DTMF（电话拨号按键信号）解码、编码",k:"teach.dtmf.decode_and_encode"}
 
 ,{n:"【Demo库】PCM采样率提升",k:"lib.samplerate.raise"}
+,{n:"【测试】WebM格式解析并提取音频",k:"test.webm.extract_audio"}
 ,{n:"【测试】音频可视化相关插件测试",k:"test.extensions.visualization"}
 
 ];

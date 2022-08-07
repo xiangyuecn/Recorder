@@ -1,0 +1,15 @@
+{
+  "name": "recorder-ts-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "webpack --progress --mode production --config package.webpack.build.js",
+    "build-dev": "webpack --progress --mode development --config package.webpack.build.js"
+  },
+  "dependencies": {
+    "recorder-core": "*",
+    "webpack": "4.41.2",
+    "webpack-cli": "3.3.10",
+    "typescript": "4.7.4",
+    "ts-loader": "8.4.0"
+  }
+}

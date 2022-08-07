@@ -1,12 +1,16 @@
 /******************
-《【Demo库】【格式转换】-mp3格式转成其他格式》
+《【Demo库】【格式转换】-mp3等格式解码转成其他格式》
 作者：高坚果
 时间：2019-10-22 15:20:57
+
+【原理】mp3格式转换成其他格式，只是简单的调用AudioContext的decodeAudioData解码音频得到pcm格式数据，然后再将pcm通过Recorder的mock方法转换成其他格式。
+
+【其他格式】由于decodeAudioData方法只支持当前浏览器能播放的音频格式，因此除了mp3外，其他能播放的格式一般也是能解码转换的，比如ogg，webm格式，通过 document.createElement("audio").canPlayType("audio/ogg") 来判断某一格式是否支持解码（mp3一定能解码，其他不一定）。
 
 文档：
 Recorder.Mp32Other(newSet,mp3Blob,True,False)
 		newSet：Recorder的set参数，用来生成新格式，注意：要先加载好新格式的编码引擎
-		mp3Blob：mp3二进制数据
+		mp3Blob：mp3或其他格式音频的二进制数据
 		True: fn(blob,duration,mockRec) 和Recorder的stop函数参数一致，mockRec为转码时用到的Recorder对象引用
 		False: fn(errMsg) 和Recorder的stop函数参数一致
 ******************/
@@ -109,8 +113,8 @@ Runtime.Ctrls([
 	
 	,{choiceFile:{
 		multiple:false
-		,name:"mp3"
-		,mime:"audio/mp3"
+		,name:"音频"
+		,mime:"audio/*"
 		,process:function(fileName,arrayBuffer,filesCount,fileIdx,endCall){
 			test(new Blob([arrayBuffer]));
 			endCall();
@@ -143,13 +147,15 @@ function recStart(){
 	});
 };
 function recStop(){
+	if(!rec){
+		Runtime.Log("未开始录音",1);
+		return;
+	}
 	rec.stop(function(blob,duration){
-		rec.close();//释放录音资源
-		
 		Runtime.LogAudio(blob,duration,rec);
 		
 		test(blob);
 	},function(msg){
 		Runtime.Log("录音失败:"+msg, 1);
-	});
+	},true);
 };

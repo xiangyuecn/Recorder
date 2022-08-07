@@ -6,7 +6,7 @@
 # 运行方法
 ## 【1】编译vue源码
 ```
-cnpm install
+npm install
 npm run build-dev
 ```
 ## 【2】浏览器访问

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 <link rel="shortcut icon" type="image/png" href="assets/icon.png">
 
-<title>Recorder H5: 用于html5网页中的前端录音解决方案，此录音插件支持mp3 wav pcm amr ogg webm格式，支持实时上传 语音识别 音频可视化 实时处理，可在PC端 移动端 Android IOS 原生App中跨平台使用</title>
+<title>Recorder H5: 用于html5网页中的前端录音解决方案，此录音插件支持mp3 wav pcm amr ogg webm格式，支持实时上传 语音识别 音频可视化 实时处理，可在PC端 移动端 Android iOS 原生App中跨平台使用</title>
 
 <script>
 console.log(
@@ -56,6 +56,7 @@ console.log(
 <style>
 body{
 	word-wrap: break-word;
+	word-break: break-all;
 	background:#f5f5f5 center top no-repeat;
 	background-size: auto 680px;
 }
@@ -151,7 +152,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2022-06-26 18:53";
+var PageLM="2022-08-06 21:36";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -203,12 +204,12 @@ if(!window.localStorage){window.localStorage={
 	</style>
 	<a class="navItem slc" style="margin-right:2%;" href="https://xiangyuecn.gitee.io/recorder/">
 		<div class="navTitle">Recorder H5</div>
-		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+</div>
+		<div class="navDesc">Recorder H5使用简单，功能丰富，支持PC、Android、iOS 14.3+</div>
 	</a>
 	
 	<a class="navItem" href="https://jiebian.life/web/h5/github/recordapp.aspx">
 		<div class="navTitle" style="text-decoration: line-through">RecordApp</div>
-		<div class="navDesc">[即将废弃]支持：Recorder + Hybrid App + 低版本IOS上的微信</div>
+		<div class="navDesc">[即将废弃]支持：Recorder + Hybrid App + 低版本iOS上的微信</div>
 	</a>
 	
 	<div style="margin-top:8px">
@@ -217,7 +218,8 @@ if(!window.localStorage){window.localStorage={
 		| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
 		
 		<span class="lb">更多Demo :</span> <a href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
-		| <a href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue" target="_blank">H5 vue</a>
+		| <a href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue/" target="_blank">H5 vue</a>
+		| <a href="https://xiangyuecn.gitee.io/recorder/assets/demo-ts/" target="_blank">H5 ts</a>
 		
 		<div style="margin-top:6px;">
 			<span class="lb">QuickStart :</span>
@@ -318,7 +320,7 @@ if(!window.localStorage){window.localStorage={
 </div>
 	
 <div class="mainBox">
-	<audio class="recPlay" style="width:100%"></audio>
+	<audio class="recPlay" controls style="display:none;width:100%"></audio>
 	<div class="reclog"></div>
 </div>
 
@@ -327,25 +329,23 @@ if(!window.localStorage){window.localStorage={
 		<span class="lb">切换麦克风 :</span>
 		<select class="trackSet_device"></select>
 		从未请求过录音权限时，可能无法正常拉取设备列表，打开一次录音后可尝试
-		<button onclick="trackSetQueryDeviceList()">重新拉取设备</button>
+		<button onclick="trackSetQueryDeviceList(1)">重新拉取设备</button>
 	</div>
 	<div>
 		<span class="lb">noiseSuppression :</span>
 		<select class="trackSet_noise">
-			<option value="">不设置</option>
 			<option value="1">true</option>
-			<option value="2">false</option>
+			<option value="2" selected>false</option>
 		</select>
-		降噪配置开关
+		降噪配置开关（默认禁用）
 	</div>
 	<div>
 		<span class="lb">echoCancellation :</span>
 		<select class="trackSet_aec">
-			<option value="">不设置</option>
 			<option value="1">true</option>
-			<option value="2">false</option>
+			<option value="2" selected>false</option>
 		</select>
-		回声消除配置开关
+		回声消除配置开关（默认禁用）
 	</div>
 	<div>
 		<span class="lb">autoGainControl :</span>
@@ -357,30 +357,45 @@ if(!window.localStorage){window.localStorage={
 		自动增益配置开关
 	</div>
 	<div>
-		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效
-	</div>
-	
-	<div style="margin-top:12px;">
-		<span class="lb">Destroy :</span>
-		<button onclick="callDestroy()">调用Recorder.Destroy()</button>
-		Destroy会关闭所有的全局资源，包括AudioContext，当录音出现问题时，可尝试Destroy一下重试
+		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效；
+		<span style="color:#aaa">移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放声音变小），所以默认禁用，使用原声录制（高音甜、中音准、低音沉，总之一句话就是通透），如需降噪、回声消除请测试好后再开启</span>
 	</div>
 </div>
 
 <div class="mainBox">
-	<span class="lb">启用AudioWorklet :</span>
+	<span class="lb">启用MediaRecorder :</span>
 	<label>
-		<input type="checkbox" class="enableWorkletSet">启用
+		<input type="checkbox" class="enableWebMSet">启用
 		<span style="color:#f60">设置后需重新打开录音</span>
 	</label>
 	
-	<div>音频采集连接方式：未启用时使用ScriptProcessor（默认），启用时使用AudioWorklet；通过设置Recorder.ConnectEnableWorklet=true启用。</div>
+	<div>音频采集连接方式：启用时尝试使用MediaRecorder.WebM.PCM，默认启用，未启用或者不支持时使用AudioWorklet或ScriptProcessor；通过设置Recorder.ConnectEnableWebM=false禁用。</div>
+	<div>
+		<span style="color:#0b1">使用MediaRecorder采集到的音频数据比其他方式更好，几乎不存在丢帧现象，所以音质明显会好很多，建议保持开启；</span>
+		<span style="color:#aaa">有些浏览器不支持录制PCM编码的WebM，如FireFox、低版本的Chrome，将依旧使用AudioWorklet或ScriptProcessor来连接采集。</span>
+	</div>
+	
+	
+	<div style="margin-top:12px;"></div>
+	<span class="lb">启用AudioWorklet :</span>
+	<label>
+		<input type="checkbox" class="enableWorkletSet">启用
+		<span style="color:#f60">设置后需重新打开录音，ConnectEnableWebM如果启用并且有效时，本参数将不起作用</span>
+	</label>
+	
+	<div>音频采集连接方式：启用时尝试使用AudioWorklet，默认禁用，未启用或者不支持时使用ScriptProcessor；通过设置Recorder.ConnectEnableWorklet=true启用。</div>
 	<div>
 		已知：AudioWorklet在一定条件下会导致某些浏览器崩溃
 		<a href="assets/ztest_chrome_bug_AudioWorkletNode.html" target="_blank">测试</a>
 		(坑已填好)。
 	</div>
 	<div class="workletSetTips" style="color:#f60"></div>
+</div>
+
+<div class="mainBox">
+	<div style="color:#0ab;font-size:22px;font-weight:bold">
+		如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~
+	</div>
 </div>
 
 <div class="mainBox">
@@ -429,6 +444,17 @@ if(!window.localStorage){window.localStorage={
 		<div><span style="color:#f60">以上参数设置后需重新打开录音</span>；这些参数仅供调试用，未来会被删除。</div>
 	</div>
 	
+	<div style="margin-top:12px;">
+		<span class="lb">Destroy :</span>
+		<button onclick="callDestroy()">调用Recorder.Destroy()</button>
+		Destroy会关闭所有的全局资源，包括AudioContext，当录音出现问题时，可尝试Destroy一下重试
+	</div>
+	
+	<div style="margin-top:12px;">
+		<span class="lb">阻止自动锁屏 :</span>
+		<button onclick="wakeLockClick()">调用navigator.wakeLock 或 静音循环播放视频</button>
+		手机锁屏后是否能录音不可控，直接简单粗暴的调用wakeLock接口 或 静音+循环播放视频来阻止锁屏，就是有点费电
+	</div>
 	
 	<div style="margin-top:12px;">
 		<span class="lb">暴力测试 :</span>
@@ -465,7 +491,7 @@ if(!window.localStorage){window.localStorage={
 	
 <div class="mainBox">
 	<span class="lb">测试App :</span>
-	IOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
+	iOS Demo App：<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios">下载源码</a> 自行编译
 	
 	，Android Demo App：<a href="https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip">下载APK</a> (40kb，删除.zip后缀，<a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android">源码</a>)
 </div>
@@ -483,17 +509,22 @@ if(!window.localStorage){window.localStorage={
 	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
 	<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
 	
-	Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>）；IOS Safari如果未开始过录音并且播放了音乐，然后后续录音将会有问题；再现方法(<a href="https://xiangyuecn.gitee.io/recorder/assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>)：刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。
+	Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>）；iOS Safari如果未开始过录音并且播放了音乐，然后后续录音将会有问题；再现方法(<a href="https://xiangyuecn.gitee.io/recorder/assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>)：刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。
 </div>
 
 <div class="mainBox">
 	<span class="lb">视频播放测试 :</span>
-	<button onclick="$('.videoTest').show().html('<video controls webkit-playsinline playsinline x5-video-player-type=\'h5\' src=\'assets/audio/movie-一代宗师-此一时彼一时.mp4.webm\' style=\'width:370px;height:160px\'></'+'video>').find('video')[0].play()">播放mp4</button>
+	<button onclick="videoTestPlay('')">播放mp4</button>
+	<script>var videoTestPlay=function(attr){
+		$('.videoTest').show().html('<video controls '+attr+' webkit-playsinline playsinline x5-video-player-type=\'h5\' src=\'assets/audio/movie-一代宗师-此一时彼一时.mp4.webm\' style=\'width:370px;height:160px\'></'+'video>').find('video')[0].play()
+	}</script>
 	
-	Video对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/84">issues#84</a>）；IOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音，但并未再现。
+	Video对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/84">issues#84</a>）；iOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音，但并未再现。
 	<button onclick="$('.videoTest').show()">显示video</button>
 	<button onclick="$('.videoTest').hide()">隐藏video</button>
 	<button onclick="$('.videoTest').html('')">移除video</button>
+	<button onclick="videoTestPlay(' loop')">循环播放</button>
+	<button onclick="videoTestPlay(' loop muted')">静音循环播放</button>
 	<div class="videoTest"></div>
 </div>
 
@@ -512,6 +543,9 @@ AudioContext.scriptProcessor:{{
 					}}
 AudioContext.audioWorklet:{{"audioWorklet" in (Recorder.Ctx||{})}}
 AudioWorkletNode:${"AudioWorkletNode" in window}
+MediaRecorder:${"MediaRecorder" in window}
+MediaRecorder.ondataavailable:${"MediaRecorder" in window && "ondataavailable" in MediaRecorder.prototype}
+MediaRecorder.WebM.PCM:${"MediaRecorder" in window && MediaRecorder.isTypeSupported("audio/webm; codecs=pcm")}
 
 URL:${location.href.replace(/#.+/g,"")}
 UA:${navigator.userAgent}
@@ -564,10 +598,16 @@ function recopen(){
 		reclog("已禁用设备卡顿时音频输入丢失补偿，可以通过别的程序大量占用CPU来模拟设备卡顿，然后录音听听未补偿时的播放效果，然后再试试不禁用的效果");
 	};
 	
+	var enableWebM=$(".enableWebMSet")[0].checked;
+	Recorder.ConnectEnableWebM=enableWebM;
+	if(!enableWebM){
+		reclog("已禁用MediaRecorder.WebM.PCM","#aaa");
+	}
+	
 	var enableWorklet=$(".enableWorkletSet")[0].checked;
 	Recorder.ConnectEnableWorklet=enableWorklet;
 	if(enableWorklet){
-		reclog("已启用AudioWorklet，"+workletTips,"#f60");
+		reclog("已启用AudioWorklet"+(enableWebM?"（同时启用了MediaRecorder，AudioWorklet只会在MediaRecorder未生效时采用）":"")+"，"+workletTips,"#f60");
 	}
 	
 	var debugSet_D220626=$(".debugSet_D220626")[0].checked;
@@ -581,7 +621,7 @@ function recopen(){
 	var trackSet_noise=$(".trackSet_noise").val();
 	var trackSet_aec=$(".trackSet_aec").val();
 	var trackSet_gain=$(".trackSet_gain").val();
-	if(trackSet_device || trackSet_noise || trackSet_aec || trackSet_gain){
+	if(trackSet_device || trackSet_noise==1 || trackSet_aec==1 || trackSet_gain){
 		audioTrackSet={};
 		if(trackSet_device){
 			var device=DeviceList[+trackSet_device];
@@ -713,13 +753,17 @@ var dialogCancel=function(){
 var callDestroy=function(){
 	Recorder.Destroy();
 	reclog("已执行Recorder.Destroy()");
+	scrollToEl(".reclog");
 };
 
 //拉取麦克风设备列表
 var DeviceList=[];
-var trackSetQueryDeviceList=function(){
+var trackSetQueryDeviceList=function(click){
 	var end=function(list,err){
 		DeviceList=list;
+		if(click){
+			console.log("DeviceList: ", JSON.parse(JSON.stringify(DeviceList)));
+		}
 		
 		var opts=['<option value="">'+(list.length?'不设置':err)+'</option>'];
 		for(var i=0;i<list.length;i++){
@@ -927,7 +971,7 @@ function recstop2(){
 };
 function recplay(key){
 	var audio=$(".recPlay")[0];
-	audio.controls=true;
+	audio.style.display="inline-block";
 	if(!(audio.ended || audio.paused)){
 		audio.pause();
 	};
@@ -1191,6 +1235,15 @@ $(".enableWorkletSet").bind("change",function(){
 	localStorage["RecEnableWorklet"]=this.checked?"1":"";
 })[0].checked=localStorage["RecEnableWorklet"]=="1";
 
+$(".enableWebMSet").bind("change",function(){
+	localStorage["RecEnableWebM"]=this.checked?"1":"-1";
+})[0].checked=localStorage["RecEnableWebM"]!="-1";
+
+//页面滚动到这个位置
+var scrollToEl=function(elem){
+	$("html,body").animate({scrollTop:$(elem).offset().top-200},300);
+};
+
 
 
 $(".recinfoCode").text($(".recinfoCode").text().replace(/\$\{(.+?)\}|\{\{([\S\s]+?)\}\}/g,function(a,b,c){return eval(b||c)}));
@@ -1229,6 +1282,35 @@ var testMultipleOpen5=function(){
 			},5000);
 		});
 	})(i)}
+};
+
+
+//阻止手机自动锁屏
+var wakeLockClick=function(){
+	var fail=function(){
+		videoTestPlay(' loop muted');
+		reclog('已通过 循环+静音 播放视频来阻止自动锁屏');
+		scrollToEl(".videoTest");
+	};
+	if(navigator.wakeLock){
+		if(window.wakeLockObj)wakeLockObj.release();
+		navigator.wakeLock.request('screen').then(function(lock){
+			wakeLockObj=lock;
+			reclog('已通过wakeLock阻止自动锁屏 <button onclick="wakeUnLockClick(this)">恢复锁屏</button>');
+			window.wakeUnLockClick=function(btn){
+				lock.release().then(function(){
+					wakeLockObj=null; $(btn).remove();
+					reclog("已恢复自动锁屏");
+				});
+			};
+			scrollToEl(".reclog");
+		})['catch'](function(e){
+			console.error("wakeLock错误："+e.message);
+			fail();
+		});
+	}else{
+		fail();
+	}
 };
 
 

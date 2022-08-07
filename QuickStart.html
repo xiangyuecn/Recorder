@@ -85,9 +85,9 @@ if(/useCDN=([^&#]+)/.test(location.href)){
 		<div style="padding-top:10px;color:#666">
 			更多Demo：
 			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue" target="_blank">H5 vue</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue/" target="_blank">H5 vue</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-ts/" target="_blank">H5 ts</a>
 			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
-			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx" target="_blank" style="text-decoration: line-through">RecordApp</a>
 			
 			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-GitHub页面历史版本访问.html#url=xiangyuecn:Recorder@1.0.20032600,/QuickStart.html" target="_blank">切换到老版本测试</a>
 		</div>
@@ -115,14 +115,13 @@ if(/useCDN=([^&#]+)/.test(location.href)){
 		</div>
 		
 		<!-- 波形绘制区域 -->
-		<div class="pd recpower">
-			<div style="height:40px;width:300px;background:#999;position:relative;">
+		<div style="padding-top:5px">
+			<div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom"><div style="height:100px;width:300px;" class="recwave"></div></div>
+			
+			<div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
 				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
 				<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
 			</div>
-		</div>
-		<div class="pd waveBox">
-			<div style="border:1px solid #ccc;display:inline-block"><div style="height:100px;width:300px;" class="recwave"></div></div>
 		</div>
 	</div>
 	
@@ -146,7 +145,7 @@ var recOpen=function(){//一般在显示出录音按钮或相关的录音界面�
 		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
 			//录音实时回调，大约1秒调用12次本回调
 			document.querySelector(".recpowerx").style.width=powerLevel+"%";
-			document.querySelector(".recpowert").innerText=bufferDuration+" / "+powerLevel;
+			document.querySelector(".recpowert").innerText=formatMs(bufferDuration,1)+" / "+powerLevel;
 			
 			//可视化图形绘制
 			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
@@ -226,7 +225,7 @@ function recStop(){
 		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
 		
 		recBlob=blob;
-		reclog("已录制mp3："+duration+"ms "+blob.size+"字节，可以点击播放、上传了",2);
+		reclog("已录制mp3："+formatMs(duration)+"ms "+blob.size+"字节，可以点击播放、上传了",2);
 	},function(msg){
 		reclog("录音失败:"+msg,1);
 	});
@@ -360,6 +359,14 @@ var dialogCancel=function(){
 	};
 };
 //recOpen弹框End
+
+var formatMs=function(ms,all){
+	var f=Math.floor(ms/60000),m=Math.floor(ms/1000)%60;
+	var s=(all||f>0?(f<10?"0":"")+f+":":"")
+		+(all||f>0||m>0?("0"+m).substr(-2)+"″":"")
+		+("00"+ms%1000).substr(-3);
+	return s;
+};
 </script>
 
 
@@ -386,11 +393,14 @@ window.onerror=function(message, url, lineNo, columnNo, error){
 	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
 };
 
-reclog("RecordApp[即将废弃] 除Recorder支持的外，支持Hybrid App，低版本IOS上支持微信网页和小程序web-view"+unescape("%uD83C%uDF89"),"#f60;font-weight:bold;font-size:24px");
+reclog('如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~',"#f60;font-size:22px;font-weight:bold");
 reclog("Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+"+unescape("%uD83D%uDCAA"),"#0b1;font-weight:bold;font-size:24px");
-reclog('本页面修改时间（有可能修改了忘改）：2022-05-24 19:31:18',"#999");
+reclog('本页面修改时间（有可能修改了忘改）：2022-08-07 18:20',"#999");
 reclog('Recorder库修改时间（有可能修改了忘改）：'+(window.Recorder&&Recorder.LM),"#999");
+reclog("UA: "+navigator.userAgent, "#999");
+reclog("URL: "+location.href.replace(/#.*/g,""), "#999");
 reclog(Tips);
+reclog('当前浏览器<span style="color:'+(Recorder.Support()?'#0b1">支持录音':'red">不支持录音')+'</span>');
 
 if(window.useCDN && useCDN.cdn){
 	reclog('本页面的js资源采用的CDN不稳定，已切换到：'+useCDN.cdn,'#f60');

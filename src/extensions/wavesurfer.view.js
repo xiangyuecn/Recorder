@@ -14,6 +14,7 @@ https://github.com/katspaugh/wavesurfer.js https://github.com/collab-project/vid
 var WaveSurferView=function(set){
 	return new fn(set);
 };
+var ViewTxt="WaveSurferView";
 var fn=function(set){
 	var This=this;
 	var o={
@@ -61,6 +62,9 @@ var fn=function(set){
 	var scale=set.scale;
 	var width=set.width*scale;
 	var height=set.height*scale;
+	if(!width || !height){
+		throw new Error(ViewTxt+"无宽高");
+	}
 	
 	var thisElem=This.elem=document.createElement("div");
 	var lowerCss=["","transform-origin:0 0;","transform:scale("+(1/scale)+");"];
@@ -250,7 +254,7 @@ fn.prototype=WaveSurferView.prototype={
 		};
 	}
 };
-Recorder.WaveSurferView=WaveSurferView;
+Recorder[ViewTxt]=WaveSurferView;
 
 	
 })();

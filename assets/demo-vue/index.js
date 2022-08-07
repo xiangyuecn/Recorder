@@ -43,28 +43,8 @@ var root=new Vue({
 });
 
 
-
-
-
-//皮一下，这种难看调用逻辑验证
-var mainRef=root.$refs.mainView;
-mainRef.reclog('<span style="color:#f60;font-weight:bold;font-size:24px">RecordApp[即将废弃] 除Recorder支持的外，支持Hybrid App，低版本IOS上支持微信网页和小程序web-view'+unescape("%uD83C%uDF89")+"</span>");
-mainRef.reclog('<span style="color:#0b1;font-weight:bold;font-size:24px">Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+'+unescape("%uD83D%uDCAA")+"</span>");
-
-mainRef.reclog(`<span style="color:green">绿油油的一大片，真有食欲</span>${unescape('%uD83D%uDE02')} 当前浏览器<span style="color:${mainRef.Rec.Support()?'green">支持录音':'red">不支持录音'}</span>`);
-
-var logMeta=function(n,v){
-    mainRef.reclog('<span style="color:#f60">'+n+":</span> <span style='color:#999'>"+v+"</span>");
-};
-logMeta(`本页面修改时间（有可能修改了忘改）`,'2022-03-03 21:52:39');
-logMeta(`Recorder库修改时间（有可能修改了忘改）`,mainRef.Rec.LM);
-logMeta(`UA`,navigator.userAgent);
-logMeta(`URL`,location.href.replace(/#.*/g,""));
-logMeta(`Vue`,Vue.version);
-mainRef.reclog("点击打开录音，然后再点击开始录音",2);
-
-
+window.vue_vue=Vue;
 window.vue_root=root;
-window.vue_main=mainRef;
+window.vue_main=root.$refs.mainView;
 console.log("Vue",Vue);
-console.log("Recorder",mainRef.Rec);
+console.log("Recorder",vue_main.Rec);

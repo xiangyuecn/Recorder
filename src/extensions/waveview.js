@@ -7,6 +7,7 @@ https://github.com/xiangyuecn/Recorder
 var WaveView=function(set){
 	return new fn(set);
 };
+var ViewTxt="WaveView";
 var fn=function(set){
 	var This=this;
 	var o={
@@ -20,7 +21,11 @@ var fn=function(set){
 		*/
 		
 		scale:2 //缩放系数，应为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
-		,speed:8 //移动速度系数，越大越快
+		,speed:9 //移动速度系数，越大越快
+		,phase:21.8 //相位，调整了速度后，调整这个值得到一个看起来舒服的波形
+		
+		,fps:20 //绘制帧率，调整后也需调整phase值
+		,keep:true //当停止了input输入时，是否保持波形，设为false停止后将变成一条线
 		
 		,lineWidth:3 //线条基础粗细
 		
@@ -50,6 +55,9 @@ var fn=function(set){
 	var scale=set.scale;
 	var width=set.width*scale;
 	var height=set.height*scale;
+	if(!width || !height){
+		throw new Error(ViewTxt+"无宽高");
+	}
 	
 	var thisElem=This.elem=document.createElement("div");
 	var lowerCss=["","transform-origin:0 0;","transform:scale("+(1/scale)+");"];
@@ -95,17 +103,65 @@ fn.prototype=WaveView.prototype={
 		return rtv;
 	}
 	,input:function(pcmData,powerLevel,sampleRate){
+		var This=this;
+		This.sampleRate=sampleRate;
+		This.pcmData=pcmData;
+		This.pcmPos=0;
+		
+		This.inputTime=Date.now();
+		This.schedule();
+	}
+	,schedule:function(){
+		var This=this,set=This.set;
+		var interval=Math.floor(1000/set.fps);
+		if(!This.timer){
+			This.timer=setInterval(function(){
+				This.schedule();
+			},interval);
+		};
+		
+		var now=Date.now();
+		var drawTime=This.drawTime||0;
+		if(now-drawTime<interval){
+			//没到间隔时间，不绘制
+			return;
+		};
+		This.drawTime=now;
+		
+		//切分当前需要的绘制数据
+		var bufferSize=This.sampleRate/set.fps;
+		var pcm=This.pcmData;
+		var pos=This.pcmPos;
+		var len=Math.max(0, Math.min(bufferSize,pcm.length-pos));
+		var sum=0;
+		for(var i=0;i<len;i++,pos++){
+			sum+=Math.abs(pcm[pos]);
+		};
+		This.pcmPos=pos;
+		
+		//推入绘制
+		if(len || !set.keep){
+			This.draw(Recorder.PowerLevel(sum, len));
+		}
+		if(!len && now-This.inputTime>1300){
+			//超时没有输入，干掉定时器
+			clearInterval(This.timer);
+			This.timer=0;
+		}
+	}
+	,draw:function(powerLevel){
 		var This=this,set=This.set;
 		var ctx=This.ctx;
 		var scale=set.scale;
 		var width=set.width*scale;
 		var height=set.height*scale;
 		
-		var speedx=set.speed*pcmData.length/sampleRate;
+		var speedx=set.speed/set.fps;
 		var phase=This._phase-=speedx;//位移速度
+		var phase2=phase+speedx*set.phase;
 		var amplitude=powerLevel/100;
 		var path1=This.genPath(2,amplitude,phase);
-		var path2=This.genPath(1.8,amplitude,phase+speedx*5);
+		var path2=This.genPath(1.8,amplitude,phase2);
 		
 		//开始绘制图形
 		ctx.clearRect(0,0,width,height);
@@ -150,7 +206,7 @@ fn.prototype=WaveView.prototype={
 		ctx.stroke();
 	}
 };
-Recorder.WaveView=WaveView;
+Recorder[ViewTxt]=WaveView;
 
 	
 })();

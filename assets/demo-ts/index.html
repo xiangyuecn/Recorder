@@ -1,0 +1,198 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="../icon.png">
+
+<title>Recorder H5 TypeScript测试</title>
+<script src="dist/index.js"></script>
+</head>
+
+<body>
+
+<div class="main">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#0b1;">Recorder H5 TypeScript测试</span>
+		<a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
+		| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
+		
+		<div style="padding-top:10px;color:#666">
+			更多Demo：
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">H5 QuickStart</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue/" target="_blank">H5 vue</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
+		</div>
+	</div>
+	
+	<div class="mainBox">
+		<!-- 按钮控制区域 -->
+		<div class="pd btns">
+			<div>
+				<button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
+				<button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
+			</div>
+			
+			<button onclick="recStart()">录制</button>
+			<button onclick="recStop()" style="margin-right:80px">停止</button>
+			
+			<span style="display: inline-block;">
+				<button onclick="recPause()">暂停</button>
+				<button onclick="recResume()">继续</button>
+			</span>
+			<span style="display: inline-block;">
+				<button onclick="recPlay()">播放</button>
+				<button onclick="recUpload()">上传</button>
+			</span>
+		</div>
+		
+		<!-- 波形绘制区域 -->
+		<div style="padding-top:5px">
+			<div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom"><div style="height:100px;width:300px;" class="recwave"></div></div>
+			
+			<div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
+				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+				<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			</div>
+		</div>
+	</div>
+	
+	<!-- 日志输出区域 -->
+	<div class="mainBox">
+		<div class="reclog"></div>
+	</div>
+	
+	<div class="mainBox">
+		<div>本测试的码源码在<a href="https://github.com/xiangyuecn/Recorder/tree/master/assets/demo-ts">/assets/demo-ts</a>目录内，主要的文件为<a href="https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-ts/index.ts">/assets/demo-ts/index.ts</a></div>
+		
+		<div style="margin-top:15px">源码修改后测试方法：
+<pre style="background:green;color:#fff;padding:10px;">
+> npm install
+> npm run build-dev
+</pre>
+		然后就可以打开index.html查看效果了。</div>
+	</div>
+</div>
+
+
+
+
+<!--以下这坨可以忽略-->
+<script>
+function reclog(s,color){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	var div=document.createElement("div");
+	var elem=document.querySelector(".reclog");
+	elem.insertBefore(div,elem.firstChild);
+	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
+};
+window.onerror=function(message, url, lineNo, columnNo, error){
+	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
+	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+};
+
+reclog('如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~',"#f60;font-size:22px;font-weight:bold");
+reclog("Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+"+unescape("%uD83D%uDCAA"),"#0b1;font-weight:bold;font-size:24px");
+reclog('本页面修改时间（有可能修改了忘改）：2022-08-07 18:24',"#999");
+reclog('Recorder库修改时间（有可能修改了忘改）：'+(window.Recorder&&Recorder.LM),"#999");
+reclog("UA: "+navigator.userAgent, "#999");
+reclog("URL: "+location.href.replace(/#.*/g,""), "#999");
+reclog('当前浏览器<span style="color:'+(Recorder.Support()?'#0b1">支持录音':'red">不支持录音')+'</span>');
+reclog("点击打开录音，然后再点击录制开始录音",2);
+</script>
+
+<script>
+if(/mobile/i.test(navigator.userAgent)){
+	//移动端加载控制台组件
+	var elem=document.createElement("script");
+	elem.setAttribute("type","text/javascript");
+	elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+	document.body.appendChild(elem);
+	elem.onload=function(){
+		new VConsole();
+	};
+};
+</script>
+
+<!-- 加载打赏挂件 -->
+<script src="https://xiangyuecn.gitee.io/recorder/assets/zdemo.widget.donate.js"></script>
+<script>
+var donateView=document.createElement("div");
+document.querySelector(".reclog").appendChild(donateView);
+DonateWidget({
+	log:function(msg){reclog(msg)}
+	,mobElem:donateView
+});
+</script>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5 center top no-repeat;
+	background-size: auto 680px;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.btns button{
+    display: inline-block;
+    cursor: pointer;
+    border: none;
+    border-radius: 3px;
+    background: #0b1;
+    color:#fff;
+    padding: 0 15px;
+    margin:3px 20px 3px 0;
+    line-height: 36px;
+    height: 36px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+.btns button:active{
+    background: #0a1;
+}
+
+.pd{
+	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+</style>
+
+</body>
+</html>
