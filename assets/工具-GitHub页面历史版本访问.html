@@ -178,27 +178,34 @@ function Step_LoadVers(){
 	}
 	var url="https://cdn.jsdelivr.net/gh/"+urlInfo.owner+"/"+urlInfo.repo+"/";
 	reclog('正在拉取版本号列表... [sync]'+ToA(url),"#bbb");
-	Load(url,function(txt){
+	var loadEnd=function(txt){
 		txt=txt.replace(/\r|\n/g,"");
+		var vers=[],opts=[];
 		var m=/<select[^>]*versions\b.+?<\/select/.exec(txt);
-		if(!m){
-			reclog("版本号页面已拉取，但提取列表失败，正则表达式未匹配");
-			return;
+		if(txt=="-1"){
+			//NOOP
+		}else if(!m){
+			reclog("版本号页面已拉取，但未匹配到版本号列表，可能是此仓库没有任何Releases",3);
+		}else{
+			txt=m[0];
+			var exp=/<option.+?@([^"]+)"/g;
+			while(m=exp.exec(txt)){
+				vers.push(m[1]);
+				opts.push('<option value="'+m[1]+'">'+m[1]+'</option>');
+			};
+			if(!vers.length){
+				reclog("版本号页面已拉取，但未发现任何版本号，可能是此仓库没有任何Releases",3);
+			}else{
+				console.log("版本号列表",vers);
+				reclog("版本号列表加载完成，发现"+vers.length+"个版本");
+			}
 		};
-		txt=m[0];
-		var exp=/<option.+?@([^"]+)"/g,vers=[],opts=[];
-		while(m=exp.exec(txt)){
-			vers.push(m[1]);
-			opts.push('<option value="'+m[1]+'">'+m[1]+'</option>');
-		};
-		if(!vers.length){
-			reclog("版本号页面已拉取，但未发现任何版本号，可能是此仓库没有任何Releases");
-			return;
-		};
-		console.log("版本号列表",vers);
-		reclog("版本号列表加载完成，发现"+vers.length+"个版本");
 		
 		args_ver=args_ver||vers[0];
+		if(!args_ver){
+			reclog("未提供版本号参数，已终止处理。",3);
+			return;
+		}
 		rootUrl="https://cdn.jsdelivr.net/gh/"+urlInfo.owner+"/"+urlInfo.repo+"@"+args_ver;
 		
 		var slcVer=args_ver;//下拉选中的值
@@ -223,8 +230,10 @@ function Step_LoadVers(){
 			+'<div class="div_'+id+'"></div>');
 		
 		Step_LoadPage();
-	},function(err){
+	};
+	Load(url,loadEnd,function(err){
 		reclog("拉取列表失败："+err,"red;font-size:30px");
+		loadEnd("-1");
 	},true);
 };
 
@@ -276,7 +285,7 @@ function reclog(s,color){
 	var div=document.createElement("div");
 	var elem=document.querySelector(".OldVer_Logs");
 	elem.appendChild(div);
-	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
+	div.innerHTML='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color==3?"#f90":color)+'">['+t+']'+s+'</div>';
 };
 function ToA(url,txt){
 	return '<a href="'+url+'" target="_blank">'+(txt||url)+'</a>';
@@ -286,8 +295,10 @@ function Load(url,True,False,sync){
 	var xhr=new XMLHttpRequest();
 	oldOpen.call(xhr,"GET", url, !sync);
 	if(!sync)xhr.timeout=30000;
+	var end=0;
 	xhr.onreadystatechange=function(){
-		if(xhr.readyState==4){
+		if(!end && xhr.readyState==4){
+			end=1;
 			if(xhr.status<200 || xhr.status>299){
 				var msg="请求失败["+xhr.status+"]";
 				console.error(msg+" "+url,xhr);
@@ -297,7 +308,11 @@ function Load(url,True,False,sync){
 			}
 		}
 	};
-	xhr.send();
+	try{
+		xhr.send();
+	}catch(e){
+		xhr.onreadystatechange();
+	}
 };
 
 Step_LoadVers();

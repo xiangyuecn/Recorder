@@ -153,7 +153,7 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 
 > https环境搭建最佳实践：建议给自己的域名申请一个泛域名通配符证书（*.xxx.com），然后线上、本地开发均可使用此证书；本地开发环境直接分配一个二级域名（dev.xxx.com、local.xxx.com、192-168-1-123.xxx.com）解析A记录到电脑局域网的IP地址（192.168.1.123、127.0.0.1），方便本地开发跨端调试（本地如何配置https请针对自己的开发环境自行搜索，很容易）。
 > 
-> 泛域名通配符证书推荐在线免费申请：[ZeroSSL](https://zerossl.com/)、[Let’s Encrypt](https://letsencrypt.org/)；不建议自己生成根证书来签发域名证书，一个是流程复杂，每个设备均要导入根证书，致命的是很多现代浏览器不再信任用户目录下导入的根证书（Android）。
+> 泛域名通配符证书推荐在线免费申请：[ZeroSSL、Let’s Encrypt](https://xiangyuecn.gitee.io/acme-html-web-browser-client/ACME-HTML-Web-Browser-Client.html)；不建议自己生成根证书来签发域名证书，一个是流程复杂，每个设备均要导入根证书，致命的是很多现代浏览器不再信任用户目录下导入的根证书（Android）。
 
 
 ## 【1】加载框架

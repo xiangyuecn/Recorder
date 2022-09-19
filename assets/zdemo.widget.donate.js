@@ -12,8 +12,13 @@ var DonateWidget=function(set){
 };
 var Fn=function(set){
 	this.set={
-		log:function(htmlMsg){}
-		,mobElem:null
+		log:function(htmlMsg){} //自定义显示日志消息，返回false禁止控制台输出
+		,mobElem:null //移动端时显示到这个dom对象里，空不显示
+		
+		,viewOnly:false //仅显示，不提供关闭，点击页面按钮不弹框
+		,getTitle:function(title){} //自定义大标题html，返回空将使用默认
+		,getBtn:function(btn,val){} //自定义按钮名称html，返回空间使用默认；btn=0关闭 1已打赏
+		,onBtnClick:function(btn,isDialog,isFloat){} //当点击按钮时回调，返回false阻止默认动作
 	};
 	for(var k in set){
 		this.set[k]=set[k];
@@ -23,19 +28,23 @@ var Fn=function(set){
 	DonateWidget.cur=This;
 	
 	This.view();
-	window.addEventListener&&document.body.addEventListener("click",function(e){
-		if(/button/i.test(e.target.tagName) || /btn/i.test(e.target.className)){
-			try{
-				This.dialog();
-			}catch(e){}
-		};
-	});
+	if(!this.set.viewOnly&&window.addEventListener){
+		document.body.addEventListener("click",function(e){
+			if(/button/i.test(e.target.tagName) || /btn/i.test(e.target.className)){
+				try{
+					This.dialog();
+				}catch(e){}
+			};
+		});
+	};
 };
 Fn.prototype=DonateWidget.prototype={
 	log:function(htmlMsg){
 		htmlMsg='[打赏挂件]'+htmlMsg;
-		console.log(htmlMsg.replace(/<[^<>]+?>/g,""));
-		this.set.log(htmlMsg);
+		var val=this.set.log(htmlMsg);
+		if(val!==false){
+			console.log(htmlMsg.replace(/<[^<>]+?>/g,""));
+		}
 	}
 	,view:function(){
 		if(IsMobile){
@@ -43,10 +52,12 @@ Fn.prototype=DonateWidget.prototype={
 				this._render(false,false,this.set.mobElem);
 			};
 		}else{
-			var dis=localStorage["DonateWidget_SetDisable"];
-			if(dis && Date.now()-new Date(dis).getTime()<24*60*60*1000){
-				this.log('已禁用打赏挂件一天，可通过命令开启：DonateWidget.SetDisable(0)  <a href="" onclick="DonateWidget.SetDisable(0);return false">exec</a>');
-				return;
+			if(!this.set.viewOnly){
+				var dis=localStorage["DonateWidget_SetDisable"];
+				if(dis && Date.now()-new Date(dis).getTime()<24*60*60*1000){
+					this.log('已禁用打赏挂件一天，可通过命令开启：DonateWidget.SetDisable(0)  <a href="" onclick="DonateWidget.SetDisable(0);return false">exec</a>');
+					return;
+				};
 			};
 			
 			this.dialog(0,"Float");
@@ -76,7 +87,7 @@ Fn.prototype=DonateWidget.prototype={
 		var fixedElem=document.createElement("div");
 		fixedElem.innerHTML='\
 <div class="DonateWidget_dialog'+(_f||"Box")+'" style="z-index:'+zIndex+';position: fixed;display:flex;align-items:center;justify-content:center;'+(_f?'top:20%;right:5px':'left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.3)')+'">\
-	<div onclick="DonateWidget.cur.close(1,\''+(_f||"Box")+'\')" style="position: absolute;font-size:32px;cursor: pointer;top: 0;right:8px;color:#fff;">'+(_f?'×':'')+'</div>\
+	<div onclick="DonateWidget.cur.close(1,\''+(_f||"Box")+'\')" style="position: absolute;font-size:32px;cursor: pointer;top: 0;right:8px;color:#fff;" class="DonateWidget_XCloseBtn">'+(_f&&!this.set.viewOnly?'×':'')+'</div>\
 	<div class="DonateWidget_dialogRender"></div>\
 </div>';
 		document.body.appendChild(fixedElem);
@@ -90,7 +101,7 @@ Fn.prototype=DonateWidget.prototype={
 		for(var i=0;!title&&i<times.length;i++){
 			var time=new Date(times[i]).getTime();
 			var td=Math.ceil((time-now)/24/60/60/1000);
-			if(td<=45&&td>-25){
+			if(td<=20&&td>-20){
 				if(td>0){
 					title="剩余"+td+"天就过年了，给大伙拜个早年吧~ 赏包辣条？";
 				}else{
@@ -106,18 +117,23 @@ Fn.prototype=DonateWidget.prototype={
 			};
 		};
 		title=title||"赏包辣条？";
+		title=this.set.getTitle(title)||title;
+		var btn0=(isDialog?"再看吧，关掉先":"算了吧")+unescape("%uD83D%uDE36");
+		btn0=this.set.getBtn(0,btn0)||btn0;
+		var btn1='已打赏~ 壕气'+unescape("%uD83D%uDE18");
+		btn1=this.set.getBtn(1,btn1)||btn1;
 		
 		var min=IsMobile?true:isDialog?false:true;
 		elem.innerHTML='\
-<div style="border-radius:12px;background:linear-gradient(160deg, rgba(0,179,255,'+(isFloat?".7":"1")+') 20%, rgba(177,0,255,'+(isFloat?".7":"1")+') 80%);max-width:'+(min?300:520)+'px;padding:'+(min?20:30)+'px;text-align: center;">\
-	<div style="font-size:18px;color:#fff;">'+title+'</div>\
+<div class="DonateWidget_render" style="border-radius:12px;background:linear-gradient(160deg, rgba(0,179,255,'+(isFloat?".7":"1")+') 20%, rgba(177,0,255,'+(isFloat?".7":"1")+') 80%);max-width:'+(min?300:520)+'px;padding:'+(min?20:30)+'px;text-align: center;">\
+	<div style="font-size:18px;color:#fff;" class="DonateWidget_Title">'+title+'</div>\
 	<div style="padding-top:14px">\
 		<img src="'+ImgAlipay+'" style="width:'+(min?145:220)+'px">\
 		<img src="'+ImgWeixin+'" style="width:'+(min?145:220)+'px">\
 	</div>\
 	<div style="padding-top:10px">\
-		<button onclick="DonateWidget.cur.click(0,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn" style="margin-right:'+(min?10:40)+'px">'+(isDialog?"再看吧，关掉先":"算了吧")+unescape("%uD83D%uDE36")+'</button>\
-		<button onclick="DonateWidget.cur.click(1,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn">已打赏~ 壕气'+unescape("%uD83D%uDE18")+'</button>\
+		<button onclick="DonateWidget.cur.click(0,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn DonateWidget_Btn_0" style="margin-right:'+(min?10:40)+'px">'+btn0+'</button>\
+		<button onclick="DonateWidget.cur.click(1,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn DonateWidget_Btn_1">'+btn1+'</button>\
 	</div>\
 <style>\
 .DonateWidget_Btn{\
@@ -141,11 +157,16 @@ Fn.prototype=DonateWidget.prototype={
 	}
 	,click:function(ok,isDialog,isFloat){
 		localStorage["DonateWidget_Close"]=new Date().toDateString();
+		if(this.set.onBtnClick(ok,isDialog,isFloat)===false){
+			return;
+		}
 		if(isDialog){
 			this.close(1,"Box");
 		}else if(isFloat){
 			this.close(!ok,"Float");
-			ok&&DonateWidget.SetDisable(1);
+			if(!this.set.viewOnly){
+				ok&&DonateWidget.SetDisable(1);
+			}
 		};
 		
 		if(ok){
