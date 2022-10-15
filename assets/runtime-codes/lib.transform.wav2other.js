@@ -6,9 +6,11 @@
 文档：
 Recorder.Wav2Other(newSet,wavBlob,True,False)
 		newSet：Recorder的set参数，用来生成新格式，注意：要先加载好新格式的编码引擎
-		wavBlob：wav二进制数据
+		wavBlob：wav二进制数据，仅支持raw编码、支持单声道和双声道音频
 		True: fn(blob,duration,mockRec) 和Recorder的stop函数参数一致，mockRec为转码时用到的Recorder对象引用
 		False: fn(errMsg) 和Recorder的stop函数参数一致
+
+原理：raw编码的wav格式是直接在pcm数据前面加了一个wav头，本库编码的wav头是固定的44字节，其他编码器生成的wav头可能存在其他的数据块超过44字节。因此只需要寻找到wav头的大小，去掉此wav头即可得到pcm格式数据，然后再将pcm通过Recorder的mock方法转换成其他格式。
 ******************/
 
 //=====wav转其他格式核心函数==========
@@ -27,24 +29,43 @@ Recorder.Wav2Other=function(newSet,wavBlob,True,False){
 		};
 		var pcm;
 		if(eq(0,"RIFF")&&eq(8,"WAVEfmt ")){
-			if(wavView[20]==1 && wavView[22]==1){//raw pcm 单声道
+			var numCh=wavView[22];
+			if(wavView[20]==1 && (numCh==1||numCh==2)){//raw pcm 单或双声道
 				var sampleRate=wavView[24]+(wavView[25]<<8)+(wavView[26]<<16)+(wavView[27]<<24);
 				var bitRate=wavView[34]+(wavView[35]<<8);
-				console.log("wav info",sampleRate,bitRate);
-				if(bitRate==16){
-					pcm=new Int16Array(wavView.buffer.slice(44));
-				}else if(bitRate==8){
-					pcm=new Int16Array(wavView.length-44);
-					//8位转成16位
-					for(var j=44,d=0;j<wavView.length;j++,d++){
-						var b=wavView[j];
-						pcm[d]=(b-128)<<8;
+				//搜索data块的位置
+				var dataPos=0; // 44 或有更多块
+				for(var i=12,iL=wavView.length-8;i<iL;){
+					if(wavView[i]==100&&wavView[i+1]==97&&wavView[i+2]==116&&wavView[i+3]==97){//eq(i,"data")
+						dataPos=i+8;break;
+					}
+					i+=4;
+					i+=4+wavView[i]+(wavView[i+1]<<8)+(wavView[i+2]<<16)+(wavView[i+3]<<24);
+				}
+				console.log("wav info",sampleRate,bitRate,numCh,dataPos);
+				if(dataPos){
+					if(bitRate==16){
+						pcm=new Int16Array(wavView.buffer.slice(dataPos));
+					}else if(bitRate==8){
+						pcm=new Int16Array(wavView.length-dataPos);
+						//8位转成16位
+						for(var j=dataPos,d=0;j<wavView.length;j++,d++){
+							var b=wavView[j];
+							pcm[d]=(b-128)<<8;
+						};
 					};
+				};
+				if(pcm && numCh==2){//双声道简单转单声道
+					var pcm1=new Int16Array(pcm.length/2);
+					for(var i=0;i<pcm1.length;i++){
+						pcm1[i]=(pcm[i*2]+pcm[i*2+1])/2;
+					}
+					pcm=pcm1;
 				};
 			};
 		};
 		if(!pcm){
-			False&&False("非单声道wav raw pcm格式音频，无法转码");
+			False&&False("非单或双声道wav raw pcm格式音频，无法转码");
 			return;
 		};
 		

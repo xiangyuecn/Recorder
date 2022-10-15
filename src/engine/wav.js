@@ -58,9 +58,9 @@ Recorder.prototype.wav=function(res,True,False){
 		/* sample rate */
 		write32(sampleRate);
 		/* byte rate (sample rate * block align) */
-		write32(sampleRate*(bitRate/8));
+		write32(sampleRate*(bitRate/8));// *1 声道
 		/* block align (channel count * bytes per sample) */
-		write16(bitRate/8);
+		write16(bitRate/8);// *1 声道
 		/* bits per sample */
 		write16(bitRate);
 		/* data chunk identifier */

@@ -288,11 +288,22 @@ var skipWavHead=function(wavView){
 		if(wavView[20]==1 && (numCh==1||numCh==2)){//raw pcm
 			var sampleRate=wavView[24]+(wavView[25]<<8)+(wavView[26]<<16)+(wavView[27]<<24);
 			var bitRate=wavView[34]+(wavView[35]<<8);
-			console.log("wav info",sampleRate,bitRate,numCh);
+			//搜索data块的位置
+			var dataPos=0; // 44 或有更多块
+			for(var i=12,iL=wavView.length-8;i<iL;){
+				if(wavView[i]==100&&wavView[i+1]==97&&wavView[i+2]==116&&wavView[i+3]==97){//eq(i,"data")
+					dataPos=i+8;break;
+				}
+				i+=4;
+				i+=4+wavView[i]+(wavView[i+1]<<8)+(wavView[i+2]<<16)+(wavView[i+3]<<24);
+			}
+			console.log("wav info",sampleRate,bitRate,numCh,dataPos);
 			
-			return {
-				u8arr:new Uint8Array(wavView.buffer.slice(44))
-				,info:{bitRate:bitRate,sampleRate:sampleRate,numChannels:numCh}
+			if(dataPos){
+				return {
+					u8arr:new Uint8Array(wavView.buffer.slice(dataPos))
+					,info:{bitRate:bitRate,sampleRate:sampleRate,numChannels:numCh}
+				};
 			};
 		};
 	};
@@ -445,9 +456,9 @@ var createWavClick=function(){
 	/* sample rate */
 	write32(sampleRate);
 	/* byte rate (sample rate * block align) */
-	write32(sampleRate*(bitRateNew/8));
+	write32(sampleRate*(numChannelsNew*bitRateNew/8));
 	/* block align (channel count * bytes per sample) */
-	write16(bitRateNew/8);
+	write16(numChannelsNew*bitRateNew/8);
 	/* bits per sample */
 	write16(bitRateNew);
 	/* data chunk identifier */
