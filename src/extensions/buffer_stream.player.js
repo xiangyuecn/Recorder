@@ -146,7 +146,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		};
 		
 		var support=1;
-		if(!Recorder.Support()){
+		if(!Recorder.GetContext()){
 			support=0;
 		}else{
 			var source=Recorder.Ctx.createBufferSource();
@@ -721,7 +721,7 @@ var FadeInOut=BufferStreamPlayer.FadeInOut=function(arr,sampleRate){
 
 /**解码音频文件成pcm**/
 var DecodeAudio=BufferStreamPlayer.DecodeAudio=function(arrayBuffer,True,False){
-	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+	if(!Recorder.GetContext()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 		False&&False("浏览器不支持音频解码");
 		return;
 	};

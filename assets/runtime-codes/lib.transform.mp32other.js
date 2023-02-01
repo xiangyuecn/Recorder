@@ -17,7 +17,7 @@ Recorder.Mp32Other(newSet,mp3Blob,True,False)
 
 //=====mp3转其他格式核心函数==========
 Recorder.Mp32Other=function(newSet,mp3Blob,True,False){
-	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+	if(!Recorder.GetContext()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 		False&&False("浏览器不支持mp3解码");
 		return;
 	};

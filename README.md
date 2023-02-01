@@ -3,13 +3,13 @@
 
 # :open_book:Recorder用于html5录音
 
-[​](?Ref=Desc&Start)支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、iOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信、小程序WebView)、大部分2021年后更新的Android手机自带浏览器；不支持：~~UC系内核（典型的支付宝），大部分未更新的老旧国产手机自带浏览器，低版本iOS(11.0-14.2)上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
+[​](?Ref=Desc&Start)支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、iOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信、小程序WebView)、uni-app(App、H5)、大部分2021年后更新的Android手机自带浏览器；不支持：~~UC系内核（典型的支付宝），大部分未更新的老旧国产手机自带浏览器，低版本iOS(11.0-14.2)上除Safari外的其他任何形式的浏览器（含PWA、WebClip、任何App内网页）~~。
 
 支持对任意`MediaStream`进行音频录制、实时处理，包括：`getUserMedia返回的流`、`WebRTC中的remote流`、`audio、video标签的captureStream方法返回的流`、`自己创建的流` 等等。
 
 提供多个插件功能支持：拥有丰富的音频可视化、变速变调处理、语音识别、音频流播放等；搭配上强大的实时处理支持，可用于各种网页应用：从简单的录音，到复杂的实时语音识别（ASR），甚至音频相关的游戏，都能从容应对。
 
-音频文件的播放：可直接使用常规的`Audio HTML标签`来播放完整的音频文件，参考文档下面的【快速使用】部分，有播放例子；上传了的录音直接将音频链接赋值给`audio.src`即可播放；本地的`blob音频文件`可通过`URL.createObjectURL`来生成本地链接赋值给`audio.src`即可播放，或者将blob对象直接赋值给`audio.srcObject`（兼容性没有src高）。实时的音频片段文件播放，可以使用本库自带的`BufferStreamPlayer`插件来播放，简单高效，或者采用别的途径播放。
+音频文件的上传和播放：可直接使用常规的`Audio HTML标签`来播放完整的音频文件，参考文档下面的【快速使用】部分，有上传和播放例子；上传了的录音直接将音频链接赋值给`audio.src`即可播放；本地的`blob音频文件`可通过`URL.createObjectURL`来生成本地链接赋值给`audio.src`即可播放，或者将blob对象直接赋值给`audio.srcObject`（兼容性没有src高）。实时的音频片段文件播放，可以使用本库自带的`BufferStreamPlayer`插件来播放，简单高效，或者采用别的途径播放。
 
 **如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加本文档下面的QQ群，联系群主（即作者），谢谢~**
 
@@ -56,7 +56,7 @@
 > 对于不支持录音的浏览器，引入js和调用相关方法都不会产生异常（IE8+），会进入相关的fail回调；一般在open的时候就能检测到不支持或被用户拒绝了权限，可在用户开始录音之前提示浏览器不支持录音或授权。
 
 
-> 如需在Hybrid App WebView内使用（支持iOS、Android），请参阅本文档下面的【快速使用】中附带的示例，参考示例代码给网页授予录音权限，或直接由App底层提供接口给H5调用（[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录内有源码）。
+> 如需在Hybrid App WebView内使用（支持iOS、Android，包括uni-app），请参阅本文档下面的【快速使用】中附带的示例，参考示例代码给网页授予录音权限，或直接由App底层提供接口给H5调用（[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录内有源码）。
 
 
 > *低版本iOS兼容、老旧国产手机自带浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
@@ -390,9 +390,18 @@ iOS 14.3+：新版本iOS WKWebView已支持H5录音，但作者还未测试，�
 iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含iOS App源码。
 
 
+[​](?)
 
+## 【附】UniApp - uni-app(App、H5)集成参考
+只要是WebView环境，且能访问到window对象，就能直接使用Recorder录音。uni-app中的`renderjs`是直接运行在视图层WebView中的，因此可以通过在`renderjs`中加载Recorder来进行录音；支持App、H5，但不支持小程序（小程序可用web-view组件加载H5，或调用小程序自己的录音接口）。
 
+注意在开发App平台的代码时，需在调用`rec.open`前，在原生层获取到录音权限；和上面的Android和iOS一样先配置好录音权限声明，再调用权限请求接口，在逻辑层中编写js权限处理代码（非renderjs层），参考：
+- Android：直接调用`plus.android.requestPermissions(["android.permission.RECORD_AUDIO"],callback)`得到权限；
+- iOS：通过反射`audioSession=plus.ios.importClass("AVAudioSession").sharedInstance()`，调用`status=audioSession.recordPermission()`来判断是否有权限：`status=1735552628 granted`为已获得权限；`status=1970168948 undetermined`为从未授权过，此时要调用`audioSession.requestRecordPermission(callback)`来请求权限（回调中从头再判断一遍权限）；`status=其他值 eg:1684369017 denied`代表无权限。
 
+除了请求权限这个差异外，App和H5没有区别。但App需注意的是，uni-app的逻辑层和视图层数据交互性能实在太拉跨了，大点的录音二进制数据传回给逻辑层可能会异常缓慢，就算用plus接口在renderjs中保存到本地文件，会发现plus接口的坑更多（他们框架对于二进制操作几乎没有任何性能可言）。
+
+App端建议使用原生插件来录音，没有这些框架缺陷带来的性能问题，修改`RecordApp`对接原生插件来录音。作者已编译好了Android原生录音`.aar module 25KB`、iOS原生录音`.a library 200KB`，集成到项目的`nativeplugins`目录中；逻辑层中通过`uni.requireNativePlugin`来获取接口给`RecordApp`调用，RecordApp会自动识别App和网页环境，App中走原生录音，网页中走H5录音；此原生插件暂未开源，如需请加上面的QQ群联系群主付费购买。
 
 
 
@@ -555,9 +564,9 @@ set={
 只要open成功后，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误；另外open操作可能需要花费比较长时间，如果中途调用了stop，open完成时（同步）的任何start调用将会被自动阻止，也是不会有提示的。
 
 ### 【方法】rec.stop(success,fail,autoClose)
-结束录音并返回录音数据`blob对象`，拿到blob对象就可以为所欲为了，不限于立即播放、上传
+结束录音并返回录音数据`blob文件对象`，拿到blob文件对象就可以为所欲为了，不限于立即播放、上传；blob可以用`XMLHttpRequest+FormData`、`WebSocket`直接发送到服务器，或者用`FileReader`读取成`ArrayBuffer`或者`Base64`给js处理。
 
-`success(blob,duration)`：`blob`：录音数据audio/mp3|wav...格式，`duration`：录音时长，单位毫秒
+`success(blob,duration)`：`blob`：录音二进制文件数据audio/mp3|wav...格式，`duration`：录音时长，单位毫秒
 
 `fail(errMsg)`：录音出错回调
 
@@ -634,11 +643,17 @@ function transformOgg(pcmData){
 ### 【静态方法】Recorder.Support()
 判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
 
+### 【静态方法】Recorder.GetContext()
+获取全局的AudioContext对象，如果浏览器不支持将返回null；本方法调用一次后，可通过`Recorder.Ctx`来获得此对象，可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。
+
 ### 【静态方法】Recorder.IsOpen()
 由于Recorder持有的普通麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能。
 
 ### 【静态方法】Recorder.Destroy()
 销毁已持有的所有全局资源（AudioContext、Worker），当要彻底移除Recorder时需要显式的调用此方法。大部分情况下不调用Destroy也不会造成问题。
+
+### 【静态方法】Recorder.CLog
+全局的日志输出函数，可赋值一个空函数来屏蔽Recorder的日志输出`Recorder.CLog=function(){}`。
 
 ### 【静态属性】Recorder.TrafficImgUrl
 流量统计用1像素图片地址，在Recorder首次被实例化时将往这个地址发送一个请求，请求是通过Image对象来发送，安全可靠；默认开启统计，url为本库的51la统计用图片地址，为空响应流量消耗非常小，因此对使用几乎没有影响。
@@ -719,6 +734,12 @@ function transformOgg(pcmData){
 `pcmAbsSum`: pcm Int16所有采样的绝对值的和
 
 `pcmLength`: pcm长度
+
+
+### 【静态方法】Recorder.PowerDBFS(maxSample)
+计算音量，单位dBFS（满刻度相对电平），返回值：-100~0 （最大值0dB，最小值-100代替-∞）。
+
+`maxSample`: 为16位pcm采样的绝对值中最大的一个（计算峰值音量），或者为pcm中所有采样的绝对值的平局值
 
 
 

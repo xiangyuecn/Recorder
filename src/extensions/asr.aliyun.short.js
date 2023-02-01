@@ -175,7 +175,7 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 			This.log(err,1);
 			fail&&fail(err);
 		};
-		if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+		if(!Recorder.GetContext()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 			failCall("浏览器不支持音频解码");
 			return;
 		};

@@ -157,21 +157,8 @@ a:hover{
 		<div>
 			如果你有蛮有意思的有价值代码片段，欢迎把代码放到assets/runtime-codes目录内提交PR，我们共同丰富这个Demo列表&#128540;
 		</div>
-		
-		<div style="font-size:12px;color:#999;margin-top:10px">
-			顶上背景图来自 diygod.me
-			<a href="#" class="hideBG"></a>
-		</div>
 	</div>
 </div>
-<script>
-var hideBG=function(hide){
-	localStorage["hideBG"]=hide?"1":"";
-	$("body").css("backgroundImage",hide?"":"url(header-leg__diygod.me.jpg)");
-	$(".hideBG").html(hide?"显示":"不再显示").attr("onclick","hideBG("+(hide?0:1)+")");
-};
-hideBG(localStorage["hideBG"]);
-</script>
 
 
 
@@ -294,7 +281,7 @@ window.Runtime={
 	,DecodeAudio:function(fileName,arrayBuffer,True,False){
 		True=True||NOOP;
 		False=False||NOOP;
-		if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+		if(!Recorder.GetContext()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 			False("浏览器不支持音频解码");
 			return;
 		};

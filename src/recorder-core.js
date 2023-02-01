@@ -21,11 +21,12 @@ var NOOP=function(){};
 var Recorder=function(set){
 	return new initFn(set);
 };
-Recorder.LM="2022-08-06 20:51";
+Recorder.LM="2023-02-01 18:05";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
 var srcSampleRateTxt="srcSampleRate";
 var sampleRateTxt="sampleRate";
+var CatchTxt="catch";
 
 
 //是否已经打开了全局的麦克风录音，所有工作都已经准备好了，就等接收音频数据了
@@ -63,13 +64,6 @@ Recorder.BindDestroy=function(key,call){
 };
 //判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权，不会判断是否支持特定格式录音。
 Recorder.Support=function(){
-	var AC=window.AudioContext;
-	if(!AC){
-		AC=window.webkitAudioContext;
-	};
-	if(!AC){
-		return false;
-	};
 	var scope=navigator.mediaDevices||{};
 	if(!scope[getUserMediaTxt]){
 		scope=navigator;
@@ -78,8 +72,23 @@ Recorder.Support=function(){
 	if(!scope[getUserMediaTxt]){
 		return false;
 	};
-	
 	Recorder.Scope=scope;
+	
+	if(!Recorder.GetContext()){
+		return false;
+	};
+	return true;
+};
+//获取全局的AudioContext对象，如果浏览器不支持将返回null
+Recorder.GetContext=function(){
+	var AC=window.AudioContext;
+	if(!AC){
+		AC=window.webkitAudioContext;
+	};
+	if(!AC){
+		return null;
+	};
+	
 	if(!Recorder.Ctx||Recorder.Ctx.state=="closed"){
 		//不能反复构造，低版本number of hardware contexts reached maximum (6)
 		Recorder.Ctx=new AC();
@@ -92,7 +101,7 @@ Recorder.Support=function(){
 			};
 		});
 	};
-	return true;
+	return Recorder.Ctx;
 };
 
 
@@ -289,7 +298,7 @@ var connWorklet=function(){
 			if(badInt){//重新计时
 				nodeAlive();
 			};
-		})[calls&&"catch"](function(e){ //fix 关键字，保证catch压缩时保持字符串形式
+		})[CatchTxt](function(e){ //fix 关键字，保证catch压缩时保持字符串形式
 			CLog(audioWorklet+".addModule失败",1,e);
 			awNext()&&oldScript();
 		});
@@ -538,11 +547,25 @@ Recorder.PowerLevel=function(pcmAbsSum,pcmLength){
 	return level;
 };
 
+/*计算音量，单位dBFS（满刻度相对电平）
+maxSample: 为16位pcm采样的绝对值中最大的一个（计算峰值音量），或者为pcm中所有采样的绝对值的平局值
+返回值：-100~0 （最大值0dB，最小值-100代替-∞）
+*/
+Recorder.PowerDBFS=function(maxSample){
+	var val=Math.max(0.1, maxSample||0),Pref=0x7FFF;
+	val=Math.min(val,Pref);
+	//https://www.logiclocmusic.com/can-you-tell-the-decibel/
+	//https://blog.csdn.net/qq_17256689/article/details/120442510
+	val=20*Math.log(val/Pref)/Math.log(10);
+	return Math.max(-100,Math.round(val));
+};
 
 
 
-//带时间的日志输出，CLog(msg,errOrLogMsg, logMsg...) err为数字时代表日志类型1:error 2:log默认 3:warn，否则当做内容输出，第一个参数不能是对象因为要拼接时间，后面可以接无数个输出参数
-var CLog=function(msg,err){
+
+//带时间的日志输出，可设为一个空函数来屏蔽日志输出
+//CLog(msg,errOrLogMsg, logMsg...) err为数字时代表日志类型1:error 2:log默认 3:warn，否则当做内容输出，第一个参数不能是对象因为要拼接时间，后面可以接无数个输出参数
+Recorder.CLog=function(msg,err){
 	var now=new Date();
 	var t=("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2)
@@ -565,8 +588,8 @@ var CLog=function(msg,err){
 		fn.apply(console,arr);
 	};
 };
+var CLog=function(){ Recorder.CLog.apply(this,arguments); };
 var IsLoser=true;try{IsLoser=!console.log.apply;}catch(e){};
-Recorder.CLog=CLog;
 
 
 
@@ -680,7 +703,7 @@ Recorder.prototype=initFn.prototype={
 		
 		//***********已直接提供了音频流************
 		if(This.set.sourceStream){
-			if(!Recorder.Support()){
+			if(!Recorder.GetContext()){
 				failCall("不支持此浏览器从流中获取录音");
 				return;
 			};
@@ -776,7 +799,7 @@ Recorder.prototype=initFn.prototype={
 			pro=Recorder.Scope[getUserMediaTxt]({audio:true},f1,f2);
 		};
 		if(pro&&pro.then){
-			pro.then(f1)[True&&"catch"](f2); //fix 关键字，保证catch压缩时保持字符串形式
+			pro.then(f1)[CatchTxt](f2); //fix 关键字，保证catch压缩时保持字符串形式
 		};
 	}
 	//关闭释放录音资源
@@ -1081,9 +1104,13 @@ Recorder.prototype=initFn.prototype={
 			}
 		};
 		if(ctx.state=="suspended"){
-			This.CLog("wait ctx resume...");
+			var tag="AudioContext resume: ";
+			This.CLog(tag+"wait...");
 			ctx.resume().then(function(){
-				This.CLog("ctx resume");
+				This.CLog(tag+ctx.state);
+				end();
+			})[CatchTxt](function(e){ //比较少见，可能对录音没有影响
+				This.CLog(tag+ctx.state+" 可能无法录音："+e.message,1,e);
 				end();
 			});
 		}else{
@@ -1346,7 +1373,9 @@ var WebM_Extract=function(inBytes, scope){
 		if(BytesEq(eid1, [0xA3])){//SimpleBlock完整数据
 			var trackNo=bytes1[0]&0xf;
 			var track=tracks[trackNo];
-			if(track.idx===0){
+			if(!track){//不可能没有，数据出错？
+				CLog("WebM !Track"+trackNo,1,tracks);
+			}else if(track.idx===0){
 				var u8arr=new Uint8Array(bytes1.length-4);
 				for(var i=4;i<bytes1.length;i++){
 					u8arr[i-4]=bytes1[i];

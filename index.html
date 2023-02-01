@@ -152,7 +152,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2022-08-06 21:36";
+var PageLM="2023-02-01 21:37";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -1129,7 +1129,7 @@ var ReadBlob=function(blob,call){
 var DecodeAudio=function(fileName,arrayBuffer,True,False){
 	True=True||function(){};
 	False=False||function(){};
-	if(!Recorder.Support()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
+	if(!Recorder.GetContext()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
 		False("浏览器不支持音频解码");
 		return;
 	};

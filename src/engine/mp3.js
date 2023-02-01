@@ -69,7 +69,7 @@ Recorder.prototype.mp3=function(res,True,False){
 //全局共享一个Worker，后台串行执行。如果每次都开一个新的，编码速度可能会慢很多，可能是浏览器运行缓存的因素，并且可能瞬间产生多个并行操作占用大量cpu
 var mp3Worker;
 Recorder.BindDestroy("mp3Worker",function(){
-	console.log("mp3Worker Destroy");
+	Recorder.CLog("mp3Worker Destroy");
 	mp3Worker&&mp3Worker.terminate();
 	mp3Worker=null;
 });
@@ -227,7 +227,7 @@ Recorder.prototype.mp3_stop=function(startCtx){
 			opens++;
 		};
 		if(opens){
-			console.warn("mp3 worker剩"+opens+"个在串行等待");
+			Recorder.CLog("mp3 worker剩"+opens+"个在串行等待",3);
 		};
 	};
 };
@@ -397,7 +397,7 @@ rm:Recorder.mp3ReadMeta
 var mp3TrimFixSetMeta=function(meta,set){
 	var tag="MP3信息 ";
 	if(meta.sampleRate&&meta.sampleRate!=set.sampleRate || meta.bitRate&&meta.bitRate!=set.bitRate){
-		console.warn(tag+"和设置的不匹配set:"+set.bitRate+"kbps "+set.sampleRate+"hz，已更新set:"+meta.bitRate+"kbps "+meta.sampleRate+"hz",set);
+		Recorder.CLog(tag+"和设置的不匹配set:"+set.bitRate+"kbps "+set.sampleRate+"hz，已更新set:"+meta.bitRate+"kbps "+meta.sampleRate+"hz",3,set);
 		set.sampleRate=meta.sampleRate;
 		set.bitRate=meta.bitRate;
 	};
@@ -413,9 +413,9 @@ var mp3TrimFixSetMeta=function(meta,set){
 	};
 	
 	if(meta.err){
-		console.error(tag,meta.err,meta);
+		Recorder.CLog(tag,1,meta.err,meta);
 	}else{
-		console.log(tag,meta);
+		Recorder.CLog(tag,meta);
 	};
 };
 
