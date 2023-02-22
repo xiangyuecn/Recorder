@@ -21,6 +21,7 @@
 [ [H5 QuickStart](https://xiangyuecn.gitee.io/recorder/QuickStart.html) ]
 [ [H5 vue](https://xiangyuecn.gitee.io/recorder/assets/demo-vue/) ]
 [ [H5 ts](https://xiangyuecn.gitee.io/recorder/assets/demo-ts/) ]
+[ [旧版本测试](https://xiangyuecn.gitee.io/recorder/assets/工具-GitHub页面历史版本访问.html#url=xiangyuecn:Recorder@1.0.19120600,/) ]
 
 
 
@@ -59,7 +60,7 @@
 > 如需在Hybrid App WebView内使用（支持iOS、Android，包括uni-app），请参阅本文档下面的【快速使用】中附带的示例，参考示例代码给网页授予录音权限，或直接由App底层提供接口给H5调用（[app-support-sample](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)目录内有源码）。
 
 
-> *低版本iOS兼容、老旧国产手机自带浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话等问题也参阅下面的知识库。*
+> *不同iOS版本下的稳定性、低版本iOS兼容、老旧国产手机自带浏览器上的使用限制等问题和兼容请参阅下面的知识库部分；打开录音后对音频播放的影响、录音中途来电话、手机锁屏对录音的影响等问题也参阅下面的知识库。*
 
 
 
@@ -85,8 +86,10 @@
 14. [【教程】新录音从老录音接续、或录制中途插入音频](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.env_in.follow)
 15. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
 16. [【Demo库】PCM采样率提升](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
-17. [【测试】WebM格式解析并提取音频](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.webm.extract_audio)
-18. [【测试】音频可视化相关插件测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
+17. [【Demo库】【信号处理】IIR低通、高通滤波](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.lib.filter.iir)
+18. [【测试】【信号处理】FFT频域分析ECharts频谱曲线图](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.test.fft.analysis)
+19. [【测试】WebM格式解析并提取音频](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.webm.extract_audio)
+20. [【测试】音频可视化相关插件测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
 
 
 ### App Demo
@@ -463,6 +466,8 @@ iOS其他浏览器|iOS 14.3+|iOS 14.3+
 ## 已知问题
 
 > 此处已清除7个已知问题，大部分无法解决的问题会随着时间消失；问题主要集中在iOS上，好在这玩意能更新
+
+*2023-02-22* iPhone 14：有部分开发者反馈iPhone14上关闭录音后再次打开录音，会出现无法录音的情况，目前并不清楚是只有iPhone14上有问题，还是iOS16均有问题；估计是新的WebKit改了相关源码印度阿三没有测试，js没办法解决此问题，静候iOS更新，也许下一个系统更新就自动修复了；建议针对iOS环境，全局只open一次，不要close，挂在那里录音，可减少iOS系统问题带来的影响（负优化+耗电）。
 
 *2020-04-26* Safari Bug：据QQ群内`1048506792`、`190451148`开发者反馈研究发现，IOS ?-13.X Safari内打开录音后，如果切换到了其他标签、或其他App并且播放了任何声音，此时将会中断已打开的录音（系统级的？），切换回正在录音的页面，这个页面的录音功能将会彻底失效，并且刷新也无法恢复录音；表现为关闭录音后再次打开录音，能够正常获得权限，但浏览器返回的采集到的音频为静默的PCM，此时地址栏也并未显示出麦克风图标，刷新这个标签也也是一样不能正常获得录音，只有关掉此标签新打开页面才可正常录音。如果打开录音后关闭了录音，然后切换到其他标签或App播放声音，然后返回录音页面，不会出现此问题。此为Safari的底层Bug。使用长按录音类似的用户交互可大幅度避免踩到这坨翔。
 

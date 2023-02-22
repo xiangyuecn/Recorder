@@ -1,15 +1,32 @@
 /******************
-《【测试】IIR低通、高通滤波》
+《【Demo库】【信号处理】IIR低通、高通滤波》
 作者：高坚果
 时间：2023-01-11 16:32
 
-移植java代码测试，测试结果： DigitalAudioFilter 比 MinimIIRFilter 过滤的干净，需要的频率能量损失也更小
+移植java代码测试，测试结果： IIRFilter_DigitalAudio 比 IIRFilter_Minim 过滤的干净，需要的频率能量损失也更小
+
+【文档】：
+filter=Recorder.IIRFilter_DigitalAudio(useLowPass, sampleRate, freq) //【推荐使用】
+filter=Recorder.IIRFilter_Minim(useLowPass, sampleRate, freq) //不推荐使用
+		useLowPass: true或false，true为低通滤波，false为高通滤波
+		sampleRate: 待处理pcm的采样率
+		freq: 截止频率Hz，最大频率为sampleRate/2
+				，低通时会切掉高于此频率的声音，高通时会切掉低于此频率的声音
+				，注意滤波并非100%的切掉不需要的声音，而是减弱频率对应的声音
+					，离截止频率越远对应声音减弱越厉害
+					，离截止频率越近声音就几乎无衰减
+
+创建好对应的filter，返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可：
+	for(var i=0;i<pcm.length;i++){ //pcm: Int16Array
+		newPcm[i]=filter( pcm[i] ); //对pcm的每个采样值处理一遍，即可得到滤波后的pcm数据
+		//newPcm[i]=filter_highPass( newPcm[i] ); //低通+高通组合一下就成了带通滤波
+	}
 ******************/
 
 /******Java代码1******/
 //https://gitee.com/52jian/digital-audio-filter/blob/master/src/main/java/com/zj/filter/AudioFilter.java
 //https://blog.csdn.net/Janix520/article/details/118411734
-Recorder.DigitalAudioFilter=function(useLowPass, sampleRate, freq){
+Recorder.IIRFilter_DigitalAudio=function(useLowPass, sampleRate, freq){
 	var Q=1;
 	var ov = 2 * Math.PI * freq / sampleRate;
 	var sn = Math.sin(ov);
@@ -43,7 +60,7 @@ Recorder.DigitalAudioFilter=function(useLowPass, sampleRate, freq){
 
 /******Java代码2******/
 //https://github.com/ddf/Minim/tree/master/src/main/java/ddf/minim/effects
-Recorder.MinimIIRFilter=function(useLowPass, sampleRate, freq){
+Recorder.IIRFilter_Minim=function(useLowPass, sampleRate, freq){
 	var freqFrac = freq/sampleRate;
 	if(useLowPass=="FS"){ //LowPassFS.java
 		var x = Math.exp(-14.445 * freqFrac);
@@ -96,15 +113,17 @@ Runtime.Import([
 //显示控制按钮
 Runtime.Ctrls([
 	{html:'<div class="testChoiceFile"></div>'}
-	,{html:`
+	,{name:"或录一段音作为素材",click:"srcStart"}
+	,{name:"结束素材录音",click:"srcStop"}
+	,{html:`<hr />
 <div>
 	<div>低通：<input class="in_lowPassHz" style="width:100px">Hz，不填不滤波<span class="maxHz"></span></div>
 	<div>高通：<input class="in_highPassHz" style="width:100px">Hz，不填不滤波<span class="maxHz"></span></div>
 	<div>采样率：<input class="in_sampleRate" style="width:100px">，不填不转换采样率<span class="maxSampleRate"></span></div>
 </div>`}
-	,{name:"开始转换1",click:"test(1);Date.now"}
-	,{name:"开始转换2",click:"test(2);Date.now"}
-	,{name:"开始转换2_FS",click:"test(2,true);Date.now"}
+	,{name:"调用转换_DigitalAudio",click:"test(1);Date.now"}
+	,{name:"调用转换_Minim",click:"test(2);Date.now"}
+	,{name:"调用转换_Minim_FS",click:"test(2,true);Date.now"}
 	
 	,{choiceFile:{multiple:false,title:"解码",
 		process:function(fileName,arrayBuffer,filesCount,fileIdx,endCall){
@@ -130,6 +149,49 @@ Runtime.Ctrls([
 	}}
 ]);
 
+//调用录音
+var srcRec;
+function srcStart(){
+	srcRec&&srcRec.close();
+	
+	srcRec=Recorder({
+		type:"wav"
+		,sampleRate:16000
+		,bitRate:16
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx){
+			Runtime.Process.apply(null,arguments);
+			//支持实时滤波，在这里给buffers中的newBufferIdx开始的数据进行处理即可
+		}
+	});
+	var t=setTimeout(function(){
+		Runtime.Log("无法录音：权限请求被忽略（超时假装手动点击了确认对话框）",1);
+	},8000);
+	
+	srcRec.open(function(){//打开麦克风授权获得相关资源
+		clearTimeout(t);
+		srcRec.start();//开始录音
+	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+		clearTimeout(t);
+		Runtime.Log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg, 1);
+	});
+};
+function srcStop(){
+	if(!srcRec){
+		Runtime.Log("未开始素材录音",1);
+		return;
+	}
+	srcRec.stop(function(blob,duration){
+		setPcmData({//不要blob，直接取录制的pcm数据
+			pcm:Recorder.SampleData(srcRec.buffers,srcRec.srcSampleRate,srcRec.srcSampleRate).data
+			,sampleRate:srcRec.srcSampleRate
+			,isRec:true
+		})
+	},function(msg){
+		Runtime.Log("录音失败:"+msg, 1);
+	},true);
+};
+
+//设置待转换的pcm数据
 $(".testChoiceFile").append($(".RuntimeChoiceFileBox"));
 var pcmData;
 var setPcmData=function(data){
@@ -141,14 +203,15 @@ var setPcmData=function(data){
 		type:"wav",bitRate:16,sampleRate:data.sampleRate
 	}).mock(data.pcm,data.sampleRate);
 	rec.stop(function(blob,duration){
-		Runtime.LogAudio(blob,duration,rec,"文件解码成功");
+		Runtime.LogAudio(blob,duration,rec,data.isRec?"":"文件解码成功");
 		Runtime.Log("pcm数据已准备好，可以开始转换了，pcm.sampleRate="+data.sampleRate,2);
 	});
 };
 
+//调用测试
 var test=function(fn,useFS){
 	if(!pcmData){
-		Runtime.Log("请先拖一个文件进来解码",1);
+		Runtime.Log("请先录个素材或拖一个文件进来解码",1);
 		return;
 	}
 	var srcSampleRate=pcmData.sampleRate;
@@ -158,9 +221,17 @@ var test=function(fn,useFS){
 	
 	var lowPass=null,highPass=null,fnName="";
 	if(fn==1){
-		fnName="DigitalAudioFilter";
+		fnName="IIRFilter_DigitalAudio";
 	}else{
-		fnName="MinimIIRFilter";
+		fnName="IIRFilter_Minim";
+	}
+	if(useFS && (fnName!="IIRFilter_Minim" || !lowPassHz)){
+		Runtime.Log("FS参数只支持 IIRFilter_Minim 低通滤波",1);
+		return;
+	}
+	if(!lowPassHz && !highPassHz){
+		Runtime.Log("至少要填一个滤波频率参数",1);
+		return;
 	}
 	if(lowPassHz)
 		lowPass=Recorder[fnName](useFS?"FS":true,srcSampleRate,lowPassHz);
