@@ -32,12 +32,12 @@ Runtime.Ctrls([
 		每次fft转换出来的结果长度为fftSize/2；
 		fftSize越大识别的频率精度越高，但每次计算需要的pcm长度越长，越难识别时长很短的信号，每次的计算量也会很大；
 		fftSize越小识别的频率精度越低，越能识别时长很短的信号，每次的计算量也会越小。
-		<br>结果中每位元素对应的频率是固定的，最后一位的频率为sampleRate/2Hz，其他位的频率均分计算。
+		<br>结果中每位元素对应的频率是固定的，频率范围0~sampleRate/2Hz(Max)，每位的频率均分(Avg)计算，最后一位的频率为(Max-Avg)~Max。
 		<br>结果每位的值为此频率的信号强度，越大代表这个频率的声音越大。
 	</div>
 	<hr />
 	<div>滑动窗口大小：1/<input value="4" class="in_windowN" style="width:60px">，fft计算时，每次前进fftSize/n个采样，通过滑动窗口可避免漏掉信号</div>
-	<div>只显示频率：<input value="" placeholder="all" class="in_freqIdxs" style="width:300px">，取值1到fftSize/2（索引），多个用逗号隔开，支持'11-15,20-90'范围写法，为空显示fft结果中所有频率数据</div>
+	<div>只显示频率：<input value="" placeholder="all" class="in_showFreqs" style="width:300px">Hz，多个用逗号隔开，支持'110-150,200-900'范围写法，为空显示fft结果中所有频率数据</div>
 	<hr />
 	<div>截取起始时间：<input placeholder="0" class="in_subA" style="width:60px">ms，为0时从头开始计算</div>
 	<div>截取结束时间：<input placeholder="0" class="in_subB" style="width:60px">ms，为0时计算到结尾，时长不要过长，不然绘图性能感人</div>
@@ -48,7 +48,7 @@ Runtime.Ctrls([
 	</div>
 	<div>结果绘制：
 		<label><input type="checkbox" class="in_draw_Exact" checked>dsp.lib.fft_exact.js</label>
-		<label><input type="checkbox" class="in_draw_Fast">extensions/lib.fft.js</label>
+		<label><input type="checkbox" class="in_draw_Fast">extensions/lib.fft.js(频率不大准)</label>
 		<label><input type="checkbox" class="in_draw_Analyser">AudioContext.createAnalyser(浏览器接口，不可移植)</label>
 		<label><input type="checkbox" class="in_draw_addPcm">叠加PCM峰值</label>
 	</div>
@@ -200,7 +200,7 @@ var test=function(){
 	var fftSize=+$(".in_fftSize").val()||0;
 	var fftSampleRate=+$(".in_sampleRate").val()||0;
 	var windowN=+$(".in_windowN").val()||0;
-	var freqIdxs=$(".in_freqIdxs").val()
+	var showFreqs=$(".in_showFreqs").val()
 			.replace(/(\d+)\-(\d+)/g,function(v,a,b){
 				a=+a;b=+b; var s="";for(;a<=b;a++)s+=(s?',':'')+a; return s; })
 			.replace(/[^\d]+/g,",");
@@ -249,6 +249,16 @@ var test=function(){
 	var fftExact=Recorder.LibFFT_Exact(fftSize);
 	var hz0=fftSampleRate/fftSize;
 	
+	//转换需要显示的频率
+	var arr1=[],arr2=showFreqs.split(",");
+	for(var i=0;i<arr2.length;i++){
+		var v=arr2[i];if(v){ v=+v; var v0=v/hz0;
+			var v1=Math.round(hz0*Math.floor(v0)),v2=Math.round(hz0*Math.ceil(v0));
+			v=v-v1>v2-v?v2:v1; if(arr1.indexOf(v)==-1)arr1.push(v);
+		}
+	}
+	showFreqs=arr1.join(","); showFreqs&&console.log("showFreqs", showFreqs);
+	
 	//转换pcm的采样率到计算需要的采样率
 	var buffer=Recorder.SampleData([pcmData.pcm],pcmData.sampleRate,fftSampleRate).data;
 	if(subB<1)subB=Math.round(buffer.length/fftSampleRate*1000);
@@ -292,9 +302,9 @@ if(drawAddPcm){//叠加pcm峰值
 	series.push({name:pcmMaxsName, type: 'line', data:arr});
 }
 for(var i=0;i<item.fftDatas.length;i++){
-	var arr0=item.fftDatas[i];
-	if(!freqIdxs || (","+freqIdxs+",").indexOf(","+(i+1)+",")+1){
-		var hz=((i+1)*hz0).toFixed(2),arr=arr0;
+	var arr0=item.fftDatas[i],arr=arr0;
+	var hz=Math.round(i*hz0);
+	if(!showFreqs || (","+showFreqs+",").indexOf(","+hz+",")+1){
 		if(!useResRaw){ arr=[];
 			for(var j=0,L=arr0.length;j<L;j++){
 				arr[j]=Math.max(-60, arr0[j]-100);
