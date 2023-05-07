@@ -277,6 +277,7 @@ if(!window.localStorage){window.localStorage={
 		<span style="display: inline-block;">
 			<button onclick="recPlayLast()">播放</button>
 			<button onclick="recUploadLast()">上传</button>
+			<button onclick="recDownLast()">本地下载</button>
 		</span>
 	</div>
 	
@@ -322,6 +323,7 @@ if(!window.localStorage){window.localStorage={
 <div class="mainBox">
 	<audio class="recPlay" controls style="display:none;width:100%"></audio>
 	<div class="reclog"></div>
+	<div class="recLastLog" style="position:fixed;z-index:2;width:20vw;min-width:200px;max-height:100px;overflow:auto;right:0;bottom:0;background:#fff;padding:5px 10px;border-radius:6px 0 0 0;box-shadow:-1px -1px 3px #ddd;font-size:13px"></div>
 </div>
 
 <div class="mainBox">
@@ -568,11 +570,13 @@ function reclog(s,color){
 	var t=("0"+now.getHours()).substr(-2)
 		+":"+("0"+now.getMinutes()).substr(-2)
 		+":"+("0"+now.getSeconds()).substr(-2);
-	$(".reclog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>');
+	var html='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>';
+	$(".reclog").prepend(html);
+	$(".recLastLog").html(html.replace(/class\s*=/ig,"clazz="));
 };
 window.onerror=function(message, url, lineNo, columnNo, error){
 	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
-	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+	reclog('【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre>',1);
 };
 </script>
 
@@ -1089,6 +1093,13 @@ function recUploadLast(){
 	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
 	xhr.send(form);
 };
+function recDownLast(){
+	if(!recLogLast){
+		reclog("请先录音，然后停止后再下载",1);
+		return;
+	};
+	recdown(recLogLast.key);
+};
 function recdown(key){
 	var o=recblob[key];
 	if(o){
@@ -1103,8 +1114,10 @@ function recdown(key){
 		downA.href=(window.URL||webkitURL).createObjectURL(o.blob);
 		downA.download=name;
 		$("."+cls).prepend(downA);
-		if(!/mobile/i.test(navigator.userAgent)){
-			downA.click(); //某些软件内会跳转页面到恶心推广页
+		if(/mobile/i.test(navigator.userAgent)){
+			alert("因移动端绝大部分国产浏览器未适配Blob Url的下载，所以本demo代码在移动端未调用downA.click()。请尝试点击日志中显示的下载链接下载，无法下载就复制Base64");
+		}else{
+			downA.click();
 		}
 	};
 };

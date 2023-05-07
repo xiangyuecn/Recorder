@@ -146,6 +146,7 @@ a:hover{
 	<div class="mainBox mainLogBox">
 		<audio class="LogAudioPlayer" controls style="display:none;width:100%"></audio>
 		<div class="mainLog"></div>
+		<div class="mainLastLog" style="position:fixed;z-index:2;width:20vw;min-width:200px;max-height:100px;overflow:auto;right:0;bottom:0;background:#fff;padding:5px 10px;border-radius:6px 0 0 0;box-shadow:-1px -1px 3px #ddd;font-size:13px"></div>
 	</div>
 	
 	<div class="mainBox">
@@ -320,7 +321,9 @@ window.Runtime={
 		var t=("0"+now.getHours()).substr(-2)
 			+":"+("0"+now.getMinutes()).substr(-2)
 			+":"+("0"+now.getSeconds()).substr(-2);
-		$(".mainLog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+msg+'</div>');
+		var html='<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+msg+'</div>';
+		$(".mainLog").prepend(html);
+		$(".mainLastLog").html(html.replace(/class\s*=/ig,"clazz="));
 	}
 	,LogAudio:function(blob,duration,rec,msg){
 		var set=rec&&rec.set||{};
@@ -331,6 +334,7 @@ window.Runtime={
 	}
 	,LogClear:function(){
 		$(".mainLog").html("");
+		$(".mainLastLog").html("");
 		LogAudios.length=1;
 	}
 };
@@ -594,7 +598,7 @@ $(function(){
 			,success:function(data){
 				setVal(data);
 				
-				Runtime.Log("注意：编辑框内的代码是由本工具提供的运行环境支持，如果要copy代码到其他html内使用，需要把Runtime相关的调用删除或使用别的代码代替。","#f60");
+				Runtime.Log("注意：编辑框内的代码是由本工具提供的运行环境支持，如果要copy代码到其他html内使用，需要把Runtime相关的调用删除或使用别的代码代替。","#f60;font-weight:bold");
 				
 				var rn=(/《(.+?)》/.exec(data)||[])[1]||"";
 				if(name){

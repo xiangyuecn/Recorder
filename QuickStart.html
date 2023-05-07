@@ -111,6 +111,7 @@ if(/useCDN=([^&#]+)/.test(location.href)){
 			<span style="display: inline-block;">
 				<button onclick="recPlay()">播放</button>
 				<button onclick="recUpload()">上传</button>
+				<button onclick="recLocalDown()">本地下载</button>
 			</span>
 		</div>
 		
@@ -225,7 +226,7 @@ function recStop(){
 		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
 		
 		recBlob=blob;
-		reclog("已录制mp3："+formatMs(duration)+"ms "+blob.size+"字节，可以点击播放、上传了",2);
+		reclog("已录制mp3："+formatMs(duration)+"ms "+blob.size+"字节，可以点击播放、上传、本地下载了",2);
 	},function(msg){
 		reclog("录音失败:"+msg,1);
 	});
@@ -310,6 +311,32 @@ function recUpload(){
 	xhr.open("POST", api);
 	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
 	xhr.send(form);
+};
+
+
+/**本地下载**/
+function recLocalDown(){
+	if(!recBlob){
+		reclog("请先录音，然后停止后再下载",1);
+		return;
+	};
+	var cls=("a"+Math.random()).replace(".","");
+	reclog('点击 <span class="'+cls+'"></span> 下载');
+	
+	var fileName="recorder-"+Date.now()+".mp3";
+	var downA=document.createElement("A");
+	downA.innerHTML="下载 "+fileName;
+	downA.href=(window.URL||webkitURL).createObjectURL(recBlob);
+	downA.download=fileName;
+	document.querySelector("."+cls).appendChild(downA);
+	if(/mobile/i.test(navigator.userAgent)){
+		alert("因移动端绝大部分国产浏览器未适配Blob Url的下载，所以本demo代码在移动端未调用downA.click()。请尝试点击日志中显示的下载链接下载");
+	}else{
+		downA.click();
+	}
+	
+	//不用了时需要revokeObjectURL，否则霸占内存
+	//(window.URL||webkitURL).revokeObjectURL(downA.href);
 };
 
 

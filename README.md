@@ -154,9 +154,9 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 
 你可以通过阅读和运行[QuickStart.html](https://xiangyuecn.gitee.io/recorder/QuickStart.html)文件来快速入门学习，直接将`QuickStart.html`copy到你的(https、localhost)网站中，无需其他文件，就能正常开始测试了；**注意：需要在https、localhost等[安全环境](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia#Privacy_and_security)下才能进行录音。**
 
-> https环境搭建最佳实践：建议给自己的域名申请一个泛域名通配符证书（*.xxx.com），然后线上、本地开发均可使用此证书；本地开发环境直接分配一个二级域名（dev.xxx.com、local.xxx.com、192-168-1-123.xxx.com）解析A记录到电脑局域网的IP地址（192.168.1.123、127.0.0.1），方便本地开发跨端调试（本地如何配置https请针对自己的开发环境自行搜索，很容易）。
+> https环境搭建最佳实践：建议给自己的域名申请一个泛域名通配符证书（*.xxx.com），然后线上、本地开发均可使用此证书；本地开发环境直接分配一个三级域名（dev.xxx.com、local.xxx.com、192-168-1-123.xxx.com）解析A记录到电脑局域网的IP地址（192.168.1.123、127.0.0.1），方便本地开发跨端调试（本地如何配置https请针对自己的开发环境自行搜索，很容易）。
 > 
-> 泛域名通配符证书推荐在线免费申请：[ZeroSSL、Let’s Encrypt](https://xiangyuecn.gitee.io/acme-html-web-browser-client/ACME-HTML-Web-Browser-Client.html)；不建议自己生成根证书来签发域名证书，一个是流程复杂，每个设备均要导入根证书，致命的是很多现代浏览器不再信任用户目录下导入的根证书（Android）。
+> 获取泛域名通配符证书推荐：[在线免费申请（ZeroSSL、Let’s Encrypt）](https://xiangyuecn.gitee.io/acme-html-web-browser-client/ACME-HTML-Web-Browser-Client.html)；不建议自己生成根证书来签发域名证书，一个是流程复杂，每个设备均要导入根证书，致命的是很多现代浏览器不再信任用户目录下导入的根证书（Android）。
 
 
 ## 【1】加载框架
@@ -199,7 +199,7 @@ import 'recorder-core/src/extensions/waveview'
 [​](?RefEnd)
 
 ## 【2】调用录音，播放结果
-[​](?Ref=Codes&Start)这里假设只录3秒，录完后立即播放，[在线编辑运行此代码>>](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)
+[​](?Ref=Codes&Start)这里假设只录3秒，录完后立即播放，[在线编辑运行此代码>>](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)。录音结束后得到的是Blob二进制文件对象，可以下载保存成文件、用`FileReader`读取成`ArrayBuffer`或者`Base64`给js处理，或者参考下一节上传示例直接上传。
 ``` javascript
 //简单控制台直接测试方法：在任意(无CSP限制)页面内加载Recorder，加载成功后再执行一次本代码立即会有效果，import("https://xiangyuecn.gitee.io/recorder/recorder.mp3.min.js").then(function(s){console.log("import ok")}).catch(function(e){console.error("import fail",e)})
 
@@ -236,18 +236,21 @@ function recStart(){//打开了录音后才能进行start、stop调用
 /**结束录音**/
 function recStop(){
     rec.stop(function(blob,duration){
-        console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
+        
+        //简单利用URL生成本地文件地址，注意不用了时需要revokeObjectURL，否则霸占内存
+        //此地址只能本地使用，比如赋值给audio.src进行播放，赋值给a.href然后a.click()进行下载（a需提供download="xxx.mp3"属性）
+        var localUrl=(window.URL||webkitURL).createObjectURL(blob);
+        console.log(blob,localUrl,"时长:"+duration+"ms");
         rec.close();//释放录音资源，当然可以不释放，后面可以连续调用start；但不释放时系统或浏览器会一直提示在录音，最佳操作是录完就close掉
         rec=null;
         
-        //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
+        //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传、下载保存
         
         /*** 【立即播放例子】 ***/
         var audio=document.createElement("audio");
         audio.controls=true;
         document.body.appendChild(audio);
-        //简单利用URL生成播放地址，注意不用了时需要revokeObjectURL，否则霸占内存
-        audio.src=(window.URL||webkitURL).createObjectURL(blob);
+        audio.src=localUrl;
         audio.play();
     },function(msg){
         console.log("录音失败:"+msg);
@@ -569,7 +572,7 @@ set={
 只要open成功后，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误；另外open操作可能需要花费比较长时间，如果中途调用了stop，open完成时（同步）的任何start调用将会被自动阻止，也是不会有提示的。
 
 ### 【方法】rec.stop(success,fail,autoClose)
-结束录音并返回录音数据`blob文件对象`，拿到blob文件对象就可以为所欲为了，不限于立即播放、上传；blob可以用`XMLHttpRequest+FormData`、`WebSocket`直接发送到服务器，或者用`FileReader`读取成`ArrayBuffer`或者`Base64`给js处理。
+结束录音并返回录音数据`blob文件对象`，拿到blob文件对象就可以为所欲为了，不限于立即播放、上传、下载保存。blob可以用`URL.createObjectURL`生成本地链接赋值给`audio.src`进行播放，赋值给`a.href`然后`a.click()`进行下载（a需提供`download="xxx.mp3"`属性）；或用`XMLHttpRequest+FormData`、`WebSocket`直接发送到服务器，或者用`FileReader`读取成`ArrayBuffer`或者`Base64`给js处理。
 
 `success(blob,duration)`：`blob`：录音二进制文件数据audio/mp3|wav...格式，`duration`：录音时长，单位毫秒
 
