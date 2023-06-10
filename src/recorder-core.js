@@ -21,7 +21,7 @@ var NOOP=function(){};
 var Recorder=function(set){
 	return new initFn(set);
 };
-Recorder.LM="2023-02-01 18:05";
+Recorder.LM="2023-06-10 21:09";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
 var srcSampleRateTxt="srcSampleRate";
@@ -120,12 +120,8 @@ var Connect=function(streamStore,isUserMedia){
 	var ctx=Recorder.Ctx,stream=streamStore.Stream;
 	var mediaConn=function(node){
 		var media=stream._m=ctx.createMediaStreamSource(stream);
-		var ctxDest=ctx.destination,cmsdTxt="createMediaStreamDestination";
-		if(ctx[cmsdTxt]){
-			ctxDest=ctx[cmsdTxt]();
-		};
 		media.connect(node);
-		node.connect(ctxDest);
+		node.connect(ctx.destination);
 	}
 	var isWebM,isWorklet,badInt,webMTips="";
 	var calls=stream._call;
@@ -172,15 +168,9 @@ var Connect=function(streamStore,isUserMedia){
 		var process=stream._p=oldFn.call(ctx,bufferSize,1,1);//单声道，省的数据处理复杂
 		mediaConn(process);
 		
-		var _DsetTxt="_D220626",_Dset=Recorder[_DsetTxt];if(_Dset)CLog("Use "+RecTxt+"."+_DsetTxt,3);
 		process.onaudioprocess=function(e){
 			var arr=e.inputBuffer.getChannelData(0);
-			if(_Dset){//临时调试用的参数，未来会被删除
-				arr=new Float32Array(arr);//块是共享的，必须复制出来
-				setTimeout(function(){ onReceive(arr) });//立即退出回调，试图减少对浏览器录音的影响
-			}else{
-				onReceive(arr);
-			};
+			onReceive(arr);
 		};
 	};
 
@@ -209,10 +199,10 @@ var connWorklet=function(){
 				This.port.onmessage=function(e){
 					if(e.data.kill){
 						This.kill=true;
-						console.log("$RA kill call");
+						$C.log("$RA kill call");
 					}
 				};
-				console.log("$RA .ctor call", option);
+				$C.log("$RA .ctor call", option);
 			});
 			
 			//https://developer.mozilla.org/en-US/docs/Web/API/AudioWorkletProcessor/process 每次回调128个采样数据，1秒375次回调，高频导致移动端性能问题，结果就是回调次数缺斤少两，进而导致丢失数据，PC端似乎没有性能问题
@@ -241,9 +231,8 @@ var connWorklet=function(){
 		clazz+='}'
 			+'try{'
 				+'registerProcessor("'+RecProc+'", '+RecProc+')'
-			+'}catch(e){'
-				+'console.error("'+recAudioWorklet+'注册失败",e)'
-			+'}';
+			+'}catch(e){$C.error("'+recAudioWorklet+'注册失败",e)}';
+		clazz=clazz.replace(/\$C\./g,"console.");//一些编译器会文本替换日志函数
 		//URL.createObjectURL 本地有些浏览器会报 Not allowed to load local resource，直接用dataurl
 		return "data:text/javascript;base64,"+btoa(unescape(encodeURIComponent(clazz)));
 	};
@@ -657,7 +646,7 @@ Recorder.prototype=initFn.prototype={
 	
 	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
 	,open:function(True,False){
-		var This=this,streamStore=This._streamStore();
+		var This=this,set=This.set,streamStore=This._streamStore();
 		True=True||NOOP;
 		var failCall=function(errMsg,isUserNotAllow){
 			isUserNotAllow=!!isUserNotAllow;
@@ -702,14 +691,14 @@ Recorder.prototype=initFn.prototype={
 		
 		
 		//***********已直接提供了音频流************
-		if(This.set.sourceStream){
+		if(set.sourceStream){
 			if(!Recorder.GetContext()){
 				failCall("不支持此浏览器从流中获取录音");
 				return;
 			};
 			
 			Disconnect(streamStore);//可能已open过，直接先尝试断开
-			This.Stream=This.set.sourceStream;
+			This.Stream=set.sourceStream;
 			This.Stream._call={};
 			
 			try{
@@ -784,20 +773,18 @@ Recorder.prototype=initFn.prototype={
 			codeFail(code,"无法录音："+code);
 		};
 		
-		var trackSet={
-			noiseSuppression:false //默认禁用降噪，原声录制，免得移动端表现怪异（包括系统播放声音变小）
-			,echoCancellation:false //回声消除
-		};
-		var trackSet2=This.set.audioTrackSet;
-		for(var k in trackSet2)trackSet[k]=trackSet2[k];
+		var trackSet=set.audioTrackSet||{};
 		trackSet.sampleRate=Recorder.Ctx.sampleRate;//必须指明采样率，不然手机上MediaRecorder采样率16k
 		
+		var mSet={audio:trackSet};
 		try{
-			var pro=Recorder.Scope[getUserMediaTxt]({audio:trackSet},f1,f2);
+			var pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
 		}catch(e){//不能设置trackSet就算了
 			This.CLog(getUserMediaTxt,3,e);
-			pro=Recorder.Scope[getUserMediaTxt]({audio:true},f1,f2);
+			mSet={audio:true};
+			pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
 		};
+		This.CLog(getUserMediaTxt+"("+JSON.stringify(mSet)+")，一般默认会降噪和回声消除，移动端可能会降低系统播放音量，请参阅文档中audioTrackSet配置");
 		if(pro&&pro.then){
 			pro.then(f1)[CatchTxt](f2); //fix 关键字，保证catch压缩时保持字符串形式
 		};

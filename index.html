@@ -152,7 +152,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2023-02-01 21:37";
+var PageLM="2023-06-10 21:23";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -336,18 +336,20 @@ if(!window.localStorage){window.localStorage={
 	<div>
 		<span class="lb">noiseSuppression :</span>
 		<select class="trackSet_noise">
+			<option value="">不设置</option>
 			<option value="1">true</option>
-			<option value="2" selected>false</option>
+			<option value="2">false</option>
 		</select>
-		降噪配置开关（默认禁用）
+		降噪（ANS）配置开关
 	</div>
 	<div>
 		<span class="lb">echoCancellation :</span>
 		<select class="trackSet_aec">
+			<option value="">不设置</option>
 			<option value="1">true</option>
-			<option value="2" selected>false</option>
+			<option value="2">false</option>
 		</select>
-		回声消除配置开关（默认禁用）
+		回声消除（AEC）配置开关
 	</div>
 	<div>
 		<span class="lb">autoGainControl :</span>
@@ -356,11 +358,11 @@ if(!window.localStorage){window.localStorage={
 			<option value="1">true</option>
 			<option value="2">false</option>
 		</select>
-		自动增益配置开关
+		自动增益（AGC）配置开关
 	</div>
 	<div>
-		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效；
-		<span style="color:#aaa">移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放声音变小），所以默认禁用，使用原声录制（高音甜、中音准、低音沉，总之一句话就是通透），如需降噪、回声消除请测试好后再开启</span>
+		<span style="color:#f60">以上参数设置后需重新打开录音</span>；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效，这些参数浏览器一般默认为打开；
+		<span style="color:#aaa">移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放音量变小），但iOS上如果关闭又可能导致录音没有声音，如需更改配置请Android和iOS分别配置，并测试好</span>
 	</div>
 </div>
 
@@ -436,15 +438,6 @@ if(!window.localStorage){window.localStorage={
 		；为set中disableEnvInFix配置值
 	</label>
 	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a>如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</div>
-	
-	<div style="margin-top:12px;">
-		<span class="lb">临时调试选项 :</span>
-		<div><label>
-			<input type="checkbox" class="debugSet_D220626">
-			Recorder._D220626=true：ScriptProcessor立即退出回调，试图减少对浏览器录音的影响，有可能减少杂音，效果有待测试
-		</label></div>
-		<div><span style="color:#f60">以上参数设置后需重新打开录音</span>；这些参数仅供调试用，未来会被删除。</div>
-	</div>
 	
 	<div style="margin-top:12px;">
 		<span class="lb">Destroy :</span>
@@ -557,7 +550,7 @@ Recorder库修改时间（有可能修改了忘改）：${Recorder.LM}
 </pre>
 	
 	<span class="lb">问题自检 :</span> 录音时注意观察灰色区域是否有绿色音量跳动，没有绿色跳动说明Recorder没有获取到声音数据。如果测试发现mp3没有声音，可以试一下wav格式，如果wav格式有声音，说明内置lamejs mp3编码器有问题。如果都没有，下载下来播放看看有没有。下载下来也没有声音可以反馈一下。
-	<div style="padding-top:20px">
+	<div style="padding-top:20px;font-size:26px;color:#fa0">
 	如果浏览器不能正常录音，并且不确定是不是这个库的问题，可以到 <a href="https://xiangyuecn.gitee.io/recorder/assets/ztext_collab-project_videojs-record.html">assets/ztext_collab-project_videojs-record.html</a> 试一下。
 	</div>
 </div>
@@ -614,18 +607,12 @@ function recopen(){
 		reclog("已启用AudioWorklet"+(enableWebM?"（同时启用了MediaRecorder，AudioWorklet只会在MediaRecorder未生效时采用）":"")+"，"+workletTips,"#f60");
 	}
 	
-	var debugSet_D220626=$(".debugSet_D220626")[0].checked;
-	Recorder._D220626=debugSet_D220626;
-	if(debugSet_D220626){
-		reclog("已启用临时调试选项：Recorder._D220626=true","#f60");
-	};
-	
 	var audioTrackSet=null;
 	var trackSet_device=$(".trackSet_device").val();
 	var trackSet_noise=$(".trackSet_noise").val();
 	var trackSet_aec=$(".trackSet_aec").val();
 	var trackSet_gain=$(".trackSet_gain").val();
-	if(trackSet_device || trackSet_noise==1 || trackSet_aec==1 || trackSet_gain){
+	if(trackSet_device || trackSet_noise || trackSet_aec || trackSet_gain){
 		audioTrackSet={};
 		if(trackSet_device){
 			var device=DeviceList[+trackSet_device];
@@ -764,20 +751,22 @@ var callDestroy=function(){
 var DeviceList=[];
 var trackSetQueryDeviceList=function(click){
 	var end=function(list,err){
-		DeviceList=list;
-		if(click){
-			console.log("DeviceList: ", JSON.parse(JSON.stringify(DeviceList)));
-		}
-		
+		DeviceList=list; var list2=[];
 		var opts=['<option value="">'+(list.length?'不设置':err)+'</option>'];
 		for(var i=0;i<list.length;i++){
 			var o=list[i];
 			if(o.deviceId && o.kind=="audioinput"){
+				list2.push(o);
 				var name=o.label||((i+1)+"# 无名称，可能是因为从来没有打开过录音");
 				opts.push('<option value="'+i+'">'+name+'</option>');
 			}
 		}
-		$(".trackSet_device").html(opts.join(" "))
+		$(".trackSet_device").html(opts.join(" "));
+		
+		if(click){
+			console.log("DeviceList: ", JSON.parse(JSON.stringify(list)));
+			reclog("已重新拉取到"+list2.length+"个设备，可切换要使用的麦克风",2);
+		}
 	};
 	if(navigator.mediaDevices && navigator.mediaDevices.enumerateDevices){
 		navigator.mediaDevices.enumerateDevices().then(end)["catch"](function(e){

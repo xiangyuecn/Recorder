@@ -11,47 +11,54 @@
 <body>
 
 <audio id="myAudio" class="video-js vjs-default-skin"></audio>
+<div class="tipsShow" style="display:none;padding-top:20px">
+	<button onclick="playerOpen()">打开录音,请求权限</button>
+	<button onclick="playerClose()">关闭录音,释放资源</button>
+	<span style="margin-left:20px"></span>
+	<button onclick="playerStart()">开始录音</button>
+	<button onclick="playerStop()">结束录音</button>
+</div>
 
 <div style="padding:20px 0 200px">
 <div class="reclog"></div>
 
-<div>国外的玩意，除了好看就是容易误操作，上面如果是空白，代表：加载很慢↑↑↑↑ （也有可能是他们更新了页面，但这个测试html还未及时同步更新）</div>
-<div>显示出录音界面后，点击大麦克风按钮打开录音，再点击左下角圆点按钮开始录音，再点按钮结束录音，录完后点左下角的播放箭头播放</div>
+<div class="tipsHide" style="font-size:32px;color:#fa0">加载中... 上面如果是空白，代表：加载很慢↑↑↑↑ （也有可能是他们更新了页面，但这个测试html还未及时同步更新）</div>
+<div class="tipsShow" style="display:none">先点击打开录音，再点击开始录音（按钮操作方便些，播放器界面除了好看就是容易误操作）</div>
 
 <div style="padding-top:20px">
-	这个录出来的音频格式完全不可控，可能是webm、wav；但可以注入代码强制修改，录音时日志里面显示的“Using recorderType: xxx”决定了录音类型，替换GetRecorderType函数即可：
+	这个录出来的音频格式完全不可控，可能是webm、wav；但可以注入代码强制修改，录音时日志里面显示的“Initialized recorderType: xxx”决定了录音类型，替换GetRecorderType函数即可：
 	<div style="padding-top:10px">wav：<button onclick="setRecType(1)">改为StereoAudioRecorder录制wav，底层使用ScriptProcessor</button></div>
 	<div style="padding-top:10px">webm：<button onclick="setRecType(2)">改为MediaStreamRecorder录制webm，底层使用MediaRecorder</button></div>
 	<div style="padding-top:10px">未知：<button onclick="setRecType(0)">还原GetRecorderType，录音格式不可控</button></div>
 </div>
 <script>
 var setRecType=function(type){
-	if(!window.GetRecorderType){
+	if(!window.GetRecorderType__org){
 		reclog("还没有加载完成，请稍后设置",1);
 		return;
-	}
-	if(!window.GetRecorderType__){
-		window.GetRecorderType__=GetRecorderType;
 	}
 	if(type==1){
 		GetRecorderType=function(){ 
 			recorderType="ScriptProcessor-StereoAudioRecorder";
 			return StereoAudioRecorder
 		}
-		reclog("将使用ScriptProcessor录制wav格式");
+		reclog("强制使用ScriptProcessor录制wav格式","#0cb");
 	}else if(type==2){
 		GetRecorderType=function(){
 			recorderType="MediaRecorder-MediaStreamRecorder";
 			return MediaStreamRecorder
 		}
-		reclog("将使用MediaRecorder录制webm格式");
+		reclog("强制使用MediaRecorder录制webm格式","#0cb");
 	}else{
 		GetRecorderType=window.GetRecorderType__;
-		reclog("已还原GetRecorderType，录制格式不确定");
+		reclog("已还原GetRecorderType，录制格式不确定","#0cb");
 	}
 };
 var recorderType="";
 var initRecorderType=function(){
+	$(".tipsHide").hide();
+	$(".tipsShow").show();
+	if(window.GetRecorderType__org)return;
 	window.GetRecorderType__org=GetRecorderType;
 	window.GetRecorderType__=GetRecorderType=function(){
 		var val=GetRecorderType__org.apply(null, arguments);
@@ -63,16 +70,32 @@ var initRecorderType=function(){
 			recorderType="MediaRecorder-MediaStreamRecorder";
 		}
 		return val;
-	}
+	};
+	setRecType(1);
+};
+
+var playerOpen=function(){
+	player.record().getDevice();
+};
+var playerClose=function(){
+	player.record().stopDevice();
+	reclog("已关闭录音");
+};
+var playerStart=function(){
+	player.record().start();
+};
+var playerStop=function(){
+	player.record().stop();
 };
 </script>
-
-<div style="padding:20px 0">原始测试地址：<a href="https://collab-project.github.io/videojs-record/demo/audio-only.html">https://collab-project.github.io/videojs-record/demo/audio-only.html</a></div>
 
 <hr>
 
 <div>
-【测试方法】：使用上面的录音功能进行测试看看能否正常录音。
+<div style="font-size:32px;color:#0a0">
+	【测试方法】：使用上面的录音功能进行测试看看能否正常录音，播放听听录音内容是否正常。可以多关闭打开几次录音进行测试，在不同设备上进行测试（iOS重灾区）。
+	<div style="color:#fa0">如果ScriptProcessor模式下的录音有问题，请点击“改为MediaStreamRecorder录制webm，底层使用MediaRecorder”按钮，重新录音测试。</div>
+</div>
 
 <br><br>
 【附带测试】：
@@ -91,6 +114,15 @@ var initRecorderType=function(){
 
 Audio对录音的影响测试（<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>）；IOS Safari如果未开始过录音并且播放了音乐，然后后续录音将会有问题；再现方法(<a href="ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>)：刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。
 </div>
+
+
+<hr>
+
+<div style="padding:20px 0">
+	<div>原始测试地址：<a href="https://collab-project.github.io/videojs-record/demo/audio-only.html" target="_blank">https://collab-project.github.io/videojs-record/demo/audio-only.html</a></div>
+	<div>GitHub：<a href="https://github.com/collab-project/videojs-record" target="_blank">https://github.com/collab-project/videojs-record</a></div>
+</div>
+
 
 <script>
 function reclog(s,color){
@@ -208,8 +240,8 @@ if(/mobile/i.test(navigator.userAgent)){
 var options = {
     controls: true,
     bigPlayButton: false,
-    width: 600,
-    height: 300,
+    width: 320,
+    height: 180,
     plugins: {
         wavesurfer: {
             backend: 'WebAudio',
@@ -235,7 +267,7 @@ var options = {
         record: {
             audio: true,
             video: false,
-            maxLength: 20,
+            maxLength: 10*60*60,
             displayMilliseconds: true,
             debug: true
         }
@@ -254,17 +286,24 @@ var player = videojs('myAudio', options, function() {
         ', wavesurfer.js ' + WaveSurfer.VERSION + ' and recordrtc ' +
         RecordRTC.version;
     videojs.log(msg);
+	initRecorderType();
 });
 
 // error handling
 player.on('deviceError', function() {
     console.log('device error:', player.deviceErrorCode);
+	reclog("deviceError: "+player.deviceErrorCode,1);
 });
 
 player.on('error', function(element, error) {
     console.error(error);
+	reclog("error: "+(error&&error.message||error),1);
 });
 
+player.on('deviceReady', function() {
+    console.log('deviceReady');
+	reclog("deviceReady 已打开录音",2);
+});
 // user clicked the record button and started recording
 player.on('startRecord', function() {
     console.log('started recording!');
@@ -280,14 +319,12 @@ player.on('finishRecord', function() {
 	var blob=player.recordedData;
 	var name=blob.name
 	if(/webm$/i.test(name)){
-		reclog("已通过MediaRecorder录制了一个webm文件 "+blob.size+"字节",2);
+		reclog("已通过MediaRecorder录制了一个webm文件 "+blob.size+"字节，点播放器左下角的播放箭头播放",2);
 	}
 	if(/wav$/i.test(name)){
-		reclog("已通过ScriptProcessor录制了一个wav文件 "+blob.size+"字节",2);
+		reclog("已通过ScriptProcessor录制了一个wav文件 "+blob.size+"字节，点播放器左下角的播放箭头播放",2);
 	}
 });
-
-initRecorderType();
 </script>
 
 </body>
