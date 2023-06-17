@@ -48,6 +48,7 @@ logMeta('Recorder库修改时间（有可能修改了忘改）',mainRef.Rec.LM);
 logMeta('UA',navigator.userAgent);
 logMeta('URL',location.href.replace(/#.*/g,""));
 logMeta('Vue',vue_vue.version);
+mainRef.reclog('<span style="font-weight:bold">支持Vue2、Vue3，自己编写代码可按照仓库首页的README.md正常`import Recorder from \'recorder-core\'`使用就行，另外专门写了一篇文章《<a href="https://www.cnblogs.com/xiangyuecn/p/17472952.html" target="_blank">vue3实现H5网页录音并上传（mp3、wav）兼容Android、iOS和PC端</a>》方便参考</span>');
 mainRef.reclog('当前浏览器<span style="color:'+(mainRef.Rec.Support()?'#0b1">支持录音':'red">不支持录音')+'</span>');
 mainRef.reclog("点击打开录音，然后再点击录制开始录音",2);
 </script>

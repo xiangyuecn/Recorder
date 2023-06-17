@@ -7,6 +7,7 @@
 
 <title>裸(RAW、WAV)PCM转WAV播放测试和转码</title>
 
+<script src="../src/recorder-core.js"></script>
 <style>
 body{
 	word-wrap: break-word;
@@ -391,23 +392,9 @@ var createWavClick=function(){
 	
 	
 	//降低采样率
-	function sampleData(data, newSampleRate, oldSampleRate) {
-		var step=oldSampleRate/newSampleRate;
-		var fitCount = Math.floor(data.length / step);
-		var newData = new Int16Array(fitCount);
-		for (var i = 0; i < fitCount; i++) {
-			var tmp = i * step;
-			var before = Math.floor(tmp);
-			var after = Math.ceil(tmp);
-			var atPoint = tmp - before;
-			
-			newData[i] = data[before]+(data[after]-data[before])*atPoint;
-		}
-		return newData;
-	};
 	if(sampleRate>sampleRateNew){
-		resA=sampleData(resA,sampleRateNew,sampleRate);
-		resB=sampleData(resB,sampleRateNew,sampleRate);
+		resA=Recorder.SampleData([resA],sampleRate,sampleRateNew).data;
+		resB=Recorder.SampleData([resB],sampleRate,sampleRateNew).data;
 		sampleRate=sampleRateNew;
 	};
 	

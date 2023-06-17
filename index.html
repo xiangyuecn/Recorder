@@ -152,7 +152,7 @@ a:hover{
 
 <script>
 //兼容环境
-var PageLM="2023-06-10 21:23";
+var PageLM="2023-06-17 20:10";
 
 function RandomKey(){
 	return "randomkey"+(RandomKey.idx++);
@@ -248,6 +248,11 @@ if(!window.localStorage){window.localStorage={
 		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine" min=",beta-amr" addload="wav">amr(beta)</label>
 		</span>
 		<label><input type="checkbox" class="loadMinJs">请求压缩版</label>
+		
+		<div style="padding-left:56px" class="types">
+			<label><input type="radio" name="type" value="g711a" engine="g711x" min=",g711x" addload="wav">g711a</label>
+			<label><input type="radio" name="type" value="g711u" engine="g711x" min=",g711x" addload="wav">g711u</label>
+		</div>
 	</div>
 	<div class="pd">
 		<span class="lb">提示 :</span> <span class="typeTips">-</span>
@@ -1620,8 +1625,7 @@ function loadEngine(input){
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
 			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"
-				+(type=="wav"?"#0b1'>wav转码超快"
-				:type=="pcm"?"#0b1'>pcm转码超快"
+				+(enc.fast?"#0b1'>"+type+"转码超快"
 				:Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)"
 				:"red'>仅支持标准UI线程转码")
 			+"</span>，"+enc.testmsg];

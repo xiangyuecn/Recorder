@@ -449,7 +449,7 @@ Runtime.LogAudioPlay=function(id){
 				end(blob);
 				logmsg("已转码成wav播放");
 			},function(msg){
-				logmsg("转码成wav失败："+msg);
+				logmsg('<span style="color:red">转码成wav失败：'+msg+'</span>');
 			});
 		}else{
 			end(o.blob);
@@ -497,24 +497,29 @@ Runtime.ViewChoiceFile=function(set){
 		,title:"转换"
 		,mime:"audio/*"
 		,process:NOOP //fn(fileName,arrayBuffer,filesCount,fileIdx,endCall)
+		,keepOther:false
+		,cls:"RuntimeChoiceFile_"+(++Rnd)
 	},set);
 	
-	$(".RuntimeChoiceFileBox").remove();
+	var cls=set.cls;
+	if(!set.keepOther){
+		$(".RuntimeChoiceFileBox").remove();
+	}
 	Runtime.Log('\
-<div class="RuntimeChoiceFileBox">\
-	<div class="RuntimeChoiceDropFile" onclick="$(\'.RuntimeChoiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; text-align:center;cursor: pointer;">\
+<div class="RuntimeChoiceFileBox '+cls+'">\
+	<div class="RuntimeChoiceDropFile" onclick="$(\'.'+cls+' .RuntimeChoiceFile\').click()" style="border: 3px dashed #a2a1a1;background:#eee; padding:30px 0; text-align:center;cursor: pointer;">\
 	拖拽'+(set.multiple?"多":"一")+'个'+set.name+'文件到这里 / 点此选择，并'+set.title+'\
 	</div>\
 	<input type="file" class="RuntimeChoiceFile" style="display:none" accept="'+set.mime+'" '+(set.multiple?'multiple="multiple"':'')+'>\
 </div>');
-	$(".RuntimeChoiceDropFile").bind("dragover",function(e){
+	$("."+cls+" .RuntimeChoiceDropFile").bind("dragover",function(e){
 		e.preventDefault();
 	}).bind("drop",function(e){
 		e.preventDefault();
 		
 		readChoiceFile(e.originalEvent.dataTransfer.files);
 	});
-	$(".RuntimeChoiceFile").bind("change",function(e){
+	$("."+cls+" .RuntimeChoiceFile").bind("change",function(e){
 		readChoiceFile(e.target.files);
 	});
 	function readChoiceFile(files){
@@ -1130,6 +1135,7 @@ var demos=[
 ,{n:"【Demo库】【信号处理】IIR低通、高通滤波",k:"dsp.lib.filter.iir"}
 ,{n:"【测试】【信号处理】FFT频域分析ECharts频谱曲线图",k:"dsp.test.fft.analysis"}
 ,{n:"【测试】WebM格式解析并提取音频",k:"test.webm.extract_audio"}
+,{n:"【测试】G711、G72X编码和解码播放",k:"test.g7xx.engine"}
 ,{n:"【测试】音频可视化相关插件测试",k:"test.extensions.visualization"}
 
 ];

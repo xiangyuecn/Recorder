@@ -6,14 +6,16 @@ https://github.com/xiangyuecn/Recorder
 浏览器支持情况
 https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats
 
-编码原理：给pcm数据加上一个44直接的wav头即成wav文件；pcm数据就是Recorder中的buffers原始数据（重新采样），16位时为LE小端模式（Little Endian），实质上是未经过任何编码处理
+编码原理：给pcm数据加上一个44字节的wav头即成wav文件；pcm数据就是Recorder中的buffers原始数据（重新采样），16位时为LE小端模式（Little Endian），实质上是未经过任何编码处理
+
+注意：其他wav编码器可能不是44字节的头，要从任意wav文件中提取pcm数据，请参考：assets/runtime-codes/fragment.decode.wav.js
 */
 (function(){
 "use strict";
 
 Recorder.prototype.enc_wav={
-	stable:true
-	,testmsg:"支持位数8位、16位（填在比特率里面），采样率取值无限制"
+	stable:true,fast:true
+	,testmsg:"支持位数8位、16位（填在比特率里面），采样率取值无限制；此编码器仅在pcm数据前加了一个44字节的wav头，编码出来的16位wav文件去掉开头的44字节即可得到pcm（注：其他wav编码器可能不是44字节）"
 };
 Recorder.prototype.wav=function(res,True,False){
 		var This=this,set=This.set

@@ -273,6 +273,8 @@ if(!window.localStorage){window.localStorage={}};
 		<label><input type="radio" name="type" value="mp3" engine="mp3,mp3-engine" class="initType" checked>mp3</label>
 		<label><input type="radio" name="type" value="wav" engine="wav">wav</label>
 		<label><input type="radio" name="type" value="pcm" engine="pcm" addload="wav">pcm</label>
+		<label><input type="radio" name="type" value="g711a" engine="g711x" addload="wav">g711a</label>
+		<label><input type="radio" name="type" value="g711u" engine="g711x" addload="wav">g711u</label>
 		<label><input type="radio" name="type" value="ogg" engine="beta-ogg,beta-ogg-engine">ogg(beta)</label>
 		<label><input type="radio" name="type" value="webm" engine="beta-webm">webm(beta)</label>
 		<label><input type="radio" name="type" value="amr" engine="beta-amr,beta-amr-engine" addload="wav">amr(beta)</label>
@@ -986,8 +988,7 @@ function loadEngine(input){
 		var end=function(){
 			var enc=Recorder.prototype["enc_"+type];
 			var tips=[!enc?"这个编码器无提示信息":type+"编码器"+(enc.stable?"稳定版":"beta版")+"，<span style='color:"
-				+(type=="wav"?"#0b1'>wav转码超快"
-				:type=="pcm"?"#0b1'>pcm转码超快"
+				+(enc.fast?"#0b1'>"+type+"转码超快"
 				:Recorder.prototype[type+"_start"]?"#0b1'>支持边录边转码(Worker)"
 				:"red'>仅支持标准UI线程转码")
 			+"</span>，"+enc.testmsg];

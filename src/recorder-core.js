@@ -21,7 +21,7 @@ var NOOP=function(){};
 var Recorder=function(set){
 	return new initFn(set);
 };
-Recorder.LM="2023-06-10 21:09";
+Recorder.LM="2023-06-17 20:03";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
 var srcSampleRateTxt="srcSampleRate";
@@ -422,6 +422,9 @@ option:{ 可选，配置项
 	index:0 pcmDatas已处理到的索引
 	offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置
 	
+	//可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，新采样率大于pcm采样率的75%时不默认滤波），如果提供了配置但fn为null时将不滤波；sr为此滤波函数对应的初始化采样率，当采样率和pcmSampleRate参数不一致时将重新设为默认函数
+	filter:null||{fn:fn(sample),sr:pcmSampleRate}
+	
 	//仅作为返回值
 	frameNext:null||[Int16,...] 下一帧的部分数据，frameSize设置了的时候才可能会有
 	sampleRate:16000 结果的采样率，<=newSampleRate
@@ -429,9 +432,21 @@ option:{ 可选，配置项
 }
 */
 Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option){
+	var Txt="SampleData";
 	prevChunkInfo||(prevChunkInfo={});
 	var index=prevChunkInfo.index||0;
 	var offset=prevChunkInfo.offset||0;
+	
+	var filter=prevChunkInfo.filter;
+	if(filter&&filter.fn&&filter.sr!=pcmSampleRate){
+		filter=null; CLog(Txt+"的filter采样率变了，重设滤波",3);
+	};
+	if(!filter){//采样率差距比较大才开启低通滤波，最高频率用新采样率频率的3/4
+		var freq=newSampleRate>pcmSampleRate*3/4?0: newSampleRate/2 *3/4;
+		filter={fn:freq?Recorder.IIRFilter(true,pcmSampleRate,freq):0};
+	};
+	filter.sr=pcmSampleRate;
+	var filterFn=filter.fn;
 	
 	var frameNext=prevChunkInfo.frameNext||[];
 	option||(option={});
@@ -442,7 +457,7 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	
 	var nLen=pcmDatas.length;
 	if(index>nLen+1){
-		CLog("SampleData似乎传入了未重置chunk "+index+">"+nLen,3);
+		CLog(Txt+"似乎传入了未重置chunk "+index+">"+nLen,3);
 	};
 	var size=0;
 	for(var i=index;i<nLen;i++){
@@ -471,26 +486,27 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	for (;index<nLen;index++) {
 		var o=pcmDatas[index];
 		var i=offset,il=o.length;
-		while(i<il){
+		var oF=new Int16Array(il);//低通滤波后的数据
+		for(var i0=0,i2=1;i0<il;i0++,i2++){
+			if(i0==0) oF[0]=filterFn?filterFn(o[0]):o[0];
+			if(i2<il) oF[i2]=filterFn?filterFn(o[i2]):o[i2];
 			//res[idx]=o[Math.round(i)]; 直接简单抽样
 			
 			//https://www.cnblogs.com/xiaoqi/p/6993912.html
 			//当前点=当前点+到后面一个点之间的增量，音质比直接简单抽样好些
 			var before = Math.floor(i);
+			if(i0!=before)continue;
 			var after = Math.ceil(i);
 			var atPoint = i - before;
 			
-			var beforeVal=o[before];
-			var afterVal=after<il ? o[after]
-				: (//后个点越界了，查找下一个数组
-					(pcmDatas[index+1]||[beforeVal])[0]||0
-				);
+			var beforeVal=oF[before];
+			var afterVal=after<il ? oF[after] : beforeVal; //后个点越界了，忽略不计
 			res[idx]=beforeVal+(afterVal-beforeVal)*atPoint;
 			
 			idx++;
 			i+=step;//抽样
 		};
-		offset=i-il;
+		offset=Math.max(0, i-il); //不太可能出现负数
 	};
 	//帧处理
 	frameNext=null;
@@ -504,10 +520,43 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	return {
 		index:index
 		,offset:offset
+		,filter:filter
 		
 		,frameNext:frameNext
 		,sampleRate:newSampleRate
 		,data:res
+	};
+};
+
+/*IIR低通、高通滤波，移植自：https://gitee.com/52jian/digital-audio-filter AudioFilter.java
+	useLowPass: true或false，true为低通滤波，false为高通滤波
+	sampleRate: 待处理pcm的采样率
+	freq: 截止频率Hz，最大频率为sampleRate/2，低通时会切掉高于此频率的声音，高通时会切掉低于此频率的声音，注意滤波并非100%的切掉不需要的声音，而是减弱频率对应的声音，离截止频率越远对应声音减弱越厉害，离截止频率越近声音就几乎无衰减
+	返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）
+可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波*/
+Recorder.IIRFilter=function(useLowPass, sampleRate, freq){
+	var ov = 2 * Math.PI * freq / sampleRate;
+	var sn = Math.sin(ov);
+	var cs = Math.cos(ov);
+	var alpha = sn / 2;
+	
+	var a0 = 1 + alpha;
+	var a1 = (-2 * cs) / a0;
+	var a2 = (1 - alpha) / a0;
+	if(useLowPass){
+		var b0 = (1 - cs) / 2 / a0;
+		var b1 = (1 - cs) / a0;
+	}else{
+		var b0 = (1 + cs) / 2 / a0;
+		var b1 = -(1 + cs) / a0;
+	}
+	
+	var x1=0,x2=0,y=0,y1=0,y2=0;
+	return function(x){
+		y = b0 * x + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2;
+		x2 = x1; x1 = x;
+		y2 = y1; y1 = y;
+		return y;
 	};
 };
 

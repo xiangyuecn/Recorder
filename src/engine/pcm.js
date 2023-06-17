@@ -10,8 +10,8 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 Recorder.prototype.enc_pcm={
-	stable:true
-	,testmsg:"pcm为未封装的原始音频数据，pcm数据文件无法直接播放；支持位数8位、16位（填在比特率里面），采样率取值无限制"
+	stable:true,fast:true
+	,testmsg:"pcm为未封装的原始音频数据，pcm音频文件无法直接播放，可用Recorder.pcm2wav()转码成wav播放；支持位数8位、16位（填在比特率里面），采样率取值无限制"
 };
 Recorder.prototype.pcm=function(res,True,False){
 		var This=this,set=This.set

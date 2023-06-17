@@ -50,6 +50,7 @@ function Run_minify(){
 	minify("../dist/engine/mp3.js",["engine/mp3.js","engine/mp3-engine.js"]);
 	minify("../dist/engine/wav.js",["engine/wav.js"]);
 	minify("../dist/engine/pcm.js",["engine/pcm.js"]);
+	minify("../dist/engine/g711x.js",["engine/g711x.js"]);
 
 	minify("../dist/engine/beta-webm.js",["engine/beta-webm.js"]);
 	minify("../dist/engine/beta-ogg.js",["engine/beta-ogg.js","engine/beta-ogg-engine.js"]);

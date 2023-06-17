@@ -247,10 +247,14 @@ var test=function(fn,useFS){
 	}
 	
 	Runtime.Log("开始转换"+fn+" "+fnName+(useFS?".FS":"")+"："+JSON.stringify({lowPass:lowPassHz,highPass:highPassHz,sampleRate:newSampleRate,srcSampleRate:srcSampleRate}),"#aaa");
+	
+	if(!Recorder.__IIRFilterBak)Recorder.__IIRFilterBak=Recorder.IIRFilter;
+	Recorder.IIRFilter=function(){return function(v){return v}};//禁用默认的滤波
 	var rec=Recorder({
 		type:"wav",bitRate:16,sampleRate:newSampleRate||srcSampleRate
 	}).mock(pcm,srcSampleRate);
 	rec.stop(function(blob,duration){
+		Recorder.IIRFilter=Recorder.__IIRFilterBak;
 		Runtime.LogAudio(blob,duration,rec,"已转换"+fn);
 	});
 };
