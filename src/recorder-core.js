@@ -21,7 +21,7 @@ var NOOP=function(){};
 var Recorder=function(set){
 	return new initFn(set);
 };
-Recorder.LM="2023-06-17 20:03";
+Recorder.LM="2023-06-29 18:27";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
 var srcSampleRateTxt="srcSampleRate";
@@ -79,8 +79,8 @@ Recorder.Support=function(){
 	};
 	return true;
 };
-//获取全局的AudioContext对象，如果浏览器不支持将返回null
-Recorder.GetContext=function(){
+//获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用CloseNewCtx(ctx)关闭
+Recorder.GetContext=function(tryNew){
 	var AC=window.AudioContext;
 	if(!AC){
 		AC=window.webkitAudioContext;
@@ -89,9 +89,10 @@ Recorder.GetContext=function(){
 		return null;
 	};
 	
-	if(!Recorder.Ctx||Recorder.Ctx.state=="closed"){
+	var ctx=Recorder.Ctx;
+	if(!ctx||ctx.state=="closed"){
 		//不能反复构造，低版本number of hardware contexts reached maximum (6)
-		Recorder.Ctx=new AC();
+		ctx=Recorder.Ctx=new AC();
 		
 		Recorder.BindDestroy("Ctx",function(){
 			var ctx=Recorder.Ctx;
@@ -101,7 +102,20 @@ Recorder.GetContext=function(){
 			};
 		});
 	};
-	return Recorder.Ctx;
+	if(tryNew && ctx.close){//没法关闭的不允许再创建
+		try{
+			ctx=new AC();
+		}catch(e){
+			CLog("GetContext tryNew异常",1,e);
+		}
+	};
+	return ctx;
+};
+//关闭新创建的AudioContext，如果是全局的不关闭
+Recorder.CloseNewCtx=function(ctx){
+	if(ctx && ctx!=Recorder.Ctx){
+		ctx.close && ctx.close();
+	}
 };
 
 
@@ -117,11 +131,18 @@ Recorder[ConnectEnableWorklet]=false;
 var Connect=function(streamStore,isUserMedia){
 	var bufferSize=streamStore.BufferSize||Recorder.BufferSize;
 	
-	var ctx=Recorder.Ctx,stream=streamStore.Stream;
+	var stream=streamStore.Stream;
+	var ctx=Recorder.GetContext(true);//2023-06 尽量创建新的ctx，免得Safari再次连接无回调
+	stream._c=ctx;
+	
 	var mediaConn=function(node){
 		var media=stream._m=ctx.createMediaStreamSource(stream);
+		var ctxDest=ctx.destination,cmsdTxt="createMediaStreamDestination";
+		if(ctx[cmsdTxt]){
+			ctxDest=stream._d=ctx[cmsdTxt]();
+		};
 		media.connect(node);
-		node.connect(ctx.destination);
+		node.connect(ctxDest);
 	}
 	var isWebM,isWorklet,badInt,webMTips="";
 	var calls=stream._call;
@@ -387,6 +408,14 @@ var Disconnect=function(streamStore){
 			stream._m.disconnect();
 			stream._m=null;
 		};
+		if(stream._c){
+			Recorder.CloseNewCtx(stream._c);
+			stream._c=null;
+		};
+		if(stream._d){
+			StopS_(stream._d.stream);
+			stream._d=null;
+		};
 		if(stream._p){
 			stream._p.disconnect();
 			stream._p.onaudioprocess=stream._p=null;
@@ -395,15 +424,19 @@ var Disconnect=function(streamStore){
 		_Disconn_r(stream);
 		
 		if(isGlobal){//全局的时候，要把流关掉（麦克风），直接提供的流不处理
-			var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
-			for(var i=0;i<tracks.length;i++){
-				var track=tracks[i];
-				track.stop&&track.stop();
-			};
-			stream.stop&&stream.stop();
+			StopS_(stream);
 		};
 	};
 	streamStore.Stream=0;
+};
+//关闭一个音频流
+var StopS_=Recorder.StopS_=function(stream){
+	var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
+	for(var i=0;i<tracks.length;i++){
+		var track=tracks[i];
+		track.stop&&track.stop();
+	};
+	stream.stop&&stream.stop();
 };
 
 /*对pcm数据的采样率进行转换
@@ -486,10 +519,17 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	for (;index<nLen;index++) {
 		var o=pcmDatas[index];
 		var i=offset,il=o.length;
-		var oF=new Int16Array(il);//低通滤波后的数据
-		for(var i0=0,i2=1;i0<il;i0++,i2++){
-			if(i0==0) oF[0]=filterFn?filterFn(o[0]):o[0];
-			if(i2<il) oF[i2]=filterFn?filterFn(o[i2]):o[i2];
+		var F=filterFn&&filterFn.Embed,F1=0,F2=0,Fx=0,Fy=0;//低通滤波后的数据
+		for(var i0=0,i2=0;i0<il;i0++,i2++){
+			if(i2<il){
+				if(F){//IIRFilter代码内置，比函数调用快4倍
+					Fx=o[i2];
+					Fy=F.b0 * Fx + F.b1 * F.x1 + F.b0 * F.x2 - F.a1 * F.y1 - F.a2 * F.y2;
+					F.x2 = F.x1; F.x1 = Fx; F.y2 = F.y1; F.y1 = Fy;
+				}else{ Fy=filterFn?filterFn(o[i2]):o[i2]; }
+			}
+			F1=F2; F2=Fy;
+			if(i2==0){ i0--; continue; } //首次只计算o[0]
 			//res[idx]=o[Math.round(i)]; 直接简单抽样
 			
 			//https://www.cnblogs.com/xiaoqi/p/6993912.html
@@ -499,8 +539,8 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 			var after = Math.ceil(i);
 			var atPoint = i - before;
 			
-			var beforeVal=oF[before];
-			var afterVal=after<il ? oF[after] : beforeVal; //后个点越界了，忽略不计
+			var beforeVal=F1;
+			var afterVal=after<il ? F2 : beforeVal; //后个点越界了，忽略不计
 			res[idx]=beforeVal+(afterVal-beforeVal)*atPoint;
 			
 			idx++;
@@ -552,12 +592,14 @@ Recorder.IIRFilter=function(useLowPass, sampleRate, freq){
 	}
 	
 	var x1=0,x2=0,y=0,y1=0,y2=0;
-	return function(x){
+	var fn=function(x){
 		y = b0 * x + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2;
 		x2 = x1; x1 = x;
 		y2 = y1; y1 = y;
 		return y;
 	};
+	fn.Embed={x1:0,x2:0,y1:0,y2:0,b0:b0,b1:b1,a1:a1,a2:a2};
+	return fn;
 };
 
 
@@ -692,6 +734,11 @@ Recorder.prototype=initFn.prototype={
 			return Recorder;
 		}
 	}
+	//当前实例用到的AudioContext，可能是全局的，也可能是独享的
+	,_streamCtx:function(){
+		var m=this._streamStore().Stream;
+		return m&&m._c;
+	}
 	
 	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
 	,open:function(True,False){
@@ -823,7 +870,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		
 		var trackSet=set.audioTrackSet||{};
-		trackSet.sampleRate=Recorder.Ctx.sampleRate;//必须指明采样率，不然手机上MediaRecorder采样率16k
+		trackSet[sampleRateTxt]=Recorder.Ctx[sampleRateTxt];//必须指明采样率，不然手机上MediaRecorder采样率16k
 		
 		var mSet={audio:trackSet};
 		try{
@@ -1105,7 +1152,7 @@ Recorder.prototype=initFn.prototype={
 	
 	//开始录音，需先调用open；只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误
 	,start:function(){
-		var This=this,ctx=Recorder.Ctx;
+		var This=this,ctx=This._streamCtx();
 		
 		var isOpen=1;
 		if(This.set.sourceStream){//直接提供了流，仅判断是否调用了open

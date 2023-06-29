@@ -203,18 +203,22 @@ import 'recorder-core/src/extensions/waveview'
 ## 【2】调用录音，播放结果
 [​](?Ref=Codes&Start)这里假设只录3秒，录完后立即播放，[在线编辑运行此代码>>](https://xiangyuecn.gitee.io/recorder/assets/%E5%B7%A5%E5%85%B7-%E4%BB%A3%E7%A0%81%E8%BF%90%E8%A1%8C%E5%92%8C%E9%9D%99%E6%80%81%E5%88%86%E5%8F%91Runtime.html?idf=self_base_demo)。录音结束后得到的是Blob二进制文件对象，可以下载保存成文件、用`FileReader`读取成`ArrayBuffer`或者`Base64`给js处理，或者参考下一节上传示例直接上传。
 ``` javascript
-//简单控制台直接测试方法：在任意(无CSP限制)页面内加载Recorder，加载成功后再执行一次本代码立即会有效果，import("https://xiangyuecn.gitee.io/recorder/recorder.mp3.min.js").then(function(s){console.log("import ok")}).catch(function(e){console.error("import fail",e)})
+//简单控制台直接测试方法：在任意(无CSP限制)页面内加载需要的js，加载成功后再执行一次本代码立即会有效果
+//①加载Recorder+mp3：import("https://unpkg.com/recorder-core/recorder.mp3.min.js").then(()=>console.log("import ok"))
+//②可视化插件和显示：import("https://unpkg.com/recorder-core/src/extensions/waveview.js").then(()=>console.log("import ok")); div=document.createElement("div");div.innerHTML='<div style="height:100px;width:300px;" class="recwave"></div>';document.body.prepend(div);
 
-var rec;
+var rec,wave;
 /**调用open打开录音请求好录音权限**/
 var recOpen=function(success){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
     rec=Recorder({ //本配置参数请参考下面的文档，有详细介绍
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
         ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //录音实时回调，大约1秒调用12次本回调，buffers为开始到现在的所有录音pcm数据块(16位小端LE)
-            //可实时绘制波形（extensions目录内的waveview.js、wavesurfer.view.js、frequency.histogram.view.js插件功能）
             //可利用extensions/sonic.js插件实时变速变调，此插件计算量巨大，onProcess需要返回true开启异步模式
             //可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+
+            //可实时绘制波形（extensions目录内的waveview.js、wavesurfer.view.js、frequency.histogram.view.js插件功能）
+            wave&&wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
         }
     });
 
@@ -222,7 +226,9 @@ var recOpen=function(success){//一般在显示出录音按钮或相关的录音
     rec.open(function(){//打开麦克风授权获得相关资源
         //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
         //rec.start() 此处可以立即开始录音，但不建议这样编写，因为open是一个延迟漫长的操作，通过两次用户操作来分别调用open和start是推荐的最佳流程
-        
+
+        //创建可视化，指定一个要显示的div
+        if(Recorder.WaveView)wave=Recorder.WaveView({elem:".recwave"});
         success&&success();
     },function(msg,isUserNotAllow){//用户拒绝未授权或不支持
         //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
@@ -250,8 +256,8 @@ function recStop(){
         
         /*** 【立即播放例子】 ***/
         var audio=document.createElement("audio");
+        document.body.prepend(audio);
         audio.controls=true;
-        document.body.appendChild(audio);
         audio.src=localUrl;
         audio.play();
     },function(msg){
@@ -660,8 +666,10 @@ function transformOgg(pcmData){
 ### 【静态方法】Recorder.Support()
 判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
 
-### 【静态方法】Recorder.GetContext()
-获取全局的AudioContext对象，如果浏览器不支持将返回null；本方法调用一次后，可通过`Recorder.Ctx`来获得此对象，可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。
+### 【静态方法】Recorder.GetContext(tryNew)
+获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用`Recorder.CloseNewCtx(ctx)`关闭。
+
+本方法调用一次后，可通过`Recorder.Ctx`来获得此全局对象，可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。已知iOS16中全局对象无法多次用于录音，当前Recorder打开录音时均会尝试创建新的非全局对象，同时会保留一个全局的对象。
 
 ### 【静态方法】Recorder.IsOpen()
 由于Recorder持有的普通麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能。
@@ -750,15 +758,13 @@ function transformOgg(pcmData){
 
 
 ### 【静态方法】Recorder.IIRFilter(useLowPass,sampleRate,freq)
-IIR低通、高通滤波；可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波。
+IIR低通、高通滤波；可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波。返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）。
 
 `useLowPass`: true或false，true为低通滤波，false为高通滤波
 
 `sampleRate`: 待处理pcm的采样率
 
 `freq`: 截止频率Hz，最大频率为sampleRate/2，低通时会切掉高于此频率的声音，高通时会切掉低于此频率的声音，注意滤波并非100%的切掉不需要的声音，而是减弱频率对应的声音，离截止频率越远对应声音减弱越厉害，离截止频率越近声音就几乎无衰减
-
-返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）。
 
 
 ### 【静态方法】Recorder.PowerLevel(pcmAbsSum,pcmLength)
@@ -984,9 +990,9 @@ BufferStreamPlayer可以通过input方法一次性输入整个音频文件，或
 var stream=Recorder.BufferStreamPlayer({
     play:true //要播放声音，设为false不播放，只提供MediaStream
     ,realtime:true /*默认为true实时模式，设为false为非实时模式
-        实时模式：
-            如果有新的input输入数据，但之前输入的数据还未播放完，如果积压的数据量过大则积压的数据将会被直接丢弃，少量积压会和新数据一起加速播放，最终达到尽快播放新输入的数据的目的；这在网络不流畅卡顿时会发挥很大作用，可有效降低播放延迟
-        非实时模式：
+        实时模式：设为 true 或 {maxDelay:300,discardAll:false}配置对象
+            如果有新的input输入数据，但之前输入的数据还未播放完的时长不超过maxDelay时（缓冲播放延迟默认限制在300ms内），如果积压的数据量过大则积压的数据将会被直接丢弃，少量积压会和新数据一起加速播放，最终达到尽快播放新输入的数据的目的；这在网络不流畅卡顿时会发挥很大作用，可有效降低播放延迟；出现加速播放时声音听起来会比较怪异，可配置discardAll=true来关闭此特性，少量积压的数据也直接丢弃，不会加速播放；如果你的音频数据块超过200ms，需要调大maxDelay（取值100-800ms）
+        非实时模式：设为 false
             连续完整的播放完所有input输入的数据，之前输入的还未播放完又有新input输入会加入队列排队播放，比如用于：一次性同时输入几段音频完整播放
         */
             
@@ -995,7 +1001,7 @@ var stream=Recorder.BufferStreamPlayer({
     //,onPlayEnd:fn() //没有可播放的数据时回调（stop后一定会回调），已输入的数据已全部播放完了，可代表正在缓冲中或播放结束；之后如果继续input输入了新数据，播放完后会再次回调，因此会多次回调；非实时模式一次性输入了数据时，此回调相当于播放完成，可以stop掉，重新创建对象来input数据可达到循环播放效果
     
     //,decode:false //input输入的数据在调用transform之前是否要进行一次音频解码成pcm [Int16,...]
-        //mp3、wav等都可以设为true，会自动解码成pcm
+        //mp3、wav等都可以设为true、或设为{fadeInOut:true}配置对象，会自动解码成pcm；默认会开启fadeInOut对解码的pcm首尾进行淡入淡出处理，减少爆音（wav等解码后和原始pcm一致的音频，可以把fadeInOut设为false）
     
     //transform:fn(inputData,sampleRate,True,False)
         //将input输入的data（如果开启了decode将是解码后的pcm）转换处理成要播放的pcm数据；如果没有解码也没有提供本方法，input的data必须是[Int16,...]并且设置set.sampleRate
@@ -1316,7 +1322,7 @@ EncodeMix对象：
 [​](?)
 
 # :open_book:已有的音频格式编码器
-所有音频格式的编码器都在`/src/engine`目录中，每个格式一般有一个同名的js文件，如果这个格式有额外的编码引擎（`*-engine.js`）的话，使用时必须要一起加上。
+所有音频格式的编码器都在`/src/engine`目录中（或`/dist/engine`目录的压缩版），每个格式一般有一个同名的js文件，如果这个格式有额外的编码引擎文件（`*-engine.js`）的话，使用时必须要一起加上。
 
 ## pcm 格式
 依赖文件：`pcm.js`，pcm编码器输出的数据其实就是Recorder中的buffers原始数据（经过了重新采样），16位时为LE小端模式（Little Endian），并未经过任何编码处理；pcm为未封装的原始音频数据，pcm数据文件无法直接播放，pcm加上一个44字节wav头即成wav文件，可通过wav格式来正常播放。两个参数相同的pcm文件直接二进制拼接在一起即可成为长的pcm文件，[pcm片段文件合并+可移植源码：PCMMerge](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_frame_pcm)。
@@ -1326,7 +1332,7 @@ EncodeMix对象：
 
 
 ## wav (raw pcm format) 格式
-依赖文件：`wav.js`，wav格式编码器时参考网上资料写的，会发现代码和别人家的差不多。源码2kb大小。[wav转其他格式参考和测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
+依赖文件：`wav.js`（或使用根目录的`recorder.wav.min.js`一个文件即可），wav格式编码器时参考网上资料写的，会发现代码和别人家的差不多。源码2kb大小。[wav转其他格式参考和测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
 
 ### wav转pcm
 生成的wav文件内音频数据的编码为未压缩的pcm数据（raw pcm），只是在pcm数据前面加了一个44字节的wav头；因此直接去掉前面44字节就能得到原始的pcm数据，如：`blob.slice(44,blob.size,"audio/pcm")`；注意：其他wav编码器可能不是44字节的头，要从任意wav文件中提取pcm数据，请参考：`assets/runtime-codes/fragment.decode.wav.js`。
@@ -1335,7 +1341,7 @@ EncodeMix对象：
 由于RAW格式的wav内直接就是pcm数据，因此将小的wav片段文件去掉wav头后得到的原始pcm数据合并到一起，再加上新的wav头即可合并出长的wav文件；要求待合成的所有wav片段的采样率和位数需一致。[wav合并参考和测试+可移植源码](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
 
 ## mp3 (CBR) 格式
-依赖文件：`mp3.js + mp3-engine.js`，采用的是[lamejs](https://github.com/zhuker/lamejs)(LGPL License)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于精简代码和修复发现的问题。LGPL协议涉及到的文件：`mp3-engine.js`；这些文件也采用LGPL授权，不适用MIT协议。源码518kb大小，压缩后160kb左右，开启gzip后60来k。[mp3转其他格式参考和测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
+依赖文件：`mp3.js + mp3-engine.js`（或使用根目录的`recorder.mp3.min.js`一个文件即可），采用的是[lamejs](https://github.com/zhuker/lamejs)(LGPL License)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于精简代码和修复发现的问题。LGPL协议涉及到的文件：`mp3-engine.js`；这些文件也采用LGPL授权，不适用MIT协议。源码518kb大小，压缩后160kb左右，开启gzip后60来k。[mp3转其他格式参考和测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
 
 ### 简单将多段小的mp3片段合成长的mp3文件
 由于lamejs CBR编码出来的mp3二进制数据从头到尾全部是大小相同的数据帧（采样率44100等无法被8整除的部分帧可能存在额外多1字节填充），没有其他任何多余信息，通过文件长度可计算出mp3的时长`fileSize*8/bitRate`（[参考](https://blog.csdn.net/u010650845/article/details/53520426)），数据帧之间可以直接拼接。因此将小的mp3片段文件的二进制数据全部合并到一起即可得到长的mp3文件；要求待合成的所有mp3片段的采样率和比特率需一致。[mp3合并参考和测试+可移植源码](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)

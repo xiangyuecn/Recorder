@@ -126,9 +126,12 @@ var resume=function(){
 
 
 
-var setRealtimeOn=function(){
+var setRealtimeOn=function(rtDiscardAll){
 	if(stream){
 		stream.set.realtime=true;
+		if(rtDiscardAll){
+			stream.set.realtime={discardAll:true};
+		}
 		Runtime.Log("切换成了实时模式，如果缓冲中积压的未播放数据量过大，会直接丢弃数据或者加速播放，达到尽快播放新输入的数据的目的，可有效降低播放延迟");
 	}
 };
@@ -155,7 +158,7 @@ var receiveAudioChunk=function(arrayBuffer){
 		$(".receiveInfo").html(""
 			+"第"+testInfo.count+"次收到"+testType+"片段"+arrayBuffer.byteLength+"字节"
 			+"，共收到"+allSize
-			+(stream.set.realtime?"，实时模式":"，非实时模式"));
+			+(stream.set.realtime?stream.set.realtime.discardAll?"，<span style='font-size:12px'>实时+discardAll</span>":"，实时模式":"，非实时模式"));
 			
 		stream.input(arrayBuffer);
 	}
@@ -238,6 +241,8 @@ Runtime.Ctrls([
 	
 	,{name:"实时模式，卡了就丢",click:"setRealtimeOn"}
 	,{name:"非实时模式，完整播放",click:"setRealtimeOff"}
+	,{html:"<span style='margin-left:78px'></span>"}
+	,{name:"实时模式+discardAll",click:"setRealtimeOn(1);Date.now"}
 	,{html:"<div/>"}
 	,{name:"模拟网络不畅，全部缓冲",click:"setNetworkFail"}
 	,{name:"恢复网络",click:"setNetworkOk"}
