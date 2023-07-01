@@ -132,7 +132,7 @@ var setRealtimeOn=function(rtDiscardAll){
 		if(rtDiscardAll){
 			stream.set.realtime={discardAll:true};
 		}
-		Runtime.Log("切换成了实时模式，如果缓冲中积压的未播放数据量过大，会直接丢弃数据或者加速播放，达到尽快播放新输入的数据的目的，可有效降低播放延迟");
+		Runtime.Log("切换成了实时模式，如果缓冲中积压的未播放数据量过大，会直接丢弃数据"+(rtDiscardAll?"（discardAll=true）":"并加速播放部分数据")+"，达到尽快播放新输入的数据的目的，可有效降低播放延迟");
 	}
 };
 var setRealtimeOff=function(){

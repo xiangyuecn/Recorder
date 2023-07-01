@@ -14,7 +14,7 @@ BufferStreamPlayer可以用于：
 	https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player
 调用示例：
 	var stream=Recorder.BufferStreamPlayer(set)
-	//创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频，set具体配置看下面源码
+	//创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频，set具体配置看下面源码；注意：start需要在用户操作(触摸、点击等)时进行调用，原因参考runningContext配置
 	stream.start(()=>{
 		stream.currentTime;//当前已播放的时长，单位ms，数值变化时会有onUpdateTime事件
 		stream.duration;//已输入的全部数据总时长，单位ms，数值变化时会有onUpdateTime事件；实时模式下意义不大，会比实际播放的长，因为实时播放时卡了就会丢弃部分数据不播放
@@ -80,6 +80,8 @@ var fn=function(set){
 			//False(errMsg) 处理失败回调
 			
 		//sampleRate:16000 //可选input输入的数据默认的采样率，当没有设置解码也没有提供transform时应当明确设置采样率
+		
+		//runningContext:AudioContext //可选提供一个state为running状态的AudioContext对象(ctx)，默认会在start时自动创建一个新的ctx，这个配置的作用请参阅Recorder的runningContext配置
 	};
 	for(var k in set){
 		o[k]=set[k];
@@ -109,18 +111,18 @@ fn.prototype=BufferStreamPlayer.prototype={
 	}
 	
 	
-	/**打开音频流，打开后就会开始播放input输入的音频
+	/**打开音频流，打开后就会开始播放input输入的音频；注意：start需要在用户操作(触摸、点击等)时进行调用，原因参考runningContext配置
 	 * True() 打开成功回调
 	 * False(errMsg) 打开失败回调**/
 	,start:function(True,False){
-		var falseCall=function(msg){
+		var falseCall=function(msg,noClear){
+			if(!noClear)This._clear();
 			CLog(msg,1);
 			False&&False(msg);
 		};
-		var This=this,__abTest=This.__abTest;
-		!__abTest&&CLog("start...");
+		var This=this,set=This.set,__abTest=This.__abTest;
 		if(This._Tc!=null){
-			falseCall(BufferStreamPlayerTxt+"多次start");
+			falseCall(BufferStreamPlayerTxt+"多次start",1);
 			return;
 		}
 		This._Tc=0;//currentTime 对应的采样数
@@ -145,7 +147,12 @@ fn.prototype=BufferStreamPlayer.prototype={
 			falseCall("浏览器不支持打开"+BufferStreamPlayerTxt+(msg?"："+msg:""));
 		};
 		
-		var support=1,ctx=Recorder.GetContext(true); This._ctx=ctx;
+		var ctx=set.runningContext || Recorder.GetContext(true); This._ctx=ctx;
+		!__abTest&&CLog("start... ctx.state="+ctx.state+(
+			ctx.state=="suspended"?"（注意：ctx不是running状态，start需要在用户操作(触摸、点击等)时进行调用，否则会尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）":""
+		));
+		
+		var support=1;
 		if(!ctx || !ctx.createMediaStreamDestination){
 			support=0;
 		}else{
@@ -190,12 +197,13 @@ fn.prototype=BufferStreamPlayer.prototype={
 		};
 		var abTest=function(){
 			//浏览器实现检测，已知Firefox的AudioBuffer没法在_writeBuffer中动态修改数据；检测方法：直接新开一个，输入一段测试数据，看看能不能拿到流中的数据
-			var testStream=BufferStreamPlayer({ play:false,sampleRate:8000 });
+			var testStream=BufferStreamPlayer({ play:false,sampleRate:8000,runningContext:ctx });
 			testStream.__abTest=1; var testRec;
 			testStream.start(function(){
 				testRec=Recorder({
 					type:"unknown"
 					,sourceStream:testStream.getMediaStream()
+					,runningContext:ctx
 					,onProcess:function(buffers){	
 						var bf=buffers[buffers.length-1],all0=1;
 						for(var i=0;i<bf.length;i++){
@@ -217,7 +225,9 @@ fn.prototype=BufferStreamPlayer.prototype={
 				});
 				testRec.open(function(){
 					testRec.start();
-				},fail);
+				},function(msg){
+					testStream.stop(); fail(msg);
+				});
 			},fail);
 			//超时没有回调
 			var testInt=setTimeout(function(){
@@ -249,8 +259,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 			abTest();
 		};
 	}
-	/**停止播放，关闭所有资源**/
-	,stop:function(){
+	,_clear:function(){
 		var This=this;
 		This.isStop=1;
 		clearInterval(This._writeInt);
@@ -264,10 +273,10 @@ fn.prototype=BufferStreamPlayer.prototype={
 			Recorder.StopS_(This._dest.stream);
 			This._dest=0;
 		}
-		if(This._ctx){
+		if(!This.set.runningContext && This._ctx){
 			Recorder.CloseNewCtx(This._ctx);
-			This._ctx=0;
 		}
+		This._ctx=0;
 		
 		var source=This.bufferSource;
 		if(source){
@@ -276,6 +285,11 @@ fn.prototype=BufferStreamPlayer.prototype={
 		}
 		This.bufferSource=0;
 		This.audioBuffer=0;
+	}
+	/**停止播放，关闭所有资源**/
+	,stop:function(){
+		var This=this;
+		This._clear();
 		
 		!This.__abTest&&CLog("stop");
 		This._playEnd(1);

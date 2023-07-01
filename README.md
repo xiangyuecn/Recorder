@@ -480,7 +480,7 @@ iOS其他浏览器|iOS 14.3+|iOS 14.3+
 
 > 此处已清除7个已知问题，大部分无法解决的问题会随着时间消失；问题主要集中在iOS上，好在这玩意能更新
 
-*2023-02-22* iPhone 14：有部分开发者反馈iPhone14上关闭录音后再次打开录音，会出现无法录音的情况，目前并不清楚是只有iPhone14上有问题，还是iOS16均有问题；估计是新的WebKit改了相关源码印度阿三没有测试，js没办法解决此问题，静候iOS更新，也许下一个系统更新就自动修复了；建议针对iOS环境，全局只open一次，不要close，挂在那里录音，可减少iOS系统问题带来的影响（负优化+耗电）。
+*2023-02-22* iPhone 14：~~有部分开发者反馈iPhone14上关闭录音后再次打开录音，会出现无法录音的情况，目前并不清楚是只有iPhone14上有问题，还是iOS16均有问题；估计是新的WebKit改了相关源码印度阿三没有测试，js没办法解决此问题，静候iOS更新，也许下一个系统更新就自动修复了；建议针对iOS环境，全局只open一次，不要close，挂在那里录音，可减少iOS系统问题带来的影响（负优化+耗电）。~~ 2023-7-1，此问题已修复，原因出在AudioContext上，iOS新版本上似乎不能共用一个AudioContext（新版本每次open均会创建新的AudioContext），并且iOS上AudioContext的resume行为和其他浏览器不相同，如果不是通过用户操作（触摸、点击等）进行调用，将无法resume，参考 [ztest_AudioContext_resume.html](https://xiangyuecn.gitee.io/recorder/assets/ztest_AudioContext_resume.html) 测试用例。
 
 *2020-04-26* Safari Bug：据QQ群内`1048506792`、`190451148`开发者反馈研究发现，IOS ?-13.X Safari内打开录音后，如果切换到了其他标签、或其他App并且播放了任何声音，此时将会中断已打开的录音（系统级的？），切换回正在录音的页面，这个页面的录音功能将会彻底失效，并且刷新也无法恢复录音；表现为关闭录音后再次打开录音，能够正常获得权限，但浏览器返回的采集到的音频为静默的PCM，此时地址栏也并未显示出麦克风图标，刷新这个标签也也是一样不能正常获得录音，只有关掉此标签新打开页面才可正常录音。如果打开录音后关闭了录音，然后切换到其他标签或App播放声音，然后返回录音页面，不会出现此问题。此为Safari的底层Bug。使用长按录音类似的用户交互可大幅度避免踩到这坨翔。
 
@@ -536,7 +536,10 @@ set={
                 //可选直接提供一个媒体流，从这个流中录制、实时处理音频数据（当前Recorder实例独享此流）；不提供时为普通的麦克风录音，由getUserMedia提供音频流（所有Recorder实例共享同一个流）
                 //比如：audio、video标签dom节点的captureStream方法（实验特性，不同浏览器支持程度不高）返回的流；WebRTC中的remote流；自己创建的流等
                 //注意：流内必须至少存在一条音轨(Audio Track)，比如audio标签必须等待到可以开始播放后才会有音轨，否则open会失败
-        
+
+        //,runningContext:AudioContext
+                //可选提供一个state为running状态的AudioContext对象(ctx)；默认会在rec.open时自动创建一个新的ctx，无用户操作（触摸、点击等）时调用rec.open的ctx.state可能为suspended，会在rec.start时尝试进行ctx.resume，如果也无用户操作ctx.resume可能不会恢复成running状态（目前仅iOS上有此兼容性问题），导致无法去读取媒体流，这时请提前在用户操作时调用Recorder.GetContext(true)来得到一个running状态AudioContext（用完需调用CloseNewCtx(ctx)关闭）
+
         /*,audioTrackSet:{
              deviceId:"",groupId:"" //指定设备的麦克风，通过navigator.mediaDevices.enumerateDevices拉取设备列表，其中kind为audioinput的是麦克风
             ,noiseSuppression:true //降噪（ANS）开关，不设置时由浏览器控制（一般为默认打开），设为true明确打开，设为false明确关闭
@@ -569,7 +572,7 @@ set={
 
 `fail`=fn(errMsg,isUserNotAllow); 如果是用户主动拒绝的录音权限，除了有错误消息外，isUserNotAllow=true，方便程序中做不同的提示，提升用户主动授权概率
 
-注意：此方法回调是可能是同步的（异常、或者已持有资源时）也可能是异步的（浏览器弹出权限请求时）；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音。
+注意：此方法回调是可能是同步的（异常、或者已持有资源时）也可能是异步的（浏览器弹出权限请求时）；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音；open和start至少有一个应当在用户操作（触摸、点击等）下进行调用，原因参考`runningContext`配置。
 
 另外：普通的麦克风录音时，因为此方法会调起用户授权请求，如果仅仅想知道浏览器是否支持录音（比如：如果浏览器不支持就走另外一套录音方案），应使用`Recorder.Support()`方法。
 
@@ -582,7 +585,7 @@ set={
 注意：普通的麦克风录音时（所有Recorder实例共享同一个流），如果创建了多个Recorder对象并且调用了open（应避免同时有多个对象进行了open），只有最后一个新建的才有权限进行实际的资源释放（和多个对象close调用顺序无关），浏览器或设备的系统才会不再显示正在录音的提示；直接提供的流 set.sourceStream 无此问题（当前Recorder实例独享此流）。
 
 ### 【方法】rec.start()
-开始录音，需先调用`open`；未close之前可以反复进行调用开始新的录音。
+开始录音，需先调用`open`；未close之前可以反复进行调用开始新的录音。注意：open和start至少有一个应当在用户操作（触摸、点击等）下进行调用，原因参考`runningContext`配置。
 
 只要open成功后，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误；另外open操作可能需要花费比较长时间，如果中途调用了stop，open完成时（同步）的任何start调用将会被自动阻止，也是不会有提示的。
 
@@ -667,7 +670,7 @@ function transformOgg(pcmData){
 判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
 
 ### 【静态方法】Recorder.GetContext(tryNew)
-获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用`Recorder.CloseNewCtx(ctx)`关闭。
+获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用`Recorder.CloseNewCtx(ctx)`关闭。注意：非用户操作（触摸、点击等）时调用返回的ctx.state可能是suspended状态，需要在用户操作时调用ctx.resume恢复成running状态，参考rec的`runningContext`配置。
 
 本方法调用一次后，可通过`Recorder.Ctx`来获得此全局对象，可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。已知iOS16中全局对象无法多次用于录音，当前Recorder打开录音时均会尝试创建新的非全局对象，同时会保留一个全局的对象。
 
@@ -1011,9 +1014,11 @@ var stream=Recorder.BufferStreamPlayer({
         //False(errMsg) 处理失败回调
         
     //sampleRate:16000 //可选input输入的数据默认的采样率，当没有设置解码也没有提供transform时应当明确设置采样率
+
+    //runningContext:AudioContext //可选提供一个state为running状态的AudioContext对象(ctx)，默认会在start时自动创建一个新的ctx，这个配置的作用请参阅Recorder的runningContext配置
 });
 
-//创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频
+//创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频；注意：start需要在用户操作(触摸、点击等)时进行调用，原因参考runningContext配置
 stream.start(()=>{
     stream.currentTime;//当前已播放的时长，单位ms，数值变化时会有onUpdateTime事件
     stream.duration;//已输入的全部数据总时长，单位ms，数值变化时会有onUpdateTime事件；实时模式下意义不大，会比实际播放的长，因为实时播放时卡了就会丢弃部分数据不播放

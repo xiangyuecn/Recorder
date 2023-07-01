@@ -1,0 +1,111 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+<title>AudioContext resume回调测试</title>
+</head>
+
+<body>
+<div>
+	<button onclick="createClick()">手动创建AudioContext</button>
+</div>
+<div class="logs"></div>
+
+<script>
+var elem=document.querySelector(".logs");
+var timeStr=function(){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2)
+		+"."+("00"+now.getMilliseconds()).substr(-3);
+	return t;
+};
+var log=function(msg,color,span){
+	msg="["+timeStr()+"]"+msg;
+	var node=span?"span":"div",el=span||elem;
+	var div=document.createElement(node);
+	div.innerHTML='<'+node+' style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+';border-bottom: 1px solid #aaa;padding:5px 8px">'+msg+"</"+node+">";
+	if(span)span.innerHTML="";
+	if(el.prepend)el.prepend(div);
+	else el.appendChild(div);
+	console.log(msg);
+};
+
+log('相关链接：<a href="https://stackoverflow.com/questions/57510426/cannot-resume-audiocontext-in-safari/67520856" target="_blank">Stack Overflow: Cannot resume AudioContext in Safari</a>');
+log('相关链接：<a href="https://developer.apple.com/forums/thread/728463" target="_blank">Apple Developer Forums: WKWebView configuration mediaTypesRequiringUserActionForPlayback not working after iOS 16.3.1 update</a>');
+
+log('<span style="font-size:24px">2023-06-30 本测试用于测试AudioContext的resume回调，已知在没有用户操作（触摸、点击等）前调用resume将不会有任何回调，用户操作后任意时间调用resume均能恢复，和audio、video自动播放策略类似。<span style="color:red">但iOS（iOS16）这货独树一帜，完全不参照audio、video自动播放策略，必须每次用户操作时才允许调用resume，否则resume一律无回调。</span></span>');
+</script>
+
+<script>
+if(!window.AudioContext)window.AudioContext=window.webkitAudioContext;
+var create=function(tag,firstMsg){
+	var ctx=new AudioContext();
+	var cls="rnd_"+Math.random().toString(16).substr(2);
+	log(tag+(firstMsg||"开始resume")+" state="+ctx.state+" <span class="+cls+">等待resume结果中...</span>");
+	var el=document.querySelector("."+cls); ctx.el=el;
+	if(firstMsg)return ctx;
+	
+	resumeCall(tag,ctx,el);
+	return ctx;
+};
+var resumeCall=function(tag,ctx,el){
+	ctx.resume().then(function(){
+		log(tag+"ok state="+ctx.state,2,el);
+		ctx.close();
+	}).catch(function(e){
+		log(tag+"错误 state="+ctx.state+" ："+e.message,1,el);
+		ctx.close();
+	});
+};
+
+
+var ctx1=create("","【主要】页面打开立即创建了AudioContext1，等待手动调用resume");
+ctx1.el.innerHTML='<button onclick="ctx1ResumeClick()">手动调用resume</button>';
+var ctx1ResumeClick=function(){
+	resumeCall("",ctx1,ctx1.el);
+};
+
+var ctx2=create("","【主要】页面打开立即创建了AudioContext2，等待手动延迟调用resume");
+ctx2.el.innerHTML='<button onclick="ctx2ResumeClick()">延迟3秒调用resume</button>';
+var ctx2ResumeClick=function(){
+	ctx2.el.innerHTML="延迟3秒中...";
+	setTimeout(function(){
+		resumeCall("",ctx2,ctx2.el);
+	},3000);
+};
+
+var autoCtx=create("[自动运行]");
+log("> 正在等待5秒后自动创建一个AudioContext，中途可以用户操作一下或者不操作，产生不同结果","#aaa");
+setTimeout(function(){
+	create("[自动运行定时5秒]");
+},5000);
+autoCtx.el.innerHTML="等待用户任意点击操作...";
+window.onclick=function(){
+	if(!autoCtx)return;
+	var ctx=autoCtx; autoCtx=0;
+	if(ctx.state=="suspended"){
+		log("检测到用户点击操作，正在等待3秒检查自动运行是否成功 ...",0,ctx.el);
+		setTimeout(function(){
+			ctx.el.innerHTML="ok state="+ctx.state;
+			if(ctx.state=="suspended"){
+				log("[自动运行]resume 等待回调超时",1,ctx.el);
+			}
+		},3000);
+	}
+};
+
+var createClick=function(){
+	create("[手动点击]");
+	log("> 手动点击，定时3秒后会自动创建","#aaa");
+	setTimeout(function(){
+		create("[手动点击定时3秒]");
+	},3000);
+};
+</script>
+
+</body>
+</html>

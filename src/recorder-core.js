@@ -21,7 +21,7 @@ var NOOP=function(){};
 var Recorder=function(set){
 	return new initFn(set);
 };
-Recorder.LM="2023-06-29 18:27";
+Recorder.LM="2023-07-01 20:46";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
 var srcSampleRateTxt="srcSampleRate";
@@ -79,7 +79,7 @@ Recorder.Support=function(){
 	};
 	return true;
 };
-//获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用CloseNewCtx(ctx)关闭
+//获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用CloseNewCtx(ctx)关闭。注意：非用户操作（触摸、点击等）时调用返回的ctx.state可能是suspended状态，需要在用户操作时调用ctx.resume恢复成running状态，参考rec的runningContext配置
 Recorder.GetContext=function(tryNew){
 	var AC=window.AudioContext;
 	if(!AC){
@@ -93,6 +93,7 @@ Recorder.GetContext=function(tryNew){
 	if(!ctx||ctx.state=="closed"){
 		//不能反复构造，低版本number of hardware contexts reached maximum (6)
 		ctx=Recorder.Ctx=new AC();
+		Recorder.NewCtxs=Recorder.NewCtxs||[];
 		
 		Recorder.BindDestroy("Ctx",function(){
 			var ctx=Recorder.Ctx;
@@ -100,11 +101,14 @@ Recorder.GetContext=function(tryNew){
 				ctx.close();
 				Recorder.Ctx=0;
 			};
+			var arr=Recorder.NewCtxs; Recorder.NewCtxs=[];
+			for(var i=0;i<arr.length;i++)arr[i].close();
 		});
 	};
 	if(tryNew && ctx.close){//没法关闭的不允许再创建
 		try{
 			ctx=new AC();
+			Recorder.NewCtxs.push(ctx);
 		}catch(e){
 			CLog("GetContext tryNew异常",1,e);
 		}
@@ -115,7 +119,17 @@ Recorder.GetContext=function(tryNew){
 Recorder.CloseNewCtx=function(ctx){
 	if(ctx && ctx!=Recorder.Ctx){
 		ctx.close && ctx.close();
+		var arr=Recorder.NewCtxs||[],L=arr.length;
+		for(var i=0;i<arr.length;i++){
+			if(arr[i]==ctx){ arr.splice(i,1); break; }
+		}
+		CLog("剩"+L+"-1="+arr.length+"个GetContext未close",arr.length?3:0);
 	}
+};
+var CtxState=function(ctx){
+	var v=ctx.state,msg="ctx.state="+v;
+	if(v=="suspended")msg+="（注意：ctx不是running状态，rec.open和start至少要有一个在用户操作(触摸、点击等)时进行调用，否则将在rec.start时尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）";
+	return msg;
 };
 
 
@@ -132,7 +146,7 @@ var Connect=function(streamStore,isUserMedia){
 	var bufferSize=streamStore.BufferSize||Recorder.BufferSize;
 	
 	var stream=streamStore.Stream;
-	var ctx=Recorder.GetContext(true);//2023-06 尽量创建新的ctx，免得Safari再次连接无回调
+	var ctx=stream._RC || stream._c || Recorder.GetContext(true);//2023-06 尽量创建新的ctx，免得Safari再次连接无回调
 	stream._c=ctx;
 	
 	var mediaConn=function(node){
@@ -408,10 +422,10 @@ var Disconnect=function(streamStore){
 			stream._m.disconnect();
 			stream._m=null;
 		};
-		if(stream._c){
+		if(!stream._RC && stream._c){//提供的runningContext不处理
 			Recorder.CloseNewCtx(stream._c);
-			stream._c=null;
 		};
+		stream._RC=null; stream._c=null;
 		if(stream._d){
 			StopS_(stream._d.stream);
 			stream._d=null;
@@ -698,6 +712,9 @@ function initFn(set){
 				//比如：audio、video标签dom节点的captureStream方法（实验特性，不同浏览器支持程度不高）返回的流；WebRTC中的remote流；自己创建的流等
 				//注意：流内必须至少存在一条音轨(Audio Track)，比如audio标签必须等待到可以开始播放后才会有音轨，否则open会失败
 		
+		//,runningContext:AudioContext
+				//可选提供一个state为running状态的AudioContext对象(ctx)；默认会在rec.open时自动创建一个新的ctx，无用户操作（触摸、点击等）时调用rec.open的ctx.state可能为suspended，会在rec.start时尝试进行ctx.resume，如果也无用户操作ctx.resume可能不会恢复成running状态（目前仅iOS上有此兼容性问题），导致无法去读取媒体流，这时请提前在用户操作时调用Recorder.GetContext(true)来得到一个running状态AudioContext（用完需调用CloseNewCtx(ctx)关闭）
+		
 		//,audioTrackSet:{ deviceId:"",groupId:"", autoGainControl:true, echoCancellation:true, noiseSuppression:true }
 				//普通麦克风录音时getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
 				//由于麦克风是全局共享的，所以新配置后需要close掉以前的再重新open
@@ -740,13 +757,14 @@ Recorder.prototype=initFn.prototype={
 		return m&&m._c;
 	}
 	
-	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音
+	//打开录音资源True(),False(msg,isUserNotAllow)，需要调用close。注意：此方法是异步的；一般使用时打开，用完立即关闭；可重复调用，可用来测试是否能录音；open和start至少有一个应当在用户操作（触摸、点击等）下进行调用，原因参考runningContext配置
 	,open:function(True,False){
-		var This=this,set=This.set,streamStore=This._streamStore();
+		var This=this,set=This.set,streamStore=This._streamStore(),newCtx=0;
 		True=True||NOOP;
 		var failCall=function(errMsg,isUserNotAllow){
 			isUserNotAllow=!!isUserNotAllow;
 			This.CLog("录音open失败："+errMsg+",isUserNotAllow:"+isUserNotAllow,1);
+			if(newCtx)Recorder.CloseNewCtx(newCtx);
 			False&&False(errMsg,isUserNotAllow);
 		};
 		
@@ -794,12 +812,14 @@ Recorder.prototype=initFn.prototype={
 			};
 			
 			Disconnect(streamStore);//可能已open过，直接先尝试断开
-			This.Stream=set.sourceStream;
-			This.Stream._call={};
+			var stream=This.Stream=set.sourceStream;
+			stream._RC=set.runningContext;
+			stream._call={};
 			
 			try{
 				Connect(streamStore);
 			}catch(e){
+				Disconnect(streamStore);
 				failCall("从流中打开录音失败："+e.message);
 				return;
 			}
@@ -838,7 +858,10 @@ Recorder.prototype=initFn.prototype={
 			codeFail("","此浏览器不支持录音");
 			return;
 		};
-				
+		//尽量先创建好ctx，不然异步下创建可能不是running状态
+		var ctx=set.runningContext;
+		if(!ctx)ctx=newCtx=Recorder.GetContext(true);
+		
 		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
 		var f1=function(stream){
 			//https://github.com/xiangyuecn/Recorder/issues/14 获取到的track.readyState!="live"，刚刚回调时可能是正常的，但过一下可能就被关掉了，原因不明。延迟一下保证真异步。对正常浏览器不影响
@@ -850,6 +873,8 @@ Recorder.prototype=initFn.prototype={
 					stream._call=oldStream._call;
 				};
 				Recorder.Stream=stream;
+				stream._c=ctx;
+				stream._RC=set.runningContext;
 				if(lockFail())return;
 				
 				if(Recorder.IsOpen()){
@@ -870,7 +895,7 @@ Recorder.prototype=initFn.prototype={
 		};
 		
 		var trackSet=set.audioTrackSet||{};
-		trackSet[sampleRateTxt]=Recorder.Ctx[sampleRateTxt];//必须指明采样率，不然手机上MediaRecorder采样率16k
+		trackSet[sampleRateTxt]=ctx[sampleRateTxt];//必须指明采样率，不然手机上MediaRecorder采样率16k
 		
 		var mSet={audio:trackSet};
 		try{
@@ -880,7 +905,7 @@ Recorder.prototype=initFn.prototype={
 			mSet={audio:true};
 			pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
 		};
-		This.CLog(getUserMediaTxt+"("+JSON.stringify(mSet)+")，一般默认会降噪和回声消除，移动端可能会降低系统播放音量，请参阅文档中audioTrackSet配置");
+		This.CLog(getUserMediaTxt+"("+JSON.stringify(mSet)+") "+CtxState(ctx)+"，一般默认会降噪和回声消除，移动端可能会降低系统播放音量，请参阅文档中audioTrackSet配置");
 		if(pro&&pro.then){
 			pro.then(f1)[CatchTxt](f2); //fix 关键字，保证catch压缩时保持字符串形式
 		};
@@ -1150,9 +1175,9 @@ Recorder.prototype=initFn.prototype={
 	
 	
 	
-	//开始录音，需先调用open；只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误
+	//开始录音，需先调用open；只要open成功时，调用此方法是安全的，如果未open强行调用导致的内部错误将不会有任何提示，stop时自然能得到错误；注意：open和start至少有一个应当在用户操作（触摸、点击等）下进行调用，原因参考runningContext配置
 	,start:function(){
-		var This=this,ctx=This._streamCtx();
+		var This=this;
 		
 		var isOpen=1;
 		if(This.set.sourceStream){//直接提供了流，仅判断是否调用了open
@@ -1166,7 +1191,8 @@ Recorder.prototype=initFn.prototype={
 			This.CLog("未open",1);
 			return;
 		};
-		This.CLog("开始录音");
+		var ctx=This._streamCtx();
+		This.CLog("start 开始录音 "+CtxState(ctx));
 		
 		This._stop();
 		This.state=3;//0未录音 1录音中 2暂停 3等待ctx激活
@@ -1254,7 +1280,7 @@ Recorder.prototype=initFn.prototype={
 	,stop:function(True,False,autoClose){
 		var This=this,set=This.set,t1;
 		var envInMS=This.envInLast-This.envInFirst, envInLen=envInMS&&This.buffers.length; //可能未start
-		This.CLog("stop 和start时差"+(envInMS?envInMS+"ms 补偿"+This.envInFix+"ms"+" envIn:"+envInLen+" fps:"+(envInLen/envInMS*1000).toFixed(1):"-"));
+		This.CLog("stop 和start时差"+(envInMS?envInMS+"ms 补偿"+This.envInFix+"ms"+" envIn:"+envInLen+" fps:"+(envInLen/envInMS*1000).toFixed(1):"-")+" LM:"+Recorder.LM);
 		
 		var end=function(){
 			This._stop();//彻底关掉engineCtx
