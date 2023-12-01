@@ -1,46 +1,36 @@
 /*
-app-support/app.js中Native测试用的配置例子，用于调用App的原生接口来录音
+app-support/app.js中Native测试用的配置例子，用于调用Hybrid App的原生接口来录音
 
-【本文件的作用】：实现app.js内Native中Config的四个标注为需实现的接口（这几个接口是app-native-support.js需要的），提供本文件可免去修改app.js源码。
+【本文件的作用】：实现app-native-support.js内Config的四个标注为需实现的接口，提供本文件可免去修改源码，即可在Android和iOS已适配的Hybrid App内录音（H5调用App原生录音接口）。
 
-本例子提供了一个JsBridge实现，并且本文件所在目录内还有Android和IOS的demo项目，app原生层已实现相应的接口，copy源码改改就能用。
+本例子提供了一个JsBridge实现，并且本文件所在目录内还有Android和iOS的demo项目，app原生层已实现相应的接口，copy源码改改就能用。
 
-此文件需要在app.js之前进行加载，【注意】【如果你App原生层实现不是用的demo中提供的接口文件，需自行重写本配置代码】
-
-支持在iframe中使用（含跨域）。
+本配置例子仅支持在浏览器环境内使用，可以在iframe中使用（含跨域），但未适配非浏览器环境。
 
 https://github.com/xiangyuecn/Recorder
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
-/**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置；如果这些文件你已手动全部加载，这个目录配置可以不用**/
-window.RecordAppBaseFolder=window.PageSet_RecordAppBaseFolder||"https://xiangyuecn.gitee.io/recorder/src/";
-
-
-
-//Install Begin：在RecordApp准备好时执行这些代码
-window.OnRecordAppInstalled=window.Native_RecordApp_Config=function(){
-window.Native_RecordApp_Config=null;
-window.IOS_Weixin_RecordApp_Config&&IOS_Weixin_RecordApp_Config();//如果ios-weixin-config.js也引入了的话，也需要初始化
-
-
-var App=RecordApp;
+var App=Recorder.RecordApp;
 var CLog=App.CLog;
 var platform=App.Platforms.Native;
 var config=platform.Config;
 
-CLog("native-config init");
+CLog("[Hybrid App] native-config init");
 
 
 
-
-
-
+if(isBrowser){
 /******JsBridge简易版*******/
 /*JsBridge名称定义
 	Android为addJavascriptInterface注入到全局，提供RecordAppJsBridge.request(jsonString)
-	IOS为userContentController绑定对象实现（此对象仅供识别，由于messageHandlers没有同步返回值（同步能实现异步，异步只能异步到死），因此不能参与数据交互，数据交互使用重写prompt实现）
+	iOS为userContentController绑定对象实现（此对象仅供识别，由于messageHandlers没有同步返回值（同步能实现异步，异步只能异步到死），因此不能参与数据交互，数据交互使用重写prompt实现）
 */
 var JsBridgeName="RecordAppJsBridge";
 
@@ -50,7 +40,7 @@ var AppJsBridgeRequest=window.AppJsBridgeRequest=function(action,args,call){
 	try{//让顶层window去处理，如果跨域无权限就算了
 		pfn=p.AppJsBridgeRequest;
 	}catch(e){
-		CLog("检测到跨域iframe，AppJsBridgeRequest将由Native通过执行postMessage转发来兼容数据的返回",3);
+		CLog($T("qkwO::检测到跨域iframe，AppJsBridgeRequest将由Native通过执行postMessage转发来兼容数据的返回",":When a cross-domain iframe is detected, AppJsBridgeRequest will be returned by Native by performing postMessage forwarding."),3);
 	};
 	if(pfn && pfn!=AppJsBridgeRequest){
 		return pfn(action,args,call);
@@ -72,10 +62,10 @@ var AppJsBridgeRequest=window.AppJsBridgeRequest=function(action,args,call){
 	var val="";
 	if(window[JsBridgeName]){//Android
 		val=window[JsBridgeName].request(data);
-	}else if( ((window.webkit||{}).messageHandlers||{})[JsBridgeName+"IsSet"] ){//IOS
+	}else if( ((window.webkit||{}).messageHandlers||{})[JsBridgeName+"IsSet"] ){//iOS
 		val=prompt(data);
 	}else{//非App环境
-		json.message="非app，不能调用接口";
+		json.message=$T("jXZB::非app，不能调用接口",":Non-app, cannot call the interface");
 	};
 	val=val&&JSON.parse(val)||json;
 	
@@ -103,9 +93,9 @@ try{
 	window.top.AppJsBridgeRequest=AppJsBridgeRequest;
 }catch(e){
 	var tipsFn=function(){
-		CLog("检测到跨域iframe，AppJsBridgeRequest无法注入到顶层，已监听postMessage，Native通过执行postMessage转发来兼容数据返回",3);
+		CLog($T("bFcE::检测到跨域iframe，AppJsBridgeRequest无法注入到顶层，已监听postMessage，Native通过执行postMessage转发来兼容数据返回",":Cross-domain iframe detected, AppJsBridgeRequest cannot be injected into the top level, postMessage has been listened to, and Native performs postMessage forwarding to support data return."),3);
 		if(window.parent!=window.top){
-			CLog("RecordApp Native Config示例不支持跨域iframe超过1层，因为没有处理中间的iframe的window的postMessage转发",1);
+			CLog($T("9cSl::RecordApp Native Config示例不支持跨域iframe超过1层，因为没有处理中间的iframe的window的postMessage转发",":The RecordApp Native Config example does not support cross-domain iframes with more than 1 layer, because the postMessage forwarding of the window of the intermediate iframe is not processed."),1);
 		};
 	};
 	setTimeout(tipsFn,8000);
@@ -121,14 +111,13 @@ try{
 			}else if(action=="Record"){
 				AppJsBridgeRequest.Record(data.pcmDataBase64, data.sampleRate);
 			}else{
-				CLog("AppJsBridgeRequest未知postMessage："+action,3);
+				CLog($T("jDCI::AppJsBridgeRequest未知postMessage：",":AppJsBridgeRequest unknown postMessage: ")+action,3);
 			};
 		};
 	});
 };
 /******JsBridge简单实现 End*******/
-
-
+};
 
 
 
@@ -138,6 +127,12 @@ try{
 
 /*********实现app.js内Native中Config的接口*************/
 config.IsApp=function(call){
+	if(!isBrowser){
+		CLog($T("pvEs::测试用的配置文件native-config.js未适配非浏览器环境，无法进行App原生录音调用",":The configuration file native-config.js used for testing is not adapted to non-browser environments. Unable to make App native recording call"),3);
+		call(false);
+		return;
+	};
+	
 	/*识别为app环境*/
 	if(window[JsBridgeName]||((window.webkit||{}).messageHandlers||{})[JsBridgeName+"IsSet"]){
 		call(true);
@@ -155,9 +150,9 @@ config.JsBridgeRequestPermission=function(success,fail){
 		if(json.value==1){
 			success();
 		}else if(json.value==3){
-			fail("用户拒绝了录音权限",true);
+			fail($T("wMEz::用户拒绝了录音权限",":User denied recording permission"),true);
 		}else{
-			fail("不支持录音");
+			fail($T("G7zU::不支持录音",":Does not support recording"));
 		};
 	});
 };
@@ -173,6 +168,7 @@ config.JsBridgeStart=function(set,success,fail){
 		success();
 		
 		//激活定时心跳，如果超过10秒未发心跳，app将会停止录音，防止未stop导致泄露
+		clearInterval(aliveInt);
 		aliveInt=setInterval(function(){
 			//同步接口
 			var val=AppJsBridgeRequest("recordAlive");
@@ -195,24 +191,4 @@ config.JsBridgeStop=function(success,fail){
 /*********接口实现END*************/
 
 
-
-};
-//Install End
-
-
-//如果已加载RecordApp，手动进行触发
-if(window.RecordApp){
-	OnRecordAppInstalled();
-};
-
-})();
-
-
-console.error("【注意】本网站正在使用RecordApp的native-config.js测试用的配置例子，这个配置如果要使用到你的网站，需要自己重写或修改后才能使用");
-//别的站点引用弹窗醒目提示
-if(!/^file:|:\/\/[^\/]*(jiebian.life|git\w+.io)(\/|$)/.test(location.href)
-	&& !localStorage["DisableAppSampleAlert"]
-	&& !window.AppSampleAlert){
-	window.AppSampleAlert=1;
-	alert("【注意】当前网站正在使用RecordApp测试用的配置例子*.config.js，需要自己重写或修改后才能使用");
-};
+}));

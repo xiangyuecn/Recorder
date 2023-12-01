@@ -3,130 +3,138 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<link rel="shortcut icon" type="image/png" href="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/assets/icon.png">
+<link rel="shortcut icon" type="image/png" href="../assets/icon.png">
 
-<title>RecordApp QuickStart: 快速入门</title>
-
-<script>
-var Tips='你可以直接将 <a target="_blank" href="https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/QuickStart.html">/app-support-sample/QuickStart.html</a> 文件copy 到你的(https)网站中，然后将变量PageSet_RecordAppWxApi改成你自己的后端API地址，无需其他文件，就能正常开始测试了；相比 RecordApp (/app-support-sample/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习'+unescape("%uD83D%uDE04");
-console.log(Tips);
-</script>
+<title reclang="CS4l">RecordApp QuickStart: 快速入门</title>
+<script>var PageLM="2023-12-01 20:16";</script>
+<!--
+你可以直接将 /app-support-sample/QuickStart.html 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了。
+You can directly copy the /app-support-sample/QuickStart.html file to your (https) website, and you can start testing normally without other files.
+-->
 </head>
 
 <body>
+<!-- ↓↓↓这部分代码无关紧要，可全部删掉，选择CDN线路用的↓↓↓ -->
+<!-- ↓↓↓This part of the code is irrelevant, you can delete it all, and choose the CDN line↓↓↓ -->
 <script>
-/********将此处后端API地址改成你的地址即可开始测试**********/
-
-/**【需修改】请使用自己的网站后端一个接口地址去实现：微信JsSDK签名、微信录音素材下载两个功能；不能用这个空的默认值，微信【强制】要【绑安全域名】，别的站用不了。此接口地址是用在ios-weixin-config.js中的，如果你要调整请求的参数、或者响应结果格式、或用两个接口地址，需要修改此js中对应的ajax调用。
-【微信文档】后端签名接口参考：微信JsSDK wx.config需使用到后端接口进行签名，文档: https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html 阅读：通过config接口注入权限验证配置、附录1-JS-SDK使用权限签名算法。
-【微信文档】后端素材下载接口参考: https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727
-**/
-var PageSet_RecordAppWxApi="";
-/*这个api接口：
-	会实现两个功能，ajax POST请求参数如下(都是两个参数，完整细节看下面ajax调用):
-		功能一、action="sign" //JsSDK签名
-				url="https://x.com/page" //当前页面url地址,需要对这个地址进行签名
-		功能二、action="wxdown" //素材下载
-				mediaID="abcd" //需下载的素材ID
-	响应内容(JSON Object):
-		{
-			c:0		//code，0：正常，其他：错误
-			,m:""	//errMsg code!=0时的错误描述
-			,v:{}	//返回结果value，为JSON Object
-					//sign时:v={appid:"公众号appid", timestamp:1577836800, noncestr:"随机字符串", signature:"签名值"} 就是返回wx.config需要的签名相关参数
-					//wxdown时:v={mime:"audio/amr", data:"base64文本"} 就是返回素材下载的音频文件base64编码数据
-		}*/
-
-
-/**【需修改】请使用自己的js文件目录，不要用github的不稳定。RecordApp会自动从这个目录内进行加载相关的实现文件、Recorder核心、编码引擎，会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置**/
-var PageSet_RecordAppBaseFolder = "https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/";//使用dist目录内的文件小2/3
-
-//自己使用时应当自己把源码clone下来，然后通过src="/src/app-support/app.js"引入，为了方便copy文件测试起见，使用了JsDelivr CDN，这玩意不一定能正常访问
-var onBadCDN=function(){
-	document.querySelector(".badCDN").innerHTML="cdn.jsdelivr.net可能不稳定，未能检测到js被成功加载。<br>如果页面异常，请复制本页面源码到本地测试，并且批量替换掉 https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/ 为 https://xiangyuecn.gitee.io/recorder/ 就能正常测试了";
+var DisableCDN=!!localStorage["Rec_QuickStart_DisableCDN"];
+if(/xiangyuecn\.git/.test(location.host))DisableCDN=true;
+if(!DisableCDN){
+	console.warn("本页面的js资源采用的CDN链接，这些CDN并不稳定，仅供测试用。The CDN links used by the js resources on this page are not stable and are only for testing.");
+	setCDNUrl("https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/");
+}
+function setCDNUrl(url){
+	if(DisableCDN)return;
+	var old=document.querySelector("base");
+	if(old)old.parentNode.removeChild(old);
+	if(!url)return;
+	var base=document.createElement("base");
+	base.setAttribute("href",url+"app-support-sample/");
+	document.head.appendChild(base);
+	console.warn("已切换CDN线路。CDN line switched.",url);
 };
+var useCDN={};
+var intBadCDN=setTimeout(function(){ onBadCDN() },10000);
+var onOKCDN=function(){ clearTimeout(intBadCDN) };
+var onBadCDN=function(){
+	if(DisableCDN)return;
+	clearTimeout(intBadCDN);
+	var cdn=useCDN.cdn;
+	var url=!cdn?"https://unpkg.com/recorder-core/":
+		/unpkg/i.test(cdn)?"https://xiangyuecn.gitee.io/recorder/":"";
+	if(!url){ setCDNUrl(""); return;}
+	location.hash="#useCDN="+encodeURIComponent(JSON.stringify({
+		time:Date.now()
+		,cdn:url
+	}));
+	location.reload();
+};
+if(/useCDN=([^&#]+)/.test(location.href)){
+	useCDN=JSON.parse(decodeURIComponent(RegExp.$1));
+	if(Date.now()-useCDN.time<60000){
+		setCDNUrl(useCDN.cdn);
+	}else{ useCDN={}; }
+	location.hash="";
+}
 </script>
-<div class="badCDN" style="font-size: 50px;text-align: center;color: #f60;"></div>
+<!-- ↑↑↑这部分代码无关紧要，可全部删掉，选择CDN线路用的↑↑↑ -->
+<!-- ↑↑↑This part of the code is irrelevant, you can delete it all, and choose the CDN line↑↑↑ -->
 
-<!--【1.1】加载独立配置文件，免得修改app.js-->
-<!-- 可选开启ios weixin支持的相关配置 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/app-support-sample/ios-weixin-config.js"></script>
-<!-- 可选开启native支持的相关配置 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/app-support-sample/native-config.js"></script>
+
 
 
 <!--
-【1.2】引入框架文件，app.js会自动加载实现文件、Recorder核心、编码引擎，需确保PageSet_RecordAppBaseFolder目录正确
-注意自己使用时应当自己把源码clone下来，然后通过src="/src/app-support/app.js"引入，这里为了方便copy文件测试起见，使用了JsDelivr CDN。
+【1】引入框架文件  Import plugin file   ，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入，这里为了方便copy文件测试起见，使用了JsDelivr CDN，这玩意不一定能正常访问
+
+另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
 -->
-<script src="https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/app-support/app.js" onerror="onBadCDN()"></script>
+
+<!-- 【1.1】引入核心文件  Import core file -->
+<script src="改成你clone的源码目录/../../src/recorder-core.js" onerror="!window.onBadCDN||onBadCDN()" onload="!window.onOKCDN||onOKCDN()"></script>
+
+<!-- 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可。  Import the corresponding format support files; if you need multiple format support, put the encoding engine js files of these formats in the back and load them all. -->
+<script src="改成你clone的源码目录/../../src/engine/mp3.js"></script>
+<script src="改成你clone的源码目录/../../src/engine/mp3-engine.js"></script>
+
+<!-- 【1.3】引入可选的扩展支持项，如果不需要这些扩展功能可以不引入。  Import optional extended support items. If you do not need these extended functions, you do not need to import them. -->
+<script src="改成你clone的源码目录/../../src/extensions/frequency.histogram.view.js"></script>
+<script src="改成你clone的源码目录/../../src/extensions/lib.fft.js"></script>
+
+<!-- 【1.4】引入RecordApp  Import RecordApp -->
+<script src="改成你clone的源码目录/../../src/app-support/app.js"></script>
+<!-- 【1.5】引入Native支持文件，用于在Android、iOS App中调用原生录音。  Import Native support files for calling native recording in Android and iOS Apps. -->
+<script src="改成你clone的源码目录/../../src/app-support/app-native-support.js"></script>
+<!-- 【1.6】引入Native测试配置文件（实现Hybrid App的JsBridge调用）。  Import the Native test configuration file (implement the JsBridge call of the Hybrid App). -->
+<script src="改成你clone的源码目录/../native-config.js"></script>
 
 
-<script>
-(function(){
-//注册可选扩展库
-var paths=RecordApp.Platforms.Default.Config.paths;
-paths.push({
-	url:PageSet_RecordAppBaseFolder+"extensions/waveview.js"
-	,lazyBeforeStart:1 //开启延迟加载，在Start调用前任何时间进行加载都行
-	,check:function(){return !Recorder.WaveView}
-});
-paths.push({
-	url:PageSet_RecordAppBaseFolder+"extensions/lib.fft.js"
-	,lazyBeforeStart:1
-	,check:function(){return !Recorder.LibFFT}
-});
-paths.push({
-	url:PageSet_RecordAppBaseFolder+"extensions/frequency.histogram.view.js"
-	,lazyBeforeStart:1
-	,check:function(){return !Recorder.FrequencyHistogramView}
-});
+<!-- 【*】无关js，仅供本页面用的国际化多语言支持，可删除。  It has nothing to do with js, it is only for international multilingual support for this page, it can be deleted. -->
+<script src="改成你clone的源码目录/../../assets/ztest-page-i18n.js"></script>
+<script src="改成你clone的源码目录/../../assets/zdemo.widget.donate.js"></script>
 
-RecordApp.AlwaysUseWeixinJS=!!(+localStorage["RecordApp_AlwaysUseWeixinJS"]||0);
-RecordApp.AlwaysAppUseJS=!!(+localStorage["RecordApp_AlwaysAppUseJS"]||0);
-
-//立即加载环境，自动把Recorder加载进来
-RecordApp.Install(function(){
-	console.log("RecordApp.Install成功");
-},function(){
-	var msg="RecordApp.Install出错："+err;
-	console.log(msg);
-	alert(msg);
-});
-
-})();
-</script>
+<script>window.setCDNUrl&&setCDNUrl("");//清除CDN地址  Clear CDN URLs</script>
 
 
-<!-- 【2】构建界面 -->
+<!-- 【2】构建界面  Build the web interface  -->
 <div class="main">
-	<div class="mainBox">
-		<span style="font-size:32px;color:#f60;text-decoration: line-through">RecordApp QuickStart: 快速入门</span>
+	<div class="i18nBox"></div>
+	<div class="mainBox topLinks">
+		<span style="font-size:32px;color:#f60;" reclang="47ME">Recorder App QuickStart: 快速入门</span>
 		<a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
 		| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
 		
 		<div style="padding-top:10px;color:#666">
-			更多Demo：
+			<span reclang="0KbD">更多Demo：</span>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/app-support-sample/" target="_blank">Recorder App</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue/recordapp.html" target="_blank">App vue</a>
 			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">Recorder QuickStart</a>
-			<a class="lb" href="https://jiebian.life/web/h5/github/recordapp.aspx" target="_blank" style="text-decoration: line-through">RecordApp</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">H5 QuickStart</a>
+			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue/" target="_blank">H5 vue</a>
 		</div>
 	</div>
 	
 	<div class="mainBox">
-		<!-- 按钮控制区域 -->
+		<!-- 按钮控制区域  Control button area -->
+		<div class="btns">
+			<button onclick="recReq()" reclang="65pE">请求权限</button>
+			<button onclick="recStart()" reclang="B3ly">录制</button>
+			<button onclick="recStop()" reclang="qpRJ">停止</button>
+		</div>
 		<div class="pd btns">
-			<button onclick="recReq()">请求权限</button>
-			<button onclick="recStart()">录制</button>
-			<button onclick="recStop()" style="margin-right:80px">停止</button>
+			<span style="display: inline-block;margin-right: 36px;">
+				<button onclick="recPause()" reclang="hQ6r">暂停</button>
+				<button onclick="recResume()" reclang="ncRU">继续</button>
+				<button onclick="recStopX()" reclang="V0wV">停止(仅清理)</button>
+			</span>
 			
 			<span style="display: inline-block;">
-				<button onclick="recPlay()">播放</button>
-				<button onclick="recUpload()">上传</button>
+				<button onclick="recPlay()" reclang="uwNo">播放</button>
+				<button onclick="recUpload()" reclang="ziQt">上传</button>
+				<button onclick="recLocalDown()" reclang="HsFg">本地下载</button>
 			</span>
 		</div>
 		
-		<!-- 波形绘制区域 -->
+		<!-- 波形绘制区域  Waveform drawing area -->
 		<div class="pd recpower">
 			<div style="height:40px;width:300px;background:#999;position:relative;">
 				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
@@ -137,64 +145,50 @@ RecordApp.Install(function(){
 			<div style="border:1px solid #ccc;display:inline-block"><div style="height:100px;width:300px;" class="recwave"></div></div>
 		</div>
 		
-		<!-- 功能配置区域 -->
+		<!-- 功能配置区域 Function configuration area -->
 		<div>
-			<div class="pd">
-				<span class="lb">JsSDK :</span> <label><input type="checkbox" class="alwaysUseWeixinJS">Android微信内也用JsSDK</label>
-			</div>
 			<div>
-				<span class="lb">AppUseJS :</span> <label><input type="checkbox" class="alwaysAppUseJS">App里面总是使用Recorder H5录音</label>
+				<span class="lb">AppUseH5 :</span> <label><input type="checkbox" class="alwaysAppUseH5"><span reclang="iIYH">App里面总是使用Recorder H5录音</span></label>
 			</div>
 		</div>
 	</div>
 	
-	<!-- 日志输出区域 -->
+	<!-- 日志输出区域  Log output area -->
 	<div class="mainBox">
 		<div class="reclog"></div>
 	</div>
 </div>
 
 
-<!-- 【3】实现录音逻辑 -->
+<!-- 【3】实现录音逻辑  Implement recording logic -->
 <script>
-var rec,wave,recBlob;
-/**调用RequestPermission打开录音请求好录音权限**/
+var wave,recBlob;
+/**调用RequestPermission打开录音请求好录音权限  Call RequestPermission to open the recording and request the recording permission.**/
 var recReq=function(){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
-	rec=false;
-	reclog("正在打开录音，请稍后...");
+	reclog(Html_$T("Dy0d::开始请求授权..."));
 	
-	createDelayDialog(); //我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调，此处demo省略了弹窗的代码
 	RecordApp.RequestPermission(function(){
-		rec=true;
-		dialogCancel(); //如果开启了弹框，此处需要取消
-		
-		reclog("已打开录音，可以点击录制开始录音了",2);
+		reclog(RecordApp.Current.Key+" "+Html_$T("crXf::已授权"),2);
 	},function(err,isUserNotAllow){
-		dialogCancel(); //如果开启了弹框，此处需要取消
-		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开录音失败："+err,1);
+		reclog((RecordApp.Current&&RecordApp.Current.Key||"[?]")
+			+(isUserNotAllow?" UserNotAllow, ":"")
+			+" "+Html_$T("z8Lp::授权失败：")+err,1);
 	});
-	
-	window.waitDialogClick=function(){
-		dialogCancel();
-		reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>",1);
-	};
 };
 
 
 
-/**开始录音**/
+/**开始录音  Start recording**/
 function recStart(){
-	if(!rec|| !RecordApp.Current){
-		reclog("未请求权限", 1);
+	if(!RecordApp.Current){
+		reclog(Html_$T("38jY::未请求权限"), 1);
 		return;
 	};
 	
-	if(RecordApp.Current==RecordApp.Platforms.Weixin){
-		reclog("正在使用微信JsSDK，录音过程中不会有任何回调，不要惊慌");
-	}else if(RecordApp.Current==RecordApp.Platforms.Native){
-		reclog("正在使用Native录音，底层由App原生层提供支持");
+	if(RecordApp.Current==RecordApp.Platforms.Native){
+		reclog(Html_$T("oZxa::正在使用Native录音，底层由App原生层提供支持"));
 	}else{
-		reclog("正在使用H5录音，底层由Recorder直接提供支持");
+		reclog(Html_$T("l9Th::正在使用H5录音，底层由Recorder直接提供支持"));
 	};
 	
 	var set={
@@ -204,7 +198,7 @@ function recStart(){
 		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
 			//录音实时回调，大约1秒调用12次本回调
 			document.querySelector(".recpowerx").style.width=powerLevel+"%";
-			document.querySelector(".recpowert").innerText=bufferDuration+" / "+powerLevel;
+			document.querySelector(".recpowert").innerText=formatMs(bufferDuration,1)+" / "+powerLevel;
 			
 			//可视化图形绘制
 			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
@@ -213,31 +207,56 @@ function recStart(){
 	
 	wave=null;
 	recBlob=null;
+	reclog(RecordApp.Current.Key+" "+Html_$T("ULVy::正在打开..."));
 	RecordApp.Start(set,function(){
-		reclog(RecordApp.Current.Key+"录制中:"+set.type+" "+set.bitRate+"kbps",2);
+		reclog(RecordApp.Current.Key+" "+Html_$T("qUcx::录制中：")+set.type+" "+set.sampleRate+" "+set.bitRate+"kbps",2);
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		wave=Recorder.FrequencyHistogramView({elem:".recwave"});
 	},function(err){
-		reclog(RecordApp.Current.Key+"开始录音失败："+err,1);
+		reclog(RecordApp.Current.Key+" "+Html_$T("0Rxw::开始录音失败：")+err,1);
 	});
 };
 
-/**结束录音，得到音频文件**/
+/**暂停录音  Passing recording**/
+function recPause(){
+	if(RecordApp.GetCurrentRecOrNull()){
+		RecordApp.Pause();
+		reclog(Html_$T("S27N::已暂停"));
+	}
+};
+/**恢复录音  Resume recording**/
+function recResume(){
+	if(RecordApp.GetCurrentRecOrNull()){
+		RecordApp.Resume();
+		reclog(Html_$T("ChUt::继续录音中..."));
+	}
+};
+
+/**结束录音，得到音频文件  Stop recording and get audio files**/
 function recStop(){
-	if(!rec|| !RecordApp.Current){
-		reclog("未请求权限",1);
+	if(!RecordApp.Current){
+		reclog(Html_$T("eHzv::未请求权限"),1);
 		return;
 	};
 	
-	RecordApp.Stop(function(blob,duration){
-		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
+	RecordApp.Stop(function(aBuf,duration,mime){
+		var blob=new Blob([aBuf],{type:mime});
+		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"duration:"+duration+"ms");
 		
 		recBlob=blob;
-		reclog("已录制mp3："+duration+"ms "+blob.size+"字节，可以点击播放、上传了",2);
+		reclog(Html_$T("YcB5::已录制mp3：{1}ms {2}字节，可以点击播放、上传、本地下载了",0,formatMs(duration),blob.size),2);
 	},function(msg){
-		reclog("录音失败:"+msg,1);
+		reclog(Html_$T("nIFF::录音失败：")+msg,1);
 	});
+};
+function recStopX(){
+	RecordApp.Stop(
+		null //success传null就只会清理资源，不会进行转码
+		,function(msg){
+			reclog(Html_$T("vHlR::已清理，错误信息：")+msg);
+		}
+	);
 };
 
 
@@ -248,14 +267,14 @@ function recStop(){
 
 
 
-/**播放**/
+/**播放  Play**/
 function recPlay(){
 	if(!recBlob){
-		reclog("请先录音，然后停止后再播放",1);
+		reclog(Html_$T("kWpA::请先录音，然后停止后再播放"),1);
 		return;
 	};
 	var cls=("a"+Math.random()).replace(".","");
-	reclog('播放中: <span class="'+cls+'"></span>');
+	reclog(Html_$T('XCKe::播放中: ')+'<span class="'+cls+'"></span>');
 	var audio=document.createElement("audio");
 	audio.controls=true;
 	document.querySelector("."+cls).appendChild(audio);
@@ -268,11 +287,11 @@ function recPlay(){
 	},5000);
 };
 
-/**上传**/
+/**上传  Upload**/
 function recUpload(){
 	var blob=recBlob;
 	if(!blob){
-		reclog("请先录音，然后停止后再上传",1);
+		reclog(Html_$T("SLaX::请先录音，然后停止后再上传"),1);
 		return;
 	};
 	
@@ -283,16 +302,16 @@ function recUpload(){
 		return function(){
 			if(xhr.readyState==4){
 				if(xhr.status==200){
-					reclog(title+"上传成功",2);
+					reclog(title+Html_$T("DHfL::上传成功"),2);
 				}else{
-					reclog(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。", "#d8c1a0");
+					reclog(title+Html_$T("K1x7::没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。"), "#d8c1a0");
 					
-					console.error(title+"上传失败",xhr.status,xhr.responseText);
+					console.error(Html_xT(title+Html_$T("UKGO::上传失败")),xhr.status,xhr.responseText);
 				};
 			};
 		};
 	};
-	reclog("开始上传到"+api+"，请求稍后...");
+	reclog(Html_$T("JIr4::开始上传到{1}，请求稍后...",0,api));
 
 	/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
 	var reader=new FileReader();
@@ -305,7 +324,7 @@ function recUpload(){
 		var xhr=new XMLHttpRequest();
 		xhr.open("POST", api);
 		xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-		xhr.onreadystatechange=onreadystatechange("上传方式一【Base64】");
+		xhr.onreadystatechange=onreadystatechange(Html_$T("XVmd::上传方式一【Base64】"));
 		xhr.send(postData);
 	};
 	reader.readAsDataURL(blob);
@@ -317,57 +336,71 @@ function recUpload(){
 	
 	var xhr=new XMLHttpRequest();
 	xhr.open("POST", api);
-	xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
+	xhr.onreadystatechange=onreadystatechange(Html_$T("6rhE::上传方式二【FormData】"));
 	xhr.send(form);
 };
 
 
-
-
-
-
-
-
-
-
-//recReq我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
-var showDialog=function(){
-	if(!/mobile/i.test(navigator.userAgent)){
-		return;//只在移动端开启没有权限请求的检测
+/**本地下载  Local download**/
+function recLocalDown(){
+	if(!recBlob){
+		reclog(Html_$T("hFmL::请先录音，然后停止后再下载"),1);
+		return;
 	};
-	dialogCancel();
+	var cls=("a"+Math.random()).replace(".","");
+	recdown64.lastCls=cls;
+	reclog(Html_$T('UrgF::点击 ')+'<span class="'+cls+'"></span>'+Html_$T('c7b7:: 下载，或复制文本')
+		+'<button onclick="recdown64(\''+cls+'\')">'+Html_$T('6Bln::生成Base64文本')+'</button><span class="'+cls+'_b64"></span>');
 	
-	//显示弹框，应该使用自己的弹框方式
-	var div=document.createElement("div");
-	document.body.appendChild(div);
-	div.innerHTML=(''
-		+'<div class="waitDialog" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">'
-			+'<div style="display:flex;height:100%;align-items:center;">'
-				+'<div style="flex:1;"></div>'
-				+'<div style="width:240px;background:#fff;padding:15px 20px;border-radius: 10px;">'
-					+'<div style="padding-bottom:10px;">录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~</div>'
-					+'<div style="text-align:center;"><a onclick="waitDialogClick()" style="color:#0B1">忽略</a></div>'
-				+'</div>'
-				+'<div style="flex:1;"></div>'
-			+'</div>'
-		+'</div>');
-};
-var createDelayDialog=function(){
-	dialogInt=setTimeout(function(){//定时8秒后打开弹窗，用于监测浏览器没有发起权限请求的情况，在open前放置定时器利于收到了回调能及时取消（不管open是同步还是异步回调的）
-		showDialog();
-	},8000);
-};
-var dialogInt;
-var dialogCancel=function(){
-	clearTimeout(dialogInt);
+	var fileName="recordapp-"+Date.now()+".mp3";
+	var downA=document.createElement("A");
+	downA.innerHTML=Html_$T("ROdY::下载 ")+fileName;
+	downA.href=(window.URL||webkitURL).createObjectURL(recBlob);
+	downA.download=fileName;
+	document.querySelector("."+cls).appendChild(downA);
+	if(/mobile/i.test(navigator.userAgent)){
+		alert(Html_xT(Html_$T("3rPj::因移动端绝大部分国产浏览器未适配Blob Url的下载，所以本demo代码在移动端未调用downA.click()。请尝试点击日志中显示的下载链接下载")));
+	}else{
+		downA.click();
+	}
 	
-	//关闭弹框，应该使用自己的弹框方式
-	var elems=document.querySelectorAll(".waitDialog");
-	for(var i=0;i<elems.length;i++){
-		elems[i].parentNode.removeChild(elems[i]);
+	//不用了时需要revokeObjectURL，否则霸占内存
+	//(window.URL||webkitURL).revokeObjectURL(downA.href);
+};
+function recdown64(cls){
+	var el=document.querySelector("."+cls+"_b64");
+	if(recdown64.lastCls!=cls){
+		el.innerHTML='<span style="color:red">'+Html_$T("weWp::老的数据没有保存，只支持最新的一条")+'</span>';
+		return;
+	}
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		el.innerHTML='<textarea></textarea>';
+		el.querySelector("textarea").value=reader.result;
 	};
+	reader.readAsDataURL(recBlob);
 };
-//recReq弹框End
+
+
+
+
+
+
+
+
+
+
+var formatMs=function(ms,all){
+	var ss=ms%1000;ms=(ms-ss)/1000;
+	var s=ms%60;ms=(ms-s)/60;
+	var m=ms%60;ms=(ms-m)/60;
+	var h=ms;
+	var t=(h?h+":":"")
+		+(all||h+m?("0"+m).substr(-2)+":":"")
+		+(all||h+m+s?("0"+s).substr(-2)+"″":"")
+		+("00"+ss).substr(-3);
+	return t;
+};
 </script>
 
 
@@ -377,25 +410,7 @@ var dialogCancel=function(){
 
 
 
-<!--以下这坨可以忽略-->
-<script>
-(function(){
-var alwaysUseWeixinJS=document.querySelector(".alwaysUseWeixinJS");
-var alwaysAppUseJS=document.querySelector(".alwaysAppUseJS");
-
-alwaysUseWeixinJS.checked=RecordApp.AlwaysUseWeixinJS;
-alwaysAppUseJS.checked=RecordApp.AlwaysAppUseJS;
-
-var clickFn=function(key){
-	return function(e){
-		localStorage[key]=e.target.checked?1:0;
-		location.reload();
-	};
-};
-alwaysUseWeixinJS.addEventListener("click",clickFn("RecordApp_AlwaysUseWeixinJS"));
-alwaysAppUseJS.addEventListener("click",clickFn("RecordApp_AlwaysAppUseJS"));
-})();
-</script>
+<!--以下这坨可以忽略  The following can be ignored-->
 <script>
 function reclog(s,color){
 	var now=new Date();
@@ -409,20 +424,80 @@ function reclog(s,color){
 };
 window.onerror=function(message, url, lineNo, columnNo, error){
 	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
-	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+	reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||Html_$T("L6RO::不能获得错误堆栈"))+'</pre></span>');
 };
 
-reclog("RecordApp[即将废弃] 除Recorder支持的外，支持Hybrid App，低版本IOS上支持微信网页和小程序web-view"+unescape("%uD83C%uDF89"),"#f60;font-weight:bold;font-size:24px");
-reclog("Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+"+unescape("%uD83D%uDCAA"),"#0b1;font-weight:bold;font-size:24px");
-reclog(Tips);
+if(!window.Html_$T){//没有提供本页面用的国际化多语言支持时 返回中文文本
+	window.Html_$T=function(){
+		var a=arguments,txt=a[0].replace(/^.+?::/,""),n=0;
+		for(var i=0;i<a.length;i++){ if(typeof a[i]=="number"){ n=i;break } }
+		txt=txt.replace(/\{(\d+)\}/g,function(v,f){ v=a[+f+n]; return v==null?"":v });
+		return txt;
+	}
+	window.Html_xT=function(v){ return v }
+}
+
+reclog(Html_$T('FaWz::如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~'),"#333;font-size:22px;font-weight:bold");
+reclog(Html_$T("98Ry::Recorder App基于Recorder H5的跨平台录音，支持在浏览器环境中使用（H5）、各种使用js来构建的程序中使用（App、小程序、UniApp、Electron、NodeJs）")+unescape("%uD83C%uDF89"),"#f60;font-weight:bold;font-size:24px");
+reclog(Html_$T("p71N::Recorder H5使用简单，功能丰富，支持PC、Android、iOS 14.3+")+unescape("%uD83D%uDCAA"),"#0b1;font-weight:bold;font-size:24px");
+reclog(Html_$T('5hyY::本页面修改时间（有可能修改了忘改）：')+PageLM,"#999");
+reclog(Html_$T('7GKB::RecordApp库修改时间（有可能修改了忘改）：')+(window.RecordApp&&RecordApp.LM),"#999");
+reclog(Html_$T('or9l::Recorder库修改时间（有可能修改了忘改）：')+(window.Recorder&&Recorder.LM),"#999");
+reclog("UA: "+navigator.userAgent, "#999");
+reclog("URL: "+location.href.replace(/#.*/g,""), "#999");
+reclog(Html_$T('veMB::你可以直接将 ')+'<a target="_blank" href="https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/QuickStart.html">/app-support-sample/QuickStart.html</a>'+Html_$T('EA2M:: 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了，本文件更适合入门学习')+unescape("%uD83D%uDE04"));
+
+if(window.useCDN && useCDN.cdn){
+	reclog(Html_$T('LiG4::本页面的js资源采用的CDN不稳定，已切换到：')+useCDN.cdn,'#f60');
+}
+
+
+if(window.RecordApp){
+	document.querySelector(".alwaysAppUseH5")
+		.addEventListener("click",function(e){
+			RecordApp.AlwaysAppUseH5=e.target.checked;
+			RecordApp.Current=null;
+			reclog(Html_$T("Xvin::AppUseH5选项变更，已重置RecordApp，请先进行权限测试"));
+		});
+	
+	//立即加载环境
+	RecordApp.Install(function(){
+		reclog(Html_$T("1GmN::Install成功，环境：")+RecordApp.Current.Key,2);
+		reclog(Html_$T('1ffD::页面已准备好，请先点击请求权限，然后点击录制'),2);
+	},function(err){
+		reclog(Html_$T("Y5vJ::RecordApp.Install出错：")+err,1);
+	});
+}else{
+	reclog(Html_$T("1ISU::js文件加载失败，请刷新重试！"),"#f00;font-size:50px");
+}
 </script>
 
 <script>
+//url路径前缀
+var BaseUrl="../",BaseUrlGitee="https://xiangyuecn.gitee.io/recorder/";
+if(!window.DisableCDN){
+	BaseUrl=BaseUrlGitee;
+	if(window.PageLangIsZhCN&&!PageLangIsZhCN()){
+		BaseUrl="https://xiangyuecn.github.io/Recorder/";
+	};
+	if(/(^https?:..xiangyuecn\.git[^\/]+\/recorder)/i.test(location.href)){
+		BaseUrl=RegExp.$1+"/";
+	};
+};
+//修改a链接的url
+var els=document.querySelectorAll(".topLinks a");
+for(var i=0;i<els.length;i++){
+	var el=els[i],v=el.getAttribute("href")||"";
+	if(v.indexOf(BaseUrlGitee)==0){
+		el.setAttribute("href", BaseUrl+v.substr(BaseUrlGitee.length));
+	}
+}
+
 if(/mobile/i.test(navigator.userAgent)){
 	//移动端加载控制台组件
 	var elem=document.createElement("script");
 	elem.setAttribute("type","text/javascript");
-	elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+	elem.setAttribute("src",BaseUrl+"assets/ztest-vconsole.js");
 	document.body.appendChild(elem);
 	elem.onload=function(){
 		new VConsole();
@@ -431,7 +506,6 @@ if(/mobile/i.test(navigator.userAgent)){
 </script>
 
 <!-- 加载打赏挂件 -->
-<script src="https://xiangyuecn.gitee.io/recorder/assets/zdemo.widget.donate.js"></script>
 <script>
 var donateView=document.createElement("div");
 document.querySelector(".reclog").appendChild(donateView);
@@ -439,6 +513,19 @@ DonateWidget({
 	log:function(msg){reclog(msg)}
 	,mobElem:donateView
 });
+</script>
+
+<!-- 启用国际化多语言支持 -->
+<script>
+if(window.PageI18nWidget){
+PageI18nWidget({
+	elem:".i18nBox", rootUrl:BaseUrl
+	,titleKey:"CS4l"
+	,langs:{
+		"en-US":{urls:[ "#app_QuickStart_html/en-US.js","#widget_donate/en-US.js" ]}
+	}
+});
+};
 </script>
 
 <style>

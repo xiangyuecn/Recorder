@@ -1,0 +1,47 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+            "path" : "pages/recTest/page_index",
+            "style" : {
+                "navigationBarTitleText": "RecordApp录音测试 - uni-app"
+            }
+        },
+		{
+		    "path" : "pages/recTest/page_index2",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp新开页面index - uni-app"
+		    }
+		},
+		{
+		    "path" : "pages/recTest/main_recTest",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp新开页面main - uni-app"
+		    }
+		},
+		{
+		    "path" : "pages/recTest/page_i18n",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp国际化多语言 - uni-app"
+		    }
+		},
+		{
+		    "path" : "pages/recTest/page_nvue",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp nvue原生页面 - uni-app"
+		    }
+		},
+		{
+		    "path" : "pages/recTest/page_renderjsOnly",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp纯renderjs调用 - uni-app"
+		    }
+		}
+    ],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {}
+}

@@ -1,0 +1,110 @@
+<view style="word-break:break-all">
+	<!-- 录音格式选择 -->
+	<view bindtap="recTypeClick">
+		类型：
+		<checkbox checked="{{recType=='mp3'}}" data-type="mp3">mp3</checkbox>
+		<checkbox checked="{{recType=='wav'}}" data-type="wav">wav</checkbox>
+		<checkbox checked="{{recType=='pcm'}}" data-type="pcm">pcm</checkbox>
+		<checkbox checked="{{recType=='amr'}}" data-type="amr">amr</checkbox>
+		<checkbox checked="{{recType=='g711a'}}" data-type="g711a">g711a</checkbox>
+		<checkbox checked="{{recType=='g711u'}}" data-type="g711u">g711u</checkbox>
+		<checkbox checked="{{recType=='ogg'}}" data-type="ogg" disabled="{{true}}">ogg(js太大)</checkbox>
+	</view>
+
+	<!-- 控制按钮 -->
+	<view style="display: flex;padding-top:10px">
+		<view style="width:10px"></view>
+		<view style="flex:1.5">
+			<button type="warn" bindtap="recReq" style="width:auto;padding:8px 5px;">请求录音权限</button>
+		</view>
+		<view style="width:10px"></view>
+		<view style="flex:1">
+			<button type="primary" bindtap="recStart" style="width:auto;padding:8px 5px;">开始录音</button>
+		</view>
+		<view style="width:10px"></view>
+		<view style="flex:1">
+			<button bindtap="recStop" style="width:auto;padding:8px 5px;">停止录音</button>
+		</view>
+		<view style="width:10px"></view>
+	</view>
+	<view style="padding:10px 10px 0">
+		<button size="mini" bindtap="recPause">暂停</button>
+		<button size="mini" bindtap="recResume" style="margin-left:10px">继续</button>
+		<button size="mini" bindtap="recStopX" style="margin-left:10px">停止(仅清理)</button>
+	</view>
+
+	<!-- 可视化绘制 -->
+	<view style="padding:10px 0 0 5px">
+		<view style="height:40px;width:300px;background:#999;position:relative;">
+			<view style="height:40px;background:#0B1;position:absolute;width:{{recpowerx+'%'}}"></view>
+			<view style="padding-left:50px; line-height:40px; position: relative;">{{recpowert}}</view>
+		</view>
+
+		<view style="padding-top:5px"></view>
+		<view class="recwave" hidden="{{recwaveChoiceKey!='WaveView'}}">
+			<canvas type="2d" class="recwave-WaveView"></canvas>
+		</view>
+		<view class="recwave" hidden="{{recwaveChoiceKey!='SurferView'}}">
+			<canvas type="2d" class="recwave-SurferView"></canvas>
+			<canvas type="2d" class="recwave-SurferView-2x" style="width:600px" hidden="{{true}}"></canvas>
+		</view>
+		<view class="recwave" hidden="{{recwaveChoiceKey!='Histogram1'}}">
+			<canvas type="2d" class="recwave-Histogram1"></canvas>
+		</view>
+		<view class="recwave" hidden="{{recwaveChoiceKey!='Histogram2'}}">
+			<canvas type="2d" class="recwave-Histogram2"></canvas>
+		</view>
+		<view class="recwave" hidden="{{recwaveChoiceKey!='Histogram3'}}">
+			<canvas type="2d" class="recwave-Histogram3"></canvas>
+		</view>
+
+		<view style="padding-top:5px" bindtap="recwaveChoice">
+			<view class="recwaveChoice {{recwaveChoiceKey=='WaveView'?'slc':''}}" data-key="WaveView">WaveView</view>
+			<view class="recwaveChoice {{recwaveChoiceKey=='SurferView'?'slc':''}}" data-key="SurferView">SurferView</view>
+			<view class="recwaveChoice {{recwaveChoiceKey=='Histogram1'?'slc':''}}" data-key="Histogram1">Histogram1</view>
+			<view class="recwaveChoice {{recwaveChoiceKey=='Histogram2'?'slc':''}}" data-key="Histogram2">H...2</view>
+			<view class="recwaveChoice {{recwaveChoiceKey=='Histogram3'?'slc':''}}" data-key="Histogram3">H...3</view>
+		</view>
+	</view>
+	
+	<view style="padding:5px 10px 0">
+		<view><checkbox checked="{{takeoffEncodeChunkSet}}" bindtap="takeoffEncodeChunkSetClick">接管编码器输出（takeoffEncodeChunk）</checkbox> {{takeoffEncodeChunkMsg}}</view>
+	</view>
+
+	<!-- 手撸播放器 -->
+	<view wx:if="{{playUrl}}" style="padding-top:30px">
+		<view style="display: flex;">
+			<view style="width:10px"></view>
+			<view style="flex:1">
+				<button bindtap="play" style="width:auto;padding:8px 5px;">{{playing?'暂停播放':'播放'}}</button>
+			</view>
+			<view style="width:10px"></view>
+			<view style="flex:1">
+				<button bindtap="shareFile" style="width:auto;padding:8px 5px;">下载保存</button>
+			</view>
+			<view style="width:10px"></view>
+		</view>
+		
+		<view style="padding-top:10px">
+			<slider value="{{player_position}}" bindchange="setPlayerPosition" step="1" max="100" min="0"></slider>
+		</view>
+		<view style="padding:0 10px;display:flex;">
+			<view style="flex:1">{{player_currentTime}}</view>
+			<view style="flex:1;text-align: right;">{{player_duration}}</view>
+		</view>
+	</view>
+
+	<!-- 日志输出 -->
+	<view style="padding-top:30px">
+		<view wx:for="{{reclogs}}" wx:key="index" style="border-bottom:1px dashed #666;padding:5px 0;">
+			<view style="color:{{item.color==1?'red':item.color==2?'green':item.color}}">
+				{{item.txt}}
+			</view>
+		</view>
+	</view>
+	
+	<view style="padding-top:30px;color:#0ab;font-size:22px;font-weight:bold">
+		<text selectable="true" style="user-select:auto">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</text>
+	</view>
+	<view style="padding-top:80px"></view>
+</view>

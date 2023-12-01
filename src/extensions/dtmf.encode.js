@@ -10,7 +10,12 @@
 使用场景：DTMF按键信号生成，软电话实时发送DTMF按键信号等
 https://github.com/xiangyuecn/Recorder
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 /**
@@ -188,4 +193,4 @@ var DTMF_Freqs={
 };
 
 	
-})();
+}));

@@ -8,7 +8,12 @@ https://github.com/katspaugh/wavesurfer.js https://github.com/collab-project/vid
 
 本扩展的波形绘制直接简单的使用PCM的采样数值大小来进行线条的绘制，同一段音频绘制出的波形和Audition内显示的波形外观上几乎没有差异。
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 var WaveSurferView=function(set){
@@ -24,7 +29,13 @@ var fn=function(set){
 		,width:0 //显示宽度
 		,height:0 //显示高度
 		
-		以上配置二选一
+H5环境以上配置二选一
+		
+		compatibleCanvas: CanvasObject //提供一个兼容H5的canvas对象，需支持getContext("2d")，支持设置width、height，支持drawImage(canvas,...)
+		,compatibleCanvas_2x: CanvasObject //提供一个宽度是compatibleCanvas的2倍canvas对象
+		,width:0 //canvas显示宽度
+		,height:0 //canvas显示高度
+非H5环境使用以上配置
 		*/
 		
 		scale:2 //缩放系数，应为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
@@ -46,44 +57,51 @@ var fn=function(set){
 	};
 	This.set=set=o;
 	
-	var elem=set.elem;
-	if(elem){
-		if(typeof(elem)=="string"){
-			elem=document.querySelector(elem);
-		}else if(elem.length){
-			elem=elem[0];
+	var cCanvas="compatibleCanvas";
+	if(set[cCanvas]){
+		var canvas=This.canvas=set[cCanvas];
+		var canvas2=This.canvas2=set[cCanvas+"_2x"];
+	}else{
+		if(!isBrowser)throw new Error($T.G("NonBrowser-1",[ViewTxt]));
+		var elem=set.elem;
+		if(elem){
+			if(typeof(elem)=="string"){
+				elem=document.querySelector(elem);
+			}else if(elem.length){
+				elem=elem[0];
+			};
+		};
+		if(elem){
+			set.width=elem.offsetWidth;
+			set.height=elem.offsetHeight;
+		};
+		
+		var thisElem=This.elem=document.createElement("div");
+		thisElem.style.fontSize=0;
+		thisElem.innerHTML='<canvas style="width:100%;height:100%;"/>';
+		
+		var canvas=This.canvas=thisElem.querySelector("canvas");
+		var canvas2=This.canvas2=document.createElement("canvas");
+		
+		if(elem){
+			elem.innerHTML="";
+			elem.appendChild(thisElem);
 		};
 	};
-	if(elem){
-		set.width=elem.offsetWidth;
-		set.height=elem.offsetHeight;
-	};
-	
 	var scale=set.scale;
 	var width=set.width*scale;
 	var height=set.height*scale;
 	if(!width || !height){
-		throw new Error(ViewTxt+"无宽高");
-	}
+		throw new Error($T.G("IllegalArgs-1",[ViewTxt+" width=0 height=0"]));
+	};
 	
-	var thisElem=This.elem=document.createElement("div");
-	var lowerCss=["","transform-origin:0 0;","transform:scale("+(1/scale)+");"];
-	thisElem.innerHTML='<div style="width:'+set.width+'px;height:'+set.height+'px;overflow:hidden"><div style="width:'+width+'px;height:'+height+'px;'+lowerCss.join("-webkit-")+lowerCss.join("-ms-")+lowerCss.join("-moz-")+lowerCss.join("")+'"><canvas/></div></div>';
-	
-	var canvas=This.canvas=thisElem.querySelector("canvas");
-	var ctx=This.ctx=canvas.getContext("2d");
 	canvas.width=width;
 	canvas.height=height;
+	var ctx=This.ctx=canvas.getContext("2d");
 	
-	var canvas2=This.canvas2=document.createElement("canvas");
-	var ctx2=This.ctx2=canvas2.getContext("2d");
 	canvas2.width=width*2;//卷轴，后台绘制画布能容纳两块窗口内容，进行无缝滚动
 	canvas2.height=height;
-	
-	if(elem){
-		elem.innerHTML="";
-		elem.appendChild(thisElem);
-	};
+	var ctx2=This.ctx2=canvas2.getContext("2d");
 	
 	This.x=0;
 };
@@ -257,4 +275,4 @@ fn.prototype=WaveSurferView.prototype={
 Recorder[ViewTxt]=WaveSurferView;
 
 	
-})();
+}));

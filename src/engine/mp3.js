@@ -1,18 +1,47 @@
 /*
-mp3编码器，需带上mp3-engine.js引擎使用
+mp3编码器，需带上src/engine/mp3-engine.js引擎使用
 https://github.com/xiangyuecn/Recorder
 
 当然最佳推荐使用mp3、wav格式，代码也是优先照顾这两种格式
 浏览器支持情况
 https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
+var SampleS="48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000";
+var BitS="8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 192, 224, 256, 320";
 Recorder.prototype.enc_mp3={
-	stable:true
-	,testmsg:"采样率范围48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000"
+	stable:true,takeEC:"full"
+	,getTestMsg:function(){
+		return $T("Zm7L::采样率范围：{1}；比特率范围：{2}（不同比特率支持的采样率范围不同，小于32kbps时采样率需小于32000）",0,SampleS,BitS);
+	}
 };
+
+var NormalizeSet=function(set){
+	var bS=set.bitRate, sS=set.sampleRate,s=sS;
+	if((" "+BitS+",").indexOf(" "+bS+",")==-1){
+		Recorder.CLog($T("eGB9::{1}不在mp3支持的取值范围：{2}",0,"bitRate="+bS,BitS),3);
+	}
+	if((" "+SampleS+",").indexOf(" "+sS+",")==-1){//engine SmpFrqIndex函数会检测
+		var arr=SampleS.split(", "),vs=[];
+		for(var i=0;i<arr.length;i++) vs.push({v:+arr[i],s:Math.abs(arr[i]-sS)});
+		vs.sort(function(a,b){return a.s-b.s}); s=vs[0].v;
+		
+		set.sampleRate=s;
+		Recorder.CLog($T("zLTa::sampleRate已更新为{1}，因为{2}不在mp3支持的取值范围：{3}",0,s,sS,SampleS),3);
+	}
+};
+var ImportEngineErr=function(){
+	return $T.G("NeedImport-2",["mp3.js","src/engine/mp3-engine.js"]);
+};
+//是否支持web worker
+var HasWebWorker=isBrowser && typeof Worker=="function";
 
 
 
@@ -20,44 +49,65 @@ Recorder.prototype.enc_mp3={
 
 Recorder.prototype.mp3=function(res,True,False){
 		var This=this,set=This.set,size=res.length;
-		
-		//优先采用worker编码，太低版本下面用老方法提供兼容
-		var ctx=This.mp3_start(set);
-		if(ctx){
-			This.mp3_encode(ctx,res);
-			This.mp3_complete(ctx,True,False,1);
-			return;
+		if(!Recorder.lamejs){
+			False(ImportEngineErr()); return;
 		};
 		
+		//优先采用worker编码，非worker时用老方法提供兼容
+		if(HasWebWorker){
+			var ctx=This.mp3_start(set);
+			if(ctx){
+				if(ctx.isW){
+					This.mp3_encode(ctx,res);
+					This.mp3_complete(ctx,True,False,1);
+					return;
+				}
+				This.mp3_stop(ctx);
+			};
+		};
+		
+		NormalizeSet(set);
 		//https://github.com/wangpengfei15975/recorder.js
 		//https://github.com/zhuker/lamejs bug:采样率必须和源一致，不然8k时没有声音，有问题fix：https://github.com/zhuker/lamejs/pull/11
 		var mp3=new Recorder.lamejs.Mp3Encoder(1,set.sampleRate,set.bitRate);
 		
 		var blockSize=57600;
-		var data=[];
+		var memory=new Int8Array(500000), mOffset=0;
 		
-		var idx=0,mp3Size=0;
+		var idx=0;
 		var run=function(){
-			if(idx<size){
-				var buf=mp3.encodeBuffer(res.subarray(idx,idx+blockSize));
-				if(buf.length>0){
-					mp3Size+=buf.buffer.byteLength;
-					data.push(buf.buffer);
+			try{
+				if(idx<size){
+					var buf=mp3.encodeBuffer(res.subarray(idx,idx+blockSize));
+				}else{
+					var buf=mp3.flush();
 				};
+			}catch(e){ //精简代码调用了abort
+				console.error(e);
+				False("MP3 Encoder: "+e.message);
+				return;
+			};
+			var bufLen=buf.length;
+			if(bufLen>0){
+				if(mOffset+bufLen>memory.length){
+					var tmp=new Int8Array(memory.length+Math.max(500000,bufLen));
+					tmp.set(memory.subarray(0, mOffset));
+					memory=tmp;
+				}
+				memory.set(buf,mOffset);
+				mOffset+=bufLen;
+			};
+			
+			if(idx<size){
 				idx+=blockSize;
 				setTimeout(run);//尽量避免卡ui
 			}else{
-				var buf=mp3.flush();
-				if(buf.length>0){
-					mp3Size+=buf.buffer.byteLength;
-					data.push(buf.buffer);
-				};
-				
+				var data=[memory.buffer.slice(0,mOffset)];
 				//去掉开头的标记信息帧
-				var meta=mp3TrimFix.fn(data,mp3Size,size,set.sampleRate);
+				var meta=mp3TrimFix.fn(data,mOffset,size,set.sampleRate);
 				mp3TrimFixSetMeta(meta,set);
 				
-				True(new Blob(data,{type:"audio/mp3"}));
+				True(data[0]||new ArrayBuffer(0),"audio/mp3");
 			};
 		};
 		run();
@@ -69,21 +119,24 @@ Recorder.prototype.mp3=function(res,True,False){
 //全局共享一个Worker，后台串行执行。如果每次都开一个新的，编码速度可能会慢很多，可能是浏览器运行缓存的因素，并且可能瞬间产生多个并行操作占用大量cpu
 var mp3Worker;
 Recorder.BindDestroy("mp3Worker",function(){
-	Recorder.CLog("mp3Worker Destroy");
-	mp3Worker&&mp3Worker.terminate();
-	mp3Worker=null;
+	if(mp3Worker){
+		Recorder.CLog("mp3Worker Destroy");
+		mp3Worker.terminate();
+		mp3Worker=null;
+	};
 });
 
 
 Recorder.prototype.mp3_envCheck=function(envInfo,set){//检查环境下配置是否可用
 	var errMsg="";
-	//需要实时编码返回数据，此时需要检查环境是否有实时特性、和是否可实时编码
+	//需要实时编码返回数据，此时需要检查是否可实时编码
 	if(set.takeoffEncodeChunk){
-		if(!envInfo.canProcess){
-			errMsg=envInfo.envName+"环境不支持实时处理";
-		}else if(!newContext()){//浏览器不能创建实时编码环境
-			errMsg="当前浏览器版本太低，无法实时处理";
+		if(!newContext()){//浏览器不能创建实时编码环境
+			errMsg=$T("yhUs::当前浏览器版本太低，无法实时处理");
 		};
+	};
+	if(!errMsg && !Recorder.lamejs){
+		errMsg=ImportEngineErr();
 	};
 	return errMsg;
 };
@@ -91,101 +144,117 @@ Recorder.prototype.mp3_start=function(set){//如果返回null代表不支持
 	return newContext(set);
 };
 var openList={id:0};
-var newContext=function(setOrNull){
-	var worker=mp3Worker;
-	try{
-		if(!worker){
-			var onmsg=function(e){
-				var ed=e.data;
-				var cur=wk_ctxs[ed.id];
-				if(ed.action=="init"){
-					wk_ctxs[ed.id]={
-						sampleRate:ed.sampleRate
-						,bitRate:ed.bitRate
-						,takeoff:ed.takeoff
-						
-						,mp3Size:0
-						,pcmSize:0
-						,encArr:[]
-						,encObj:new wk_lame.Mp3Encoder(1,ed.sampleRate,ed.bitRate)
-					};
-				}else if(!cur){
-					return;
-				};
+var newContext=function(setOrNull,_badW){
+	//独立运行的函数，scope.wkScope worker.onmessage 字符串会被替换
+	var run=function(e){
+		var ed=e.data;
+		var wk_ctxs=scope.wkScope.wk_ctxs;
+		var wk_lame=scope.wkScope.wk_lame;
+		var wk_mp3TrimFix=scope.wkScope.wk_mp3TrimFix;
+		
+		var cur=wk_ctxs[ed.id];
+		if(ed.action=="init"){
+			wk_ctxs[ed.id]={
+				sampleRate:ed.sampleRate
+				,bitRate:ed.bitRate
+				,takeoff:ed.takeoff
 				
-				switch(ed.action){
-				case "stop":
-					cur.encObj=null;
-					delete wk_ctxs[ed.id];
-					break;
-				case "encode":
-					cur.pcmSize+=ed.pcm.length;
-					var buf=cur.encObj.encodeBuffer(ed.pcm);
-					if(buf.length>0){
-						if(cur.takeoff){
-							self.postMessage({action:"takeoff",id:ed.id,chunk:buf});
-						}else{
-							cur.mp3Size+=buf.buffer.byteLength;
-							cur.encArr.push(buf.buffer);
-						};
-					};
-					break;
-				case "complete":
-					var buf=cur.encObj.flush();
-					if(buf.length>0){
-						if(cur.takeoff){
-							self.postMessage({action:"takeoff",id:ed.id,chunk:buf});
-						}else{
-							cur.mp3Size+=buf.buffer.byteLength;
-							cur.encArr.push(buf.buffer);
-						};
-					};
-					
-					//去掉开头的标记信息帧
-					var meta=wk_mp3TrimFix.fn(cur.encArr,cur.mp3Size,cur.pcmSize,cur.sampleRate);
-					
-					self.postMessage({
-						action:ed.action
-						,id:ed.id
-						,blob:new Blob(cur.encArr,{type:"audio/mp3"})
-						,meta:meta
-					});
-					break;
+				,pcmSize:0
+				,memory:new Int8Array(500000), mOffset:0
+				,encObj:new wk_lame.Mp3Encoder(1,ed.sampleRate,ed.bitRate)
+			};
+		}else if(!cur){
+			return;
+		};
+		var addBytes=function(buf){
+			var bufLen=buf.length;
+			if(cur.mOffset+bufLen>cur.memory.length){
+				var tmp=new Int8Array(cur.memory.length+Math.max(500000,bufLen));
+				tmp.set(cur.memory.subarray(0, cur.mOffset));
+				cur.memory=tmp;
+			}
+			cur.memory.set(buf,cur.mOffset);
+			cur.mOffset+=bufLen;
+		};
+		
+		switch(ed.action){
+		case "stop":
+			cur.encObj=null;
+			delete wk_ctxs[ed.id];
+			break;
+		case "encode":
+			cur.pcmSize+=ed.pcm.length;
+			try{
+				var buf=cur.encObj.encodeBuffer(ed.pcm);
+			}catch(e){ //精简代码调用了abort
+				cur.err=e;
+				console.error(e);
+			};
+			if(buf && buf.length>0){
+				if(cur.takeoff){
+					worker.onmessage({action:"takeoff",id:ed.id,chunk:buf});
+				}else{
+					addBytes(buf);
 				};
 			};
+			break;
+		case "complete":
+			try{
+				var buf=cur.encObj.flush();
+			}catch(e){ //精简代码调用了abort
+				cur.err=e;
+				console.error(e);
+			};
+			if(buf && buf.length>0){
+				if(cur.takeoff){
+					worker.onmessage({action:"takeoff",id:ed.id,chunk:buf});
+				}else{
+					addBytes(buf);
+				};
+			};
+			if(cur.err){
+				worker.onmessage({action:ed.action,id:ed.id
+					,err:"MP3 Encoder: "+cur.err.message});
+				break;
+			};
 			
-			//创建一个新Worker
-			var jsCode=");wk_lame();var wk_ctxs={};self.onmessage="+onmsg;
-			jsCode+=";var wk_mp3TrimFix={rm:"+mp3TrimFix.rm+",fn:"+mp3TrimFix.fn+"}";
+			var data=[cur.memory.buffer.slice(0,cur.mOffset)];
+			//去掉开头的标记信息帧
+			var meta=wk_mp3TrimFix.fn(data,cur.mOffset,cur.pcmSize,cur.sampleRate);
 			
-			var lamejsCode=Recorder.lamejs.toString();
-			var url=(window.URL||webkitURL).createObjectURL(new Blob(["var wk_lame=(",lamejsCode,jsCode], {type:"text/javascript"}));
-			
-			worker=new Worker(url);
-			setTimeout(function(){
-				(window.URL||webkitURL).revokeObjectURL(url);//必须要释放，不然每次调用内存都明显泄露内存
-			},10000);//chrome 83 file协议下如果直接释放，将会使WebWorker无法启动
-			
-			worker.onmessage=function(e){
-				var data=e.data;
-				var ctx=openList[data.id];
-				if(ctx){
-					if(data.action=="takeoff"){
-						//取走实时生成的mp3数据
-						ctx.set.takeoffEncodeChunk(new Uint8Array(data.chunk.buffer));
-					}else{
-						//complete
-						ctx.call&&ctx.call(data);
-						ctx.call=null;
-					};
+			worker.onmessage({
+				action:ed.action
+				,id:ed.id
+				,blob:data[0]||new ArrayBuffer(0)
+				,meta:meta
+			});
+			break;
+		};
+	};
+	
+	var initOnMsg=function(isW){
+		worker.onmessage=function(e){
+			var data=e; if(isW)data=e.data;
+			var ctx=openList[data.id];
+			if(ctx){
+				if(data.action=="takeoff"){
+					//取走实时生成的mp3数据
+					ctx.set.takeoffEncodeChunk(new Uint8Array(data.chunk.buffer));
+				}else{
+					//complete
+					ctx.call&&ctx.call(data);
+					ctx.call=null;
 				};
 			};
 		};
-		
-		var ctx={worker:worker,set:setOrNull,takeoffQueue:[]};
+	};
+	var initCtx=function(){
+		var ctx={worker:worker,set:setOrNull};
 		if(setOrNull){
 			ctx.id=++openList.id;
 			openList[ctx.id]=ctx;
+			
+			NormalizeSet(setOrNull);
 			
 			worker.postMessage({
 				action:"init"
@@ -201,15 +270,47 @@ var newContext=function(setOrNull){
 				x:new Int16Array(5)//低版本浏览器不支持序列化TypedArray
 			});
 		};
+		return ctx;
+	};
+	var scope,worker=mp3Worker;
+	
+	//非浏览器，不支持worker，或者开启失败，使用UI线程处理
+	if(_badW || !HasWebWorker){
+		Recorder.CLog($T("k9PT::当前环境不支持Web Worker，mp3实时编码器运行在主线程中"),3);
+		worker={ postMessage:function(ed){ run({data:ed}); } };
+		scope={wkScope:{
+			wk_ctxs:{}, wk_lame:Recorder.lamejs, wk_mp3TrimFix:mp3TrimFix
+		}};
+		initOnMsg();
+		return initCtx();
+	};
+	
+	try{
+		if(!worker){
+			//创建一个新Worker
+			var onmsg=(run+"").replace(/\w+\.onmessage/g,"self.postMessage");
+			onmsg=onmsg.replace(/\w+.wkScope/g,"wkScope");
+			var jsCode=");wk_lame();self.onmessage="+onmsg;
+			jsCode+=";var wkScope={ wk_ctxs:{},wk_lame:wk_lame";
+			jsCode+=",wk_mp3TrimFix:{rm:"+mp3TrimFix.rm+",fn:"+mp3TrimFix.fn+"} }";
+			
+			var lamejsCode=Recorder.lamejs.toString();
+			var url=(window.URL||webkitURL).createObjectURL(new Blob(["var wk_lame=(",lamejsCode,jsCode], {type:"text/javascript"}));
+			
+			worker=new Worker(url);
+			setTimeout(function(){
+				(window.URL||webkitURL).revokeObjectURL(url);//必须要释放，不然每次调用内存都明显泄露内存
+			},10000);//chrome 83 file协议下如果直接释放，将会使WebWorker无法启动
+			initOnMsg(1);
+		};
 		
-		
+		var ctx=initCtx(); ctx.isW=1;
 		mp3Worker=worker;
 		return ctx;
 	}catch(e){//出错了就不要提供了
 		worker&&worker.terminate();
-		
 		console.error(e);
-		return null;
+		return newContext(setOrNull, 1);//切换到UI线程处理
 	};
 };
 Recorder.prototype.mp3_stop=function(startCtx){
@@ -227,7 +328,7 @@ Recorder.prototype.mp3_stop=function(startCtx){
 			opens++;
 		};
 		if(opens){
-			Recorder.CLog("mp3 worker剩"+opens+"个在串行等待",3);
+			Recorder.CLog($T("fT6M::mp3 worker剩{1}个未stop",0,opens),3);
 		};
 	};
 };
@@ -244,11 +345,14 @@ Recorder.prototype.mp3_complete=function(startCtx,True,False,autoStop){
 	var This=this;
 	if(startCtx&&startCtx.worker){
 		startCtx.call=function(data){
-			mp3TrimFixSetMeta(data.meta,startCtx.set);
-			True(data.blob);
-			
 			if(autoStop){
 				This.mp3_stop(startCtx);
+			};
+			if(data.err){
+				False(data.err);
+			}else{
+				mp3TrimFixSetMeta(data.meta,startCtx.set);
+				True(data.blob,"audio/mp3");
 			};
 		};
 		startCtx.worker.postMessage({
@@ -256,7 +360,7 @@ Recorder.prototype.mp3_complete=function(startCtx,True,False,autoStop){
 			,id:startCtx.id
 		});
 	}else{
-		False("mp3编码器未打开");
+		False($T("mPxH::mp3编码器未start"));
 	};
 };
 
@@ -273,8 +377,8 @@ mp3Buffers=[ArrayBuffer,...]
 length=mp3Buffers的数据二进制总长度
 */
 Recorder.mp3ReadMeta=function(mp3Buffers,length){
-	//kill babel-polyfill ES6 Number.parseInt 不然放到Worker里面找不到方法
-	var parseInt_ES3=typeof(window)=="object"?window.parseInt:self.parseInt;
+	//kill babel-polyfill ES6 Number.parseInt 不然放到Worker里面找不到方法，也不能用typeof(x)==object 会被替换成 _typeof
+	var parseInt_ES3=typeof(window)!="undefined"&&window.parseInt||typeof(self)!="undefined"&&self.parseInt||parseInt;
 	
 	var u8arr0=new Uint8Array(mp3Buffers[0]||[]);
 	if(u8arr0.length<4){
@@ -350,7 +454,7 @@ rm:Recorder.mp3ReadMeta
 ,fn:function(mp3Buffers,length,pcmLength,pcmSampleRate){
 	var meta=this.rm(mp3Buffers,length);
 	if(!meta){
-		return {err:"mp3非预定格式"};
+		return {err:"mp3 unknown format"};
 	};
 	var pcmDuration=Math.round(pcmLength/pcmSampleRate*1000);
 	
@@ -383,7 +487,7 @@ rm:Recorder.mp3ReadMeta
 			for(var i=0;i<arrs.length;i++){
 				mp3Buffers.splice(i,0,arrs[i]);
 			};
-			meta.err="fix后数据错误，已还原，错误原因不明";
+			meta.err="mp3 fix error: 已还原，错误原因不明"; //worker里面没$T翻译
 		};
 		
 		var fix=meta.trimFix={};
@@ -395,18 +499,18 @@ rm:Recorder.mp3ReadMeta
 }
 };
 var mp3TrimFixSetMeta=function(meta,set){
-	var tag="MP3信息 ";
+	var tag="MP3 Info: ";
 	if(meta.sampleRate&&meta.sampleRate!=set.sampleRate || meta.bitRate&&meta.bitRate!=set.bitRate){
-		Recorder.CLog(tag+"和设置的不匹配set:"+set.bitRate+"kbps "+set.sampleRate+"hz，已更新set:"+meta.bitRate+"kbps "+meta.sampleRate+"hz",3,set);
+		Recorder.CLog(tag+$T("uY9i::和设置的不匹配{1}，已更新成{2}",0,"set:"+set.bitRate+"kbps "+set.sampleRate+"hz","set:"+meta.bitRate+"kbps "+meta.sampleRate+"hz"),3,set);
 		set.sampleRate=meta.sampleRate;
 		set.bitRate=meta.bitRate;
 	};
 	
 	var trimFix=meta.trimFix;
 	if(trimFix){
-		tag+="Fix移除"+trimFix.remove+"帧"+trimFix.removeDuration+"ms -> "+trimFix.duration+"ms";
+		tag+=$T("iMSm::Fix移除{1}帧",0,trimFix.remove)+" "+trimFix.removeDuration+"ms -> "+trimFix.duration+"ms";
 		if(trimFix.remove>2){
-			meta.err=(meta.err?meta.err+", ":"")+"移除帧数过多";
+			meta.err=(meta.err?meta.err+", ":"")+$T("b9zm::移除帧数过多");
 		};
 	}else{
 		tag+=(meta.duration||"-")+"ms";
@@ -421,4 +525,4 @@ var mp3TrimFixSetMeta=function(meta,set){
 
 
 	
-})();
+}));

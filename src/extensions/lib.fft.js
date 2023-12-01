@@ -10,6 +10,13 @@ fft.transform(inBuffer)
 	inBuffer:[Int16,...] 数组长度必须是bufferSize
 	返回[Float64(Long),...]，长度为bufferSize/2
 */
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
+"use strict";
 
 /*
 从FFT.java 移植，Java开源库：jmp123 版本0.3
@@ -17,8 +24,6 @@ https://www.iteye.com/topic/851459
 https://sourceforge.net/projects/jmp123/files/
 */
 Recorder.LibFFT=function(bufferSize){
-	"use strict";
-	
 	var FFT_N_LOG,FFT_N,MINY;
 	var real, imag, sintable, costable;
 	var bitReverse;
@@ -109,3 +114,5 @@ Recorder.LibFFT=function(bufferSize){
 	FFT_Fn(bufferSize);
 	return {transform:getModulus,bufferSize:FFT_N};
 };
+
+}));

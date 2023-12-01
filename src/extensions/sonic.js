@@ -28,8 +28,17 @@ Recorder.Sonic.Async(set)
 	.input(buffer,callback) callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
 	.flush(callback) callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
+
+//是否支持web worker
+var HasWebWorker=isBrowser && typeof Worker=="function";
+
 function SonicFunction(SonicFunction_set){//用函数包裹方便Web Worker化
 
 //暴露接口
@@ -973,13 +982,19 @@ Recorder.Sonic=SonicFunction;
 //Worker异步化
 var sonicWorker;
 Recorder.BindDestroy("sonicWorker",function(){
-	console.log("sonicWorker Destroy");
-	sonicWorker&&sonicWorker.terminate();
-	sonicWorker=null;
+	if(sonicWorker){
+		Recorder.CLog("sonicWorker Destroy");
+		sonicWorker&&sonicWorker.terminate();
+		sonicWorker=null;
+	};
 });
 //开启异步，如果返回null代表不支持，开启成功后必须调用flush方法，否则会内存泄露
 var openList={id:0};
 SonicFunction.Async=function(set){
+	if(!HasWebWorker){
+		Recorder.CLog($T("Ikdz::当前环境不支持Web Worker，不支持调用Sonic.Async"),3);
+		return null;
+	};
 	var worker=sonicWorker;
 	try{
 		var onmsg=function(e){
@@ -1101,7 +1116,7 @@ sonicWorkerCtx.prototype={
 					opens++;
 				};
 				if(opens){
-					console.warn("sonic worker剩"+opens+"个在串行等待");
+					Recorder.CLog($T("IC5Y::sonic worker剩{1}个未flush",0,opens),3);
 				};
 			})
 		});
@@ -1137,4 +1152,4 @@ addWorkerCtxSet("setVolume");
 addWorkerCtxSet("setChordPitch");
 addWorkerCtxSet("setQuality");
 
-})();
+}));

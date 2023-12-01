@@ -14,7 +14,7 @@ Recorder.SampleRaise(pcmDatas,pcmSampleRate,newSampleRate)
 			data:[Int16,...] 转换后的PCM结果
 		}
 		
-本方法将简单的提升pcm的采样率，如果新采样率低于pcm采样率，将不会进行任何处理。采用的简单算法能力有限，会引入能感知到的轻微杂音。
+本方法将简单的提升pcm的采样率，如果新采样率低于pcm采样率，将不会进行任何处理。采用的简单算法能力有限，会引入能感知到的轻微杂音（通过低通滤波后不明显）。
 
 Recorder.SampleData只提供降低采样率，不提供提升采样率，因为由低的采样率转成高的采样率没有存在的意义。提升采样率的代码不会作为核心功能提供，但某些场合确实需要提升采样率，可自行编写代码转换一下即可。
 ******************/
@@ -34,10 +34,16 @@ Recorder.SampleRaise=function(pcmDatas,pcmSampleRate,newSampleRate){
 		size=Math.floor(size*step);
 	};
 	
+	var filterFn=0;//采样率差距比较大才开启低通滤波，最高频率用新采样率频率的3/4
+	if(pcmSampleRate<=newSampleRate*3/4){
+		filterFn=Recorder.IIRFilter(true,newSampleRate,pcmSampleRate/2 *3/4);
+	};
+	
 	var res=new Int16Array(size);
 	
 	//处理数据
 	var posFloat=0,prev=0;
+	var F=filterFn&&filterFn.Embed,Fx=0,Fy=0;//低通滤波后的数据
 	for (var index=0,nl=pcmDatas.length;index<nl;index++) {
 		var arr=pcmDatas[index];
 		for(var i=0;i<arr.length;i++){
@@ -51,7 +57,14 @@ Recorder.SampleRaise=function(pcmDatas,pcmSampleRate,newSampleRate){
 			var n=(cur-prev)/(end-pos);
 			for(var j=1;pos<end;pos++,j++){
 				//res[pos]=cur;
-				res[pos]=Math.floor(prev+(j*n));
+				var s=Math.floor(prev+(j*n));
+				if(F){//IIRFilter代码内置，比函数调用快4倍
+					Fx=s;
+					Fy=F.b0 * Fx + F.b1 * F.x1 + F.b0 * F.x2 - F.a1 * F.y1 - F.a2 * F.y2;
+					F.x2 = F.x1; F.x1 = Fx; F.y2 = F.y1; F.y1 = Fy;
+					s=Fy;
+				}else{ s=filterFn?filterFn(s):s; }
+				res[pos]=s;
 			};
 			
 			prev=cur;

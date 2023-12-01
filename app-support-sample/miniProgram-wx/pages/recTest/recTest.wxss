@@ -1,0 +1,35 @@
+
+.recwaveChoice{
+	cursor: pointer;
+	display:inline-block;
+	vertical-align: bottom;
+	border-right:1px solid #ccc;
+	background:#ddd;
+	line-height:28px;
+	font-size:12px;
+	color:#666;
+	padding:0 5px;
+}
+.recwaveChoice:first-child{
+	border-radius: 99px 0 0 99px;
+}
+.recwaveChoice:last-child{
+	border-radius: 0 99px 99px 0;
+	border-right:none;
+}
+.recwaveChoice.slc,.recwaveChoice:hover{
+	background:#f60;
+	color:#fff;
+}
+
+
+
+.recwave{
+	border:1px solid #ccc;
+	height:100px;
+	width:300px;
+}
+.recwave canvas{
+	height:100px;
+	width:300px;
+}

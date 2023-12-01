@@ -2,10 +2,23 @@
 (function(){
 "use strict";
 
-var ImgAlipay="https://xiangyuecn.gitee.io/recorder/assets/donate-alipay.png";
-var ImgWeixin="https://xiangyuecn.gitee.io/recorder/assets/donate-weixin.png";
+var BaseUrl="https://xiangyuecn.gitee.io/recorder";
+if(/(^https?:..xiangyuecn\.git[^\/]+\/recorder)/i.test(location.href)){
+	BaseUrl=RegExp.$1;
+}
+var ImgAlipay=BaseUrl+"/assets/donate-alipay.png";
+var ImgWeixin=BaseUrl+"/assets/donate-weixin.png";
+var ImgPayPal=BaseUrl+"/assets/donate-paypal.png";
+var ImgLibera=BaseUrl+"/assets/donate-liberapay.png";
 
 var IsMobile=/mobile/i.test(navigator.userAgent);
+var IsCN=/\b(zh|cn)\b/i.test(navigator.language.replace(/_/g," "));
+
+//调用$T返回一个国际化文本，如果支持的话
+var Html_$T=function(zh){
+	if(window.Html_$T)return window.Html_$T.apply(null,arguments);
+	return zh.replace(/^.+?::/,"");
+};
 
 var DonateWidget=function(set){
 	return new Fn(set);
@@ -40,7 +53,7 @@ var Fn=function(set){
 };
 Fn.prototype=DonateWidget.prototype={
 	log:function(htmlMsg){
-		htmlMsg='[打赏挂件]'+htmlMsg;
+		htmlMsg='['+Html_$T("4AP9::打赏挂件")+']'+htmlMsg;
 		var val=this.set.log(htmlMsg);
 		if(val!==false){
 			console.log(htmlMsg.replace(/<[^<>]+?>/g,""));
@@ -55,7 +68,7 @@ Fn.prototype=DonateWidget.prototype={
 			if(!this.set.viewOnly){
 				var dis=localStorage["DonateWidget_SetDisable"];
 				if(dis && Date.now()-new Date(dis).getTime()<24*60*60*1000){
-					this.log('已禁用打赏挂件一天，可通过命令开启：DonateWidget.SetDisable(0)  <a href="" onclick="DonateWidget.SetDisable(0);return false">exec</a>');
+					this.log(Html_$T("NOaR::已禁用打赏挂件一天，可通过命令开启：")+'DonateWidget.SetDisable(0)  <a href="" onclick="DonateWidget.SetDisable(0);return false">exec</a>');
 					return;
 				};
 			};
@@ -103,24 +116,24 @@ Fn.prototype=DonateWidget.prototype={
 			var td=Math.ceil((time-now)/24/60/60/1000);
 			if(td<=20&&td>-20){
 				if(td>0){
-					title="剩余"+td+"天就过年了，给大伙拜个早年吧~ 赏包辣条？";
+					title=Html_$T("e4F2::剩余{1}天就过年了，给大伙拜个早年吧~ 赏包辣条？",0,td);
 				}else{
 					title="";
 					if(td>-14){
-						title+="新年快乐，给大伙拜年啦~ 赏个红包？";
+						title+=Html_$T("qwYd::新年快乐，给大伙拜年啦~ 赏个红包？");
 					}else if(td==-14){
-						title+="元宵节快乐~ 赏个红包？";
+						title+=Html_$T("rZ6r::元宵节快乐~ 赏个红包？");
 					}else{
-						title+="新年快乐，给大伙拜个晚年~ 赏包辣条？";
+						title+=Html_$T("yA8s::新年快乐，给大伙拜个晚年~ 赏包辣条？");
 					};
 				};
 			};
 		};
-		title=title||"赏包辣条？";
+		title=title||Html_$T("x2q9::赏包辣条？");
 		title=this.set.getTitle(title)||title;
-		var btn0=(isDialog?"再看吧，关掉先":"算了吧")+unescape("%uD83D%uDE36");
+		var btn0=(isDialog?Html_$T("Fyh4::再看吧，关掉先"):Html_$T("TQ2d::算了吧"))+unescape("%uD83D%uDE36");
 		btn0=this.set.getBtn(0,btn0)||btn0;
-		var btn1='已打赏~ 壕气'+unescape("%uD83D%uDE18");
+		var btn1=Html_$T("1LpD::已打赏~ 壕气")+unescape("%uD83D%uDE18");
 		btn1=this.set.getBtn(1,btn1)||btn1;
 		
 		var min=IsMobile?true:isDialog?false:true;
@@ -128,8 +141,14 @@ Fn.prototype=DonateWidget.prototype={
 <div class="DonateWidget_render" style="border-radius:12px;background:linear-gradient(160deg, rgba(0,179,255,'+(isFloat?".7":"1")+') 20%, rgba(177,0,255,'+(isFloat?".7":"1")+') 80%);max-width:'+(min?300:520)+'px;padding:'+(min?20:30)+'px;text-align: center;">\
 	<div style="font-size:18px;color:#fff;" class="DonateWidget_Title">'+title+'</div>\
 	<div style="padding-top:14px">\
-		<img src="'+ImgAlipay+'" style="width:'+(min?145:220)+'px">\
-		<img src="'+ImgWeixin+'" style="width:'+(min?145:220)+'px">\
+		<span reclang acceptlang="zh" style="display:'+(IsCN?'':'none')+'">\
+			<img src="'+ImgAlipay+'" style="width:'+(min?145:220)+'px">\
+			<img src="'+ImgWeixin+'" style="width:'+(min?145:220)+'px">\
+		</span>\
+		<span reclang acceptlang="!zh" style="display:'+(IsCN?'none':'')+'">\
+			<a href="https://paypal.me/xiangyuecn" target="_blank" title="Go to the PayPal donation page" ><img src="'+ImgPayPal+'" style="width:'+(min?145:220)+'px"></a>\
+			<a href="https://liberapay.com/xiangyuecn" target="_blank" title="Go to the Liberapay donation page" ><img src="'+ImgLibera+'" style="width:'+(min?145:220)+'px"></a>\
+		</span>\
 	</div>\
 	<div style="padding-top:10px">\
 		<button onclick="DonateWidget.cur.click(0,'+(isDialog?1:0)+','+(isFloat?1:0)+')" class="DonateWidget_Btn DonateWidget_Btn_0" style="margin-right:'+(min?10:40)+'px">'+btn0+'</button>\
@@ -170,9 +189,9 @@ Fn.prototype=DonateWidget.prototype={
 		};
 		
 		if(ok){
-			this.log("谢谢支持，看好你哟~");
+			this.log(Html_$T("NGKc::谢谢支持，看好你哟~"));
 		}else{
-			this.log("emmm... 加油~");
+			this.log(Html_$T("6ifH::emmm... 加油~"));
 		};
 	}
 	,close:function(user,cls,disableView){
@@ -185,7 +204,7 @@ Fn.prototype=DonateWidget.prototype={
 			this.view();
 		};
 		if(user && cls=="Float"){
-			this.log('通过命令可禁用侧边打赏挂件一天: DonateWidget.SetDisable(1) <a href="" onclick="DonateWidget.SetDisable(1);return false">exec</a>');
+			this.log(Html_$T("NSbf::通过命令可禁用侧边打赏挂件一天: ")+'DonateWidget.SetDisable(1) <a href="" onclick="DonateWidget.SetDisable(1);return false">exec</a>');
 		};
 	}
 };
@@ -193,7 +212,7 @@ Fn.prototype=DonateWidget.prototype={
 DonateWidget.SetDisable=function(disable){
 	localStorage["DonateWidget_SetDisable"]=disable?new Date().toDateString():"";
 	if(disable){
-		DonateWidget.cur.log("emmm...已禁用打赏挂件，禁用时长为一天");
+		DonateWidget.cur.log(Html_$T("NaUj::emmm...已禁用打赏挂件，禁用时长为一天"));
 	}else{
 		DonateWidget.cur.view();
 	};

@@ -11,13 +11,12 @@ if(fs.existsSync("../../app-support-sample")){
         console.log("已复制"+dist);
     };
     
-    //测试demo每个js前面注入一段代码，用来指定加载js的目录，这些文件copy到了自己网站无需这些东西
-    var demoAddJs='window.PageSet_RecordAppBaseFolder = "https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/dist/";\n';
+    //测试demo每个js前面注入一段代码
+    var demoAddJs='';
     
     copyFile("../../app-support-sample/native-config.js","copy/native-config.js",demoAddJs);
-    copyFile("../../app-support-sample/ios-weixin-config.js","copy/ios-weixin-config.js",demoAddJs);
 }else{
-    console.error("未能copy RecordApp的配置文件，请确保本目录内存在 `copy` 目录，并且放置了配置文件native-config.js、ios-weixin-config.js，否则将无法编译recordapp.vue文件");
+    console.error("未能copy RecordApp的配置文件，请确保本目录内存在 `copy` 目录，并且放置了配置文件native-config.js，否则将无法编译recordapp.vue文件");
 };
 
 

@@ -1,6 +1,6 @@
 /*
 录音 Recorder扩展，频率直方图显示
-使用本扩展需要引入lib.fft.js支持，直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可自行修改源码恢复成完整的线性频谱，或修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者
+使用本扩展需要引入src/extensions/lib.fft.js支持，直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可自行修改源码恢复成完整的线性频谱，或修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者
 
 https://github.com/xiangyuecn/Recorder
 
@@ -8,7 +8,12 @@ https://github.com/xiangyuecn/Recorder
 https://www.iteye.com/topic/851459
 https://sourceforge.net/projects/jmp123/files/
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 var FrequencyHistogramView=function(set){
@@ -24,7 +29,12 @@ var fn=function(set){
 		,width:0 //显示宽度
 		,height:0 //显示高度
 		
-		以上配置二选一
+H5环境以上配置二选一
+		
+		compatibleCanvas: CanvasObject //提供一个兼容H5的canvas对象，需支持getContext("2d")，支持设置width、height，支持drawImage(canvas,...)
+		,width:0 //canvas显示宽度
+		,height:0 //canvas显示高度
+非H5环境使用以上配置
 		*/
 		
 		scale:2 //缩放系数，应为正整数，使用2(3? no!)倍宽高进行绘制，避免移动端绘制模糊
@@ -63,42 +73,48 @@ var fn=function(set){
 	};
 	This.set=set=o;
 	
-	var elem=set.elem;
-	if(elem){
-		if(typeof(elem)=="string"){
-			elem=document.querySelector(elem);
-		}else if(elem.length){
-			elem=elem[0];
+	var cCanvas="compatibleCanvas";
+	if(set[cCanvas]){
+		var canvas=This.canvas=set[cCanvas];
+	}else{
+		if(!isBrowser)throw new Error($T.G("NonBrowser-1",[ViewTxt]));
+		var elem=set.elem;
+		if(elem){
+			if(typeof(elem)=="string"){
+				elem=document.querySelector(elem);
+			}else if(elem.length){
+				elem=elem[0];
+			};
+		};
+		if(elem){
+			set.width=elem.offsetWidth;
+			set.height=elem.offsetHeight;
+		};
+		
+		var thisElem=This.elem=document.createElement("div");
+		thisElem.style.fontSize=0;
+		thisElem.innerHTML='<canvas style="width:100%;height:100%;"/>';
+		
+		var canvas=This.canvas=thisElem.querySelector("canvas");
+		
+		if(elem){
+			elem.innerHTML="";
+			elem.appendChild(thisElem);
 		};
 	};
-	if(elem){
-		set.width=elem.offsetWidth;
-		set.height=elem.offsetHeight;
-	};
-	
 	var scale=set.scale;
 	var width=set.width*scale;
 	var height=set.height*scale;
 	if(!width || !height){
-		throw new Error(ViewTxt+"无宽高");
-	}
-	
-	var thisElem=This.elem=document.createElement("div");
-	var lowerCss=["","transform-origin:0 0;","transform:scale("+(1/scale)+");"];
-	thisElem.innerHTML='<div style="width:'+set.width+'px;height:'+set.height+'px;overflow:hidden"><div style="width:'+width+'px;height:'+height+'px;'+lowerCss.join("-webkit-")+lowerCss.join("-ms-")+lowerCss.join("-moz-")+lowerCss.join("")+'"><canvas/></div></div>';
-	
-	var canvas=This.canvas=thisElem.querySelector("canvas");
-	var ctx=This.ctx=canvas.getContext("2d");
-	canvas.width=width;
-	canvas.height=height;
-	
-	if(elem){
-		elem.innerHTML="";
-		elem.appendChild(thisElem);
+		throw new Error($T.G("IllegalArgs-1",[ViewTxt+" width=0 height=0"]));
 	};
 	
+	canvas.width=width;
+	canvas.height=height;
+	var ctx=This.ctx=canvas.getContext("2d");
+	
 	if(!Recorder.LibFFT){
-		throw new Error("需要lib.fft.js支持");
+		throw new Error($T.G("NeedImport-2",[ViewTxt,"src/extensions/lib.fft.js"]));
 	};
 	This.fft=Recorder.LibFFT(1024);
 	
@@ -139,6 +155,10 @@ fn.prototype=FrequencyHistogramView.prototype={
 			//超时没有输入，顶部横条已全部落下，干掉定时器
 			clearInterval(This.timer);
 			This.timer=0;
+			
+			This.lastH=[];//重置高度再绘制一次，避免定时不准没到底就停了
+			This.stripesH=[];
+			This.draw(null,This.sampleRate);
 			return;
 		};
 		if(now-drawTime<interval){
@@ -219,8 +239,10 @@ fn.prototype=FrequencyHistogramView.prototype={
 			
 			//查找当前频段的最大"幅值"
 			var maxAmp=0;
-			for (var j=start; j<end; j++) {
-				maxAmp=Math.max(maxAmp,Math.abs(frequencyData[j]));
+			if(frequencyData){
+				for (var j=start; j<end; j++) {
+					maxAmp=Math.max(maxAmp,Math.abs(frequencyData[j]));
+				};
 			};
 			
 			//计算音量
@@ -333,10 +355,12 @@ fn.prototype=FrequencyHistogramView.prototype={
 			ctx.restore();
 		};
 		
-		set.onDraw(frequencyData,sampleRate);
+		if(frequencyData){
+			set.onDraw(frequencyData,sampleRate);
+		};
 	}
 };
 Recorder[ViewTxt]=FrequencyHistogramView;
 
 	
-})();
+}));

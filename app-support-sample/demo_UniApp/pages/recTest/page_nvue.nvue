@@ -1,0 +1,235 @@
+<template>
+<view>
+	<view style="padding:5px 10px 0">
+		<view><text style="font-size:24px;color:#0b1">在nvue原生页面中录音</text></view>
+		<view><text style="font-size:13px;color:#f60">App中由于nvue原生页面没有像vue页面中renderjs一样的WebView环境，无法直接由Recorder H5来提供录音支持，因此RecordApp需要搭配使用原生录音插件或uts插件来进行录音。本页面编译成H5时依旧使用Recorder H5进行录音。</text></view>
+	</view>
+	
+	<!-- 录音格式选择 -->
+	<view style="display: flex;flex-direction:row;padding:10px 10px 0">
+		<view>类型：{{recType}}</view>
+		<view style="width:10px"></view>
+		<view>采样率：</view><view><input type="number" v-model.number="recSampleRate" style="width:60px;display:inline-block;border:1px solid #ddd"/></view><view>hz</view>
+		<view style="width:10px"></view>
+		<view>比特率：</view><view><input type="number" v-model.number="recBitRate" style="width:60px;display:inline-block;border:1px solid #ddd"/></view><view>kbps</view>
+	</view>
+	
+	<!-- 控制按钮 -->
+	<view style="display: flex;flex-direction:row;padding-top:10px">
+		<view style="width:10px"></view>
+		<view style="flex:1">
+			<button type="warn" @click="recReq" style="font-size:16px;padding:0">请求录音权限</button>
+		</view>
+		<view style="width:10px"></view>
+		<view style="flex:1">
+			<button type="primary" @click="recStart" style="font-size:16px;padding:0">开始录音</button>
+		</view>
+		<view style="width:10px"></view>
+		<view style="flex:1">
+			<button @click="recStop" style="font-size:16px;padding:0">停止录音</button>
+		</view>
+		<view style="width:10px"></view>
+	</view>
+	<view style="display: flex;flex-direction:row;padding:10px 10px 0">
+		<button size="mini" type="default" @click="recPause">暂停</button>
+		<button size="mini" type="default" @click="recResume">继续</button>
+		<view style="flex:1"></view>
+	</view>
+	
+	<!-- 可视化绘制 -->
+	<view style="padding:5px 0 0 10px">
+		<view style="height:40px;width:300px;background:#999;position:relative;">
+			<view style="height:40px;background:#0B1;position:absolute;" :style="{width:recpowerx}"></view>
+			<view style="padding-left:50px; position: relative;">
+				<text style="line-height:40px;">{{recpowert}}</text>
+			</view>
+		</view>
+		
+		<!-- 可视化波形，需要兼容H5的canvas，目前不支持 -->
+		<view style="padding-top:5px"></view>
+		<view class="recwave">
+			<text style="color:#999;font-size:12px">不能显示可视化波形，因为需要提供兼容H5的canvas，nvue里面没有这种canvas</text>
+		</view>
+	</view>
+	
+	<!-- 手撸播放器 -->
+	<view style="padding-top:10px">
+		<TestPlayer ref="player" />
+	</view>
+	
+	<!-- 日志输出 -->
+	<view style="padding-top:10px">
+		<view v-for="obj in reclogs" :key="obj.idx" style="border-bottom:1px dashed #666;padding:5px 0;">
+			<text :style="{fontSize:'16px',color:obj.color==1?'red':obj.color==2?'green':obj.color}">
+				{{obj.txt}}
+			</text>
+		</view>
+	</view>
+</view>
+</template>
+
+<script>
+import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放器
+
+
+/** 先引入Recorder （ 需先 npm install recorder-core ）**/
+import Recorder from 'recorder-core';
+
+//按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积，nvue里面会在逻辑层进行音频编码
+import 'recorder-core/src/engine/mp3.js'
+import 'recorder-core/src/engine/mp3-engine.js'
+
+/** 引入RecordApp **/
+import RecordApp from 'recorder-core/src/app-support/app.js'
+//【所有平台必须引入】uni-app支持文件
+import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+
+/** 引入原生录音插件 **/
+var RecNativePlugin=null;
+// #ifdef APP
+	var RecUtsPlugin=null; //【使用uts插件要删除这句再解开下一句的注释】
+	// import * as RecUtsPlugin from "../../uni_modules/Recorder-UtsPlugin" 【uts插件开发中，暂不支持解开注释】
+	// var RecNativePlugin={nativePlugin:true}; //使用原生录音插件就解开这个注释，跟uts插件二选一
+// #endif
+// #ifndef APP
+	var RecUtsPlugin=null; //非App，给个变量
+// #endif
+
+
+export default {
+	components: { TestPlayer },
+	data() {
+		return {
+			recType:"mp3"
+			,recSampleRate:16000
+			,recBitRate:16
+	
+			,recpowerx:"0px"
+			,recpowert:""
+			,reclogs:[]
+		}
+	},
+	mounted() {
+		RecordApp.Current=null;
+		RecordApp.UniWithoutAppRenderjs=true; //nvue内必须在所有操作前先设为true
+		RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin;
+		
+		//可选，立即显示出环境信息
+		this.reclog("正在执行Install，请勿操作...","#f60");
+		RecordApp.Install(()=>{
+			this.reclog("Install成功，环境："+RecordApp.Current.Key,2);
+			this.reclog("请先请求录音权限，然后再开始录音");
+		},(err)=>{
+			this.reclog("RecordApp.Install出错："+err,1);
+		});
+	},
+	/*#ifdef VUE3*/unmounted()/*#endif*/ /*#ifndef VUE3*/destroyed()/*#endif*/ {
+		var tag=/*#ifdef VUE3*/"unmounted"/*#endif*/ /*#ifndef VUE3*/"destroyed"/*#endif*/;
+		//清理资源，如果打开了录音没有关闭，这里将会进行关闭
+		RecordApp.Stop(null,()=>{
+			RecordApp.Current=null; //恢复环境
+			RecordApp.UniWithoutAppRenderjs=false; //恢复环境
+			RecordApp.UniNativeUtsPlugin=null; //停用原生插件
+			console.log(tag+" 已恢复环境");
+		});
+	},
+	methods:{
+		recReq(){
+			/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
+			获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
+			****/
+			//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
+			
+			this.reclog("正在请求录音权限...");
+			RecordApp.RequestPermission(()=>{
+				this.reclog(RecordApp.Current.Key+" 已获得录音权限，可以开始录音了",2);
+			},(msg,isUserNotAllow)=>{
+				if(isUserNotAllow){//用户拒绝了录音权限
+					//这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
+				}
+				this.reclog((RecordApp.Current&&RecordApp.Current.Key||"[?]")
+					+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
+				if(!RecordApp.UniNativeUtsPlugin){
+					this.reclog("本页面的源码中未引入原生录音插件或uts插件，请先修改本页面源码后再测试：到`import * as RecUtsPlugin from ...`这段代码，根据注释里面的提示引入插件","#fa0");
+				}
+			});
+		}
+		,recStart(){
+			this.$refs.player.setPlayBytes(null);
+			
+			this.reclog(RecordApp.Current.Key+" 正在打开...");
+			RecordApp.Start({
+				type:this.recType
+				,sampleRate:+this.recSampleRate
+				,bitRate:+this.recBitRate
+				
+				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
+					//全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+					this.recpowerx=~~(300*powerLevel/100)+"px"; //nvue不支持百分比
+					this.recpowert=this.formatTime(duration,1)+" / "+powerLevel;
+				}
+				
+				,takeoffEncodeChunk:!this.takeoffEncodeChunkSet?null:(chunkBytes)=>{
+					//全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
+				}
+			},()=>{
+				this.reclog(RecordApp.Current.Key+" 录制中："+this.recType
+					+" "+this.recSampleRate+" "+this.recBitRate+"kbps",2);
+			},(msg)=>{
+				this.reclog(RecordApp.Current.Key+" 开始录音失败："+msg,1);
+			});
+		}
+		,recPause(){
+			if(RecordApp.GetCurrentRecOrNull()){
+				RecordApp.Pause();
+				this.reclog("已暂停");
+			}
+		}
+		,recResume(){
+			if(RecordApp.GetCurrentRecOrNull()){
+				RecordApp.Resume();
+				this.reclog("继续录音中...");
+			}
+		}
+		,recStop(){
+			this.reclog("正在结束录音...");
+			RecordApp.Stop((aBuf,duration,mime)=>{
+				//全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
+				
+				var recSet=(RecordApp.GetCurrentRecOrNull()||{set:{type:this.recType}}).set;
+				this.reclog("已录制["+mime+"]："+this.formatTime(duration,1)+" "+aBuf.byteLength+"字节 "
+						+recSet.sampleRate+"hz "+recSet.bitRate+"kbps",2);
+				
+				// #ifdef APP
+				this.$refs.player.useNvuePlayer=true; //nvue里面用不了h5播放
+				// #endif
+				//播放，部分格式会转码成wav播放
+				this.$refs.player.setPlayBytes(aBuf,"",duration,mime,recSet,Recorder);
+			},(msg)=>{
+				this.reclog("结束录音失败："+msg,1);
+			});
+		}
+		
+		,reclog(msg,color){
+			var now=new Date();
+			var t=("0"+now.getHours()).substr(-2)
+				+":"+("0"+now.getMinutes()).substr(-2)
+				+":"+("0"+now.getSeconds()).substr(-2);
+			var txt="["+t+"]"+msg;
+			console.log(txt);
+			this.reclogs.splice(0,0,{txt:txt,color:color});
+		}
+		,formatTime(ms,showSS){
+			var ss=ms%1000;ms=(ms-ss)/1000;
+			var s=ms%60;ms=(ms-s)/60;
+			var m=ms%60;ms=(ms-m)/60;
+			var h=ms, v="";
+			if(h>0) v+=(h<10?"0":"")+h+":";
+			v+=(m<10?"0":"")+m+":";
+			v+=(s<10?"0":"")+s;
+			if(showSS)v+="″"+("00"+ss).substr(-3);;
+			return v;
+		}
+	}
+}
+</script>

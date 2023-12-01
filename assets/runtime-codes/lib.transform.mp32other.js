@@ -3,22 +3,22 @@
 作者：高坚果
 时间：2019-10-22 15:20:57
 
-【原理】mp3格式转换成其他格式，只是简单的调用AudioContext的decodeAudioData解码音频得到pcm格式数据，然后再将pcm通过Recorder的mock方法转换成其他格式。
+【原理】mp3等格式转换成其他格式，只是简单的调用AudioContext的decodeAudioData解码音频得到pcm格式数据，然后再将pcm通过Recorder的mock方法转换成其他格式。
 
 【其他格式】由于decodeAudioData方法只支持当前浏览器能播放的音频格式，因此除了mp3外，其他能播放的格式一般也是能解码转换的，比如ogg，webm格式，通过 document.createElement("audio").canPlayType("audio/ogg") 来判断某一格式是否支持解码（mp3一定能解码，其他不一定）。
 
 文档：
-Recorder.Mp32Other(newSet,mp3Blob,True,False)
+Recorder.Mp32Other(newSet,audioBlob,True,False)
 		newSet：Recorder的set参数，用来生成新格式，注意：要先加载好新格式的编码引擎
-		mp3Blob：mp3或其他格式音频的二进制数据
+		audioBlob：浏览器支持的音频格式的二进制数据，mp3或其他浏览器支持的格式
 		True: fn(blob,duration,mockRec) 和Recorder的stop函数参数一致，mockRec为转码时用到的Recorder对象引用
 		False: fn(errMsg) 和Recorder的stop函数参数一致
 ******************/
 
-//=====mp3转其他格式核心函数==========
-Recorder.Mp32Other=function(newSet,mp3Blob,True,False){
+//=====mp3等格式转其他格式核心函数（只要浏览器支持的音频格式均能转成其他格式）==========
+Recorder.Mp32Other=function(newSet,audioBlob,True,False){
 	if(!Recorder.GetContext()){//强制激活Recorder.Ctx 不支持大概率也不支持解码
-		False&&False("浏览器不支持mp3解码");
+		False&&False("浏览器不支持音频解码");
 		return;
 	};
 	
@@ -41,18 +41,18 @@ Recorder.Mp32Other=function(newSet,mp3Blob,True,False){
 				True(blob,duration,rec);
 			},False);
 		},function(e){
-			False&&False("mp3解码失败:"+e.message);
+			False&&False("音频解码失败:"+e.message);
 		});
 	};
-	reader.readAsArrayBuffer(mp3Blob);
+	reader.readAsArrayBuffer(audioBlob);
 };
 //=====END=========================
 
 
 
 //转换测试
-var test=function(mp3Blob){
-	if(!mp3Blob){
+var test=function(audioBlob){
+	if(!audioBlob){
 		Runtime.Log("无数据源，请先录音",1);
 		return;
 	};
@@ -63,10 +63,10 @@ var test=function(mp3Blob){
 	};
 	
 	//数据格式一 Blob
-	Recorder.Mp32Other(set,mp3Blob,function(blob,duration,rec){
+	Recorder.Mp32Other(set,audioBlob,function(blob,duration,rec){
 		console.log(blob,(window.URL||webkitURL).createObjectURL(blob));
-		Runtime.Log("mp3 src blob 转换成 wav...",2);
-		Runtime.LogAudio(blob,duration,rec);
+		Runtime.Log("src blob 转换成 wav...",2);
+		Runtime.LogAudio(blob,duration,rec,"已转码");
 	},function(msg){
 		Runtime.Log(msg,1);
 	});
@@ -83,13 +83,13 @@ var test=function(mp3Blob){
 		};
 		
 		Recorder.Mp32Other(set,new Blob([u8arr.buffer]),function(blob,duration,rec){
-			Runtime.Log("mp3 as base64 转换成 wav...",2);
-			Runtime.LogAudio(blob,duration,rec);
+			Runtime.Log("src base64 转换成 wav...",2);
+			Runtime.LogAudio(blob,duration,rec,"已转码");
 		},function(msg){
 			Runtime.Log(msg,1);
 		});
 	};
-	reader.readAsDataURL(mp3Blob);
+	reader.readAsDataURL(audioBlob);
 };
 
 

@@ -7,7 +7,12 @@
 使用场景：电话录音软解，软电话实时提取DTMF按键信号等
 https://github.com/xiangyuecn/Recorder
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 /*
@@ -47,7 +52,7 @@ Recorder.DTMF_Decode=function(pcmData,sampleRate,prevChunk){
 	var keys=[];
 	
 	if(!Recorder.LibFFT){
-		throw new Error("需要lib.fft.js支持");
+		throw new Error($T.G("NeedImport-2",["DTMF_Decode","src/extensions/lib.fft.js"]));
 	};
 	var bufferSize=256;//小一点每次处理的时长不会太长，也不要太小影响分辨率
 	var fft=Recorder.LibFFT(bufferSize);
@@ -260,4 +265,4 @@ var FindIndex=function(freq, freqs, freqStep){
 	return idx;
 };
 	
-})();
+}));

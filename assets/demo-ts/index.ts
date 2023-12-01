@@ -39,10 +39,7 @@ win.recOpen=function(){//一般在显示出录音按钮或相关的录音界面�
 		}
 	});
 
-	createDelayDialog(); //我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调，此处demo省略了弹窗的代码
 	newRec.open(function(){//打开麦克风授权获得相关资源
-		dialogCancel(); //如果开启了弹框，此处需要取消
-		
 		rec=newRec;
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
@@ -50,14 +47,8 @@ win.recOpen=function(){//一般在显示出录音按钮或相关的录音界面�
 		
 		reclog("已打开录音，可以点击录制开始录音了",2);
 	},function(msg:any,isUserNotAllow:any){//用户拒绝未授权或不支持
-		dialogCancel(); //如果开启了弹框，此处需要取消
 		reclog((isUserNotAllow?"UserNotAllow，":"")+"打开录音失败："+msg,1);
 	});
-	
-	win.waitDialogClick=function(){
-		dialogCancel();
-		reclog("打开失败：权限请求被忽略，<span style='color:#f00'>用户主动点击的弹窗</span>",1);
-	};
 };
 
 
@@ -200,52 +191,53 @@ win.recUpload=function(){
 };
 
 
-
-
-
-
-
-
-
-
-//recOpen我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
-var showDialog=function(){
-	if(!/mobile/i.test(navigator.userAgent)){
-		return;//只在移动端开启没有权限请求的检测
+/**本地下载  Local download**/
+win.recLocalDown=function(){
+	if(!recBlob){
+		reclog("请先录音，然后停止后再下载",1);
+		return;
 	};
-	dialogCancel();
+	var cls=("a"+Math.random()).replace(".","");
+	win.recdown64.lastCls=cls;
+	reclog('点击 <span class="'+cls+'"></span> 下载，或复制文本'
+		+'<button onclick="recdown64(\''+cls+'\')">生成Base64文本</button><span class="'+cls+'_b64"></span>');
 	
-	//显示弹框，应该使用自己的弹框方式
-	var div=doc.createElement("div");
-	doc.body.appendChild(div);
-	div.innerHTML=(''
-		+'<div class="waitDialog" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">'
-			+'<div style="display:flex;height:100%;align-items:center;">'
-				+'<div style="flex:1;"></div>'
-				+'<div style="width:240px;background:#fff;padding:15px 20px;border-radius: 10px;">'
-					+'<div style="padding-bottom:10px;">录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~</div>'
-					+'<div style="text-align:center;"><a onclick="waitDialogClick()" style="color:#0B1">忽略</a></div>'
-				+'</div>'
-				+'<div style="flex:1;"></div>'
-			+'</div>'
-		+'</div>');
-};
-var createDelayDialog=function(){
-	dialogInt=setTimeout(function(){//定时8秒后打开弹窗，用于监测浏览器没有发起权限请求的情况，在open前放置定时器利于收到了回调能及时取消（不管open是同步还是异步回调的）
-		showDialog();
-	},8000);
-};
-var dialogInt:any;
-var dialogCancel=function(){
-	clearTimeout(dialogInt);
+	var fileName="recorder-"+Date.now()+".mp3";
+	var downA=doc.createElement("A");
+	downA.innerHTML="下载 "+fileName;
+	downA.href=(win.URL||webkitURL).createObjectURL(recBlob);
+	downA.download=fileName;
+	doc.querySelector("."+cls).appendChild(downA);
+	if(/mobile/i.test(navigator.userAgent)){
+		alert("因移动端绝大部分国产浏览器未适配Blob Url的下载，所以本demo代码在移动端未调用downA.click()。请尝试点击日志中显示的下载链接下载");
+	}else{
+		downA.click();
+	}
 	
-	//关闭弹框，应该使用自己的弹框方式
-	var elems=doc.querySelectorAll(".waitDialog");
-	for(var i=0;i<elems.length;i++){
-		elems[i].parentNode.removeChild(elems[i]);
+	//不用了时需要revokeObjectURL，否则霸占内存
+	//(win.URL||webkitURL).revokeObjectURL(downA.href);
+};
+win.recdown64=function(cls:any){
+	var el=doc.querySelector("."+cls+"_b64");
+	if(win.recdown64.lastCls!=cls){
+		el.innerHTML='<span style="color:red">老的数据没有保存，只支持最新的一条</span>';
+		return;
+	}
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		el.innerHTML='<textarea></textarea>';
+		el.querySelector("textarea").value=reader.result;
 	};
+	reader.readAsDataURL(recBlob);
 };
-//recOpen弹框End
+
+
+
+
+
+
+
+
 
 var formatMs=function(ms:any,all?:any){
 	var f=Math.floor(ms/60000),m=Math.floor(ms/1000)%60;

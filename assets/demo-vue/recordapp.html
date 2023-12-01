@@ -3,47 +3,102 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<link rel="shortcut icon" type="image/png" DEF="/*=:=*/" href="../icon.png"
-	DEF="/*<@ href='https://xiangyuecn.gitee.io/recorder/assets/icon.png' @>*/">
+<link rel="shortcut icon" type="image/png" href="../icon.png">
 
 <title>RecordApp vue+webpack测试</title>
 </head>
 
 <body>
     <div class="rootView"></div>
-	<script
-		DEF="/*=:=*/" src="dist/recordapp.js"
-		DEF="/*<@ src='https://xiangyuecn.gitee.io/recorder/assets/demo-vue/dist/recordapp.js' @>*/"
-	></script>
+	<script src="dist/recordapp.js"></script>
 
-	<!-- 控制台组件 -->
-    <script>
-	if(/mobile/i.test(navigator.userAgent)){
-		//移动端加载控制台组件
-		var elem=document.createElement("script");
-		elem.setAttribute("type","text/javascript");
-		elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
-		document.body.appendChild(elem);
-		elem.onload=function(){
-			new VConsole();
-		};
+
+
+
+<!--以下这坨可以忽略-->
+<div class="tp_topHead" style="display:none">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#0b1;">Recorder App vue+webpack测试</span>
+		<a href="https://github.com/xiangyuecn/Recorder" target="_blank">GitHub</a>
+		| <a href="https://gitee.com/xiangyuecn/Recorder" target="_blank">Gitee</a>
+		
+		<div style="padding-top:10px;color:#666">
+			更多Demo：
+			<a class="lb" href="../../app-support-sample/" target="_blank">Recorder App</a>
+			<a class="lb" href="../../app-support-sample/QuickStart.html" target="_blank">App QuickStart</a>
+			<a class="lb" href="../../" target="_blank">Recorder H5</a>
+			<a class="lb" href="./" target="_blank">H5 vue</a>
+		</div>
+	</div>
+</div>
+<div class="tp_bottomBox" style="display:none">
+	<div class="mainBox">
+		<div>本测试的码源码在<a href="https://github.com/xiangyuecn/Recorder/tree/master/assets/demo-vue">/assets/demo-vue</a>目录内，主要的文件为<a href="https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-vue/component/recordapp.vue">/assets/demo-vue/component/recordapp.vue</a></div>
+		
+		<div style="margin-top:15px">源码修改后测试方法：
+<pre style="background:green;color:#fff;padding:10px;">
+> npm install
+> npm run build-dev
+</pre>
+		然后就可以打开recordapp.html查看效果了。</div>
+	</div>
+</div>
+
+<script>
+//把显示的文本信息提出来，用原生js处理，省的改一下又要编译一次
+document.querySelector(".topHead").innerHTML=document.querySelector(".tp_topHead").innerHTML;
+document.querySelector(".bottomBox").innerHTML=document.querySelector(".tp_bottomBox").innerHTML;
+
+var mainRef=vue_main;
+mainRef.reclog('<span style="color:#333;font-weight:bold;font-size:24px">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</span>');
+mainRef.reclog('<span style="color:#f60;font-weight:bold;font-size:24px">Recorder App基于Recorder H5的跨平台录音，支持在浏览器环境中使用（H5）、各种使用js来构建的程序中使用（App、小程序、UniApp、Electron、NodeJs）'+unescape("%uD83C%uDF89")+"</span>");
+mainRef.reclog('<span style="color:#0b1;font-weight:bold;font-size:24px">Recorder H5使用简单，功能丰富，支持PC、Android、iOS 14.3+'+unescape("%uD83D%uDCAA")+"</span>");
+
+var logMeta=function(n,v){
+    mainRef.reclog('<span style="color:#f60">'+n+":</span> <span style='color:#999'>"+v+"</span>");
+};
+logMeta('本页面修改时间（有可能修改了忘改）','2023-12-01 20:36');
+logMeta('Recorder库修改时间（有可能修改了忘改）',mainRef.Rec.LM);
+logMeta('RecordApp库修改时间（有可能修改了忘改）',mainRef.App.LM);
+logMeta('UA',navigator.userAgent);
+logMeta('URL',location.href.replace(/#.*/g,""));
+logMeta('Vue',vue_vue.version);
+mainRef.reclog('<span style="font-weight:bold">支持Vue2、Vue3，自己编写代码可按照仓库的app-support-sample/README.md正常`import RecordApp from \'recorder-core/src/app-support/app\'`使用就行，另外专门写了一篇文章《<a href="https://www.cnblogs.com/xiangyuecn/p/17472952.html" target="_blank">vue3实现H5网页录音并上传（mp3、wav）兼容Android、iOS和PC端</a>》方便参考</span>');
+mainRef.reclog('当前浏览器<span style="color:'+(mainRef.Rec.Support()?'#0b1">支持录音':'red">不支持录音')+'</span>');
+mainRef.reclog("当前环境："+(RecordApp.Current&&RecordApp.Current.Key||"?"),2);
+mainRef.reclog("页面已准备好，请先点击请求权限，然后点击录制",2);
+</script>
+
+
+<!-- 控制台组件 -->
+<script>
+if(/mobile/i.test(navigator.userAgent)){
+	//移动端加载控制台组件
+	var elem=document.createElement("script");
+	elem.setAttribute("type","text/javascript");
+	elem.setAttribute("src","../ztest-vconsole.js");
+	document.body.appendChild(elem);
+	elem.onload=function(){
+		new VConsole();
 	};
-	
-	window.onerror=function(message, url, lineNo, columnNo, error){
-		//https://www.cnblogs.com/xianyulaodi/p/6201829.html
-		vue_main.reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
-	};
-	</script>
-	
-	<!-- 加载打赏挂件 -->
-	<script src="https://xiangyuecn.gitee.io/recorder/assets/zdemo.widget.donate.js"></script>
-	<script>
-	var donateView=document.createElement("div");
-	document.querySelector(".mainLog").appendChild(donateView);
-	DonateWidget({
-		log:function(msg){vue_main.reclog(msg)}
-		,mobElem:donateView
-	});
-	</script>
+};
+
+window.onerror=function(message, url, lineNo, columnNo, error){
+	//https://www.cnblogs.com/xianyulaodi/p/6201829.html
+	vue_main.reclog('<span style="color:red">【Uncaught Error】'+message+'<pre>'+"at:"+lineNo+":"+columnNo+" url:"+url+"\n"+(error&&error.stack||"不能获得错误堆栈")+'</pre></span>');
+};
+</script>
+
+<!-- 加载打赏挂件 -->
+<script src="../zdemo.widget.donate.js"></script>
+<script>
+var donateView=document.createElement("div");
+document.querySelector(".mainLog").appendChild(donateView);
+DonateWidget({
+	log:function(msg){vue_main.reclog(msg)}
+	,mobElem:donateView
+});
+</script>
+
 </body>
 </html>

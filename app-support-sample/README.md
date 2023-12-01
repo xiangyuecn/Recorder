@@ -1,300 +1,300 @@
-[Recorder](https://github.com/xiangyuecn/Recorder/) | RecordApp
-
-  Basic:
-  <a title="Stars" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1&logo=github" alt="Stars"></a>
-  <a title="Forks" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder?color=0b1&logo=github" alt="Forks"></a>
-  <a title="npm Version" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=0b1&logo=npm" alt="npm Version"></a>
-  <a title="License" href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
-  
-  Traffic:
-  <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=f60&logo=npm" alt="npm Downloads"></a>
-  <a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://img.shields.io/badge/-cnpm-555" alt="cnpm"></a><a title="cnpm" href="https://npmmirror.com/package/recorder-core"><img src="https://npmmirror.com/badge/d/recorder-core.svg" alt="cnpm"></a>
-  <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://img.shields.io/badge/CDN-JsDelivr-f60" alt="JsDelivr CDN"></a>
-  <a title="unpkg CDN" href="https://unpkg.com/recorder-core/"><img src="https://img.shields.io/badge/CDN-unpkg-f60" alt="unpkg CDN"></a>
-  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
-
-
-
 **【[源GitHub仓库](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)】如果本文档图片没有显示，请手动切换到Gitee镜像库阅读文档。**
 
 
-# :open_book:RecordApp 最大限度的统一兼容PC、Android和IOS
+# :open_book:RecordApp：基于Recorder的跨平台录音解决方案
 
-**因为从IOS 14.3开始，IOS已开始提供全面的`getUserMedia`支持，本兼容方案会随着IOS老版本的逐渐消失而渐渐失去价值；如果你不打算兼容老版本IOS，请直接使用Recorder，体验强大的H5录音，无需再使用RecordApp编写蹩脚的代码；本兼容方案将逐渐停止支持，并最终彻底被删除。**
+RecordApp是在[Recorder](../)基础上为不同平台环境提供底层适配，支持在：浏览器WebView（H5）、各种使用js来构建的程序（App、小程序、UniApp、Electron、NodeJs）中录音。
 
-[在线测试](https://jiebian.life/web/h5/github/recordapp.aspx)，`RecordApp`源码在[/src/app-support](https://github.com/xiangyuecn/Recorder/tree/master/src/app-support)目录，当前`/app-support-sample`目录为参考配置的演示目录。`RecordApp`由`Recorder`提供基础支持，所以`Recorder`的源码也是属于`RecordApp`的一部分。
+使用场景|平台环境|参考Demo
+:-:|-|-
+**App+H5页面**|浏览器、WebView（App、软件内置浏览器）|[ [H5在线测试](https://xiangyuecn.gitee.io/recorder/app-support-sample/) ] [ [QuickStart](https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html) ] [ [App vue](https://xiangyuecn.gitee.io/recorder/assets/demo-vue/recordapp.html) ] <br> [ [Android App](demo_android) ] [ [iOS App](demo_ios) ]
+**微信小程序**|微信小程序（支持可视化插件）|使用文档和Demo: [ [miniProgram-wx](./miniProgram-wx) ]
+**uni-app**|可编译成：H5、Android iOS App、小程序|使用文档和Demo: [ [demo_UniApp](./demo_UniApp) ]
+**NodeJs**|无录音功能，可对PCM数据实时处理、编码|测试代码: [ [node-codes](../assets/node-codes) ]
+其他环境|可通过`RecordApp.RegisterPlatform`自行适配|自行对接
 
-提供了一个vue版的demo，在 [/assets/demo-vue](https://github.com/xiangyuecn/Recorder/tree/master/assets/demo-vue) 目录中，[在线测试](https://jiebian.life/web/h5/github/recordapp.aspx?path=/assets/demo-vue/recordapp.html)。
 
+
+
+[​](?)
+
+[​](?)
+
+[​](?)
+
+[​](?)
+
+
+<p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://xiangyuecn.gitee.io/recorder/assets/icon.png" alt="Recorder logo"></a></p>
+
+<p align="center">
+  <a title="Stars" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1&logo=github" alt="Stars"></a>
+  <a title="Forks" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/forks/xiangyuecn/Recorder?color=0b1&logo=github" alt="Forks"></a>
+  <a title="npm Downloads" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/dt/recorder-core?color=0b1&logo=npm" alt="npm Downloads"></a>
+  <a title="npm Version" href="https://www.npmjs.com/package/recorder-core"><img src="https://img.shields.io/npm/v/recorder-core?color=0b1&logo=npm" alt="npm Version"></a>
+  <a title="License" href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
+  <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://img.shields.io/badge/CDN-JsDelivr-0b1" alt="JsDelivr CDN"></a>
+  <a title="unpkg CDN" href="https://unpkg.com/recorder-core/"><img src="https://img.shields.io/badge/CDN-unpkg-0b1" alt="unpkg CDN"></a>
+  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
+</p>
+
+
+[​](?)
 
 # :open_book:快速使用
 
-你可以通过阅读和运行[QuickStart.html](https://jiebian.life/web/h5/github/recordapp.aspx?path=/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将 [/app-support-sample/QuickStart.html](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/QuickStart.html) 文件copy 到你的(https)网站中，然后将变量PageSet_RecordAppWxApi改成你自己的后端API地址，无需其他文件，就能正常开始测试了，App内同样适用。
+## 一、引入js文件
+可以通过 npm 进行安装 `npm install recorder-core` ，或者直接git clone得到源码直接引用。所有js文件均为手动引入（内部不会自动引用），因此未被你引入的文件均可删除来精简源码大小。
 
-
-## 【后端】可选 - 实现后端微信接口
-RecordApp默认开启IOS端微信内的支持（可配置禁用支持），在IOS微信环境内，自动走微信JsSDK来录音，其他环境走Native、H5录音。
-
-开启微信支持需要后端实现：
-- 签名接口：使用微信JsSDK需要后端提供JsSDK签名。
-- 素材下载接口：JsSDK录音完成后需要后端服务器调用微信素材接口下载录音二进制数据。
-
-你可以直接copy [app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js) 这个演示配置文件改改，提供后端接口后即可正常使用。
-
-详细的接口文档和实现，请阅读下面的`Weixin(IOS-Weixin).Config`章节。
-
-
-## 【App】可选 - 实现App原生接口
-RecordApp默认未开启App内原生录音支持，可开启后在App环境中将走Native录音，其他环境走Weixin、H5录音。
-
-你可以直接copy [app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js) 这个演示配置文件改改，然后Android、IOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift`，即可正常使用。
-
-详细的开启和实现，请阅读下面的`Native.Config`章节。
-
-> 注：Android可以不实现App原生接口，仅IOS App实现原生接口；因为Android可以通过开启WebView的H5录音权限来进行H5录音，不过H5的麦克风获取似乎没有原生来的稳定，具体的H5权限开启请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节。
-
-
-## 【集成步骤1】加载框架
-
-**方式一**：使用script标签引入
-
-``` html
-<!-- 可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置必须放到app.js之前。
-    【注意】：使用时应该使用自己编写的文件，而不是直接使用这个参考用的文件 -->
-<!-- 可选开启native支持的相关配置 -->
-<script src="app-support-sample/native-config.js"></script>
-<!-- 可选开启ios weixin支持的相关配置 -->
-<script src="app-support-sample/ios-weixin-config.js"></script>
-
-<!-- 在需要录音功能的页面引入`app-support/app.js`文件（src内的为源码、dist内的为压缩后的）即可。
-    app.js会自动加载实现文件、Recorder核心、编码引擎，应确保app.js内BaseFolder目录的正确性(参阅RecordAppBaseFolder)。
-    （如何避免自动加载：使用时可以把所有支持文件全部手动引入，或者压缩时可以把所有支持文件压缩到一起，会检测到组件已加载，就不会再进行自动加载；会自动默认加载哪些文件，请查阅app.js内所有Platform的paths配置）
-    （**注意：需要在https等安全环境下才能进行录音**） -->
-<script src="src/app-support/app.js"></script>
-
-
-<!-- 可选的扩展支持项的引入
-        方法一：我们可以先直接引入Recorder核心，然后再引入扩展支持，这样会自动检测到组件已加载
-        <script src="src/recorder-core.js"></script>
-        <script src="src/extensions/waveview.js"></script>
-        
-        方法二：通过注入到Default实现的paths中让RecordApp去自动加载
-        <script>
-            RecordApp.Platforms.Default.Config.paths.push({
-                url:"src/extensions/waveview.js"
-                ,lazyBeforeStart:1 //开启延迟加载，在Start调用前任何时间进行加载都行
-                ,check:function(){return !Recorder.WaveView} //检测是否需要加载
-            });
-        </script>
-        
-        方法三：直接修改app.js源码中RecordApp.Platforms.Default.Config.paths，添加需要加载的js
--->
-```
-
-**方式二**：通过import/require引入
-
-通过npm进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可 [​](?Ref=ImportCode&Start)
+[​](?Ref=ImportCode&Start)可以使用`import`、`require`、`html script`等你适合的方式来引入js文件，下面的以import为主要参考，其他引入方式根据文件路径自行调整一下就可以了。
 ``` javascript
-//可选的独立配置文件，提供这些文件时可免去修改app.js源码。这些配置文件需要自己编写，参考https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample 目录内的这两个演示用的配置文件代码。
-//你可以直接copy /app-support-sample 目录内的两个演示配置文件改改后，就能正常使用了
-import '你的配置文件目录/native-config.js' //可选开启native支持的相关配置
-import '你的配置文件目录/ios-weixin-config.js' //可选开启ios weixin支持的相关配置
+//必须引入的Recorder核心（文件路径是 /src/recorder-core.js 下同）
+import Recorder from 'recorder-core' //这个是npm安装后的引入方式，使用import、require都行；recorder-core会自动往window（浏览器环境）或Object（非浏览器环境）下挂载名称为Recorder对象，全局可调用Recorder
+//import './你clone的目录/src/recorder-core.js' //clone源码可以按这个方式引入，下同
+//require('./你clone的目录/src/recorder-core.js') //clone源码可以按这个方式引入，下同
+//<script src="你clone的目录/src/recorder-core.js"> //这是html中script方式引入，下同
 
-
-/********加载RecordApp需要用到的支持文件*********/
-//必须引入的app核心文件，换成require也是一样的。注意：app.js会自动往window下挂载名称为RecordApp对象，全局可调用window.RecordApp，也许可自行调整相关源码清除全局污染
-import RecordApp from 'recorder-core/src/app-support/app'
-//可选开启Native支持，需要引入此文件
-import 'recorder-core/src/app-support/app-native-support'
-//可选开启IOS上微信录音支持，需要引入此文件
-import 'recorder-core/src/app-support/app-ios-weixin-support'
-
-
-/*********加载Recorder需要的文件***********/
-//必须引入的核心，所有需要的文件都应当引入，引入后会检测到组件已自动加载
-//不引入也可以，app.js会去用script动态加载，应确保app.js内BaseFolder目录的正确性(参阅RecordAppBaseFolder)，否则会导致404 js加载失败
-import 'recorder-core'
-
-//需要使用到的音频格式编码引擎的js文件统统加载进来
+//按需引入你需要的录音格式支持文件，如果需要多个格式支持，把这些格式的编码引擎js文件统统引入进来即可
 import 'recorder-core/src/engine/mp3'
-import 'recorder-core/src/engine/mp3-engine'
+import 'recorder-core/src/engine/mp3-engine' //如果此格式有额外的编码引擎（*-engine.js）的话，必须要加上
 
-//由于大部分情况下ios-weixin的支持需要用到amr解码器，应当把amr引擎也加载进来
-import 'recorder-core/src/engine/beta-amr'
-import 'recorder-core/src/engine/beta-amr-engine'
-import 'recorder-core/src/engine/wav' //amr依赖了wav引擎
+//以上三个也可以合并使用压缩好的recorder.xxx.min.js
+//比如 import 'recorder-core/recorder.mp3.min' //已包含recorder-core和mp3格式支持
+//比如 <script src="你clone的目录/recorder.mp3.min.js">
 
-//可选的扩展支持项
+//可选的插件支持项
 import 'recorder-core/src/extensions/waveview'
+
+/****以上均为Recorder的相关文件，下面是RecordApp需要的支持文件****/
+
+//必须引入的RecordApp核心文件（文件路径是 /src/app-support/app.js）。注意：app.js会自动往window（浏览器环境）或Object（非浏览器环境）下挂载名称为RecordApp对象，全局可调用RecordApp
+import RecordApp from 'recorder-core/src/app-support/app'
+
+//引入特定平台环境下的支持文件（也可以统统引入进来，非对应的环境下运行时会忽略掉）
+//import 'recorder-core/src/app-support/app-native-support.js' //App下的原生录音支持文件
+//import 'recorder-core/src/app-support/app-miniProgram-wx-support.js' //微信小程序下的录音支持文件
+//import '@/uni_modules/Recorder-UniCore/app-uni-support.js' //uni-app下的支持文件，请参考本文档目录下的demo_UniApp测试项目
+
+//ts import 提示：npm包内已自带了.d.ts声明文件（不过是any类型）
 ```
 [​](?RefEnd)
 
-## 【集成步骤2】调用录音
-[​](?Ref=Codes&Start)然后使用，假设立即运行，只录3秒，会自动根据环境使用Native录音、微信JsSDK录音、H5录音
-``` javascript
-//var dialog=createDelayDialog(); 开启可选的弹框伪代码，需先于权限请求前执行，因为回调不确定是同步还是异步的
-//RecordApp.AlwaysUseWeixinJS=true; 在微信内强制总是使用微信的JsSDK接口录音，这样也方便于Android微信上进行调试，或者统一使用微信JsSDK来录音
-//RecordApp.AlwaysAppUseJS=true; App里面总是使用H5网页版录音，可用于测试App里面的网页兼容性
+### 在App WebView、H5页面中使用
+可以通过阅读和运行本目录下的[QuickStart.html](https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将此html文件copy 到你的(https)网站中，无需其他文件，就能正常开始测试了，Android、iOS App内同样适用。
 
-//请求录音权限
-RecordApp.RequestPermission(function(){
-    //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
-    
-    RecordApp.Start({//如果需要的组件还在延迟加载，Start调用会等待这些组件加载完成后才会调起底层平台的Start方法，可通绑定RecordApp.Current.OnLazyReady事件来确定是否已完成组件的加载，或者设置RecordApp.UseLazyLoad=false来关闭延迟加载（会阻塞Install导致RequestPermission变慢）
-        type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把支持文件到Platforms.Default内注册
+RecordApp默认未开启App内原生录音支持，可开启后在App环境中将走Native原生录音，其他情况下默认走H5录音。在Android、iOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift`，即可开启原生录音支持，本目录下的`native-config.js`文件内实现了对App的JsBridge调用（copy过去使用）。
+
+关于App的系统录音权限：使用原生录音时，JsBridge会自动处理App的录音权限；使用H5录音时，需要先自行处理好App的系统录音权限；更多请参考下面的App权限部分。
+
+``` javascript
+//开启App原生录音需要引入的文件，不引入就使用默认的H5录音
+import 'recorder-core/src/app-support/app-native-support.js' //App下的原生录音支持文件
+
+//引入配置文件
+import './你copy的目录/native-config.js' //你需要将 /app-support-sample/native-config.js copy到你自己项目中，再引入
+```
+
+### 在微信小程序中使用
+请直接参考本目录下的 [miniProgram-wx](./miniProgram-wx) 小程序demo项目。
+
+``` javascript
+//微信开发者工具对npm支持太差，因此最好直接git clone源码使用
+
+//引入RecordApp的微信小程序支持文件
+require("./你clone的目录/src/app-support/app-miniProgram-wx-support.js");
+```
+
+### 在uni-app中使用
+请直接参考本目录下的 [demo_UniApp](./demo_UniApp) demo项目，可编译成：H5、Android App、iOS App、微信小程序，**[AD]编译成App时仅供测试，正式发布需商用授权**。
+
+在uni-app中使用，需要先导入Recorder-UniCore组件，在demo_UniApp项目中可以找到此组件，或者到DCloud 插件市场下载此组件（暂未发布）。
+``` javascript
+//所有平台必须引入的uni-app支持文件
+import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
+
+//需要编译成微信小程序时，引入微信小程序支持文件
+import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
+
+//需要编译成app时，需要在页面内提供一个renderjs模块，同样的进行一遍import
+//具体使用请参考demo_UniApp项目
+```
+
+
+[​](?)
+
+[​](?)
+
+## 二、调用录音
+[​](?Ref=Codes&Start)RecordApp的基础调用方式在所有平台环境下是通用的；但不同环境下可能会提供更多的方法、或配置参数以供使用，多出来的请参考对应的平台环境支持说明。
+
+``` javascript
+/**请求录音权限，Start调用前至少要调用一次RequestPermission**/
+var recReq=function(success){
+    RecordApp.RequestPermission(function(){
+        //注意：有使用到H5录音时，为了获得最佳兼容性，建议RequestPermission、Start至少有一个应当在用户操作（触摸、点击等）下进行调用
+        success&&success();
+    },function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+        console.log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg);
+    });
+};
+
+/**开始录音**/
+var recStart=function(success){
+    //开始录音的参数和Recorder的初始化参数大部分相同
+    RecordApp.Start({
+        type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
         ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
-            //如果当前环境支持实时回调（RecordApp.Current.CanProcess()），收到录音数据时就会实时调用本回调方法
-            //可利用extensions/waveview.js扩展实时绘制波形
-            //可利用extensions/sonic.js扩展实时变速变调，此扩展计算量巨大，onProcess需要返回true开启异步模式
+            //录音实时回调，大约1秒调用12次本回调，buffers为开始到现在的所有录音pcm数据块(16位小端LE)
+            //可实时上传（发送）数据，可实时绘制波形，ASR语音识别，使用可参考Recorder
         }
+        
+        //...  不同环境的专有配置，根据文档按需配置
     },function(){
-        setTimeout(function(){
-            RecordApp.Stop(function(blob,duration){//到达指定条件停止录音和清理资源
-                console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
-                
-                //已经拿到blob文件对象想干嘛就干嘛：立即播放、上传
-            },function(msg){
-                console.log("录音失败:"+msg);
-            });
-        },3000);
+        //开始录音成功
+        success&&success();
     },function(msg){
         console.log("开始录音失败："+msg);
     });
-},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
-    //dialog&&dialog.Cancel(); 如果开启了弹框，此处需要取消
-    
-    console.log((isUserNotAllow?"UserNotAllow，":"")+"无法录音:"+msg);
-});
-
-
-//我们可以选择性的弹一个对话框：为了防止当移动端浏览器使用Recorder H5录音时存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
-/*伪代码：
-function createDelayDialog(){
-    if(Is Mobile){//只针对移动端
-        return new Alert Dialog Component
-            .Message("录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~")
-            .Button("忽略")
-            .OnClick(function(){//明确是用户点击的按钮，此时代表浏览器没有发起任何权限请求
-                //此处执行fail逻辑
-                console.log("无法录音：权限请求被忽略");
-            })
-            .OnCancel(NOOP)//自动取消的对话框不需要任何处理
-            .Delay(8000); //延迟8秒显示，这么久还没有操作基本可以判定浏览器有毛病
-    };
 };
-*/
+
+
+//暂停录音
+var recPause=function(){
+    if(RecordApp.GetCurrentRecOrNull()){
+        RecordApp.Pause();
+        console.log("已暂停");
+    }
+};
+//继续录音
+var recResume=function(){
+    if(RecordApp.GetCurrentRecOrNull()){
+        RecordApp.Resume();
+        console.log("继续录音中...");
+    }
+};
+
+
+/**停止录音，清理资源**/
+var recStop=function(){
+    RecordApp.Stop(function(arrayBuffer,duration,mime){
+        //arrayBuffer就是录音文件的二进制数据，不同平台环境下均可进行播放、上传
+        console.log(arrayBuffer,mime,"时长:"+duration+"ms");
+        
+        //如果当前环境支持Blob，也可以直接构造成Blob文件对象，和Recorder使用一致
+        if(typeof(Blob)!="undefined" && typeof(window)=="object"){
+            var blob=new Blob([arrayBuffer],{type:mime});
+            console.log(blob, (window.URL||webkitURL).createObjectURL(blob));
+        }
+    },function(msg){
+        console.log("录音失败:"+msg);
+    });
+};
+
+
+//这里假设立即运行，只录3秒
+recReq(function(){
+    recStart(function(){
+        setTimeout(recStop,3000);
+    });
+});
 ```
 [​](?RefEnd)
 
-## 【附】录音立即播放、上传示例
-参考[Recorder](https://github.com/xiangyuecn/Recorder)中的示例。
 
+
+
+[​](?)
+
+[​](?)
+
+## 【附】App中使用H5录音需要进行的权限处理
+App的WebView中打开网页进行录音时，如果未使用原生录音，将默认使用Recorder H5进行录音（和普通网页录音没有任何区别），此时必须在`RecordApp.RequestPermission`前先获取到App的系统录音权限，如果App没有系统录音权限，将无法录音。
+
+### Android App录音权限
+在Android App WebView中使用本库来录音，需要在App源码中实现以下两步分：
+
+1. 在`AndroidManifest.xml`声明需要用到的两个权限
+``` xml
+<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+```
+
+2. `WebChromeClient`中实现`onPermissionRequest`网页授权请求
+``` java
+@Override
+public void onPermissionRequest(PermissionRequest request) {
+    //需判断request.getResources()中包含了PermissionRequest.RESOURCE_AUDIO_CAPTURE才进行权限处理，否则不认识的请求直接deny()
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        //录音是敏感权限，必须app先有录音权限后，网页才会有录音权限，伪代码：
+        App的系统录音权限请求()
+            .用户已授权(()->{
+                //直接静默授权，或者再弹个确认对话框让用户确认是否允许此网页录音后grant|deny
+                request.grant(request.getResources());
+            })
+            .用户拒绝授权(()->{
+                request.deny();
+            })
+    }
+}
+```
+
+> 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，默认他会自己弹框询问（如果点了拒绝就很惨了），可以通过调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理，参考此篇[X5集成文章](https://www.cnblogs.com/xiangyuecn/p/13450916.html)最后面的网页权限处理代码。
+
+如果不出意外，App内显示的网页就能正常录音了。
+
+
+### iOS App录音权限
+在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限。
+
+iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时均会弹出录音权限对话框。
+
+iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层原生录音的支持，具体参考 [demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios) 目录，含iOS App源码。
+
+
+### 微信小程序录音权限
+录音功能由微信小程序的`RecorderManager`提供，需要用户授予录音权限，调用`RecordApp.RequestPermission`的时候会检查是否能正常录音，如果用户拒绝了录音权限，会进入错误回调，回调里面你应当编写代码检查`wx.getSetting`中的`scope.record`录音权限，然后引导用户进行授权（可调用`wx.openSetting`打开设置页面，方便用户给权限）。
+
+
+### Electron程序录音权限
+在Electron BrowserWindow中使用本库来录音，需要程序本身先获得录音权限，调用`RecordApp.RequestPermission`前先到主进程使用 `systemPreferences.getMediaAccessStatus('microphone')` 判断程序是否有录音权限，如果是未申请权限，需要调用 `systemPreferences.askForMediaAccess('microphone')` 来请求权限；程序有权限后，即可和普通网页一样正常的录音。
+
+
+### uni-app录音权限
+uni-app项目当需要编译成Android、iOS App时，需要在 `manifest.json` 中配置好Android和iOS的录音权限声明，参考上面的Android iOS权限，是一样的，注意Android不要漏掉了`MODIFY_AUDIO_SETTINGS`权限；无需其他处理，因为`Recorder-UniCore`组件内已经全部处理好了。
+
+
+
+[​](?)
+
+[​](?)
 
 ## 【QQ群】交流与支持
 
-欢迎加QQ群：781036591，纯小写口令：`recorder`
+欢迎加QQ群：①群 781036591、②群 748359095，纯小写口令：`recorder`
 
 <img src="https://xiangyuecn.gitee.io/recorder/assets/qq_group_781036591.png" width="220px">
 
 
-## 【截图】运行效果图
-
-<img src="https://xiangyuecn.gitee.io/recorder/assets/use_native_ios.gif" width="360px"> <img src="https://xiangyuecn.gitee.io/recorder/assets/use_native_android.gif" width="360px">
-
-
-
-## 案例演示
-
-### 【IOS】Hybrid App测试
-
-[demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ，详细的原生实现、权限配置等请阅读这个目录内的README；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+，已测试IOS 12.3。
-
-**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，嫌弃苹果公司工程师水准**
-
-
-### 【Android】Hybrid App测试
-
-[demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录内包含Android App测试源码，和核心文件 [RecordAppJsBridge.java](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/RecordAppJsBridge.java) ，详细的原生实现、权限配置等请阅读这个目录内的README；目录内 [app-debug.apk.zip](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip) 为打包好的debug包（40kb，删掉.zip后缀），或者clone后自行用`Android Studio`编译打包。本demo为java代码，兼容API Level 15+，已测试Android 9.0。
-
-### 【IOS微信】H5测试
-[<img src="https://xiangyuecn.gitee.io/recorder/assets/demo-recordapp.png" width="100px">](https://jiebian.life/web/h5/github/recordapp.aspx) https://jiebian.life/web/h5/github/recordapp.aspx
-
-此demo页面为代理页面（[源](https://xiangyuecn.gitee.io/recorder/app-support-sample/)），受[微信JsSDK](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)的域名限制，直接在`github.io|gitee.io`上访问将导致`JsSDK`无法调用。
-
-### 【IOS微信】小程序WebView测试
-[<img src="https://xiangyuecn.gitee.io/recorder/assets/jiebian.life-xcx.png" width="100px">](https://jiebian.life/t/a)
-
-1. 在小程序页面内，找任意一个文本输入框，输入`::apitest`，然后点一下别的地方让输入框失去焦点，此时会提示`命令已处理`。
-2. 重启小程序，会发现丑陋的控制台已经显示出来了，在控制台命令区域输入`location.href="/web/h5/github/recordapp.aspx"`并运行。
-3. 不出意外就进入了上面这个在线测试页面，开始愉快的测试吧。
-
-> Android微信H5、WebView支持录音，无需特殊兼容，因此上面特意针对IOS微信。
 
 
 
 
-# :open_book:仅为兼容IOS而生
-
-由于IOS上除了`Safari`可以H5录音外，[其他浏览器、WebView](https://forums.developer.apple.com/thread/88052)均不能进行H5录音，Android和PC上情况好很多；可以说是仅为兼容IOS上的微信而生。
-
-据[艾瑞移动设备指数](https://index.iresearch.com.cn/device)2019年7月29日数据：苹果占比`23.29%`位居第一，华为以`19.74%`排名第二。不得不向大厂低头，于是就有了此最大限度的兼容方案；由于有些开发者比较关心此问题，于是就开源了。
-
-当`IOS`哪天开始全面支持`getUserMedia`录音功能时，本兼容方案就可以删除了，H5原生录音一把梭。
-
-[2021] IOS 14.3已开始提供全面的`getUserMedia`支持，H5已能在别的浏览器内录音，本方案短期内还是可以用作兼容老版本IOS的方案，到了一定时期本兼容方案将彻底被删除。
 
 
-> `RecordApp`单纯点来讲就是为了兼容低版本IOS的，使用的复杂性比`Recorder`高了很多，到底用哪个，自己选
+[​](?)
 
-支持|[Recorder](https://github.com/xiangyuecn/Recorder/)|RecordApp
--:|:-:|:-:
-PC浏览器|√|√
-Android Chrome Firefox|√|√
-Android微信(含小程序)|√|√
-Android Hybrid App|√|√
-Android其他浏览器|未知|未知
-IOS Safari|√|√
-IOS微信(含小程序)|IOS 14.3+|√
-IOS Hybrid App|IOS 14.3+|√
-IOS其他浏览器|IOS 14.3+|IOS 14.3+
-开发难度|简单|复杂
-第三方依赖|无|依赖微信公众号
+[​](?)
 
+[​](?)
 
-## 使用重要前提
-
-本功能并非拿来就能用的，需要对源码进行调整配置，可参考[app-support-sample](../app-support-sample)目录内的配置文件。
-
-使用本功能虽然可以最大限度的兼容`Android`和`IOS`，但使用[app-ios-weixin-support.js](../src/app-support/app-ios-weixin-support.js)需要后端提供支持，如果使用[app-native-support.js](../src/app-support/app-native-support.js)需要App端提供支持，具体情况查看这两个文件内的注释。
-
-如果不能得到上面相应的支持，并且坚决要使用相关功能，那将会很困难。
-
-
-## 支持功能
-
-- 会自动加载`Recorder`，因此`Recorder`支持的功能，`RecordApp`基本上都能支持，包括语音通话聊天。
-- 优先使用`Recorder` H5进行录音，如果浏览器不支持将使用`IOS-Weixin`选项。
-- 默认开启`IOS-Weixin`支持（可配置禁用支持），用于支持IOS中微信`H5`、`小程序WebView`的录音功能，参考[ios-weixin-config.js](ios-weixin-config.js)接入配置。
-- 可选手动开启`Native`支持，用于支持IOS、Android上的Hybrid App录音，默认未开启支持，参考[native-config.js](native-config.js)开启`Native`支持配置，实现自己App的`JsBridge`接口调用；本方式优先级最高。
-
-
-## 限制功能
-
-- `IOS-Weixin`不支持实时回调，因此当在IOS微信上录音时，实时音量反馈、实时波形、实时转码等功能不会有效果；并且微信素材下载接口下载的amr音频音质勉强能听（总比没有好，自行实现时也许可以使用它的高清接口，不过需要服务器端转码）；amr原始的采样率为8000hz，如果设置的采样率高于8000，将会自动提升采样率到设置的值（如16000），但音质不可能会变好。
-- `IOS-Weixin`使用的`微信JsSDK`单次调用录音最长为60秒，底层已屏蔽了这个限制，超时后会立即重启接续录音，因此当在IOS微信上录音时，超过60秒还未停止，将重启微信JsSDK录音，中间可能会导致短暂的停顿感觉。
-- `demo_ios`中swift代码使用的`AVAudioRecorder`来录音，由于录音数据是通过这个对象写入文件来获取的，可能是因为存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后；`AudioQueue`、`AudioUnit`之类的更强大的工具文章又少，代码又多，本质上是因为不会用，所以就成这样了。
-- `Android WebView`本身是支持H5录音的(古董版本就算啦)，仅需处理H5网页授权即可，但Android里面使用网页的录音问题可能比原生的录音要复杂，为了简化js端的复杂性（出问题了好甩锅），不管是Android还是IOS都实现一下可能会简单很多；另外Android和IOS的音频编码并非易事，且不易更新，使用js编码引擎大大简化App的逻辑；因此就有了Android版的Hybrid App Demo，如果想使用Android H5录音，请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节来开启网页权限即可。
-
-
+[​](?)
 
 # :open_book:方法文档
 
 ![](../assets/use_caller.png)
 
 ## 【静态方法】RecordApp.RequestPermission(success,fail)
-请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法，用于准备好必要的环境；请求权限后如果不使用了，不管有没有调用`Start`，至少要调用一次`Stop`来清理可能持有的资源。
-
-主要用于在`Start`前让用户授予权限，因为未获得权限时可能会弹出授权弹框让用户好去处理；App和大部分浏览器只需授权一次，后续就不会再弹框了；因为`Start`中已隐式包含了授权请求逻辑，对于少部分每次都会弹授权请求的浏览器，不调用本方法也能获得权限。
+请求录音权限，如果当前环境不支持录音或用户拒绝将调用错误回调；调用`RecordApp.Start`前需先至少调用一次此方法，用于获得权限和必要的环境初始化；请求权限后如果不使用了，不管有没有调用`Start`，至少要调用一次`Stop`来清理可能持有的资源。
 
 `success`: `fn()` 有权限时回调
 
@@ -302,46 +302,81 @@ IOS其他浏览器|IOS 14.3+|IOS 14.3+
 
 
 ## 【静态方法】RecordApp.Start(set,success,fail)
-开始录音，需先调用`RecordApp.RequestPermission`。
-
-注：开始录音后如果底层支持实时返回PCM数据，将会回调`set.onProcess`事件方法，并非所有平台都支持实时回调，可以通过`RecordApp.Current.CanProcess()`方法来检测。
+开始录音，需先调用`RecordApp.RequestPermission`；成功开始录音后会回调`success()`，失败会回调`fail(errMsg)`。
 
 ``` javascript
-set配置默认值：
+set配置默认值（和Recorder的初始化参数大部分相同）：
 {
-    type:"mp3"//最佳输出格式，如果底层实现能够支持就应当优先返回此格式
-    sampleRate:16000//最佳采样率hz
-    bitRate:16//最佳比特率kbps
+    type:"mp3" //输出类型：mp3,wav等，使用一个类型前需要先引入对应的编码引擎
+    ,bitRate:16 //比特率，必须是数字 wav(位):16、8，MP3(单位kbps)：8kbps时文件大小1k/s，16kbps 2k/s，录音文件很小
     
-    onProcess:NOOP//如果当前环境支持实时回调（RecordApp.Current.CanProcess()），接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd)，此回调和Recorder的回调行为完全一致
+    ,sampleRate:16000 //采样率，必须是数字，wav格式（8位）文件大小=sampleRate*时间；mp3此项对低比特率文件大小有影响，高比特率几乎无影响。
+                //wav任意值，mp3取值范围：48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000
+    
+    ,onProcess:NOOP //接收到录音数据时的回调函数：fn(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd)
+            //如果某平台环境下没有特殊说明，那么此环境下的回调和Recorder的onProcess回调行为完全一致
+                //返回值：onProcess如果返回true代表开启异步模式，在某些大量运算的场合异步是必须的，必须在异步处理完成时调用asyncEnd(不能真异步时需用setTimeout包裹)；返回其他值或者不返回为同步模式（需避免在回调内执行耗时逻辑）；如果开启异步模式，在onProcess执行后新增的buffer会全部替换成空数组，因此本回调开头应立即将newBufferIdx到本次回调结尾位置的buffer全部保存到另外一个数组内，处理完成后写回buffers中本次回调的结尾位置。
+                //buffers=[[Int16,...],...]：缓冲的PCM数据块(16位小端LE)，为从开始录音到现在的所有pcm片段，每次回调可能增加0-n个不定量的pcm片段。
+                    //注意：buffers数据的采样率为bufferSampleRate，它和set.sampleRate不一定相同，可能为浏览器提供的原始采样率rec.srcSampleRate，也可能为已转换好的采样率set.sampleRate；如需浏览器原始采样率的数据，请使用rec.buffers原始数据，而不是本回调的参数；如需明确和set.sampleRate完全相同采样率的数据，请在onProcess中自行连续调用采样率转换函数Recorder.SampleData()，配合mock方法可实现实时转码和压缩语音传输；修改或替换buffers内的数据将会改变最终生成的音频内容（注意不能改变第一维数组长度），比如简单有限的实现实时静音、降噪、混音等处理，详细参考下面的rec.buffers
+                //powerLevel：当前缓冲的音量级别0-100。
+                //bufferDuration：已缓冲时长。
+                //bufferSampleRate：buffers缓存数据的采样率（当type支持边录边转码(Worker)时，此采样率和设置的采样率相同，否则不一定相同）。
+                //newBufferIdx:本次回调新增的buffer起始索引。
+                //asyncEnd：fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。
+                //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
+                //如果需要实时上传（发送）之类的，可以配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm，或使用mock方法将新数据连续的转码成其他格式，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
     
     //*******高级设置******
         //,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能，如果不清楚作用请勿随意使用
-        //,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出。此回调和Recorder的回调行为完全一致
-                //加了这个回调就意味着录音环境必须支持实时回调，因此RecordApp.Current.CanProcess()==false时，Start将直接走fail回调（如IOS-Weixin环境就不支持）
+        //,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出。
+                //当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；环境要求比较苛刻：如果当前环境不支持实时编码处理，将在Start时直接走fail逻辑
+                //因此提供此回调后调用Stop方法将无法获得有效的音频数据，因为编码器内没有音频数据，因此Stop时返回的数据长度为0
+    
+    //*******H5录音专有配置******
+        //,sourceStream:MediaStream Object
+                //可选直接提供一个媒体流，从这个流中录制、实时处理音频数据，请参考Recorder
+
+        //,runningContext:AudioContext
+                //可选提供一个state为running状态的AudioContext对象(ctx)，请参考Recorder
+
+        /*,audioTrackSet:{ //请参考Recorder
+             deviceId:"",groupId:"" //指定设备的麦克风，通过navigator.mediaDevices.enumerateDevices拉取设备列表，其中kind为audioinput的是麦克风
+            ,noiseSuppression:true //降噪（ANS）开关，不设置时由浏览器控制（一般为默认打开），设为true明确打开，设为false明确关闭
+            ,echoCancellation:true //回声消除（AEC）开关，取值和降噪开关一样
+            ,autoGainControl:true //自动增益（AGC）开关，取值和降噪开关一样
+        }*/
+    
+    //*******uni-app编译成app时专有配置，详细请参考 demo_UniApp 目录******
+        //,onProcess_renderjs:'function(...){ }' //renderjs中执行的onProcess函数字符串
+        //,takeoffEncodeChunk_renderjs:'function(...){ }' //renderjs中执行的takeoffEncodeChunk函数字符串
+        //,start_renderjs:'function(){ }' //Start成功时renderjs中会先调用这个函数字符串
+        //,stop_renderjs:'function(...){ }' //Stop成功时renderjs中会先调用这个函数字符串
 }
-注意：此对象会被修改，因为平台实现时需要把实际使用的值存入此对象
-
-IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在set.DownWxMediaData中。
+注意：此对象会被修改，因为平台实现时需要把实际使用的采样率、比特率存入此对象
 ```
-
-`success`: `fn()` 打开录音时回调
-
-`fail`: `fn(errMsg)` 开启录音出错时回调
 
 
 ## 【静态方法】RecordApp.Stop(success,fail)
 结束录音和清理资源。
 
-`success`: `fn(blob,duration)`    结束录音时回调，`blob:Blob` 录音数据`audio/mp3|wav...`格式，`duration`: `123` 音频持续时间。
+`success`: `fn(arrayBuffer,duration,mime)`    结束录音时回调，`arrayBuffer:ArrayBuffer` 录音二进制数据，`duration`: `123` 音频持续时间毫秒，`mime`: `audio/mp3` 录音格式类型。
 
 `fail`: `fn(errMsg)` 录音出错时回调
 
 如果不提供success参数=null时，将不会进行音频编码操作，只进行清理完可能持有的资源后走fail回调。
 
+注意：当Start时提供了takeoffEncodeChunk后，你需要自行实时保存录音文件数据，因此Stop时返回的arrayBuffer的长度将为0字节。
+
+
+## 【静态方法】RecordApp.Pause()
+暂停录音。
+
+## 【静态方法】RecordApp.Resume()
+继续录音。
+
 
 ## 【静态方法】RecordApp.Install(success,fail)
-对底层平台进行识别和加载相应的类库进行初始化，`RecordApp.RequestPermission`只是对此方法进行了一次封装，并且多了一个权限请求而已。如果你只想完成功能的加载，并不想调起权限请求，可手动调用此方法。此方法可以反复调用。
+对底层平台环境进行识别和初始化，`RecordApp.RequestPermission`只是对此方法进行了一次封装，并且多了一个权限请求而已。如果你只想先完成环境初始化，并不想调起权限请求，可手动调用此方法。此方法可以反复调用。
 
 `success`: `fn()` 初始化成功回调
 
@@ -349,112 +384,135 @@ IOS-Weixin底层会把从微信素材下载过来的原始音频信息存储在s
 
 
 
-
-## 【全局方法】window.top.NativeRecordReceivePCM(pcmDataBase64,sampleRate)
-开启了`Native`支持时，会有这个方法，用于原生App实时返回pcm数据。
-
-此方法由Native Platform底层实现来调用，在开始录音后，需调用此方法传递数据给js。
-
-`pcmDataBase64`: `Int16[] Base64` 当前单声道录音缓冲PCM片段Base64编码，正常情况下为上次回调本接口开始到现在的录音数据
-
-`sampleRate` 缓冲PCM的采样率
-
-注意：此方法会自动注入到top层window，如果是iframe并且跨域了，将无法进行注入，需要top层使用postMessage来转发数据给iframe，详细请看`app-native-support.js`中`addEventListener("message"...)`源码；示例App中已实现了对应的postMessage转发操作，集成示例代码即可正常使用。
-
-
-## 【静态属性】RecordApp.UseLazyLoad
-默认为`true`开启部分非核心组件的延迟加载，不会阻塞`Install`，`Install`后通过`RecordApp.Current.OnLazyReady`事件来确定组件是否已全部加载；如果设为`false`，将忽略组件的延迟加载属性，`Install`时会将所有组件一次性加载完成后才会`Install`成功。
-
-此配置只有在组件是通过RecordApp自动加载时才会有效，如果组件是手动引入的时不会生效；会影响的组件有：`RecordApp.Platforms`的`Config.paths`中标记了`lazyBeforeStart=1`、`lazyBeforeStop=1`的js；`lazyBeforeStart`标记的js会在`Start`调用前完成加载，否则会阻塞`Start`，`lazyBeforeStop`标记的js会在`Stop`调用前完成加载，否则会阻塞`Stop`。
-
-
-## 【静态属性】RecordApp.AlwaysUseWeixinJS
-默认为`false`，设为`true`时：在微信内强制总是使用微信的JsSDK接口录音，这样也方便于Android微信上进行调试，或者统一使用微信JsSDK来录音。
-
-## 【静态属性】RecordApp.AlwaysAppUseJS
-默认为`false`，设为`true`时：App里面总是使用H5网页版录音，可用于测试App里面的网页兼容性。
-
-
 ## 【静态属性】RecordApp.Current
-为`RecordApp.Install`初始化后识别到的底层平台，取值为`RecordApp.Platforms`之一。
-
-## 【静态方法】RecordApp.Current.OnLazyReady(fn)
-绑定一个函数，在所有延迟加载的组件加载完成后回调，受`RecordApp.UseLazyLoad`属性的影响，此回调的调用时机是不一样的：开启延迟加载后，OnLazyReady会在Install完成后，所有组件加载完成时调用；关闭延迟加载后，OnLazyReady会在Install完成前调用。
-
-`fn`: `fn(errMsg)` 提供一个回调函数，参数为错误信息，如果错误信息为空代表没有错误，否则代表组件有加载失败，可再次请求权限会尝试重新加载组件。
+为`RecordApp.Install`初始化后识别到的底层平台环境，取值为`RecordApp.Platforms`之一。
 
 ## 【静态方法】RecordApp.Current.CanProcess()
-识别的底层平台是否支持实时返回PCM数据，如果返回值为true，`set.onProcess`将可以被实时回调。
+识别的底层平台环境是否支持实时返回PCM数据，如果返回值为true，`set.onProcess`将可以被实时回调，目前所有环境均为true。
 
-## 【静态方法】RecordApp.GetStartUsedRecOrNull()
-获取底层平台录音过程中会使用用来处理实时数据的Recorder对象实例rec，如果底层录音过程中不实用Recorder进行数据的实时处理，将返回null。除了微信平台外，其他平台均会返回rec，但Start调用前和Stop调用后均会返回null，只有Start后和Stop彻底完成前之间才会返回rec。
+## 【静态方法】RecordApp.GetCurrentRecOrNull()
+获取底层平台录音过程中会使用用来处理实时数据的Recorder对象实例rec，如果底层录音过程中不使用Recorder进行数据的实时处理（目前没有），将返回null。Start调用前和Stop调用后均会返回null。
 
-rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如：实时清理缓冲，当缓冲被清理，Stop时永远会走fail回调。
-
-## 【静态方法】RecordApp.GetStopUsedRec()
-获取底层平台录音结束时使用的用来转码音频的Recorder对象实例rec。在Stop成功回调时一定会返回rec对象，Stop回调前和Stop回调后均会返回null。除了微信平台外，其他平台返回的rec和GetStartUsedRecOrNull返回的是同一个对象；（注意如果微信平台的素材下载接口实现了服务器端转码，本方法始终会返回null，这种情况算是比较罕见的功能）。
-
-rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如额外的格式转码或数据提取。
+rec中的方法不一定都能使用，主要用来获取内部缓冲用的，比如实时清理缓冲。
 
 ## 【静态属性】RecordApp.Platforms
-支持的平台列表，目前有三个：
-1. `Native`: 原生App平台支持，底层由实际的`JsBridge`提供，此平台默认未开启
-2. `IOS-Weixin`: IOS微信`浏览器`、`小程序web-view`支持，底层使用的`微信JsSDK` `+` `Recorder`，此平台默认开启
-3. `Default`: H5原生支持，底层使用的`Recorder H5`，此平台默认开启且不允许关闭，其他平台需要此平台提供支持
+当前已注册支持的平台列表，引入相关平台支持文件后（`app-xxx-support.js`），会自动通过`RecordApp.RegisterPlatform`注册进这个列表。
+
+## 【静态方法】RecordApp.RegisterPlatform(key,config)
+注册一个平台的实现，对应的都会有一个`app-xxx-support.js`支持文件(Default-H5除外)，config中提供统一的实现接口，实现比较复杂，具体请阅读此方法源码注释，和参考已有的`app-xxx-support.js`文件。
+
+**当你使用的平台环境没有相应的js支持文件时，你可以调用这个方法自行进行对接实现，然后就能正常使用RecordApp进行录音了。**
 
 
 
-# :open_book:配置和实现
-底层所有支持的平台为`RecordApp.Platforms`中定义的值。
 
 
-## 附：统一实现参考
-每个底层平台都实现了三个方法，`Native`已在[app-native-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-native-support.js)中实现了，`IOS-Weixin`已在[app-ios-weixin-support.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app-ios-weixin-support.js)中实现了，`Default`已在[app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)中实现了。
 
-### platform.RequestPermission(success,fail)
-本底层具体的权限请求实现，参数和`RecordApp.RequestPermission`相同。
+[​](?)
 
-### platform.Start(set,success,fail)
-本底层具体的开始录音实现，参数和`RecordApp.Start`相同。
+[​](?)
 
-### platform.Stop(success,fail)
-本底层具体的开始录音实现，参数和`RecordApp.Stop`相同。
+[​](?)
 
+[​](?)
 
-## 配置
-每个底层平台都有一个`platform.Config`配置，这个配置是根据平台的需要什么我们这里面就要给什么；每个`platform.Config`内都有一个`paths`数组，里面包含了此平台初始化时需要加载的相关的实现文件、Recorder核心、编码引擎，可修改这些数组加载自己需要的格式编码引擎。另外还有一个全局配置`RecordAppBaseFolder`。
+# :open_book:不同平台环境下的使用说明
 
-### 【全局变量】window.RecordAppBaseFolder
-可提供文件基础目录`BaseFolder`，用来自动定位加载类库，此目录可以是`src/`或者`/dist/`，必须`/`结尾；目录内应该包含`recorder-core.js、engine`等。实际取值需自行根据自己的网站目录调整，或者加载`app.js`前，设置此全局变量。
+## 内置：Default-H5
+这个是RecordApp的内置支持，底层由Recorder H5提供录音支持；当在浏览器（WebView）环境中使用时，如果没有其他环境支持，就会默认由H5进行录音。
 
-### 【Event】window.OnRecordAppInstalled()
-可提供这个全局的回调函数用来对`RecordApp`进行配置，在`app.js`文件的代码加载完毕时会尝试回调此方法，此方法是用来避免`RecordAppBaseFolder`属性要在`app.js`之前定义，其他配置又要在此js之后定义的麻烦；意思就是允许你在html文件开头编写配置，其他任意位置引入`app.js`。本回调的使用可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)配置。
+### 可使用的Recorder插件
+因为是在浏览器中使用，因此所有的Recorder插件均可以使用。
 
 
-### 【配置】RecordApp.Platforms.Default.Config
-此为默认的H5原生录音实现配置，配置内定义了对Recorder库和编码引擎的加载，可修改配置内的paths来添加自动加载扩展js。由于其他平台都需要此平台进行支持，因此修改这个配置会影响其他平台。
+[​](?)
+
+[​](?)
+
+## App原生录音：app-native-support.js
+[app-native-support.js](../src/app-support/app-native-support.js) 是App Native原生录音支持文件，支持在浏览器环境中使用（Android iOS WebView）、各种适配后的js运行环境中使用（非浏览器环境）；使用本文件需要iOS、Android等App端提供的原生支持，如果你不能修改App的源码，将无法提供原生录音支持。
+
+录音功能由原生App(Native)代码实现，通过JsBridge和js进行交互。Native层需要提供：请求权限、开始录音、结束录音、定时回调PCM[Int16]片段 等功能和接口。因为js层已加载Recorder和相应的js编码引擎，所以，Native层无需进行编码，可大大简化App的逻辑。
+
+JsBridge可以是自己实现的交互方式 或 别人提供的框架。因为不知道具体使用的桥接方式，对应的请求已抽象成了4个方法在Native.Config中，需自行实现；你可以直接参考使用本文档目录下的 [native-config.js](./native-config.js) 配置文件，还有参考 [demo_android](./demo_android) 和 [demo_ios](./demo_ios) 两个demo项目，copy源码改改就能用。
+
+### 可使用的Recorder插件
+浏览器环境中使用时，所有的Recorder插件均可以使用；非浏览器环境中部分依赖浏览器的插件将不可用（如：可视化、播放器）。
+
+### 【静态属性】RecordApp.AlwaysAppUseH5
+默认为false，设为true时：App里面总是使用H5网页版录音，忽略原生录音。
 
 
-### 【配置】RecordApp.Platforms.Native.Config
-修改这个配置会有点复杂，可以参考[app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)中的演示有效的配置，并提供相应的App原生实现；或者你直接copy这个演示配置文件改改，然后Android、IOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift`，即可正常使用。
 
-注：Android可以不实现App原生接口，仅IOS App实现原生接口；因为Android可以通过开启WebView的H5录音权限来进行H5录音，不过H5的麦克风获取似乎没有原生来的稳定，具体的H5权限开启请阅读Recorder首页文档中 `Android Hybrid App中录音示例` 这节。
+[​](?)
 
-使用App原生录音，必需提供配置中的`IsApp`、`JsBridgeRequestPermission`、`JsBridgeStart`、`JsBridgeStop`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
+[​](?)
+
+## 微信小程序：app-miniProgram-wx-support.js
+[app-miniProgram-wx-support.js](../src/app-support/app-miniProgram-wx-support.js) 是微信小程序支持文件，支持在微信小程序环境中使用；使用请参考本目录内的 [miniProgram-wx](./miniProgram-wx) 小程序demo项目。
+
+录音功能由微信小程序的RecorderManager录音接口提供（已屏蔽10分钟录音限制），因为js层已加载Recorder和相应的js编码引擎，所以，Recorder支持的录音格式，小程序内均可以做到支持。
+
+### 可使用的Recorder插件
+所有可视化、ASR插件均支持在小程序内使用，其他部分依赖浏览器环境的插件不可用（如：播放器）。
+
+### 【静态方法】RecordApp.MiniProgramWx_onShow()
+当使用到录音的页面onShow时进行一次调用，用于恢复被暂停的录音（比如按了home键会暂停录音）。
+
+小程序自带的`RecorderManager`录音的时候，如果小程序退到了后台（或触发了`onInterruptionBegin`），录音将会被暂停，小程序显示的时候才允许继续录音，但`RecorderManager`无法感知这些事件或者存在bug，**因此你需要在要录音页面的`onShow`函数内加上`RecordApp.MiniProgramWx_onShow()`这行代码**，如果没有加这行代码，被暂停的录音可能会无法自动恢复。
 
 
-### 【配置】RecordApp.Platforms.Weixin(IOS-Weixin).Config
-修改这个配置会有点复杂，可以参考[app-support-sample/ios-weixin-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/ios-weixin-config.js)中的演示有效的配置；或者你直接copy这个演示配置文件改改，提供后端接口后即可正常使用。
-
-使用微信录音，必需提供配置中的`WxReady`、`DownWxMedia`方法，可选提供`Enable`方法，具体情况请查阅[src/app-support/app.js](https://github.com/xiangyuecn/Recorder/blob/master/src/app-support/app.js)内有详细的说明。
-
-- `Enable`: 回调返回是否要启用微信支持，本方法是可选的，默认启用支持。
-- `WxReady`: 对使用到的[微信JsSDK进行签名](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1421141115)，至少要包含`startRecord,stopRecord,onVoiceRecordEnd,uploadVoice`接口。签名操作需要后端支持。
-- `DownWxMedia`: 对[微信录音素材进行下载](https://mp.weixin.qq.com/wiki?t=resource/res_main&id=mp1444738727)，下载操作需要后端支持。
-
-以上两个方法都是公众(订阅)号开发范畴，需要注册开通相应的微信服务账号。
 
 
+[​](?)
+
+[​](?)
+
+## uni-app组件：app-uni-support.js
+在本文档目录下的[demo_UniApp](./demo_UniApp)项目中可以找到Recorder-UniCore组件，或者到DCloud 插件市场下载此组件（暂未发布），路径为 `@/uni_modules/Recorder-UniCore/app-uni-support.js` 。
+
+此组件支持vue2、vue3、nvue，支持编译成：H5、Android App、iOS App、微信小程序，**[AD]编译成App时仅供测试，正式发布需商用授权**。
+
+`app-uni-support.js` 在RecordApp下提供了大量的方法可供调用，详细文档请阅读[demo_UniApp](./demo_UniApp)的文档。
+
+### 可使用的Recorder插件
+编译成H5时，所有插件均可使用。
+
+编译成App时，在renderjs支持使用所有插件（renderjs就是WebView浏览器环境）；在逻辑层中支持使用所有可视化、ASR插件，其他部分依赖浏览器环境的插件不可用（如：播放器）。
+
+编译成小程序时，所有可视化插件均支持在小程序内使用，其他部分依赖浏览器环境的插件不可用（如：播放器）。
+
+
+
+
+
+
+
+[​](?)
+
+[​](?)
+
+[​](?)
+
+[​](?)
+
+# :open_book:国际化多语言支持（i18n）
+RecordApp共用`Recorder.i18n`实现，因此只需配置Recorder的语言即可；支持的语言文件在 [/src/i18n](../src/i18n) 目录内，详细使用请参考Recorder文档。
+
+比如切换成英文：先`import "recorder-core/src/i18n/en-US.js"`，然后配置`Recorder.i18n.lang="en-US"`即可。
+
+不同平台环境下可能还有专门的i18n文件夹，请参考对应的说明文档，import对应的语言文件进来即可。
+
+
+
+
+[​](?)
+
+[​](?)
+
+[​](?)
+
+[​](?)
 
 # :star:捐赠
 如果这个库有帮助到您，请 Star 一下。

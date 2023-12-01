@@ -37,6 +37,7 @@ pre{
 a{
 	text-decoration: none;
 	color:#06c;
+	cursor:pointer;
 }
 a:hover{
 	color:#f00;
@@ -339,11 +340,15 @@ window.Runtime={
 	}
 };
 var formatMs=function(ms,all){
-	var f=Math.floor(ms/60000),m=Math.floor(ms/1000)%60;
-	var s=(all||f>0?(f<10?"0":"")+f+":":"")
-		+(all||f>0||m>0?("0"+m).substr(-2)+"″":"")
-		+("00"+ms%1000).substr(-3);
-	return s;
+	var ss=ms%1000;ms=(ms-ss)/1000;
+	var s=ms%60;ms=(ms-s)/60;
+	var m=ms%60;ms=(ms-m)/60;
+	var h=ms;
+	var t=(h?h+":":"")
+		+(all||h+m?("0"+m).substr(-2)+":":"")
+		+(all||h+m+s?("0"+s).substr(-2)+"″":"")
+		+("00"+ss).substr(-3);
+	return t;
 };
 
 
@@ -1067,7 +1072,6 @@ var recOpen=function(){//一般在显示出录音按钮或相关的录音界面�
 		}
 	});
 	
-	//var dialog=createDelayDialog(); 我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调，此处demo省略了弹窗的代码
 	//if(Is Mobile)//只针对移动端，demo偷一下懒
 	var t=setTimeout(function(){
 		Runtime.Log("无法录音：权限请求被忽略（超时假装手动点击了确认对话框）",1);
@@ -1136,6 +1140,7 @@ var demos=[
 ,{n:"【测试】【信号处理】FFT频域分析ECharts频谱曲线图",k:"dsp.test.fft.analysis"}
 ,{n:"【测试】WebM格式解析并提取音频",k:"test.webm.extract_audio"}
 ,{n:"【测试】G711、G72X编码和解码播放",k:"test.g7xx.engine"}
+,{n:"【测试】音乐合成-用波形函数将歌曲简谱文本转成PCM",k:"test.create-audio.nmn2pcm"}
 ,{n:"【测试】音频可视化相关插件测试",k:"test.extensions.visualization"}
 
 ];

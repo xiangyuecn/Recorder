@@ -24,26 +24,41 @@
 		
 		<div style="padding-top:10px;color:#666">
 			更多Demo：
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/QuickStart.html" target="_blank">H5 QuickStart</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-ts/" target="_blank">H5 ts</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html" target="_blank">Demo列表(可编辑)</a>
+			<a class="lb" href="../../" target="_blank">Recorder H5</a>
+			<a class="lb" href="../../QuickStart.html" target="_blank">H5 QuickStart</a>
+			<a class="lb" href="../demo-ts/" target="_blank">H5 ts</a>
+			<a class="lb" href="../../app-support-sample/" target="_blank">Recorder App</a>
+			<a class="lb" href="./recordapp.html" target="_blank">App vue</a>
 		</div>
+	</div>
+</div>
+<div class="tp_bottomBox" style="display:none">
+	<div class="mainBox">
+		<div>本测试的码源码在<a href="https://github.com/xiangyuecn/Recorder/tree/master/assets/demo-vue">/assets/demo-vue</a>目录内，主要的文件为<a href="https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-vue/component/recorder.vue">/assets/demo-vue/component/recorder.vue</a></div>
+		
+		<div style="margin-top:15px">源码修改后测试方法：
+<pre style="background:green;color:#fff;padding:10px;">
+> npm install
+> npm run build-dev
+</pre>
+		然后就可以打开index.html查看效果了。</div>
 	</div>
 </div>
 
 <script>
 //把显示的文本信息提出来，用原生js处理，省的改一下又要编译一次
 document.querySelector(".topHead").innerHTML=document.querySelector(".tp_topHead").innerHTML;
+document.querySelector(".bottomBox").innerHTML=document.querySelector(".tp_bottomBox").innerHTML;
 
 var mainRef=vue_main;
-mainRef.reclog('<span style="color:#f60;font-size:22px;font-weight:bold">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</span>');
-mainRef.reclog('<span style="color:#0b1;font-weight:bold;font-size:24px">Recorder H5使用简单，功能丰富，支持PC、Android、IOS 14.3+'+unescape("%uD83D%uDCAA")+'</span>');
+mainRef.reclog('<span style="color:#333;font-weight:bold;font-size:24px">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</span>');
+mainRef.reclog('<span style="color:#f60;font-weight:bold;font-size:24px">Recorder App基于Recorder H5的跨平台录音，支持在浏览器环境中使用（H5）、各种使用js来构建的程序中使用（App、小程序、UniApp、Electron、NodeJs）'+unescape("%uD83C%uDF89")+"</span>");
+mainRef.reclog('<span style="color:#0b1;font-weight:bold;font-size:24px">Recorder H5使用简单，功能丰富，支持PC、Android、iOS 14.3+'+unescape("%uD83D%uDCAA")+"</span>");
 
 var logMeta=function(n,v){
     mainRef.reclog('<span style="color:#f60">'+n+":</span> <span style='color:#999'>"+v+"</span>");
 };
-logMeta('本页面修改时间（有可能修改了忘改）','2022-08-07 21:52');
+logMeta('本页面修改时间（有可能修改了忘改）','2023-12-01 20:36');
 logMeta('Recorder库修改时间（有可能修改了忘改）',mainRef.Rec.LM);
 logMeta('UA',navigator.userAgent);
 logMeta('URL',location.href.replace(/#.*/g,""));
@@ -60,7 +75,7 @@ if(/mobile/i.test(navigator.userAgent)){
 	//移动端加载控制台组件
 	var elem=document.createElement("script");
 	elem.setAttribute("type","text/javascript");
-	elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+	elem.setAttribute("src","../ztest-vconsole.js");
 	document.body.appendChild(elem);
 	elem.onload=function(){
 		new VConsole();

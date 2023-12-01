@@ -14,14 +14,18 @@ js压缩合并用的nodejs代码
 var fs = require("fs");
 var crypto = require('crypto');
 var UglifyJS = require("uglify-js");
+var i18nRun = require("./package-i18n.js");
 
-console.log("\x1B[32m%s\x1B[0m","请选择操作：(1)压缩js (2)生成npm包 (回车)所有");
+console.log("\x1B[32m%s\x1B[0m","请选择操作：(1)生成语言包 (2)压缩js (3)生成npm包 (回车)所有");
 process.stdin.on('data',function(input){
 	input=input.toString().trim();
 	if(!input||input=="1"){
-		Run_minify();
+		i18nRun();
 	};
 	if(!input||input=="2"){
+		Run_minify();
+	};
+	if(!input||input=="3"){
 		Run_npm();
 	};
 	console.log("\x1B[33m%s\x1B[0m","程序已退出");
@@ -36,11 +40,10 @@ function Run_minify(){
 	!fs.existsSync("../dist")&&fs.mkdirSync("../dist");
 	fs.mkdirSync("../dist/engine");
 	fs.mkdirSync("../dist/extensions");
+	fs.mkdirSync("../dist/i18n");
 	fs.mkdirSync("../dist/app-support");
 
 	console.log("\x1B[33m%s\x1B[0m","开始minify处理文件...");
-
-	minify("../dist/app-support/app.js",["app-support/app.js","app-support/app-ios-weixin-support.js","app-support/app-native-support.js"]);
 
 
 	minify("../recorder.mp3.min.js",["recorder-core.js","engine/mp3.js","engine/mp3-engine.js"]);
@@ -56,15 +59,15 @@ function Run_minify(){
 	minify("../dist/engine/beta-ogg.js",["engine/beta-ogg.js","engine/beta-ogg-engine.js"]);
 	minify("../dist/engine/beta-amr.js",["engine/beta-amr.js","engine/beta-amr-engine.js","engine/wav.js"]);
 
-	minify("../dist/extensions/waveview.js",["extensions/waveview.js"]);
-	minify("../dist/extensions/wavesurfer.view.js",["extensions/wavesurfer.view.js"]);
-	minify("../dist/extensions/lib.fft.js",["extensions/lib.fft.js"]);
-	minify("../dist/extensions/frequency.histogram.view.js",["extensions/frequency.histogram.view.js"]);
-	minify("../dist/extensions/sonic.js",["extensions/sonic.js"]);
-	minify("../dist/extensions/dtmf.encode.js",["extensions/dtmf.encode.js"]);
-	minify("../dist/extensions/dtmf.decode.js",["extensions/dtmf.decode.js"]);
-	minify("../dist/extensions/buffer_stream.player.js",["extensions/buffer_stream.player.js"]);
-	minify("../dist/extensions/asr.aliyun.short.js",["extensions/asr.aliyun.short.js"]);
+	fs.readdirSync("app-support").forEach(function(file){
+		minify("../dist/app-support/"+file,["app-support/"+file]);
+	});
+	fs.readdirSync("extensions").forEach(function(file){
+		minify("../dist/extensions/"+file,["extensions/"+file]);
+	});
+	fs.readdirSync("i18n").forEach(function(file){
+		minify("../dist/i18n/"+file,["i18n/"+file]);
+	});
 
 	console.log("\x1B[33m%s\x1B[0m","处理完成");
 };
@@ -97,6 +100,14 @@ src: ${srcs.join(",")}
 `;
 	code+=res.code;
 	fs.writeFileSync(output,code);
+	
+	//asm.js代码检测，压缩可能丢掉参数类型：function xx(a,b){a|0;b|0;
+	if(/['"]use\s+asm['"]/.test(code)){
+		var exp=/function\s+(\w+)\s*\([^\)]+\)\s*([\{;]\w\|0\b)+[^\}]*\}/g,m;
+		while(m=exp.exec(code)){
+			console.log("\x1B[31m%s\x1B[0m","        asm代码压缩后参数错误："+m[0]+" 可能是没有任何引用导致的，尝试源码中删除这个函数");
+		}
+	}
 };
 
 
@@ -147,7 +158,7 @@ function Run_npm(){
 	deleteFolder(npmFiles);
 	!fs.existsSync(npmFiles)&&fs.mkdirSync(npmFiles);
 	fs.mkdirSync(npmSrc);
-	var srcDirs=["engine","extensions","app-support"];
+	var srcDirs=["engine","extensions","i18n","app-support"];
 
 	var rootREADME=fs.readFileSync("../README.md","utf-8");
 	var appREADME=fs.readFileSync("../app-support-sample/README.md","utf-8");

@@ -6,22 +6,34 @@ https://github.com/xiangyuecn/Recorder
 浏览器支持情况
 https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 var mime="audio/webm";
-var support=window.MediaRecorder&&MediaRecorder.isTypeSupported(mime);
+var support=isBrowser&&window.MediaRecorder&&MediaRecorder.isTypeSupported(mime);
 
 
 Recorder.prototype.enc_webm={
 	stable:false
-	,testmsg:support?"只有比较新的浏览器支持，压缩率和mp3差不多。由于未找到对已有pcm数据进行快速编码的方法，只能按照类似边播放边收听形式把数据导入到MediaRecorder，有几秒就要等几秒。(想接原始录音Stream？我不给，哼!)输出音频虽然可以通过比特率来控制文件大小，但音频文件中的比特率并非设定比特率，采样率由于是我们自己采样的，到这个编码器随他怎么搞":"此浏览器不支持进行webm编码，未实现MediaRecorder"
+	,getTestMsg:function(){
+		if(!support) return $T("L49q::此浏览器不支持进行webm编码，未实现MediaRecorder");
+		return $T("tsTW::只有比较新的浏览器支持，压缩率和mp3差不多。由于未找到对已有pcm数据进行快速编码的方法，只能按照类似边播放边收听形式把数据导入到MediaRecorder，有几秒就要等几秒。输出音频虽然可以通过比特率来控制文件大小，但音频文件中的比特率并非设定比特率，采样率由于是我们自己采样的，到这个编码器随他怎么搞");
+	}
 };
 Recorder.prototype.webm=function(res,True,False){
 		//https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder/MediaRecorder
 		//https://developer.mozilla.org/en-US/docs/Web/API/MediaStreamAudioDestinationNode
+		if(!isBrowser){
+			False($T.G("NonBrowser-1",["webm encoder"]));
+			return;
+		};
 		if(!support){
-			False("此浏览器不支持把录音转成webm格式");
+			False($T("aG4z::此浏览器不支持把录音转成webm格式"));
 			return;
 		};
 		var This=this, set=This.set,size=res.length,sampleRate=set.sampleRate;
@@ -41,10 +53,15 @@ Recorder.prototype.webm=function(res,True,False){
 			chunks.push(e.data);
 		};
 		recorder.onstop=function(e) {
-			True(new Blob(chunks,{type:mime}));
+			var blob=new Blob(chunks,{type:mime});
+			var reader=new FileReader();
+			reader.onloadend=function(){
+				True(reader.result,mime);
+			};
+			reader.readAsArrayBuffer(blob);
 		};
 		recorder.onerror=function(e){
-			False("转码webm出错："+e.message);
+			False($T("PIX0::转码webm出错：{1}",0,e.message));
 		};
 		recorder.start();
 		
@@ -66,4 +83,4 @@ Recorder.prototype.webm=function(res,True,False){
 		};
 	}
 	
-})();
+}));

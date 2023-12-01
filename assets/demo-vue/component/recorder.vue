@@ -92,6 +92,7 @@ a:hover{
 			<span style="display: inline-block;">
 				<button @click="recPlayLast">播放</button>
 				<button @click="recUploadLast">上传</button>
+				<button @click="recDownLast">本地下载</button>
 			</span>
 		</div>
 	</div>
@@ -100,7 +101,7 @@ a:hover{
 		<div style="height:100px;width:300px;border:1px solid #ccc;box-sizing: border-box;display:inline-block;vertical-align:bottom" class="ctrlProcessWave"></div>
 		<div style="height:40px;width:300px;display:inline-block;background:#999;position:relative;vertical-align:bottom">
 			<div class="ctrlProcessX" style="height:40px;background:#0B1;position:absolute;" :style="{width:powerLevel+'%'}"></div>
-			<div class="ctrlProcessT" style="padding-left:50px; line-height:40px; position: relative;">{{ duration+"/"+powerLevel }}</div>
+			<div class="ctrlProcessT" style="padding-left:50px; line-height:40px; position: relative;">{{ durationTxt+"/"+powerLevel }}</div>
 		</div>
 	</div>
 	
@@ -118,7 +119,7 @@ a:hover{
 						{{ intp(obj.res.rec.set.bitRate,3) }}kbps
 						{{ intp(obj.res.rec.set.sampleRate,5) }}hz
 						编码{{ intp(obj.res.blob.size,6) }}b
-						[{{ obj.res.rec.set.type }}]{{ intp(obj.res.duration,6) }}ms 
+						[{{ obj.res.rec.set.type }}]{{ obj.res.durationTxt }}ms 
 						
 						<button @click="recdown(obj.idx)">下载</button>
 						<button @click="recplay(obj.idx)">播放</button>
@@ -134,17 +135,6 @@ a:hover{
 					</template>
 				</div>
 			</div>
-		</div>
-	</div>
-
-	<div v-if="recOpenDialogShow" style="z-index:99999;width:100%;height:100%;top:0;left:0;position:fixed;background:rgba(0,0,0,0.3);">
-		<div style="display:flex;height:100%;align-items:center;">
-			<div style="flex:1;"></div>
-			<div style="width:240px;background:#fff;padding:15px 20px;border-radius: 10px;">
-				<div style="padding-bottom:10px;">录音功能需要麦克风权限，请允许；如果未看到任何请求，请点击忽略~</div>
-				<div style="text-align:center;"><a @click="waitDialogClick" style="color:#0B1">忽略</a></div>
-			</div>
-			<div style="flex:1;"></div>
 		</div>
 	</div>
 
@@ -175,53 +165,43 @@ import 'recorder-core/src/extensions/waveview'
 module.exports={
 	data(){
 		return {
-			Rec:Recorder
-			
-			,type:"mp3"
+			type:"mp3"
 			,bitRate:16
 			,sampleRate:16000
 
-			,rec:0
 			,duration:0
+			,durationTxt:"0"
 			,powerLevel:0
 
-			,recOpenDialogShow:0
 			,logs:[]
 		}
+	}
+	,created:function(){
+		this.Rec=Recorder;
 	}
 	,methods:{
 		recOpen:function(){
 			var This=this;
 			var rec=this.rec=Recorder({
 				type:This.type
-				,bitRate:This.bitRate
-				,sampleRate:This.sampleRate
+				,bitRate:+This.bitRate
+				,sampleRate:+This.sampleRate
 				,onProcess:function(buffers,powerLevel,duration,sampleRate){
 					This.duration=duration;
+					This.durationTxt=This.formatMs(duration,1);
 					This.powerLevel=powerLevel;
 
 					This.wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
 				}
 			});
 
-			This.dialogInt=setTimeout(function(){//定时8秒后打开弹窗，用于监测浏览器没有发起权限请求的情况
-				This.showDialog();
-			},8000);
-
 			rec.open(function(){
-				This.dialogCancel();
 				This.reclog("已打开:"+This.type+" "+This.sampleRate+"hz "+This.bitRate+"kbps",2);
 				
 				This.wave=Recorder.WaveView({elem:".ctrlProcessWave"});
 			},function(msg,isUserNotAllow){
-				This.dialogCancel();
 				This.reclog((isUserNotAllow?"UserNotAllow，":"")+"打开失败："+msg,1);
 			});
-
-			This.waitDialogClickFn=function(){
-				This.dialogCancel();
-				This.reclog("打开失败：权限请求被忽略，用户主动点击的弹窗",1);
-			};
 		}
 		,recClose:function(){
 			var rec=this.rec;
@@ -269,6 +249,7 @@ module.exports={
 				This.reclog("已录制:","",{
 					blob:blob
 					,duration:duration
+					,durationTxt:This.formatMs(duration)
 					,rec:rec
 				});
 			},function(s){
@@ -338,6 +319,13 @@ module.exports={
 			xhr.open("POST", api);
 			xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
 			xhr.send(form);
+		}
+		,recDownLast:function(){
+			if(!this.recLogLast){
+				this.reclog("请先录音，然后停止后再下载",1);
+				return;
+			};
+			this.recdown(this.recLogLast.idx);
 		}
 
 
@@ -413,27 +401,21 @@ module.exports={
 				+":"+("0"+now.getSeconds()).substr(-2);
 			return t;
 		}
+		,formatMs:function(ms,all){
+			var ss=ms%1000;ms=(ms-ss)/1000;
+			var s=ms%60;ms=(ms-s)/60;
+			var m=ms%60;ms=(ms-m)/60;
+			var h=ms;
+			var t=(h?h+":":"")
+				+(all||h+m?("0"+m).substr(-2)+":":"")
+				+(all||h+m+s?("0"+s).substr(-2)+"″":"")
+				+("00"+ss).substr(-3);
+			return t;
+		}
 		,intp:function(s,len){
 			s=s==null?"-":s+"";
 			if(s.length>=len)return s;
 			return ("_______"+s).substr(-len);
-		}
-
-
-		,showDialog:function(){
-			//我们可以选择性的弹一个对话框：为了防止移动端浏览器存在第三种情况：用户忽略，并且（或者国产系统UC系）浏览器没有任何回调
-			if(!/mobile/i.test(navigator.userAgent)){
-				return;//只在移动端开启没有权限请求的检测
-			};
-			this.recOpenDialogShow=1;
-		}
-		,dialogCancel:function(){
-			clearTimeout(this.dialogInt);
-			this.recOpenDialogShow=0;
-		}
-		,waitDialogClick:function(){
-			this.dialogCancel();
-			this.waitDialogClickFn();
 		}
 	}
 }

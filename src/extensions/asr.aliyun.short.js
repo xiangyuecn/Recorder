@@ -47,7 +47,12 @@ https://github.com/xiangyuecn/Recorder
 	//一次性的将单个完整PCM音频数据转成文字，无需start、stop，创建好asr后直接调用本方法即可
 	asr.pcmToText(buffer,sampleRate,success,fail)
 */
-(function(){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 var ASR_Aliyun_Short=function(set){
@@ -80,6 +85,18 @@ var fn=function(set){
 					args:{} == apiArgs
 					success:fn(value) 接口调用成功回调，value={appkey:"", token:""}
 					fail:fn(errMsg) 接口调用出错回调，errMsg="错误消息"
+				*/
+		,compatibleWebSocket:null /*提供一个函数返回兼容WebSocket的对象，一般也需要提供apiRequest
+				如果你使用的环境不支持WebSocket，需要提供一个函数来返回一个兼容实现对象
+				方法参数：fn(url) url为连接地址，返回一个对象，需支持的回调和方法：{
+						onopen:fn() 连接成功回调
+						onerror:fn({message}) 连接失败回调
+						onclose:fn({code, reason}) 连接关闭回调
+						onmessage:fn({data}) 收到消息回调
+						connect:fn() 进行连接
+						send:fn(data) 发送数据，data为字符串或者arraybuffer
+					}
+				binaryType固定使用arraybuffer类型
 				*/
 		
 		//,asrProcess:null //fn(text,nextDuration,abortMsg) 当实时接收到语音识别结果时的回调函数（对单个完整音频文件的识别也有效）
@@ -226,14 +243,16 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 		fail:fn(errMsg)
 	**/
 	,start:function(success,fail){
-		var This=this;
+		var This=this,set=This.set;
 		var failCall=function(err){
 			This.sendAbortMsg=err;
 			fail&&fail(err);
 		};
-		if(!window.WebSocket){
-			failCall("当前浏览器不支持语音识别");
-			return;
+		if(!set.compatibleWebSocket){
+			if(!isBrowser){
+				failCall("非浏览器环境，请提供compatibleWebSocket配置来返回一个兼容的WebSocket");
+				return;
+			};
 		};
 		
 		if(This.state!=0){
@@ -452,7 +471,7 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 		var minSize=This.sampleRate/1000*50;//最小发送量50ms ≈1.6k
 		var maxSize=This.sampleRate;//最大发送量1000ms ≈32k
 		//速度控制1，取决于网速
-		if(ws.bufferedAmount/2>maxSize*3){
+		if((ws.bufferedAmount||0)/2>maxSize*3){
 			//传输太慢，阻塞一会再发送
 			This.sendWait=setTimeout(function(){
 				This.sendWait=0;
@@ -687,9 +706,15 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 			};
 			return s.join("");
 		};
-		var This=this;
+		var This=this,set=This.set;
 		CLog("[ASR "+id+"]正在连接...");
-		var ws=new WebSocket("wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token="+sData.token);
+		var url="wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token="+sData.token;
+		if(set.compatibleWebSocket){
+			var ws=set.compatibleWebSocket(url);
+		}else{
+			var ws=new WebSocket(url);
+		}
+		
 		//ws._s=0 0连接中 1opening 2openOK 3stoping 4closeing -1closed
 		//ws.isStop=0 1已停止识别
 		ws.onclose=function(){
@@ -820,6 +845,7 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 				}
 			}));
 		};
+		if(ws.connect)ws.connect(); //兼容时会有这个方法
 		return ws;
 	}
 	
@@ -880,4 +906,4 @@ function NOOP(){};
 Recorder[ASR_Aliyun_ShortTxt]=ASR_Aliyun_Short;
 
 	
-})();
+}));

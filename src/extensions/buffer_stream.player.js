@@ -45,7 +45,12 @@ BufferStreamPlayer可以用于：
 
 注意：已知Firefox的AudioBuffer没法动态修改数据，所以对于带有这种特性的浏览器将采用先缓冲后再播放（类似assets/runtime-codes/fragment.playbuffer.js），音质会相对差一点；其他浏览器测试Android、IOS、Chrome无此问题；start方法中有一大段代码给浏览器做了特性检测并进行兼容处理。
 */
-(function(Recorder){
+(function(factory){
+	var browser=typeof window=="object" && !!window.document;
+	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var rec=win.Recorder,ni=rec.i18n;
+	factory(rec,ni,ni.$T,browser);
+}(function(Recorder,i18n,$T,isBrowser){
 "use strict";
 
 var BufferStreamPlayer=function(set){
@@ -95,7 +100,7 @@ var fn=function(set){
 fn.prototype=BufferStreamPlayer.prototype={
 	/**【已过时】获取MediaStream的audio播放地址，新版浏览器、未start将会抛异常**/
 	getAudioSrc:function(){
-		CLog("getAudioSrc方法已过时：请直接使用getMediaStream然后赋值给audio.srcObject，仅允许在不支持srcObject的浏览器中调用本方法赋值给audio.src以做兼容",3);
+		CLog($T("0XYC::getAudioSrc方法已过时：请直接使用getMediaStream然后赋值给audio.srcObject，仅允许在不支持srcObject的浏览器中调用本方法赋值给audio.src以做兼容"),3);
 		if(!this._src){
 			//新版chrome调用createObjectURL会直接抛异常了 https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL#using_object_urls_for_media_streams
 			this._src=(window.URL||webkitURL).createObjectURL(this.getMediaStream());
@@ -105,7 +110,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 	/**获取MediaStream流对象，未start将会抛异常**/
 	,getMediaStream:function(){
 		if(!this._dest){
-			throw new Error(BufferStreamPlayerTxt+"未start");
+			throw new Error(NoStartMsg());
 		}
 		return this._dest.stream;
 	}
@@ -122,7 +127,11 @@ fn.prototype=BufferStreamPlayer.prototype={
 		};
 		var This=this,set=This.set,__abTest=This.__abTest;
 		if(This._Tc!=null){
-			falseCall(BufferStreamPlayerTxt+"多次start",1);
+			falseCall($T("I4h4::{1}多次start",0,BufferStreamPlayerTxt),1);
+			return;
+		}
+		if(!isBrowser){
+			falseCall($T.G("NonBrowser-1",[BufferStreamPlayerTxt]));
 			return;
 		}
 		This._Tc=0;//currentTime 对应的采样数
@@ -144,12 +153,12 @@ fn.prototype=BufferStreamPlayer.prototype={
 		This.pcmBuffer=[[],[]];//未推入audioBuffer的pcm数据缓冲
 		
 		var fail=function(msg){
-			falseCall("浏览器不支持打开"+BufferStreamPlayerTxt+(msg?"："+msg:""));
+			falseCall($T("P6Gs::浏览器不支持打开{1}",0,BufferStreamPlayerTxt)+(msg?": "+msg:""));
 		};
 		
 		var ctx=set.runningContext || Recorder.GetContext(true); This._ctx=ctx;
 		!__abTest&&CLog("start... ctx.state="+ctx.state+(
-			ctx.state=="suspended"?"（注意：ctx不是running状态，start需要在用户操作(触摸、点击等)时进行调用，否则会尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）":""
+			ctx.state=="suspended"?$T("JwDm::（注意：ctx不是running状态，start需要在用户操作(触摸、点击等)时进行调用，否则会尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）"):""
 		));
 		
 		var support=1;
@@ -169,7 +178,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		
 		var end=function(){
 			if(This.isStop){
-				CLog("start被stop终止",3);
+				CLog($T("6DDt::start被stop终止"),3);
 				return;
 			};
 			//创建MediaStream
@@ -189,7 +198,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 					This._writeBuffer();
 				},100);
 			}else{
-				CLog("此浏览器的AudioBuffer实现不支持动态特性，采用兼容模式",3);
+				CLog($T("qx6X::此浏览器的AudioBuffer实现不支持动态特性，采用兼容模式"),3);
 				This._writeInt=setInterval(function(){
 					This._writeBad();
 				},10);//定时调用进行数据写入播放
@@ -232,7 +241,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 			//超时没有回调
 			var testInt=setTimeout(function(){
 				testInt=0; testStream.stop(); testRec&&testRec.close();
-				fail("环境检测超时");
+				fail($T("cdOx::环境检测超时"));
 			},1500);
 			//随机生成1秒的数据，rec有一次回调即可
 			var data=new Int16Array(8000);
@@ -252,7 +261,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 				CLog(tag+ctx.state);
 				abTest();
 			})[CatchTxt](function(e){ //比较少见，可能没有影响
-				CLog(tag+ctx.state+" 可能无法播放："+e.message,1,e);
+				CLog(tag+ctx.state+" "+$T("S2Bu::可能无法播放：{1}",0,e.message),1,e);
 				abTest();
 			});
 		}else{
@@ -353,7 +362,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 				未提供set.transform，数据必须是pcm[Int16,...]，此时的set必须提供sampleRate；
 				提供了set.transform，数据为transform方法支持的任意格式。
 			set.decode为true时:
-				数据必须是ArrayBuffer，会自动解码成pcm[Int16,...]；注意输入的每一片数据都应该是完整的一个音频片段文件，否则可能会解码失败。
+				数据必须是ArrayBuffer，会自动解码成pcm[Int16,...]；注意输入的每一片数据都应该是完整的一个音频片段文件，否则可能会解码失败；注意ArrayBuffer对象是Transferable object，参与解码后此对象将不可用，因为内存数据已被转移到了解码线程，可通过 stream.input(arrayBuffer.slice(0)) 形式复制一份再解码就没有这个问题了。
 				
 		关于anyData的二进制长度：
 			如果是提供的pcm、wav格式数据，数据长度对播放无太大影响，很短的数据也能很好的连续播放。
@@ -363,7 +372,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		var This=this,set=This.set;
 		var inputN=++This.inputN;
 		if(!This.inputQueue){
-			throw new Error("未调用start方法");
+			throw new Error(NoStartMsg());
 		}
 		
 		var decSet=set.decode;
@@ -404,15 +413,15 @@ fn.prototype=BufferStreamPlayer.prototype={
 		var This=this;
 		
 		if(!pcm || !pcm.subarray){
-			This._inputErr("input调用失败：非pcm[Int16,...]输入时，必须解码或者使用transform转换", inputN);
+			This._inputErr($T("ZfGG::input调用失败：非pcm[Int16,...]输入时，必须解码或者使用transform转换"), inputN);
 			return;
 		}
 		if(!sampleRate){
-			This._inputErr("input调用失败：未提供sampleRate", inputN);
+			This._inputErr($T("N4ke::input调用失败：未提供sampleRate"), inputN);
 			return;
 		}
 		if(This.bufferSampleRate && This.bufferSampleRate!=sampleRate){
-			This._inputErr("input调用失败：data的sampleRate="+sampleRate+"和之前的="+This.bufferSampleRate+"不同", inputN);
+			This._inputErr($T("IHZd::input调用失败：data的sampleRate={1}和之前的={2}不同",0,sampleRate,This.bufferSampleRate), inputN);
 			return;
 		}
 		if(!This.bufferSampleRate){
@@ -497,7 +506,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		
 		var ctx=This._ctx;
 		var sampleRate=This.bufferSampleRate;
-		var bufferSize=sampleRate*60;//建一个可以持续播放60秒的buffer，循环写入数据播放，大点好简单省事
+		var bufferSize=sampleRate*(set.bufferSecond||60);//建一个可以持续播放60秒的buffer，循环写入数据播放，大点好简单省事
 		var buffer=ctx.createBuffer(1, bufferSize,sampleRate);
 		
 		var source=ctx.createBufferSource();
@@ -571,7 +580,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 			//堆积的在300ms内按正常播放
 			if(dSize<dMax){
 				//至少要延迟播放新数据
-				var d150Size=Math.floor(delaySecond*sampleRate-dSize);
+				var d150Size=Math.floor(delaySecond*sampleRate-dSize-pcm1.length);
 				if(oldAudioBufferIdx==0 && d150Size>0){
 					//开头加上少了的延迟
 					This.audioBufferIdx=Math.max(This.audioBufferIdx, d150Size);
@@ -771,6 +780,10 @@ fn.prototype=BufferStreamPlayer.prototype={
 	
 };
 
+var NoStartMsg=function(){
+	return $T("TZPq::{1}未调用start方法",0,BufferStreamPlayerTxt);
+};
+
 
 
 /**pcm数据进行首尾1ms淡入淡出处理，播放时可以大幅减弱爆音**/
@@ -788,11 +801,11 @@ var FadeInOut=BufferStreamPlayer.FadeInOut=function(arr,sampleRate){
 var DecodeAudio=BufferStreamPlayer.DecodeAudio=function(arrayBuffer,True,False){
 	var ctx=Recorder.GetContext();
 	if(!ctx){//强制激活Recorder.Ctx 不支持大概率也不支持解码
-		False&&False("浏览器不支持音频解码");
+		False&&False($T("iCFC::浏览器不支持音频解码"));
 		return;
 	};
 	if(!arrayBuffer || !(arrayBuffer instanceof ArrayBuffer)){
-		False&&False("音频解码数据必须是ArrayBuffer");
+		False&&False($T("wE2k::音频解码数据必须是ArrayBuffer"));
 		return;//非ArrayBuffer 有日志但不抛异常 不会走回调
 	};
 	
@@ -813,7 +826,7 @@ var DecodeAudio=BufferStreamPlayer.DecodeAudio=function(arrayBuffer,True,False){
 			,data:pcm
 		});
 	},function(e){
-		False&&False("音频解码失败:"+(e&&e.message||"-"));
+		False&&False($T("mOaT::音频解码失败：{1}",0,e&&e.message||"-"));
 	});
 };
 
@@ -824,4 +837,4 @@ var CLog=function(){
 Recorder[BufferStreamPlayerTxt]=BufferStreamPlayer;
 
 	
-})(Recorder);
+}));
