@@ -2,13 +2,14 @@
 
 # :open_book:uni-app内使用RecordApp录音
 
-本目录内包含uni-app的测试项目源码，主要文件请参考 [main_recTest.vue](pages/recTest/main_recTest.vue) ；本测试项目是使用[app-uni-support.js](uni_modules/Recorder-UniCore/app-uni-support.js)来给`RecordApp`提供uni-app支持的，此文件在 `uni_modules/Recorder-UniCore` 组件内，copy即可使用，或者到DCloud 插件市场下载此组件（暂未发布）。
+本目录内包含uni-app的测试项目源码，主要文件请参考 [main_recTest.vue](pages/recTest/main_recTest.vue) ；本测试项目是使用[app-uni-support.js](uni_modules/Recorder-UniCore/app-uni-support.js)来给`RecordApp`提供uni-app支持的，此文件在 `uni_modules/Recorder-UniCore` 组件内，copy即可使用，或者到[DCloud 插件市场下载此组件](https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore)。
 
 - 支持vue2、vue3、nvue
 - 支持编译成：H5、Android App、iOS App、微信小程序
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
 - 支持可视化波形显示
+- App端另有配套的原生录音插件、uts插件可供选择，兼容性和体验更好
 
 **[AD]app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权；详情参考本文档下面的授权许可章节。
 
@@ -38,7 +39,7 @@
 
 ## 一、引入js文件
 1. 在你的项目根目录安装`recorder-core`：`npm install recorder-core`
-2. 导入Recorder-UniCore组件：直接复制本目录下的`uni_modules/Recorder-UniCore`组件到你项目中，或者到DCloud 插件市场下载此组件（暂未发布）
+2. 导入Recorder-UniCore组件：直接复制本目录下的`uni_modules/Recorder-UniCore`组件到你项目中，或者到[DCloud 插件市场下载此组件](https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore)
 3. 在需要录音的vue文件内编写以下代码，按需引入需要的js
 
 ``` html
@@ -52,7 +53,8 @@ import RecordApp from 'recorder-core/src/app-support/app'
 //所有平台必须引入的uni-app支持文件（如果编译出现路径错误，请把@换成 ../../ 这种）
 import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
 
-// #ifdef MP-WEIXIN //需要编译成微信小程序时，引入微信小程序支持文件
+/** 需要编译成微信小程序时，引入微信小程序支持文件 **/
+// #ifdef MP-WEIXIN
     import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
 // #endif
 
@@ -76,7 +78,7 @@ import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
     ，因为App中默认是在renderjs（WebView）中进行录音和音频编码**/
 import 'recorder-core'
 import RecordApp from 'recorder-core/src/app-support/app'
-import '@/uni_modules/Recorder-UniCore/app-uni-support.js' //如果编译出现路径错误，请把@换成 ../../ 这种
+import '../../uni_modules/Recorder-UniCore/app-uni-support.js' //renderjs中似乎不支持"@/"打头的路径，如果编译路径错误请改正路径即可
 
 //按需引入你需要的录音格式支持文件，和插件
 import 'recorder-core/src/engine/mp3'
@@ -130,6 +132,9 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
         RecordApp.RequestPermission(()=>{
             console.log("已获得录音权限，可以开始录音了");
         },(msg,isUserNotAllow)=>{
+            if(isUserNotAllow){//用户拒绝了录音权限
+                //这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
+            }
             console.error("请求录音权限失败："+msg);
         });
     }
@@ -139,7 +144,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
         //录音配置信息
         var set={
             type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
-            ,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+            ,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
                 //全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
                 
                 //注意：App里面是在renderjs中进行实际的音频格式编码操作，此处的buffers数据是renderjs实时转发过来的，修改此处的buffers数据不会改变renderjs中buffers，所以不会改变生成的音频文件，可在onProcess_renderjs中进行修改操作就没有此问题了；如需清理buffers内存，此处和onProcess_renderjs中均需要进行清理，H5、小程序中无此限制
@@ -249,7 +254,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 [​](?)
 
 ## 编译成微信小程序时录音和权限
-编译成微信小程序时，录音功能由小程序的`RecorderManager`提供。
+编译成微信小程序时，录音功能由小程序的`RecorderManager`提供，屏蔽了微信原有的底层细节（无录音时长限制）。
 
 小程序录音需要用户授予录音权限，调用`RecordApp.RequestPermission`的时候会检查是否能正常录音，如果用户拒绝了录音权限，会进入错误回调，回调里面你应当编写代码检查`wx.getSetting`中的`scope.record`录音权限，然后引导用户进行授权（可调用`wx.openSetting`打开设置页面，方便用户给权限）。
 

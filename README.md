@@ -9,9 +9,9 @@
 
 支持对任意`MediaStream`进行音频录制、实时处理，包括：`getUserMedia返回的流`、`WebRTC中的remote流`、`audio、video标签的captureStream方法返回的流`、`自己创建的流` 等等。
 
-提供多个插件功能支持：拥有丰富的音频可视化、变速变调处理、语音识别、音频流播放等；搭配上强大的实时处理支持，可用于各种网页应用：从简单的录音，到复杂的实时语音识别（ASR），甚至音频相关的游戏，都能从容应对。
+提供多个插件功能支持，拥有丰富的音频可视化、变速变调处理、语音识别、音频流播放等；搭配上强大的实时处理支持，可用于各种网页应用：从简单的录音，到复杂的实时语音识别（ASR），甚至音频相关的游戏，都能从容应对；提供转码支持，允许将录制的buffers数据或任意pcm数据转码成你需要的格式（参考`rec.mock`方法）。
 
-主要用于语音录制，因此仅对**单声道**进行支持（未适配双声道）；默认输出mp3格式，另外可选wav、pcm、g711a、g711u、ogg、amr、webm(beta)格式，支持任意格式扩展（前提有相应编码器）；使用recorder.mp3.min.js（150kb）即可录制mp3，使用recorder.wav.min.js（25kb）即可录制wav；均支持实时转码和实时传输。
+主要用于语音录制，因此仅对**单声道**进行支持（未适配双声道），支持超长时间录音（参考`rec.buffers`）；默认输出mp3格式，另外可选wav、pcm、g711a、g711u、ogg、amr、webm(beta)格式，支持任意格式扩展（前提有相应编码器）；使用recorder.mp3.min.js（150kb）即可录制mp3，使用recorder.wav.min.js（25kb）即可录制wav；均支持实时转码和实时传输。
 
 音频文件的上传和播放：可直接使用常规的`Audio HTML标签`来播放完整的音频文件，参考文档下面的【快速使用】部分，有上传和播放例子；上传了的录音直接将音频链接赋值给`audio.src`即可播放；本地的`blob音频文件`可通过`URL.createObjectURL`来生成本地链接赋值给`audio.src`即可播放，或者将blob对象直接赋值给`audio.srcObject`（兼容性没有src高）。实时的音频片段文件播放，可以使用本库自带的`BufferStreamPlayer`插件来播放，简单高效，或者采用别的途径播放。
 
@@ -587,35 +587,38 @@ stop时返回的录音数据类型，取值：`blob`、`arraybuffer`，默认为
 
 
 ### 【方法】rec.mock(pcmData,pcmSampleRate)
-模拟一段录音数据，后面直接调用stop进行编码得到音频文件。需提供pcm数据 `pcmData` `=` `[Int16,...]` 为一维数组，和pcm数据的采样率 `pcmSampleRate`。调用本方法后无需调用也无法调用open、close、start等方法，只能调用stop，如果之前已经开始了录音，前面的录音数据全部会被丢弃；本方法主要用于音频转码。
+模拟一段录音数据，后面直接调用stop进行编码得到音频文件。需提供pcm数据 `pcmData` `=` `[Int16,...]` 为Int16Array一维数组，和pcm数据的采样率 `pcmSampleRate`。调用本方法后无需调用也无法调用open、close、start等方法，只能调用stop，如果之前已经开始了录音，前面的录音数据全部会被丢弃（一般不要共用一个rec，直接创建个新的再调用mock）；本方法主要用于音频转码。
 
 提示：在录音实时回调中配合`Recorder.SampleData()`方法使用效果更佳，可实时生成小片段语音文件。
 
 **注意：pcmData为一维数组，如果提供二维数组将会产生不可预料的错误**；如果需要使用类似`onProcess`回调的`buffers`或者`rec.buffers`这种pcm列表（二维数组）时，可自行展开成一维，或者使用`Recorder.SampleData()`方法转换成一维。
 
-本方法可用于将一个音频解码出来的pcm数据方便的转换成另外一个格式：
 ``` javascript
-var amrBlob=...;//amr音频blob对象
-var amrSampleRate=8000;//amr音频采样率
+//提供一个变量，用于连续转换buffers数据，注意开始新的转换时需要重置为null
+var prevChunk=null;
 
-//解码amr得到pcm数据
-var reader=new FileReader();
-reader.onload=function(){
-    Recorder.AMR.decode(new Uint8Array(reader.result),function(pcm){
-        transformOgg(pcm);
-    });
-};
-reader.readAsArrayBuffer(amrBlob);
+//将onProcess回调中的buffers转成pcm   onProcess(buffers,powerLevel,duration,sampleRate)
+//var chunk=Recorder.SampleData(buffers,sampleRate,sampleRate,prevChunk);
 
-//将pcm转成ogg
-function transformOgg(pcmData){
-    Recorder({type:"ogg",bitRate:64,sampleRate:32000})
-        .mock(pcmData,amrSampleRate)
-        .stop(function(blob,duration){
-            //我们就得到了新采样率和比特率的ogg文件
-            console.log(blob,duration);
-        });
-};
+//将rec.buffers转成pcm
+var chunk=Recorder.SampleData(rec.buffers,rec.srcSampleRate,rec.srcSampleRate,prevChunk);
+
+prevChunk=chunk; //存起来，下次从当前已转换位置继续转换
+
+//这就是上面的代码自动截取到的最新未转换pcm数据
+//你也可以自行从buffers中截取出需要转码的pcm
+//或者从其他地方获取到pcm数据，比如用解码其他音频文件得到pcm，即可实现不同音频格式之间转码
+var pcm=chunk.data; 
+var sampleRate=chunk.sampleRate;
+
+//调用mock方法把pcm转码成mp3或其他格式
+var mockRec=Recorder({ type:"mp3",bitRate:16,sampleRate:16000 });
+mockRec.mock(pcm,sampleRate);
+mockRec.stop(function(blob,duration){
+    console.log("pcm已转码成mp3",blob,duration);
+},function(msg){
+    console.error("不应该出现的错误:"+msg);
+});
 ```
 
 

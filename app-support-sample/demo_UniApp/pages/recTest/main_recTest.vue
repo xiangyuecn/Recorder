@@ -1,3 +1,8 @@
+<!-- uni-app内使用RecordApp录音
+GitHub: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp
+DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore
+-->
+
 <template>
 <view>
 	<view style="padding:5px 10px 0">
@@ -31,7 +36,7 @@
 		<checkbox @click="recTypeClick" :checked="recType=='mp3'" data-type="mp3">mp3</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='wav'" data-type="wav">wav</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='pcm'" data-type="pcm">pcm</checkbox>
-		<checkbox @click="recTypeClick" :checked="recType=='amr'" data-type="amr">amr</checkbox>
+		<checkbox @click="recTypeClick" :checked="recType=='amr'" data-type="amr" :disabled="disableAmr">amr</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='g711a'" data-type="g711a">g711a</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='g711u'" data-type="g711u">g711u</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='ogg'" data-type="ogg" :disabled="disableOgg">ogg{{disableOgg?'(js太大)':''}}</checkbox>
@@ -125,7 +130,8 @@
 	<view style="height:10px;background:#eee"></view>
 	<view style="padding:10px 10px">
 		<view style="padding-bottom: 10px;color:#02a2ff;word-break:break-all;">
-			RecordApp的uni-app支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp (github可以换成gitee)
+			<view>DCloud 插件市场下载本组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore</view>
+			<view>RecordApp的uni-app支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp (github可以换成gitee)</view>
 		</view>
 		<view style="color:#0ab;font-size:22px;font-weight:bold">
 			如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~
@@ -200,19 +206,13 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
 
 
 //特殊处理：amr、ogg编码器需要atob进行base64解码，小程序没有atob
-var disableOgg=false;
+var disableOgg=false,disableAmr=false;
 // #ifdef MP-WEIXIN
 	disableOgg=true;
-	if(typeof atob=="undefined" && typeof globalThis=="object"){
-		globalThis.atob=(s)=>{
-			var a=new Uint8Array(uni.base64ToArrayBuffer(s)),t="";
-			for(var i=0;i<a.length;i++)t+=String.fromCharCode(a[i]);
-			return t;
-		};
-		console.warn("没有atob，已提供全局变量");
-	}
+	disableAmr=true;
+	//无法像小程序demo项目一样在开头提供 globalThis.atob 来支持atob，因为uni-app编译后npm包会在所有js文件前面加载，js代码块会在所有import之后执行，本demo代码暂不提供amr、ogg小程序的支持，你可以在node_modules包中手动增加一个js来实现 globalThis.atob 并import这个文件，小程序里面就能正常使用amr、ogg了
 // #endif
-// #ifdef H5 || MP-WEIXIN
+// #ifdef H5
 	//H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
 	import 'recorder-core/src/engine/beta-amr' //小程序中需要atob支持
 	import 'recorder-core/src/engine/beta-amr-engine'
@@ -252,7 +252,7 @@ export default {
 			,recpowerx:0
 			,recpowert:""
 			,pageDeep:0,pageNewPath:"main_recTest"
-			,disableOgg:disableOgg
+			,disableOgg:disableOgg,disableAmr:disableAmr
 			,evalExecCode:""
 			,reclogs:[]
 		}

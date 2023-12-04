@@ -1,3 +1,8 @@
+<!-- uni-app内使用RecordApp录音
+GitHub: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp
+DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore
+-->
+
 <template>
 <view>
 	<view style="padding:5px 10px 0">

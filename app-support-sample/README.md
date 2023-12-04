@@ -107,7 +107,7 @@ require("./你clone的目录/src/app-support/app-miniProgram-wx-support.js");
 ### 在uni-app中使用
 请直接参考本目录下的 [demo_UniApp](./demo_UniApp) demo项目，可编译成：H5、Android App、iOS App、微信小程序，**[AD]编译成App时仅供测试，正式发布需商用授权**。
 
-在uni-app中使用，需要先导入Recorder-UniCore组件，在demo_UniApp项目中可以找到此组件，或者到DCloud 插件市场下载此组件（暂未发布）。
+在uni-app中使用，需要先导入Recorder-UniCore组件，在demo_UniApp项目中可以找到此组件，或者到[DCloud 插件市场下载此组件](https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore)。
 ``` javascript
 //所有平台必须引入的uni-app支持文件
 import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
@@ -207,7 +207,7 @@ recReq(function(){
 
 [​](?)
 
-## 【附】App中使用H5录音需要进行的权限处理
+## 【附】需要进行的权限处理
 App的WebView中打开网页进行录音时，如果未使用原生录音，将默认使用Recorder H5进行录音（和普通网页录音没有任何区别），此时必须在`RecordApp.RequestPermission`前先获取到App的系统录音权限，如果App没有系统录音权限，将无法录音。
 
 ### Android App录音权限
@@ -469,7 +469,7 @@ JsBridge可以是自己实现的交互方式 或 别人提供的框架。因为�
 [​](?)
 
 ## uni-app组件：app-uni-support.js
-在本文档目录下的[demo_UniApp](./demo_UniApp)项目中可以找到Recorder-UniCore组件，或者到DCloud 插件市场下载此组件（暂未发布），路径为 `@/uni_modules/Recorder-UniCore/app-uni-support.js` 。
+在本文档目录下的[demo_UniApp](./demo_UniApp)项目中可以找到Recorder-UniCore组件，或者到[DCloud 插件市场下载此组件](https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore)，路径为 `@/uni_modules/Recorder-UniCore/app-uni-support.js` 。
 
 此组件支持vue2、vue3、nvue，支持编译成：H5、Android App、iOS App、微信小程序，**[AD]编译成App时仅供测试，正式发布需商用授权**。
 
