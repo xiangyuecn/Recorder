@@ -6,7 +6,7 @@
 <link rel="shortcut icon" type="image/png" href="../assets/icon.png">
 
 <title reclang="CS4l">RecordApp QuickStart: 快速入门</title>
-<script>var PageLM="2023-12-01 20:16";</script>
+<script>var PageLM="2023-12-08 20:41";</script>
 <!--
 你可以直接将 /app-support-sample/QuickStart.html 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了。
 You can directly copy the /app-support-sample/QuickStart.html file to your (https) website, and you can start testing normally without other files.
@@ -40,8 +40,7 @@ var onBadCDN=function(){
 	if(DisableCDN)return;
 	clearTimeout(intBadCDN);
 	var cdn=useCDN.cdn;
-	var url=!cdn?"https://unpkg.com/recorder-core/":
-		/unpkg/i.test(cdn)?"https://xiangyuecn.gitee.io/recorder/":"";
+	var url=!cdn?"https://xiangyuecn.gitee.io/recorder/":"";
 	if(!url){ setCDNUrl(""); return;}
 	location.hash="#useCDN="+encodeURIComponent(JSON.stringify({
 		time:Date.now()

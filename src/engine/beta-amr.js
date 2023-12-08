@@ -298,16 +298,6 @@ var newContext=function(setOrNull,_badW){
 			jsCode+=";var wkScope={ wk_ctxs:{},wk_AMR:Create() }";
 			
 			var engineCode=Recorder.AMR.Create.toString();
-			if(!window.URL){//老版本Worker里面没有atob、console，处理一下 https://developer.mozilla.org/en-US/docs/Web/API/atob
-				var t1=Date.now();
-				engineCode=engineCode.replace(/\w+\.b64Dec\(.(.+?).\)/g,function(a,str){
-					var s=atob(str),a=new Array(s.length);
-					for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);
-					return "["+a.join(",")+"]";
-				});
-				Recorder.CLog("AMR: Outdated Worker without atob, Patch code takes "+(Date.now()-t1)+"ms",3);
-			};
-			
 			var url=(window.URL||webkitURL).createObjectURL(new Blob(["var Create=(",engineCode,jsCode], {type:"text/javascript"}));
 			
 			worker=new Worker(url);

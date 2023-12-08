@@ -1,5 +1,5 @@
 {
-	"navigationBarTitleText":"RecordApp录音测试"
+	"navigationBarTitleText":"RecordApp语音识别ASR"
 	,"usingComponents": {
 		"test-player":"../test_player__/test_player__"
 	}

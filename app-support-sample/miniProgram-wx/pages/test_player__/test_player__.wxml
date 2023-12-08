@@ -1,0 +1,24 @@
+<view>
+	<!-- 手撸播放器 -->
+	<view wx:if="{{playUrl}}" style="padding-top:30px">
+		<view style="display: flex;">
+			<view style="width:10px"></view>
+			<view style="flex:1">
+				<button bindtap="play" style="width:auto;padding:8px 5px;">{{playing?'暂停播放':'播放'}}</button>
+			</view>
+			<view style="width:10px"></view>
+			<view style="flex:1">
+				<button bindtap="shareFile" style="width:auto;padding:8px 5px;">下载保存</button>
+			</view>
+			<view style="width:10px"></view>
+		</view>
+		
+		<view style="padding-top:10px">
+			<slider value="{{player_position}}" bindchange="setPlayerPosition" step="1" max="100" min="0"></slider>
+		</view>
+		<view style="padding:0 10px;display:flex;">
+			<view style="flex:1">{{player_currentTime}}</view>
+			<view style="flex:1;text-align: right;">{{player_duration}}</view>
+		</view>
+	</view>
+</view>

@@ -429,9 +429,27 @@ function Create(){
     STATICTOP = STATIC_BASE + 31776;
 
     //精简 负优化
-	Module.b64Dec=function(str){
+	Module.b64Atob=function(input) {
 		//低版本Worker里面没有atob https://developer.mozilla.org/en-US/docs/Web/API/atob
-		var s=atob(str),a=new Uint8Array(s.length);
+		//测试： s=new Array(1024*10).fill();s=s.map(v=>String.fromCharCode(~~(Math.random()*256)));t=s.join("");s=btoa(t);b64Atob(s)==atob(s)
+		var bc = 0, bs, buffer, idx = 0, output = '';
+		while(true){
+			buffer = input.charCodeAt(idx++);
+			if(!buffer || buffer==61) break //""||"="
+			if(buffer>64&&buffer<91) buffer-=65;
+			else if(buffer>96&&buffer<123) buffer-=71; //97-26
+			else if(buffer>47&&buffer<58) buffer+=4; //48-26-26
+			else if(buffer==43) buffer=62;// +
+			else if(buffer==47) buffer=63;// /
+			else continue;
+			bs = bc % 4 ? bs * 64 + buffer : buffer;
+			if(bc++ % 4) output += String.fromCharCode(255 & bs >> (-2 * bc & 6));
+		}
+		return output;
+	};
+	Module.b64Dec=function(str){
+		var s=typeof atob=="function"?atob(str):Module.b64Atob(str);
+		var a=new Uint8Array(s.length);
 		for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);
 		return a;
 	};

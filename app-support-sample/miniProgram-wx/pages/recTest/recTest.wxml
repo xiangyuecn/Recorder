@@ -1,6 +1,12 @@
 <view style="word-break:break-all">
+	<view style="padding:0 10px">
+		<button size="mini"><navigator url="/pages/test_asr/test_asr">asr语音识别</navigator></button>
+		<button size="mini" bindtap="reloadPage" style="margin-left:10px">刷新当前页</button>
+	</view>
+	<view style="margin-top:5px;height:10px;background:#eee"></view>
+	
 	<!-- 录音格式选择 -->
-	<view bindtap="recTypeClick">
+	<view bindtap="recTypeClick" style="padding:10px 10px 0">
 		类型：
 		<checkbox checked="{{recType=='mp3'}}" data-type="mp3">mp3</checkbox>
 		<checkbox checked="{{recType=='wav'}}" data-type="wav">wav</checkbox>
@@ -9,6 +15,10 @@
 		<checkbox checked="{{recType=='g711a'}}" data-type="g711a">g711a</checkbox>
 		<checkbox checked="{{recType=='g711u'}}" data-type="g711u">g711u</checkbox>
 		<checkbox checked="{{recType=='ogg'}}" data-type="ogg" disabled="{{true}}">ogg(js太大)</checkbox>
+	</view>
+	<view style="padding:10px 10px 0">
+		采样率：<input type="number" value="{{recSampleRate}}" bindinput="inputSet" data-type="number" data-key="recSampleRate" style="width:50px;display:inline-block;border:1px solid #ddd"/>hz
+		比特率：<input type="number" value="{{recBitRate}}" bindinput="inputSet" data-type="number" data-key="recBitRate"  style="width:50px;display:inline-block;border:1px solid #ddd"/>kbps
 	</view>
 
 	<!-- 控制按钮 -->
@@ -72,27 +82,7 @@
 	</view>
 
 	<!-- 手撸播放器 -->
-	<view wx:if="{{playUrl}}" style="padding-top:30px">
-		<view style="display: flex;">
-			<view style="width:10px"></view>
-			<view style="flex:1">
-				<button bindtap="play" style="width:auto;padding:8px 5px;">{{playing?'暂停播放':'播放'}}</button>
-			</view>
-			<view style="width:10px"></view>
-			<view style="flex:1">
-				<button bindtap="shareFile" style="width:auto;padding:8px 5px;">下载保存</button>
-			</view>
-			<view style="width:10px"></view>
-		</view>
-		
-		<view style="padding-top:10px">
-			<slider value="{{player_position}}" bindchange="setPlayerPosition" step="1" max="100" min="0"></slider>
-		</view>
-		<view style="padding:0 10px;display:flex;">
-			<view style="flex:1">{{player_currentTime}}</view>
-			<view style="flex:1;text-align: right;">{{player_duration}}</view>
-		</view>
-	</view>
+	<test-player class="player"></test-player>
 
 	<!-- 日志输出 -->
 	<view style="padding-top:30px">
@@ -103,7 +93,11 @@
 		</view>
 	</view>
 	
-	<view style="padding-top:30px;color:#0ab;font-size:22px;font-weight:bold">
+	<view style="margin-top:80px;height:10px;background:#eee"></view>
+	<view style="padding-top:10px;color:#0a0">
+		<text selectable="true" style="user-select:auto">RecordApp的微信小程序支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx (github可以换成gitee)</text>
+	</view>
+	<view style="padding-top:20px;color:#0ab;font-size:22px;font-weight:bold">
 		<text selectable="true" style="user-select:auto">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</text>
 	</view>
 	<view style="padding-top:80px"></view>

@@ -1,0 +1,9 @@
+.recwave{
+	border:1px solid #ccc;
+	height:100px;
+	width:300px;
+}
+.recwave canvas{
+	height:100px;
+	width:300px;
+}

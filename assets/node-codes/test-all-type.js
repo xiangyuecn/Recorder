@@ -359,8 +359,8 @@ if(1){
 	await testEncode("pcm","68734486");
 	await testEncode("pcm","e89ff730",8000,8);
 	
-	await testEncode("g711a","bacdc0ef");
-	await testEncode("g711u","83298d81");
+	await testEncode("g711a","05af4d69",8000);
+	await testEncode("g711u","738015dd",8000);
 	await testEncode("webm","",0,0,1);
 	
 	await testEncode("amr","3da0ed48");

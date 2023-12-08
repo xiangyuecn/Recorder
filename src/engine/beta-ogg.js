@@ -274,27 +274,6 @@ var newContext=function(setOrNull,_badW){
 			};
 			
 			var engineCode=Recorder.OggVorbisEncoder.Create.toString();
-			if(!window.URL){//老版本Worker里面没有atob、console，处理一下 https://developer.mozilla.org/en-US/docs/Web/API/atob
-				var t1=Date.now();
-				var b64=/\.b64Zip=.([^'"]+)/.exec(engineCode)[1];
-				var dic=JSON.parse(/\.b64Dic=([^\}]+\})/.exec(engineCode)[1].replace(/(\w+):/g,'"$1":'));
-				var bytes=Recorder.OggVorbisEncoder.Module.b64UnZip(b64,dic);
-				engineCode=engineCode.replace(/\.b64Bytes=0/g,function(a,str){
-					var code=[".b64Bytes=(function(){ var buf=new Uint8Array("+bytes.length+");"];
-					var n=0;
-					while(n<bytes.length){
-						var arr="buf.set([";
-						for(var i=n,L=Math.min(bytes.length,n+50000);i<L;i++)
-							arr+=(i==n?'':',')+bytes[i];
-						code.push(arr+"],"+n+");");
-						n+=50000;
-					};
-					code.push("return buf; })()");
-					return code.join("");
-				});
-				Recorder.CLog("OggVorbis: Outdated Worker without atob, Patch code takes "+(Date.now()-t1)+"ms",3);
-			};
-			
 			var url=(window.URL||webkitURL).createObjectURL(new Blob(["var Create=(",engineCode,jsCode], {type:"text/javascript"}));
 			
 			worker=new Worker(url);

@@ -24,7 +24,7 @@ var IsNum=function(v){return typeof v=="number"};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2023-12-01 20:17";
+var LM=Recorder.LM="2023-12-08 20:36";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -573,7 +573,10 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 			
 			var beforeVal=F1;
 			var afterVal=after<il ? F2 : beforeVal; //后个点越界了，忽略不计
-			res[idx]=beforeVal+(afterVal-beforeVal)*atPoint;
+			var val=beforeVal+(afterVal-beforeVal)*atPoint;
+			
+			if(val>0x7FFF) val=0x7FFF; else if(val<-0x8000) val=-0x8000; //Int16越界处理
+			res[idx]=val;
 			
 			idx++;
 			i+=step;//抽样
@@ -604,7 +607,7 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	useLowPass: true或false，true为低通滤波，false为高通滤波
 	sampleRate: 待处理pcm的采样率
 	freq: 截止频率Hz，最大频率为sampleRate/2，低通时会切掉高于此频率的声音，高通时会切掉低于此频率的声音，注意滤波并非100%的切掉不需要的声音，而是减弱频率对应的声音，离截止频率越远对应声音减弱越厉害，离截止频率越近声音就几乎无衰减
-	返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）
+	返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）；注意此函数返回值可能会越界超过Int16范围，自行限制一下即可：Math.min(Math.max(val,-0x8000),0x7FFF)
 可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波*/
 Recorder.IIRFilter=function(useLowPass, sampleRate, freq){
 	var ov = 2 * Math.PI * freq / sampleRate;

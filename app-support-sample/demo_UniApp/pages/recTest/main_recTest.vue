@@ -16,6 +16,10 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			<button size="mini" type="default">国际化多语言</button>
 		</navigator>
 		
+		<navigator url="page_asr" style="display: inline;">
+			<button size="mini" type="default">asr语音识别</button>
+		</navigator>
+		
 <!-- #ifdef APP || H5 -->
 		<navigator url="page_nvue" style="display: inline;">
 			<button size="mini" type="default">nvue原生页面</button>
@@ -26,7 +30,6 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 <!-- #endif -->
 		
 		<button size="mini" type="default" @click="reloadPage">刷新当前页</button>
-		<button size="mini" type="default" @click="loadVConsole">显示vConsole</button>
 	</view>
 	<view style="margin-top:5px;height:10px;background:#eee"></view>
 	
@@ -36,7 +39,7 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		<checkbox @click="recTypeClick" :checked="recType=='mp3'" data-type="mp3">mp3</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='wav'" data-type="wav">wav</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='pcm'" data-type="pcm">pcm</checkbox>
-		<checkbox @click="recTypeClick" :checked="recType=='amr'" data-type="amr" :disabled="disableAmr">amr</checkbox>
+		<checkbox @click="recTypeClick" :checked="recType=='amr'" data-type="amr">amr</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='g711a'" data-type="g711a">g711a</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='g711u'" data-type="g711u">g711u</checkbox>
 		<checkbox @click="recTypeClick" :checked="recType=='ogg'" data-type="ogg" :disabled="disableOgg">ogg{{disableOgg?'(js太大)':''}}</checkbox>
@@ -124,13 +127,18 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			</view>
 		</view>
 	</view>
+	<view style="padding-top:80px"></view>
+	
+	<!-- 更多功能按钮 -->
+	<view style="padding:10px 10px">
+		<button size="mini" type="default" @click="loadVConsole">显示vConsole</button>
+	</view>
 	
 	<!-- 文档地址提示 -->
-	<view style="padding-top:80px"></view>
 	<view style="height:10px;background:#eee"></view>
 	<view style="padding:10px 10px">
 		<view style="padding-bottom: 10px;color:#02a2ff;word-break:break-all;">
-			<view>DCloud 插件市场下载本组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore</view>
+			<view style="padding-bottom:10px">DCloud 插件市场下载本组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore</view>
 			<view>RecordApp的uni-app支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp (github可以换成gitee)</view>
 		</view>
 		<view style="color:#0ab;font-size:22px;font-weight:bold">
@@ -199,27 +207,22 @@ import RecordApp from 'recorder-core/src/app-support/app.js'
 //【所有平台必须引入】uni-app支持文件
 import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
+var disableOgg=false;
 // #ifdef MP-WEIXIN
-//可选引入微信小程序支持文件
-import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
+	//可选引入微信小程序支持文件
+	import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
+	disableOgg=true; //小程序不测试ogg js文件太大
 // #endif
 
 
-//特殊处理：amr、ogg编码器需要atob进行base64解码，小程序没有atob
-var disableOgg=false,disableAmr=false;
-// #ifdef MP-WEIXIN
-	disableOgg=true;
-	disableAmr=true;
-	//无法像小程序demo项目一样在开头提供 globalThis.atob 来支持atob，因为uni-app编译后npm包会在所有js文件前面加载，js代码块会在所有import之后执行，本demo代码暂不提供amr、ogg小程序的支持，你可以在node_modules包中手动增加一个js来实现 globalThis.atob 并import这个文件，小程序里面就能正常使用amr、ogg了
-// #endif
-// #ifdef H5
+// #ifdef H5 || MP-WEIXIN
 	//H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
-	import 'recorder-core/src/engine/beta-amr' //小程序中需要atob支持
+	import 'recorder-core/src/engine/beta-amr'
 	import 'recorder-core/src/engine/beta-amr-engine'
 // #endif
 // #ifdef H5
 	//app、h5测试ogg，小程序不测试ogg js文件太大
-	import 'recorder-core/src/engine/beta-ogg' //小程序中需要atob支持
+	import 'recorder-core/src/engine/beta-ogg'
 	import 'recorder-core/src/engine/beta-ogg-engine'
 // #endif
 
@@ -252,7 +255,7 @@ export default {
 			,recpowerx:0
 			,recpowert:""
 			,pageDeep:0,pageNewPath:"main_recTest"
-			,disableOgg:disableOgg,disableAmr:disableAmr
+			,disableOgg:disableOgg
 			,evalExecCode:""
 			,reclogs:[]
 		}
@@ -322,7 +325,7 @@ export default {
 			
 			//使用renderjs时提示一下iOS有弹框
 			if(RecordApp.UniIsApp() && !RecordApp.UniNativeUtsPlugin){
-				this.reclog("当前是在App的renderjs中使用H5进行录音，iOS上只支持14.3以上版本，且iOS上每次进入页面后第一次请求录音权限时WebView均会弹出录音权限对话框，不同旧iOS版本（低于iOS17）下H5录音可能存在的问题在App中同样会存在；使用配套的原生录音插件或uts插件时无以上问题和版本限制，Android也无以上问题","#f60");
+				this.reclog("当前是在App的renderjs中使用H5进行录音，iOS上只支持14.3以上版本，且iOS上每次进入页面后第一次请求录音权限时、或长时间无操作再请求录音权限时WebView均会弹出录音权限对话框，不同旧iOS版本（低于iOS17）下H5录音可能存在的问题在App中同样会存在；使用配套的原生录音插件或uts插件时无以上问题和版本限制，Android也无以上问题","#f60");
 			}
 			
 			this.reclog("正在请求录音权限...");

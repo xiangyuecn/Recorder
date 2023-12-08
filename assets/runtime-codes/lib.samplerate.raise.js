@@ -64,6 +64,8 @@ Recorder.SampleRaise=function(pcmDatas,pcmSampleRate,newSampleRate){
 					F.x2 = F.x1; F.x1 = Fx; F.y2 = F.y1; F.y1 = Fy;
 					s=Fy;
 				}else{ s=filterFn?filterFn(s):s; }
+				
+				if(s>0x7FFF) s=0x7FFF; else if(s<-0x8000) s=-0x8000; //Int16越界处理
 				res[pos]=s;
 			};
 			

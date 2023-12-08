@@ -94,6 +94,7 @@ var fn=function(set){
 						onclose:fn({code, reason}) 连接关闭回调
 						onmessage:fn({data}) 收到消息回调
 						connect:fn() 进行连接
+						close:fn(code,reason) 关闭连接
 						send:fn(data) 发送数据，data为字符串或者arraybuffer
 					}
 				binaryType固定使用arraybuffer类型
@@ -148,20 +149,14 @@ var fn=function(set){
 		This.log("未绑定asrProcess回调无法感知到abort事件",3);
 	};
 };
-var CLog=function(msg,color){
-	var now=new Date();
-	var t=("0"+now.getMinutes()).substr(-2)
-		+":"+("0"+now.getSeconds()).substr(-2)
-		+"."+("00"+now.getMilliseconds()).substr(-3);
-	msg="["+t+" "+ASR_Aliyun_ShortTxt+"]"+msg;
-	
-	console[color==1?"error":color==3?"warn":"log"](msg);
-	return msg;
+var CLog=function(){
+	var v=arguments; v[0]="["+ASR_Aliyun_ShortTxt+"]"+v[0];
+	Recorder.CLog.apply(null,v);
 };
 fn.prototype=ASR_Aliyun_Short.prototype={
 	log:function(msg,color){
-		msg=CLog(msg,color);
-		this.set.log(msg,color==3?"#f60":color);
+		CLog(msg,typeof color=="number"?color:0);
+		this.set.log("["+ASR_Aliyun_ShortTxt+"]"+msg,color==3?"#f60":color);
 	}
 	
 	
@@ -629,7 +624,7 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 		if(needSend){
 			try{
 				ws.send(chunk.buffer);
-			}catch(e){console.error(e);};
+			}catch(e){CLog("ws.send",1,e);};
 		};
 		
 		//不要停

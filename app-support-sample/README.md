@@ -95,7 +95,7 @@ import './你copy的目录/native-config.js' //你需要将 /app-support-sample/
 ```
 
 ### 在微信小程序中使用
-请直接参考本目录下的 [miniProgram-wx](./miniProgram-wx) 小程序demo项目。
+请直接参考本目录下的 [miniProgram-wx](./miniProgram-wx) 小程序demo项目；如果是在小程序`web-view`中录音请直接使用`Recorder H5`就行，不需要额外支持。
 
 ``` javascript
 //微信开发者工具对npm支持太差，因此最好直接git clone源码使用
@@ -246,7 +246,7 @@ public void onPermissionRequest(PermissionRequest request) {
 ### iOS App录音权限
 在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限。
 
-iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时均会弹出录音权限对话框。
+iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
 
 iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层原生录音的支持，具体参考 [demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios) 目录，含iOS App源码。
 
@@ -449,7 +449,7 @@ JsBridge可以是自己实现的交互方式 或 别人提供的框架。因为�
 [​](?)
 
 ## 微信小程序：app-miniProgram-wx-support.js
-[app-miniProgram-wx-support.js](../src/app-support/app-miniProgram-wx-support.js) 是微信小程序支持文件，支持在微信小程序环境中使用；使用请参考本目录内的 [miniProgram-wx](./miniProgram-wx) 小程序demo项目。
+[app-miniProgram-wx-support.js](../src/app-support/app-miniProgram-wx-support.js) 是微信小程序支持文件，支持在微信小程序环境中使用；使用请参考本目录内的 [miniProgram-wx](./miniProgram-wx) 小程序demo项目；如果是在小程序`web-view`中录音请直接使用`Recorder H5`就行，不需要额外支持。
 
 录音功能由微信小程序的RecorderManager录音接口提供（已屏蔽10分钟录音限制），因为js层已加载Recorder和相应的js编码引擎，所以，Recorder支持的录音格式，小程序内均可以做到支持。
 

@@ -352,7 +352,7 @@ public void onPermissionRequest(PermissionRequest request) {
 ## 【附】iOS App - WebView中录音示例
 在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限。
 
-iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时均会弹出录音权限对话框。
+iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
 
 iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含iOS App源码。
 
@@ -374,7 +374,7 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 [​](?)
 
 ## 【附】uni-app集成参考
-`RecordApp`支持在uni-app中直接进行录音，支持编译成：H5、Android App、iOS App、微信小程序，请参考Demo项目和文档：[demo_UniApp](./app-support-sample/demo_UniApp)。
+`RecordApp`支持在uni-app中直接进行录音，支持编译成：H5、Android App、iOS App、微信小程序，请参考Demo项目和文档：[demo_UniApp](./app-support-sample/demo_UniApp)，对应的组件可到[DCloud 插件市场下载](https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore)。
 
 [不推荐] 如果仅使用`Recorder`的话，因为uni-app中的`renderjs`是直接运行在视图层WebView中的，因此可以通过在`renderjs`中加载Recorder来进行录音；此方法支持App、H5，但不支持小程序。同时需要注意在开发App平台的代码时，需在调用`rec.open`前，在原生层获取到录音权限；和上面的Android和iOS一样先配置好录音权限声明，再调用权限请求接口（iOS的WebView会自动处理可以不请求），在逻辑层中编写js权限处理代码。
 
@@ -411,7 +411,7 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 
 **留意中途来电话**：在移动端录音时，如果录音中途来电话，或者通话过程中打开录音，是不一定能进行录音的；经过简单测试发现，iOS上Safari将暂停返回音频数据，直到通话结束才开始继续有音频数据返回；小米上Chrome不管是来电还是通话中开始录音都能对麦克风输入的声音进行录音；只是简单测试，更多机器和浏览器并未做测试，不过整体上来看来电话或通话中进行录音的可行性并不理想，也不赞成在这种过程中进行录音；但只要通话结束后录音还是会正常进行，影响基本不大。
 
-**录音时对播放音频的影响**：仅在移动端，如果录音配置中未禁用降噪+回声消除（浏览器默认开启降噪+回声），打开录音后，如果同时播放音频，此时系统播放音量可能会变得很小；PC上 和 禁用降噪+回声消除后 似乎无此影响，但iOS上如果禁用又可能会导致无法正常录音，详细请阅读配置文档中的`audioTrackSet`参数说明。
+**录音时对播放音频的影响**：仅在移动端，如果录音配置中未禁用降噪+回声消除（浏览器默认开启降噪+回声），打开录音后，如果同时播放音频，此时系统播放音量可能会变得很小，关闭录音后一般可恢复音量；PC上 和 禁用降噪+回声消除后 似乎无此影响，但iOS上如果禁用又可能会导致无法正常录音，详细请阅读配置文档中的`audioTrackSet`参数说明。
 
 **移动端锁屏录音**：手机锁屏后浏览器的运行状态是一个玄学，是否能录音不可控；不同手机、甚至同一手机在不同状态下，有可能能录又有可能不能录，且无法检测；可以调用 `navigator.wakeLock` 来阻止手机自动锁屏，不支持的直接简单粗暴的 循环+静音 播放一段视频，来阻止锁屏，就是有点费电，具体实现可参考H5在线测试页面内的`wakeLockClick`方法。
 
@@ -424,6 +424,8 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 ## 已知问题
 
 > 此处已清除7个已知问题，大部分无法解决的问题会随着时间消失；问题主要集中在iOS部分版本上（不同系统版本问题不重样），好在这玩意能更新
+
+*2023-12-06* iOS上反复弹出的权限弹框：据QQ群内`1806152243`开发者反馈，进入页面打开一次录音并关闭后，如果没有在页面上进行任何用户交互操作（点击、触摸、滑动等），大约35秒左右之后，重新打开录音时，浏览器将会再次弹出录音权限对话框；iOS Safari上稳定复现；这是浏览器自己的行为，js无法控制，设计交互逻辑时应当注意。
 
 *2023-02-22* iPhone 14：~~有部分开发者反馈iPhone14上关闭录音后再次打开录音，会出现无法录音的情况，目前并不清楚是只有iPhone14上有问题，还是iOS16均有问题；估计是新的WebKit改了相关源码印度阿三没有测试，js没办法解决此问题，静候iOS更新，也许下一个系统更新就自动修复了；建议针对iOS环境，全局只open一次，不要close，挂在那里录音，可减少iOS系统问题带来的影响（负优化+耗电）。~~ 2023-7-1，此问题已修复，原因出在AudioContext上，iOS新版本上似乎不能共用一个AudioContext（新版本每次open均会创建新的AudioContext），并且iOS上AudioContext的resume行为和其他浏览器不相同，如果不是通过用户操作（触摸、点击等）进行调用，将无法resume，参考 [ztest_AudioContext_resume.html](https://xiangyuecn.gitee.io/recorder/assets/ztest_AudioContext_resume.html) 测试用例。
 
@@ -724,7 +726,7 @@ mockRec.stop(function(blob,duration){
 
 
 ### 【静态方法】Recorder.IIRFilter(useLowPass,sampleRate,freq)
-IIR低通、高通滤波；可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波。返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）。
+IIR低通、高通滤波；可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波。返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）；注意此函数返回值可能会越界超过Int16范围，自行限制一下即可：Math.min(Math.max(val,-0x8000),0x7FFF)。
 
 `useLowPass`: true或false，true为低通滤波，false为高通滤波
 
@@ -1104,6 +1106,7 @@ var asr=Recorder.ASR_Aliyun_Short({
                     onclose:fn({code, reason}) 连接关闭回调
                     onmessage:fn({data}) 收到消息回调
                     connect:fn() 进行连接
+                    close:fn(code,reason) 关闭连接
                     send:fn(data) 发送数据，data为字符串或者arraybuffer
                 }
             binaryType固定使用arraybuffer类型

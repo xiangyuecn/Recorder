@@ -1,12 +1,13 @@
 {
 	"pages": [
-		"pages/recTest/recTest"
+		"pages/recTest/recTest",
+		"pages/test_asr/test_asr"
 	],
 	"window": {
-	  "backgroundTextStyle": "light",
-	  "navigationBarBackgroundColor": "#fff",
-	  "navigationBarTitleText": "Weixin",
-	  "navigationBarTextStyle": "black"
+		"backgroundTextStyle": "light",
+		"navigationBarBackgroundColor": "#fff",
+		"navigationBarTitleText": "Weixin",
+		"navigationBarTextStyle": "black"
 	},
 	"style": "v2",
 	"sitemapLocation": "sitemap.json",

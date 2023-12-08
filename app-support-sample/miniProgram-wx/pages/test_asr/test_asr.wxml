@@ -1,0 +1,62 @@
+<view style="word-break:break-all">
+	<view style="color:#f60;font-weight:bold;padding:10px">实时语音识别 [阿里云版] - /src/extensions/asr.aliyun.short.js</view>
+	<view bindtap="asrLangClick" style="padding:0 10px">
+		<text>识别语言模型：</text>
+		<checkbox checked="{{asrLang=='普通话'}}" data-val="普通话">普通话</checkbox>
+		<checkbox checked="{{asrLang=='粤语'}}" data-val="粤语">粤语</checkbox>
+		<checkbox checked="{{asrLang=='英语'}}" data-val="英语">英语</checkbox>
+		<checkbox checked="{{asrLang=='日语'}}" data-val="日语">日语</checkbox>
+	</view>
+	<view style="padding:0px 10px 0">
+		<text>Token Api：</text>
+		<input value="{{asrTokenApi}}" bindinput="inputSet" data-key="asrTokenApi" style="width:200px;display:inline-block;border:1px solid #ddd"/>
+		<view style="font-size:13px;color:#999">你可以在电脑上运行Recorder仓库/assets/demo-asr内的nodejs服务器端脚本，然后填写你电脑局域网ip即可测试（调试时用127.0.0.1）</view>
+		<view style="font-size:13px;color:#fa0">需要将阿里云的ws地址也加入白名单，测试时还可设置不校验域名</view>
+	</view>
+	
+	<!-- 控制按钮 -->
+	<view style="display: flex;padding-top:10px">
+		<view style="width:10px"></view>
+		<view style="flex:1">
+			<button type="primary" bindtap="recStart" style="font-size:16px;padding:8px 5px;">开始录音+语音识别</button>
+		</view>
+		<view style="width:10px"></view>
+		<view style="width:120px">
+			<button type="warn" bindtap="recStop" style="font-size:16px;padding:8px 5px;width:auto">停止</button>
+		</view>
+		<view style="width:10px"></view>
+	</view>
+	
+	<!-- 可视化绘制 -->
+	<view style="padding:5px 0 0 10px">
+		<view style="height:40px;width:300px;background:#999;position:relative;">
+			<view style="height:40px;background:#0B1;position:absolute;width:{{recpowerx+'%'}}"></view>
+			<view style="padding-left:50px; line-height:40px; position: relative;">{{recpowert}}</view>
+		</view>
+		
+		<!-- 可视化波形，只需创建需要用到的canvas就行，canvas需要指定宽高（下面style里指定了300*100） -->
+		<view style="padding-top:5px"></view>
+		<view class="recwave">
+			<canvas type="2d" class="recwave-WaveView"></canvas>
+		</view>
+	</view>
+	
+	<!-- 显示语音识别结果 -->
+	<view style="padding:10px">
+		<view style="margin:0 0 6px;font-size:12px">实时识别结果: {{asrTime}}</view>
+		<view style="padding:15px 10px;min-height:50px;border:3px dashed #a2a1a1">{{asrTxt}}</view>
+	</view>
+	
+	<!-- 手撸播放器 -->
+	<test-player class="player"></test-player>
+	
+	<!-- 日志输出 -->
+	<view style="padding-top:30px">
+		<view wx:for="{{reclogs}}" wx:key="index" style="border-bottom:1px dashed #666;padding:5px 0;">
+			<view style="color:{{item.color==1?'red':item.color==2?'green':item.color}}">
+				{{item.txt}}
+			</view>
+		</view>
+	</view>
+	
+</view>
