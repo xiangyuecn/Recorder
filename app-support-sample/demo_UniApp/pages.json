@@ -19,6 +19,12 @@
 		    }
 		},
 		{
+		    "path" : "pages/recTest/page_asr",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp语音识别ASR - uni-app"
+		    }
+		},
+		{
 		    "path" : "pages/recTest/page_i18n",
 		    "style" : {
 		        "navigationBarTitleText": "RecordApp国际化多语言 - uni-app"

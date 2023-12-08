@@ -1,7 +1,7 @@
 {
   "id": "Recorder-UniCore",
   "displayName": "跨平台Recorder录音插件：支持多种格式、音频可视化、实时上传、语音识别",
-  "version": "1.0.231201",
+  "version": "1.0.231208",
   "description": "支持H5、Android iOS App、微信小程序；mp3 wav pcm g711a g711u ogg amr 录音格式；实时帧回调处理 音频转码 波形动画显示 ASR语音转文字 无录制时长限制",
   "keywords": [
     "Recorder-UniCore",
