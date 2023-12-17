@@ -58,7 +58,7 @@ var audioStart=function(){
 	sourceStart("audio",RootFolder+"/assets/audio/music-阿刁-张韶涵.mp3");
 };
 var videoStart=function(){
-	sourceStart("video",RootFolder+"/assets/audio/movie-一代宗师-此一时彼一时.mp4.webm");
+	sourceStart("video",RootFolder+"/assets/audio/movie-一代宗师-此一时彼一时.mp4.webm","video/mp4");
 };
 var fileStart=function(type,file){
 	if(!file.files.length){
@@ -66,14 +66,16 @@ var fileStart=function(type,file){
 	}
 	sourceStart(type,URL.createObjectURL(file.files[0]));
 };
-var sourceStart=function(type,src){
+var sourceStart=function(type,src,mime){
 	$(".sourceBox").html('\
 <div>\
 	切换播放本地'+type+'文件：<input type="file" accept="'+type+'/*"\
 		onchange="fileStart(\''+type+'\',this)">\
 </div>\
 <div style="padding-top:10px">\
-	<'+type+' class="sourcePlayer" controls autoplay src="'+src+'" style="width:80%"/>\
+	<'+type+' class="sourcePlayer" controls autoplay webkit-playsinline playsinline x5-video-player-type="h5" style="width:80%">\
+		<source src="'+src+'" '+(mime?'type="'+mime+'"':'')+'/>\
+	</'+type+'>\
 </div>\
 	');
 	var elem=$(".sourcePlayer");

@@ -43,11 +43,11 @@ var waveConfigs={
 			,fallDuration:400
 			,stripeEnable:false
 			,mirrorEnable:true}
-		,{testTitle:"稀疏镜像"
-			,lineCount:8
+		,{testTitle:"镜像+密集"
+			,lineCount:90,widthRatio:1
 			,position:0
 			,minHeight:1
-			,fallDuration:400
+			,fallDuration:600
 			,stripeEnable:false
 			,mirrorEnable:true
 			,linear:[0,"#0ac",1,"#0ac"]}
@@ -57,6 +57,18 @@ var waveConfigs={
 			,spaceWidth:1.5
 			,stripeEnable:false
 			,linear:[0,"#ab00ff",1,"#ab00ff"]}
+		
+		,{testTitle:"显示出所有频率"
+			,fullFreq:true}
+		,{testTitle:"镜像+密集2"
+			,lineCount:90,widthRatio:1
+			,minHeight:1
+			,mirrorEnable:true
+			,linear:[0,"#0A5",1,"#A50"]}
+		,{testTitle:"镜像+粗大"
+			,lineCount:8
+			,spaceWidth:1.5
+			,mirrorEnable:true}
 	]
 };
 var waveStore={};

@@ -8,7 +8,7 @@
 <title reclang="PZM5">RecordApp测试</title>
 
 <script>
-var PageLM="2023-12-01 20:16";
+var PageLM="2023-12-17 18:20";
 (function(){
 console.log("【温馨提示】本页面用于测试RecordApp的主要功能，代码难看臃肿，不建议阅读本页面源码；如果想要快速入门，请参考app-support-sample/QuickStart.html页面。    "
 +"[Reminder] This page is used to test the main functions of RecordApp. The code is ugly and bloated. It is not recommended to read the source code of this page; if you want to get started quickly, please refer to the app-support-sample/QuickStart.html page.");
@@ -913,10 +913,12 @@ var initWaveStore=function(store,elem){
 	store.Histogram1=Recorder.FrequencyHistogramView({elem:elem});
 	store.Histogram2=Recorder.FrequencyHistogramView({
 		elem:elem
-		,lineCount:90
+		,lineCount:200,widthRatio:1
 		,position:0
 		,minHeight:1
+		,fallDuration:600
 		,stripeEnable:false
+		,mirrorEnable:true
 	});
 	store.Histogram3=Recorder.FrequencyHistogramView({
 		elem:elem

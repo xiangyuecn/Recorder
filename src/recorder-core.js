@@ -24,7 +24,7 @@ var IsNum=function(v){return typeof v=="number"};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2023-12-08 20:36";
+var LM=Recorder.LM="2023-12-17 18:13";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";

@@ -124,6 +124,12 @@ XMLHttpRequest.prototype.open=function(m,u){
 XMLHttpRequest.prototype.setRequestHeader=function(k,v){
 	console.warn("xhr阻止添加请求头:"+k+"="+v);//沙雕jQuery会添加X-Requested-With
 };
+var oldWrite=document.write;
+document.write=function(){
+	var a=[],v=arguments;
+	for(var i=0;i<v.length;i++)a[i]=replaceHtmlAllSrc("document.write",v[i]);
+	return oldWrite.apply(this,a);
+};
 function replaceSrc(tag,src){
 	if(!urlInfo._dir){
 		urlInfo._dir=urlInfo.path.replace(/\/[^\/]+$/g,"/");
@@ -156,15 +162,15 @@ function replaceSrc(tag,src){
 	console.log((val==src?"未":"")+"替换"+tag,src+(val==src?"":" -> "+val));
 	return val;
 };
-function replaceHtmlAllSrc(html){
-	html=replaceHtml_node(html,"link","href");
-	html=replaceHtml_node(html,"script","src");
+function replaceHtmlAllSrc(from,html){
+	html=replaceHtml_node(from,html,"link","href");
+	html=replaceHtml_node(from,html,"script","src");
 	return html;
 };
-function replaceHtml_node(html,tag,key){
+function replaceHtml_node(from,html,tag,key){
 	var exp=new RegExp("(<"+tag+"[^>]+"+key+"\\s*=\\s*[\"'])([^>]+?)([\"'][^>]*>)","ig");
 	html=html.replace(exp,function(a,b,c,d){
-		return b+replaceSrc("html."+tag,c)+d;
+		return b+replaceSrc(from+"@"+tag,c)+d;
 	});
 	return html;
 };
@@ -249,7 +255,7 @@ function Step_LoadPage(){
 		reclog("拉取成功【"+title.replace(/<|'|"/g,"")+"】，已开始执行原始页面内容↓↓↓↓↓↓",2);
 		
 		html=html.replace(/<!DOCTYPE.*?>/ig,"");
-		html=replaceHtmlAllSrc(html);
+		html=replaceHtmlAllSrc("LoadPage",html);
 		document.write(html);
 	},function(err){
 		reclog("拉取页面失败："+err,"red;font-size:30px");

@@ -1,6 +1,6 @@
 /*
 录音 Recorder扩展，频率直方图显示
-使用本扩展需要引入src/extensions/lib.fft.js支持，直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可自行修改源码恢复成完整的线性频谱，或修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者
+使用本扩展需要引入src/extensions/lib.fft.js支持，直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可通过配置fullFreq来恢复成完整的线性频谱，或自行修改源码修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者
 
 https://github.com/xiangyuecn/Recorder
 
@@ -65,6 +65,7 @@ H5环境以上配置二选一
 		,stripeShadowBlur:-1 //峰值小横条阴影基础大小，设为0不显示阴影，-1为柱子的大小，如果柱子数量太多时请勿开启，非常影响性能
 		,stripeShadowColor:"" //峰值小横条阴影颜色，留空为柱子的阴影颜色
 		
+		,fullFreq:false //是否要绘制所有频率；默认false主要绘制5khz以下的频率，高频部分占比很少，此时不同的采样率对频谱显示几乎没有影响；设为true后不同采样率下显示的频谱是不一样的，因为 最大频率=采样率/2 会有差异
 		//当发生绘制时会回调此方法，参数为当前绘制的频率数据和采样率，可实现多个直方图同时绘制，只消耗一个input输入和计算时间
 		,onDraw:function(frequencyData,sampleRate){}
 	};
@@ -214,15 +215,17 @@ fn.prototype=FrequencyHistogramView.prototype={
 		var logY0 = Math.log(Y0)/Math.log(10);
 		var dBmax=20*Math.log(0x7fff)/Math.log(10);
 		
-		var fftSize=bufferSize/2;
-		var fftSize5k=Math.min(fftSize,Math.floor(fftSize*5000/(sampleRate/2)));//5khz所在位置，8000采样率及以下最高只有4khz
-		var fftSize5kIsAll=fftSize5k==fftSize;
-		var line80=fftSize5kIsAll?lineCount:Math.round(lineCount*0.8);//80%的柱子位置
+		var fftSize=bufferSize/2,fftSize5k=fftSize;
+		if(!set.fullFreq){//非绘制所有频率时，计算5khz所在位置，8000采样率及以下最高只有4khz
+			fftSize5k=Math.min(fftSize,Math.floor(fftSize*5000/(sampleRate/2)));
+		}
+		var isFullFreq=fftSize5k==fftSize;
+		var line80=isFullFreq?lineCount:Math.round(lineCount*0.8);//80%的柱子位置
 		var fftSizeStep1=fftSize5k/line80;
-		var fftSizeStep2=fftSize5kIsAll?0:(fftSize-fftSize5k)/(lineCount-line80);
+		var fftSizeStep2=isFullFreq?0:(fftSize-fftSize5k)/(lineCount-line80);
 		var fftIdx=0;
 		for(var i=0;i<lineCount;i++){
-			//不采用jmp123的非线性划分频段，录音语音并不适用于音乐的频率，应当弱化高频部分
+			// !fullFreq 时不采用jmp123的非线性划分频段，录音语音并不适用于音乐的频率，应当弱化高频部分
 			//80%关注0-5khz主要人声部分 20%关注剩下的高频，这样不管什么采样率都能做到大部分频率显示一致。
 			var start=Math.ceil(fftIdx);
 			if(i<line80){
@@ -232,7 +235,8 @@ fn.prototype=FrequencyHistogramView.prototype={
 				//5khz以上
 				fftIdx+=fftSizeStep2;
 			};
-			var end=Math.min(Math.ceil(fftIdx),fftSize);
+			var end=Math.ceil(fftIdx); if(end==start)end++;
+			end=Math.min(end,fftSize);
 			
 			
 			//参考AudioGUI.java .drawHistogram方法
@@ -276,8 +280,6 @@ fn.prototype=FrequencyHistogramView.prototype={
 		var stripeLinear2=set.stripeLinear&&This.genLinear(ctx,set.stripeLinear,originY,originY+heightY)||linear2;//上半部分的峰值小横条填充
 		
 		//计算柱子间距
-		ctx.shadowBlur=set.shadowBlur*scale;
-		ctx.shadowColor=set.shadowColor;
 		var mirrorEnable=set.mirrorEnable;
 		var mirrorCount=mirrorEnable?lineCount*2-1:lineCount;//镜像柱子数量翻一倍-1根
 		
@@ -287,72 +289,81 @@ fn.prototype=FrequencyHistogramView.prototype={
 			widthRatio=(width-spaceWidth*(mirrorCount+1))/width;
 		};
 		
-		var lineWidth=Math.max(1*scale,Math.floor((width*widthRatio)/mirrorCount));//柱子宽度至少1个单位
-		var spaceFloat=(width-mirrorCount*lineWidth)/(mirrorCount+1);//均匀间隔，首尾都留空，可能为负数，柱子将发生重叠
-		
-		//绘制柱子
-		var minHeight=set.minHeight*scale;
-		var mirrorSubX=spaceFloat+lineWidth/2;
-		var XFloat=mirrorEnable?width/2-mirrorSubX:0;//镜像时，中间柱子位于正中心
-		for(var i=0,xFloat=XFloat,x,y,h;i<lineCount;i++){
-			xFloat+=spaceFloat;
-			x=Math.floor(xFloat);
-			h=Math.max(lastH[i],minHeight);
-			
-			//绘制上半部分
-			if(originY!=0){
-				y=originY-h;
-				ctx.fillStyle=linear1;
-				ctx.fillRect(x, y, lineWidth, h);
-			};
-			//绘制下半部分
-			if(originY!=height){
-				ctx.fillStyle=linear2;
-				ctx.fillRect(x, originY, lineWidth, h);
-			};
-			
-			xFloat+=lineWidth;
+		for(var i=0;i<2;i++){
+			var lineFloat=Math.max(1*scale,(width*widthRatio)/mirrorCount);//柱子宽度至少1个单位
+			var lineWN=Math.floor(lineFloat),lineWF=lineFloat-lineWN;//提取出小数部分
+			var spaceFloat=(width-mirrorCount*lineFloat)/(mirrorCount+1);//均匀间隔，首尾都留空，可能为负数，柱子将发生重叠
+			if(spaceFloat>0 && spaceFloat<1){
+				widthRatio=1; spaceFloat=0; //不够一个像素，丢弃不绘制间隔，重新计算
+			}else break;
 		};
 		
-		//绘制柱子顶上峰值小横条
-		if(set.stripeEnable){
-			var stripeShadowBlur=set.stripeShadowBlur;
-			ctx.shadowBlur=(stripeShadowBlur==-1?set.shadowBlur:stripeShadowBlur)*scale;
-			ctx.shadowColor=set.stripeShadowColor||set.shadowColor;
-			var stripeHeight=set.stripeHeight*scale;
-			for(var i=0,xFloat=XFloat,x,y,h;i<lineCount;i++){
+		//绘制
+		var minHeight=set.minHeight*scale;
+		var XFloat=mirrorEnable?(width-lineWN)/2-spaceFloat:0;//镜像时，中间柱子位于正中心
+		for(var iMirror=0;iMirror<2;iMirror++){
+			if(iMirror){ ctx.save(); ctx.scale(-1,1); }
+			var xMirror=iMirror?width:0; //绘制镜像部分，不用drawImage(canvas)进行镜像绘制，提升兼容性（iOS微信小程序bug https://developers.weixin.qq.com/community/develop/doc/000aaca2148dc8a235a0fb8c66b000）
+			
+			//绘制柱子
+			ctx.shadowBlur=set.shadowBlur*scale;
+			ctx.shadowColor=set.shadowColor;
+			for(var i=0,xFloat=XFloat,wFloat=0,x,y,w,h;i<lineCount;i++){
 				xFloat+=spaceFloat;
-				x=Math.floor(xFloat);
-				h=stripesH[i];
+				x=Math.floor(xFloat)-xMirror;
+				w=lineWN; wFloat+=lineWF; if(wFloat>=1){ w++; wFloat--; } //小数凑够1像素
+				h=Math.max(lastH[i],minHeight);
 				
 				//绘制上半部分
 				if(originY!=0){
-					y=originY-h-stripeHeight;
-					if(y<0){y=0;};
-					ctx.fillStyle=stripeLinear1;
-					ctx.fillRect(x, y, lineWidth, stripeHeight);
+					y=originY-h;
+					ctx.fillStyle=linear1;
+					ctx.fillRect(x, y, w, h);
 				};
 				//绘制下半部分
 				if(originY!=height){
-					y=originY+h;
-					if(y+stripeHeight>height){
-						y=height-stripeHeight;
-					};
-					ctx.fillStyle=stripeLinear2;
-					ctx.fillRect(x, y, lineWidth, stripeHeight);
+					ctx.fillStyle=linear2;
+					ctx.fillRect(x, originY, w, h);
 				};
 				
-				xFloat+=lineWidth;
+				xFloat+=w;
 			};
-		};
+			
+			//绘制柱子顶上峰值小横条
+			if(set.stripeEnable){
+				var stripeShadowBlur=set.stripeShadowBlur;
+				ctx.shadowBlur=(stripeShadowBlur==-1?set.shadowBlur:stripeShadowBlur)*scale;
+				ctx.shadowColor=set.stripeShadowColor||set.shadowColor;
+				var stripeHeight=set.stripeHeight*scale;
+				for(var i=0,xFloat=XFloat,wFloat=0,x,y,w,h;i<lineCount;i++){
+					xFloat+=spaceFloat;
+					x=Math.floor(xFloat)-xMirror;
+					w=lineWN; wFloat+=lineWF; if(wFloat>=1){ w++; wFloat--; } //小数凑够1像素
+					h=stripesH[i];
+					
+					//绘制上半部分
+					if(originY!=0){
+						y=originY-h-stripeHeight;
+						if(y<0){y=0;};
+						ctx.fillStyle=stripeLinear1;
+						ctx.fillRect(x, y, w, stripeHeight);
+					};
+					//绘制下半部分
+					if(originY!=height){
+						y=originY+h;
+						if(y+stripeHeight>height){
+							y=height-stripeHeight;
+						};
+						ctx.fillStyle=stripeLinear2;
+						ctx.fillRect(x, y, w, stripeHeight);
+					};
+					
+					xFloat+=w;
+				};
+			};
 		
-		//镜像，从中间直接镜像即可
-		if(mirrorEnable){
-			var srcW=Math.floor(width/2);
-			ctx.save();
-			ctx.scale(-1,1);
-			ctx.drawImage(This.canvas,Math.ceil(width/2),0,srcW,height,-srcW,0,srcW,height);
-			ctx.restore();
+			if(iMirror){ ctx.restore(); }
+			if(!mirrorEnable) break;
 		};
 		
 		if(frequencyData){

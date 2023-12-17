@@ -288,8 +288,8 @@ var newContext=function(setOrNull,_badW){
 	try{
 		if(!worker){
 			//创建一个新Worker
-			var onmsg=(run+"").replace(/\w+\.onmessage/g,"self.postMessage");
-			onmsg=onmsg.replace(/\w+.wkScope/g,"wkScope");
+			var onmsg=(run+"").replace(/[\w\$]+\.onmessage/g,"self.postMessage");
+			onmsg=onmsg.replace(/[\w\$]+\.wkScope/g,"wkScope");
 			var jsCode=");wk_lame();self.onmessage="+onmsg;
 			jsCode+=";var wkScope={ wk_ctxs:{},wk_lame:wk_lame";
 			jsCode+=",wk_mp3TrimFix:{rm:"+mp3TrimFix.rm+",fn:"+mp3TrimFix.fn+"} }";

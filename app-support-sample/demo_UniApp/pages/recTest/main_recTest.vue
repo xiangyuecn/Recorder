@@ -501,6 +501,7 @@ export default {
 				store.SurferView=Recorder.WaveSurferView({compatibleCanvas:canvas1,compatibleCanvas_2x:canvas2, width:300, height:100});
 			`,(canvas1,canvas2)=>{
 				store.SurferView=Recorder.WaveSurferView({compatibleCanvas:canvas1,compatibleCanvas_2x:canvas2, width:300, height:100});
+				//注意：iOS上微信小程序基础库存在bug，canvas.drawImage(canvas)可能无法绘制，可能会导致WaveSurferView在iOS小程序上不能正确显示，其他环境下无此兼容性问题
 			});
 			
 			RecordApp.UniFindCanvas(this,[".recwave-Histogram1"],`${webStore}
@@ -510,10 +511,12 @@ export default {
 			});
 			RecordApp.UniFindCanvas(this,[".recwave-Histogram2"],`${webStore}
 				store.Histogram2=Recorder.FrequencyHistogramView({compatibleCanvas:canvas1, width:300, height:100
-					 ,lineCount:90,position:0,minHeight:1,stripeEnable:false});
+					,lineCount:200,widthRatio:1,position:0,minHeight:1
+					,fallDuration:600,stripeEnable:false,mirrorEnable:true});
 			`,(canvas1)=>{
 				store.Histogram2=Recorder.FrequencyHistogramView({compatibleCanvas:canvas1, width:300, height:100
-					 ,lineCount:90,position:0,minHeight:1,stripeEnable:false});
+					,lineCount:200,widthRatio:1,position:0,minHeight:1
+					,fallDuration:600,stripeEnable:false,mirrorEnable:true});
 			});
 			RecordApp.UniFindCanvas(this,[".recwave-Histogram3"],`${webStore}
 				store.Histogram3=Recorder.FrequencyHistogramView({compatibleCanvas:canvas1, width:300, height:100
@@ -530,6 +533,11 @@ export default {
 			if(key){
 				if(key!=this.recwaveChoiceKey){
 					this.reclog("已切换波形显示为："+key);
+					if(key=="SurferView"){
+						// #ifdef MP-WEIXIN
+						this.reclog("注意：iOS上微信小程序基础库存在bug，canvas.drawImage(canvas)可能无法绘制，可能会导致WaveSurferView在iOS小程序上不能正确显示，其它可视化插件无此兼容性问题","#fa0");
+						// #endif
+					}
 				}
 				this.recwaveChoiceKey=key;
 				//App中传送给renderjs里面，同样赋值

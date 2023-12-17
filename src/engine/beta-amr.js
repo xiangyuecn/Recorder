@@ -292,8 +292,8 @@ var newContext=function(setOrNull,_badW){
 	try{
 		if(!worker){
 			//创建一个新Worker
-			var onmsg=(run+"").replace(/\w+\.onmessage/g,"self.postMessage");
-			onmsg=onmsg.replace(/\w+.wkScope/g,"wkScope");
+			var onmsg=(run+"").replace(/[\w\$]+\.onmessage/g,"self.postMessage");
+			onmsg=onmsg.replace(/[\w\$]+\.wkScope/g,"wkScope");
 			var jsCode=");self.onmessage="+onmsg;
 			jsCode+=";var wkScope={ wk_ctxs:{},wk_AMR:Create() }";
 			

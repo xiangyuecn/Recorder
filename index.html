@@ -8,7 +8,7 @@
 <title reclang="HQYi">Recorder H5: 用于html5网页中的前端录音解决方案，此录音插件支持mp3 wav pcm g711a g711u amr ogg webm格式，支持实时上传 语音识别 音频可视化 实时处理，可在PC端 移动端 Android iOS 原生App中跨平台使用</title>
 
 <script>
-var PageLM="2023-12-01 20:16";
+var PageLM="2023-12-17 18:20";
 (function(){
 console.log("【温馨提示】本页面用于测试Recorder的主要功能，代码难看臃肿，不建议阅读本页面源码；如果想要快速入门，请阅读github项目内首页README文档，参考文档内的快速使用部分，简单快捷高效，或者参考QuickStart.html页面。    "
 +"[Reminder] This page is used to test the main functions of Recorder. The code is ugly and bloated. It is not recommended to read the source code of this page; if you want to get started quickly, please read the README document on the homepage of the github project, and refer to the quick use part in the document, which is simple and fast Efficient, or refer to the QuickStart.html page.");
@@ -536,7 +536,10 @@ if(!window.localStorage){window.localStorage={
 	<span class="lb" reclang="HH7Z">视频播放测试 :</span>
 	<button onclick="videoTestPlay('')" reclang="9q2V">播放mp4</button>
 	<script>var videoTestPlay=function(attr){
-		$('.videoTest').show().html('<video controls '+attr+' webkit-playsinline playsinline x5-video-player-type=\'h5\' src=\'assets/audio/movie-一代宗师-此一时彼一时.mp4.webm\' style=\'width:370px;height:160px\'></'+'video>').find('video')[0].play()
+		$('.videoTest').show().html('<video controls '+attr+' webkit-playsinline playsinline x5-video-player-type="h5" '
+		+'style="width:370px;height:160px">'
+		+'<source src="assets/audio/movie-一代宗师-此一时彼一时.mp4.webm" type="video/mp4"/>' //fix safari
+		+'</'+'video>').find('video')[0].play()
 	}</script>
 	
 	<span reclang="WQXo">Video对录音的影响测试</span> (<a href="https://github.com/xiangyuecn/Recorder/issues/84">issues#84</a>) <span reclang="skOH">；iOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音，但并未再现。</span>
@@ -1211,10 +1214,12 @@ var initWaveStore=function(store,elem){
 	store.Histogram1=Recorder.FrequencyHistogramView({elem:elem});
 	store.Histogram2=Recorder.FrequencyHistogramView({
 		elem:elem
-		,lineCount:90
+		,lineCount:200,widthRatio:1
 		,position:0
 		,minHeight:1
+		,fallDuration:600
 		,stripeEnable:false
+		,mirrorEnable:true
 	});
 	store.Histogram3=Recorder.FrequencyHistogramView({
 		elem:elem

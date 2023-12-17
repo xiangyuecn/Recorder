@@ -203,6 +203,7 @@ Page({
 		});
 		getCanvas(".recwave-SurferView",(canvas)=>{
 			getCanvas(".recwave-SurferView-2x",(canvas_2x)=>{
+				//注意：iOS上微信小程序基础库存在bug，canvas.drawImage(canvas)可能无法绘制，可能会导致WaveSurferView在iOS小程序上不能正确显示，其他环境下无此兼容性问题
 				store.SurferView=Recorder.WaveSurferView({compatibleCanvas:canvas,compatibleCanvas_2x:canvas_2x, width:300, height:100});
 			});
 		});
@@ -211,10 +212,12 @@ Page({
 		});
 		getCanvas(".recwave-Histogram2",(canvas)=>{
 			store.Histogram2=Recorder.FrequencyHistogramView({compatibleCanvas:canvas, width:300, height:100
-				,lineCount:90
+				,lineCount:200,widthRatio:1
 				,position:0
 				,minHeight:1
+				,fallDuration:600
 				,stripeEnable:false
+				,mirrorEnable:true
 			});
 		});
 		getCanvas(".recwave-Histogram3",(canvas)=>{
@@ -234,6 +237,9 @@ Page({
 		if(key){
 			if(key!=this.data.recwaveChoiceKey){
 				this.reclog("已切换波形显示为："+key);
+				if(key=="SurferView"){
+					this.reclog("注意：iOS上微信小程序基础库存在bug，canvas.drawImage(canvas)可能无法绘制，可能会导致WaveSurferView在iOS小程序上不能正确显示，其它可视化插件无此兼容性问题","#fa0");
+				}
 			}
 			this.setData({ recwaveChoiceKey:key });
 		}

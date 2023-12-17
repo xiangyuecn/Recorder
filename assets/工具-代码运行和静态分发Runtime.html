@@ -245,10 +245,12 @@ window.Runtime={
 			waveStore.Histogram1=Recorder.FrequencyHistogramView({elem:".ctrlProcessWave"});
 			waveStore.Histogram2=Recorder.FrequencyHistogramView({
 				elem:".ctrlProcessWave"
-				,lineCount:90
+				,lineCount:200,widthRatio:1
 				,position:0
 				,minHeight:1
+				,fallDuration:600
 				,stripeEnable:false
+				,mirrorEnable:true
 			});
 			waveStore.Histogram3=Recorder.FrequencyHistogramView({
 				elem:".ctrlProcessWave"
