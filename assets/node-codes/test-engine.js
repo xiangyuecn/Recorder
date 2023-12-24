@@ -3,12 +3,13 @@
 作者：高坚果
 时间：2023-09-25 20:51:06
 
-运行： node test-engine.js [type=mp3] [br=16] [dist] [full][fast][save] [loop]
+运行： node test-engine.js [type=mp3] [br=16] [dist] [full][fast][save] [big][loop]
 			type=mp3|ogg|amr
 			br=16 只测试这个比特率
 			dist 使用压缩版js进行测试
 			full 进行完整测试，会测试时长为1小时的音频编码，测试会很慢
 			fast 进行快速测试，最长测试1秒的音频编码，测试会很快
+			big 只进行超长时间编码测试
 			loop 循环进行测试，不结束
 			oggFullFast ogg全采样率测试
 			save 保存一个文件，然后退出，用于检查音频内容
@@ -22,6 +23,8 @@ if(FastTest) Log("FastTest",3);
 var FullTest=global.FullTest||process.argv.indexOf("full")!=-1;
 if(FullTest) Log("FullTest",3);
 
+var TestBig=process.argv.indexOf("big")!=-1;
+if(TestBig) Log("TestBig",3);
 var TestLoop=process.argv.indexOf("loop")!=-1;
 if(TestLoop) Log("TestLoop",3);
 var TestSave=process.argv.indexOf("save")!=-1;
@@ -213,6 +216,65 @@ var testExec=function(type,sr,br,srcPcm,dur,fast){ return new Promise(function(r
 		});
 	});
 })};
+var bigTestEngine=function(type,sr,br){ return new Promise(function(resolve,reject){
+	var dur=24*60*60000;
+	var Tag="bigTestEngine "+type+" "+sr+" "+br+" "+dur/60000/60+"小时";
+	Log("------ "+Tag+(TestLoop?" loop:"+LoopCount:"")
+		+" 已耗时："+FormatMs(Date.now()-StartTime)+" ------",3);
+	
+	if(TestSave){
+		var path=ArrayBufferSaveTempFile("test-engine-big-save-"+sr+"-"+br+"."+type,new Uint8Array(0).buffer);
+		Log("保存文件到："+path,2);
+	}
+	
+	var t1=Date.now();
+	var encSize=0,lastDur=0;
+	var rec=Recorder({
+		type:type,sampleRate:sr,bitRate:br
+		,onProcess:function(buffers,powerLevel,duration){
+			lastDur=duration;
+			for(var i=buffers.length-2;i>=0;i--){
+				if(!buffers[i]) break;
+				buffers[i]=null;//清除缓冲数据
+			}
+		}
+		,takeoffEncodeChunk:function(bytes){
+			encSize+=bytes.byteLength;
+			if(TestSave){
+				fs.writeFileSync(path, Buffer.from(bytes.buffer), { flag:"a" });
+			}
+		}
+	});
+	rec.envStart({ envName:"nodejs",canProcess:true },sampleRate);
+	
+	var size=sampleRate/1000*dur;
+	var idx=0;
+	while(idx<size){
+		var pcm=testPcm; idx+=pcm.length; rec.envIn(pcm,0);
+		pcm=new Int16Array(pcm.length); var vol=Math.random();
+		for(var i=0;i<pcm.length;i++){
+			pcm[i]=vol*(0x7fff-Math.random()*0x7fff*2);
+		}
+		idx+=pcm.length; rec.envIn(pcm,0);
+		
+		process.stdout.clearLine();
+		process.stdout.write("\r>>> "+(idx/size*100).toFixed(2)+"%"
+			+" "+FormatMs(lastDur)
+			+" "+FormatSize(encSize)
+			+" | 预估:"+FormatSize(encSize/idx*size)
+			+" 耗时:"+FormatMs(Date.now()-t1)
+			+" 还需:"+FormatMs(~~((Date.now()-t1)/idx*(size-idx))));
+	};
+	console.log("");
+	
+	rec.stop(function(blob){
+		var msg="envIn编码出："+encSize+"字节";
+		msg+=" 耗时："+FormatMs(Date.now()-t1);
+		Log("OK "+msg,2);
+		resolve();
+	},function(msg){ throw msg });
+})};
+
 
 
 var LoopCount=0;
@@ -238,7 +300,12 @@ do{
 	}
 	LoopCount++;
 	
-	if(!TestType || TestType=="mp3"){
+	while(!TestType || TestType=="mp3"){
+		if(TestBig){
+			if(!TestBitRate||TestBitRate<=16)await bigTestEngine("mp3",16000,16);
+			if(!TestBitRate||TestBitRate>16)await bigTestEngine("mp3",48000,TestBitRate||320);
+			okMsgs.push("test mp3 big"); break;
+		};
 		var mp3BitRate=TestBitRate?[TestBitRate]
 			:[8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 192, 224, 256, 320];
 		for(var i=0;i<mp3BitRate.length;i++){
@@ -251,9 +318,14 @@ do{
 			await testEngine("mp3",44100,br,1);
 			await testEngine("mp3",48000,br,fast);
 		}
-		okMsgs.push("test mp3");
+		okMsgs.push("test mp3"); break;
 	}
-	if(!TestType || TestType=="ogg"){
+	while(!TestType || TestType=="ogg"){
+		if(TestBig){
+			if(!TestBitRate||TestBitRate<=16)await bigTestEngine("ogg",16000,16);
+			if(!TestBitRate||TestBitRate>16)await bigTestEngine("ogg",48000,TestBitRate||100);
+			okMsgs.push("test ogg big"); break;
+		};
 		var oggBitRate=TestBitRate?[TestBitRate]
 			:[16, 30, 40, 50, 60, 70, 80, 90, 100];
 		if(OggFullFast){
@@ -277,15 +349,20 @@ do{
 			await testEngine("ogg",44100,br,1);
 			await testEngine("ogg",48000,br,fast);
 		}
-		okMsgs.push("test ogg");
+		okMsgs.push("test ogg"); break;
 	}
-	if(!TestType || TestType=="amr"){
+	while(!TestType || TestType=="amr"){
+		if(TestBig){
+			if(!TestBitRate||TestBitRate<12.2)await bigTestEngine("amr",16000,4.75);
+			if(!TestBitRate||TestBitRate>=12.2)await bigTestEngine("amr",48000,TestBitRate||12.2);
+			okMsgs.push("test amr big"); break;
+		};
 		var amrBitRate=TestBitRate?[TestBitRate]
 			:[4.75, 5.15, 5.9, 6.7, 7.4, 7.95, 10.2, 12.2];
 		for(var i=0,L=amrBitRate.length-1;i<=L;i++){
 			await testEngine("amr",8000,amrBitRate[i],i!=0&&i!=L);
 		}
-		okMsgs.push("test amr");
+		okMsgs.push("test amr"); break;
 	}
 }while(TestLoop);
 

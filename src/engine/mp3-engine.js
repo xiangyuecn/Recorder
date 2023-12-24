@@ -1293,7 +1293,7 @@ function Takehiro() {
                     break;
 
                 default:
-                    abort();//fix cc 精简 print
+                    //fix cc 精简 print
                     break;
             }
         }
@@ -2456,7 +2456,7 @@ function BitStream() {
 
             if (gfc.h_ptr == gfc.w_ptr) {
                 /* yikes! we are out of header buffer space */
-                abort();//fix cc 精简 print
+                //fix cc 精简 print
             }
 
         }
@@ -2759,7 +2759,7 @@ function BitStream() {
         total_bytes_output.total += bufByteIdx + 1;
 
         if (flushbits < 0) {
-            abort();//fix cc 精简 print
+            //fix cc 精简 print
         }
         return flushbits;
     }
@@ -2828,7 +2828,7 @@ function BitStream() {
          * what we think the resvsize is:
          */
         if (compute_flushbits(gfp, new TotalBytes()) != gfc.ResvSize) {
-            abort();//fix cc 精简 print
+            //fix cc 精简 print
         }
 
         /*
@@ -2836,12 +2836,20 @@ function BitStream() {
          * resvsize is:
          */
         if ((l3_side.main_data_begin * 8) != gfc.ResvSize) {
-            abort();//fix cc 精简
+            //fix cc 精简 print
+            gfc.ResvSize = l3_side.main_data_begin * 8;
         }
         //;
 
-        if (totbit > 1000000000) {
-            abort();//fix cc 精简
+        if (totbit > 1000000000) { //不可精简
+            /*
+             * to avoid totbit overflow, (at 8h encoding at 128kbs) lets reset
+             * bit counter
+             */
+            var i;
+            for (i = 0; i < LameInternalFlags.MAX_HEADER_BUF; ++i)
+                gfc.header[i].write_timing -= totbit;
+            totbit = 0;
         }
 
         return 0;

@@ -48,6 +48,15 @@ global.FormatMs=function(ms){
 		+("00"+ss).substr(-3);
 	return t;
 };
+global.FormatSize=function(num){
+	var size=+num||0,s="B";
+	if(size>1023){ s="KB"; size/=1024; }
+	if(size>1023){ s="MB"; size/=1024; }
+	if(size>1023){ s="GB"; size/=1024; }
+	var txt=+size.toFixed(1)+" "+s;
+	if(size>9)txt=Math.round(size)+" "+s;
+	return txt;
+};
 global.Sleep=function(ms){ return new Promise(function(resolve,reject){
 	setTimeout(resolve,ms);
 }) };
