@@ -163,7 +163,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
             
             ,takeoffEncodeChunk:true?null:(chunkBytes)=>{
                 //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
-                //App中如果未配置Recorder.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
+                //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
             }
             ,takeoffEncodeChunk_renderjs:true?null:`function(chunkBytes){
                 //App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
@@ -494,8 +494,10 @@ RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin;
 
 ## 获取商用授权和购买原生录音插件
 客服联系方式：QQ 1251654593 ，或者直接联系作者QQ 753610399 （回复可能没有客服及时）。
-- 方式一：联系客服加入VIP支持QQ群，入群费用**¥199元**，入群后即获得授权，在群文件中可下载`app-uni-support.js`文件最新源码。
+- 方式一：联系客服加入VIP支持QQ群，入群费用 **¥199元** ，入群后即获得授权，在群文件中可下载`app-uni-support.js`文件最新源码。
 - 方式二：联系客服或到DCloud插件市场购买配套的原生录音插件或uts插件，购买后即获得授权；购买后可联系客服，同时提供订单信息，客服拉你进入VIP支持QQ群。
+
+**优惠活动：2024年01月01日起付费 ¥199 元入群后，可 ¥1 元购Android版原生录音插件`.aar module`（后续如需iOS版原生录音插件补¥299元差价即可购买）。**
 
 > 目前uts插件还在开发中不可购买；原生录音插件已开发好，但还未上架到DCloud插件市场，如果需要请联系客服付费购买，原生录音插件价格为：**¥499元**（可买单个平台¥299元，已付费入群可补差价购买），购买后客服会发送Android的`.aar module 25KB`、iOS的`.a library 200KB`两个文件给你，和demo项目供参考，集成到项目的`nativeplugins`目录中，详细使用请参考上面的`RecordApp.UniNativeUtsPlugin`属性文档。
 

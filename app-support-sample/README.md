@@ -71,7 +71,7 @@ import 'recorder-core/src/extensions/waveview'
 import RecordApp from 'recorder-core/src/app-support/app'
 
 //引入特定平台环境下的支持文件（也可以统统引入进来，非对应的环境下运行时会忽略掉）
-//import 'recorder-core/src/app-support/app-native-support.js' //App下的原生录音支持文件
+//import 'recorder-core/src/app-support/app-native-support.js' //App下的原生录音支持文件（App中未提供原生支持时可以不提供，统统走H5录音）
 //import 'recorder-core/src/app-support/app-miniProgram-wx-support.js' //微信小程序下的录音支持文件
 //import '@/uni_modules/Recorder-UniCore/app-uni-support.js' //uni-app下的支持文件，请参考本文档目录下的demo_UniApp测试项目
 
@@ -80,14 +80,16 @@ import RecordApp from 'recorder-core/src/app-support/app'
 [​](?RefEnd)
 
 ### 在App WebView、H5页面中使用
-可以通过阅读和运行本目录下的[QuickStart.html](https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将此html文件copy 到你的(https)网站中，无需其他文件，就能正常开始测试了，Android、iOS App内同样适用。
+可以通过阅读和运行本目录下的[QuickStart.html](https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将此html文件copy 到你的(https)网站中，无需其他文件，就能正常开始测试了，H5、Android App、iOS App内均适用。
 
-RecordApp默认未开启App内原生录音支持，可开启后在App环境中将走Native原生录音，其他情况下默认走H5录音。在Android、iOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift`，即可开启原生录音支持，本目录下的`native-config.js`文件内实现了对App的JsBridge调用（copy过去使用）。
+RecordApp默认未开启App内原生录音支持，App内默认也使用H5录音（简单通用），可选开启支持后在App环境中将走Native原生录音（需要App配合）。
+
+如何开启可选的原生录音支持：在Android、iOS App内使用`demo_android`、`demo_ios`目录内的`RecordAppJsBridge.java`或`RecordAppJsBridge.swift` 即可开启支持，本目录下的`native-config.js`文件内实现了对App的JsBridge调用（copy过去使用）。
 
 关于App的系统录音权限：使用原生录音时，JsBridge会自动处理App的录音权限；使用H5录音时，需要先自行处理好App的系统录音权限；更多请参考下面的App权限部分。
 
 ``` javascript
-//开启App原生录音需要引入的文件，不引入就使用默认的H5录音
+//可选 开启App原生录音需要引入的文件，不引入时App中也统统使用默认的H5录音
 import 'recorder-core/src/app-support/app-native-support.js' //App下的原生录音支持文件
 
 //引入配置文件

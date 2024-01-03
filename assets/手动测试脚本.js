@@ -33,3 +33,34 @@ console.timeEnd(1);
 crypto.subtle.digest("sha-1",pcm.buffer).then(v=>console.log(Array.from(new Uint8Array(v)).map(v=>("0"+v.toString(16)).substr(-2)).join("")))
 
 
+
+【WebM长时间解析测试】
+//Chrome 75.0.3770.100 64位 + Win7，未复现问题：录制超过1小时出现“WebM !Track4”错误消息
+//进入代码运行页面，运行 实时转码并上传-mp3专版，先执行下面的代码
+var TWebMBytes=new Uint8Array(50*1000*1000),TWebMOffset=0,TWebMIsEnd=false;
+var TWebMAdd=function(bytes){
+	if(TWebMIsEnd)return;
+	if(TWebMOffset+bytes.length>TWebMBytes.length){
+		var len=~~(TWebMOffset/2);
+		var tmp=new Uint8Array(TWebMBytes.length);
+		tmp.set(TWebMBytes.subarray(TWebMOffset-len));
+		TWebMBytes=tmp;
+		TWebMOffset=len;
+	}
+	TWebMBytes.set(bytes,TWebMOffset);
+	TWebMOffset+=bytes.length;
+};
+var TWebMEnd=function(){
+	if(!TWebMIsEnd){
+		var bytes=TWebMBytes.slice(0,TWebMOffset);
+		var blob=new Blob([bytes.buffer]);
+		TWebMIsEnd=URL.createObjectURL(blob);
+		console.log(blob);
+	}
+	console.error(new Date().toLocaleString()+" 已抓取到WebM解析错误数据");
+	console.log(TWebMIsEnd);
+};
+//控制台源码中打开recorder-core.js
+//在WebM_Extract中打断点，开头位置加上条件断点: TWebMAdd(inBytes);false
+//在WebM_Extract中打断点，CLog("WebM !Track"位置加上条件断点: TWebMEnd();false
+

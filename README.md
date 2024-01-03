@@ -3,7 +3,7 @@
 
 # :open_book:Recorder用于html5录音
 
-支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、iOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信、小程序WebView)、Electron、大部分2021年后更新的Android手机自带浏览器；不支持：~~UC系内核（典型的支付宝），大部分未更新的老旧国产手机自带浏览器，低版本iOS(11.0-14.2)上除Safari外的其他任何形式的浏览器~~。
+支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、iOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信、小程序WebView)、Electron、大部分2021年后更新的Android手机自带浏览器、2024年后更新的Android版UC内核(支付宝、钉钉)；不支持：~~Android版UC/夸克浏览器、老旧国产手机自带浏览器、老旧iOS(11.0-14.2)上除Safari外的其他任何形式的浏览器~~。
 
 支持在非浏览器环境中使用部分功能（如nodejs、各种使用js来构建的程序），使用[RecordApp](./app-support-sample)可在微信小程序、uni-app中直接录音。
 
@@ -1393,13 +1393,13 @@ EncodeMix对象：
 依赖文件：`g711x.js`，g711a: G.711 A-law (pcma)，g711u: G.711 μ-law (pcmu、mu-law)；支持g711的编码和解码，支持实时编码（边录边转码），编解码源码移植自：`https://github.com/twstx1/codec-for-audio-in-G72X-G711-G723-G726-G729/blob/master/G711_G721_G723/g711.c`；固定为8000hz采样率、16位，每个采样压缩成8位存储，音频文件大小为8000字节/秒。
 
 ### Recorder.g711a_encode|g711u_encode(pcm)
-编码任意采样率的pcm得到g711x数据。pcm: Int16Array，任意采样率pcm数据（标准采样率为8000）。返回Uint8Array，g711x二进制数据（采样率为pcm的采样率）。
+编码任意采样率的pcm得到g711x数据。pcm: Int16Array，任意采样率pcm数据（标准采样率为8000，其它采样率的pcm可使用Recorder.SampleData方法来转成8000采样率）。返回Uint8Array，g711x二进制数据（采样率为pcm的采样率）。
 
 ### Recorder.g711a_decode|g711u_decode(bytes)
-解码g711x得到pcm，`bytes`: Uint8Array，g711x二进制数据；返回Int16Array，为8000采样率、16位的pcm数据。
+解码g711x得到pcm，`bytes`: Uint8Array，g711x二进制数据，采样率一般是8000；返回Int16Array，为g711x的采样率、16位的pcm数据。
 
 ### Recorder.g711a2wav|g711u2wav(g711xBlob,True,False)
-已实现把g711a、g711u转成wav格式来播放的方法，`g711xBlob为g711x音频文件blob对象`，`True=fn(wavBlob,duration)`；要使用此方法需要带上`wav`格式编码器。
+已实现把g711a、g711u转成wav格式来播放的方法，`g711xBlob为g711x音频文件blob对象 或 ArrayBuffer（回调也将返回ArrayBuffer），采样率只支持8000`，`True=fn(wavBlob,duration)`；要使用此方法需要带上`wav`格式编码器。
 
 
 ## ogg (Vorbis) 格式
