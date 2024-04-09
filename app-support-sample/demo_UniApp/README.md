@@ -8,10 +8,11 @@
 - 支持编译成：H5、Android App、iOS App、微信小程序
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
-- 支持可视化波形显示
-- App端另有配套的原生录音插件、uts插件可供选择，兼容性和体验更好
+- 支持可视化波形显示；可配置回声消除、降噪；注意：不支持通话时录音
+- 支持离线使用，本组件和配套原生插件均不依赖网络
+- App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好
 
-**[AD]app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权；详情参考本文档下面的授权许可章节。
+**[AD]app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先到DCloud插件市场购买[此带授权的插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android)（费用为¥199元，赠送Android版原生插件）获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权；详情参考本文档下面的授权许可章节。
 
 
 
@@ -44,8 +45,8 @@
 
 ``` html
 <script> /**这里是逻辑层**/
-//必须引入的Recorder核心（文件路径是 /src/recorder-core.js 下同）
-import Recorder from 'recorder-core' //使用import、require都行
+//必须引入的Recorder核心（文件路径是 /src/recorder-core.js 下同），使用import、require都行
+import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 //必须引入的RecordApp核心文件（文件路径是 /src/app-support/app.js）
 import RecordApp from 'recorder-core/src/app-support/app'
@@ -65,7 +66,7 @@ import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
     import 'recorder-core/src/engine/mp3'
     import 'recorder-core/src/engine/mp3-engine' //如果此格式有额外的编码引擎（*-engine.js）的话，必须要加上
     
-    //可选的插件支持项
+    //可选的插件支持项，把需要的插件按需引入进来即可
     import 'recorder-core/src/extensions/waveview'
 // #endif
 </script>
@@ -110,6 +111,8 @@ export default {
 /**在逻辑层中编写**/
 //import ... 上面那些import代码
 
+//var vue3This=getCurrentInstance().proxy; //当用vue3 setup组合式 API (Composition API) 编写时，直接在import后面取到当前实例this，在需要this的地方传vue3This变量即可，其他的和选项式 API (Options API) 没有任何区别；import {getCurrentInstance} from 'vue'；详细可以参考Demo项目中的 page_vue3____composition_api.vue
+
 export default {
 data() { return {} } //视图没有引用到的变量无需放data里，直接this.xxx使用
 
@@ -128,6 +131,8 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
         //编译成App时提供的授权许可（编译成H5、小程序为免费授权可不填写）；如果未填写授权许可，将会在App打开后第一次调用请求录音权限时，弹出“未获得商用授权时，App上仅供测试”提示框
         //RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
         
+        //RecordApp.RequestPermission_H5OpenSet={ audioTrackSet:{ noiseSuppression:true,echoCancellation:true,autoGainControl:true } }; //这个是Start中的audioTrackSet配置，在h5（H5、App+renderjs）中必须提前配置，因为h5中RequestPermission会直接打开录音
+        
         RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
         RecordApp.RequestPermission(()=>{
             console.log("已获得录音权限，可以开始录音了");
@@ -144,6 +149,9 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
         //录音配置信息
         var set={
             type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+            /*,audioTrackSet:{ //可选，如果需要同时播放声音（比如语音通话），需要打开回声消除（并不一定会生效；打开后声音可能会从听筒播放，部分环境下（如小程序、App原生插件）可调用接口切换成扬声器外放）
+                //注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+                echoCancellation:true,noiseSuppression:true,autoGainControl:true} */
             ,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
                 //全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
                 
@@ -156,11 +164,16 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
                 // #endif
             }
             ,onProcess_renderjs:`function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
-                //App中在这里修改buffers才会改变生成的音频文件
+                //App中在这里修改buffers会改变生成的音频文件，但注意：buffers会先转发到逻辑层onProcess后才会调用本方法，因此在逻辑层的onProcess中需要重新修改一遍
+                //本方法可以返回true，renderjs中的onProcess将开启异步模式，处理完后调用asyncEnd结束异步，注意：这里异步修改的buffers一样的不会在逻辑层的onProcess中生效
                 //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
                 if(this.waveView) this.waveView.input(buffers[buffers.length-1],powerLevel,sampleRate);
             }`
-            
+            ,onProcessBefore_renderjs:`function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
+                //App中本方法会在逻辑层onProcess之前调用，因此修改的buffers会转发给逻辑层onProcess，本方法没有asyncEnd参数不支持异步处理
+                //一般无需提供本方法只用onProcess_renderjs就行，renderjs的onProcess内部调用过程：onProcessBefore_renderjs -> 转发给逻辑层onProcess -> onProcess_renderjs
+            }`
+
             ,takeoffEncodeChunk:true?null:(chunkBytes)=>{
                 //全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
                 //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
@@ -219,11 +232,21 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
             
             //注意：当Start时提供了takeoffEncodeChunk后，你需要自行实时保存录音文件数据，因此Stop时返回的arrayBuffer的长度将为0字节
             
-            //如果当前环境支持Blob，也可以直接构造成Blob文件对象，和Recorder使用一致
-            if(typeof(Blob)!="undefined" && typeof(window)=="object"){
+            //如果是H5环境，也可以直接构造成Blob/File文件对象，和Recorder使用一致
+            // #ifdef H5
                 var blob=new Blob([arrayBuffer],{type:mime});
                 console.log(blob, (window.URL||webkitURL).createObjectURL(blob));
-            }
+                var file=new File([arrayBuffer],"recorder.mp3");
+                //uni.uploadFile({file:file, ...}) //参考demo中的test_upload_saveFile.vue
+            // #endif
+            
+            //如果是App、小程序环境，可以直接保存到本地文件，然后调用相关网络接口上传
+            // #ifdef APP || MP-WEIXIN
+                RecordApp.UniSaveLocalFile("recorder.mp3",arrayBuffer,(savePath)=>{
+                    console.log(savePath); //app保存的文件夹为`plus.io.PUBLIC_DOWNLOADS`，小程序为 `wx.env.USER_DATA_PATH` 路径
+                    //uni.uploadFile({filePath:savePath, ...}) //参考demo中的test_upload_saveFile.vue
+                },(errMsg)=>{ console.error(errMsg) });
+            // #endif
         },(msg)=>{
             console.error("结束录音失败："+msg);
         });
@@ -270,7 +293,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 
 **当App是在renderjs中使用H5进行录音时（未使用原生录音插件和uts插件），iOS上只支持14.3以上版本，且iOS上每次进入页面后第一次请求录音权限时、或长时间无操作再请求录音权限时WebView均会弹出录音权限对话框，不同旧iOS版本（低于iOS17）下H5录音可能存在的问题在App中同样会存在；使用配套的原生录音插件或uts插件时无以上问题和版本限制（uts插件开发中暂不可用），Android也无以上问题。**
 
-**当音频编码是在renderjs中进行处理时，录音结束后会将整个录音文件传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，建议Start时使用takeoffEncodeChunk实时获取音频文件数据可避免Stop时产生超大数据回传；配置了`RecordApp.UniWithoutAppRenderjs=true`后，因为音频编码直接是在逻辑层中进行，将不存在传输性能损耗，但会影响逻辑层的性能（正常情况轻微不明显），需要配套使用原生录音插件才可以进行此项配置。**
+**当音频编码是在renderjs中进行处理时，录音结束后会将整个录音文件传回逻辑层，由于uni-app的逻辑层和renderjs层大点的文件传输会比较慢，建议Start时使用takeoffEncodeChunk实时获取音频文件数据可避免Stop时产生超大数据回传；配置了`RecordApp.UniWithoutAppRenderjs=true`后，因为音频编码直接是在逻辑层中进行，将不存在传输性能损耗，但会影响逻辑层的性能（正常情况轻微不明显），需要配套使用原生录音插件才可以进行此项配置。**
 
 在调用`RecordApp.RequestPermission`的时候，`Recorder-UniCore`组件会自动处理好App的系统录音权限，只需要在uni-app项目的 `manifest.json` 中配置好Android和iOS的录音权限声明。
 ```
@@ -280,6 +303,34 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 
 //iOS需要声明的权限
 NSMicrophoneUsageDescription
+【注意】iOS需要在 `App常用其它设置`->`后台运行能力`中提供`audio`配置，不然App切到后台后立马会停止录音
+```
+
+
+[​](?)
+
+## 语音通话、回声消除、声音外放
+在App、H5中，使用[BufferStreamPlayer](../../src/extensions/buffer_stream.player.js)可以实时播放语音；其中App中需要在renderjs中加载BufferStreamPlayer，在逻辑层中调用`RecordApp.UniWebViewVueCall`等方法将逻辑层中接收到的实时语音数据发送到renderjs中播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
+
+微信小程序请参考 [miniProgram-wx](../miniProgram-wx) 文档里面的同名章节，使用WebAudioContext播放。
+
+配置audioTrackSet可尝试打开回声消除，或者切换听筒播放或外放，打开回声消除时，一般会转为听筒播放显著降低回声。
+``` js
+//打开回声消除
+RecordApp.Start({
+    ... 更多配置参数请参考RecordApp文档
+    //此配置App、H5、小程序均可打开回声消除；注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+    ,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    
+    //Android指定麦克风源（App搭配原生插件、小程序可用），0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)
+    ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高
+});
+
+//App搭配原生插件时尝试切换听筒播放或外放
+await RecordApp.UniNativeUtsPluginCallAsync("setSpeakerOff",{off:true或false});
+//小程序尝试切换
+wx.setInnerAudioOption({ speakerOn:false或true })
+//H5不支持切换
 ```
 
 
@@ -313,6 +364,8 @@ RecordApp共用`Recorder.i18n`实现，因此只需配置Recorder的语言即可
 # RecordApp增加的属性和方法文档
 RecordApp基础的属性和方法请阅读[RecordApp文档](../)，比如`RequestPermission`、`Start`、`Stop`这些方法。下面的属性和方法是uni-app支持文件给RecordApp增加的，引入`app-uni-support.js`文件后才可以使用。
 
+**下面方法中用到的componentThis参数**，一般直接使用this即可，如果你使用的vue3 setup组合式 API (Composition API) 编写时，请在import后面取到当前实例this（参考上面调用录音的代码中的vue3This变量定义），在需要componentThis的地方传vue3This变量即可。
+
 **下面的方法中，如果写了`App 逻辑层中调用`，就只能在App环境下，并且只能在逻辑层中调用，在H5、renderjs等环境下调用将返回错误或显示错误日志，但不会抛异常；写了`renderjs层中调用`只能在App环境下的renderjs中进行调用；未写类似字样的，一般没有调用限制，在哪调用都行。**
 
 ## 【静态方法】RecordApp.UniIsApp()
@@ -327,64 +380,14 @@ App 逻辑层中调用，切换使用当前页面或组件的WebView，传入当
 ## 【静态方法】RecordApp.UniRenderjsRegister(moduleThis)
 App renderjs中的mounted内调用，传入当前模块的this，一个renderjs模块只需调用一次即可
 
-## 【静态方法】RecordApp.UniWebViewEval(componentThis,jsCode,bigBytes)
-App 逻辑层中直接调用此页面或组件的WebView renderjs中的eval（componentThis为null时使用UniWebViewActivate切换的页面或组件），jsCode里一般需要用个自调用函数包裹；要调用renderjs模块vue组件内的方法请用UniWebViewVueCall；如果需要传递大的数据请用bigBytes参数传入一个ArrayBuffer，jsCode中使用BigBytes变量得到这个数据
-
-``` javascript
-//调用示例代码
-var cb=RecordApp.UniMainCallBack((data)=>{ //可选的，renderjs执行完成后回调
-    uni.showModal({title:"收到了renderjs回调", content:JSON.stringify(data)});
-});
-
-var dataMB=new Uint8Array(1*1024*1024); //可选的，假设同时需要传递1MB的数据到renderjs中
-
-RecordApp.UniWebViewEval(this,`(function(){
-    var dataMB=BigBytes; //接收到了逻辑层的二进制数据
-    console.log("renderjs已执行 "+dataMB.byteLength); //这里是WebView浏览器环境，随便调用
-    
-    //处理完后，可以回调结果给逻辑层
-    RecordApp.UniWebViewSendToMain({action:"${cb}", abc:dataMB.byteLength});
-})()`, dataMB.buffer);
-```
-
-## 【静态方法】RecordApp.UniWebViewVueCall(componentThis,jsCode,bigBytes)
-App 逻辑层中直接调用此页面或组件的renderjs模块vue组件内的方法（componentThis为null时使用UniWebViewActivate切换的页面或组件），jsCode中的this为renderjs模块的this（也可以用This变量）（如需renderjs中调用逻辑层vue实例方法，请直接用$ownerInstance.callMethod即可）；如果需要传递大的数据请用bigBytes参数传入一个ArrayBuffer，jsCode中使用BigBytes变量得到这个数据
-
-``` javascript
-//调用示例代码
-var cb=RecordApp.UniMainCallBack((data)=>{ //可选的，renderjs执行完成后回调
-    uni.showModal({title:"收到了renderjs回调", content:JSON.stringify(data)});
-});
-
-RecordApp.UniWebViewVueCall(this,`
-    console.log("renderjs已执行 "+typeof(this.$ownerInstance));
-    //调用逻辑层vue的方法
-    //this.$ownerInstance.callMethod("test",{data:{}});
-    
-    //处理完后，可以回调结果给逻辑层
-    RecordApp.UniWebViewSendToMain({action:"${cb}", abc:typeof(this.$ownerInstance)});
-`);
-```
-
-## 【静态方法】RecordApp.UniMainCallBack(callback)
-App 逻辑层中生成一个回调，renderjs层通过这个回调返回数据给逻辑层，函数参数为renderjs层返回的数据，数据应当是个对象，错误消息统一用errMsg属性，主要和UniWebViewSendToMain一块搭配使用，请参考上面的UniWebViewEval
-
-## 【静态方法】RecordApp.UniWebViewSendToMain(data)
-renderjs层中调用本方法，将数据传回给逻辑层回调，`data={action:"UniMainCallBack等",...需要返回的数据, errMsg:"错误消息"}`，使用请参考上面的UniWebViewEval
-
-## 【静态方法】RecordApp.UniWebViewSendBigBytesToMain(arrayBuffer,True,False)
-renderjs层调用本方法，将超过512KB的二进制数据传回逻辑层，一次性发送1MB以上的数据UniApp太卡，传入arrayBuffer，True(dataID), False(errMsg)，成功后可在逻辑层中通过UniMainTakeBigBytes(dataID)来取到数据
-
-## 【静态方法】RecordApp.UniMainTakeBigBytes(dataID)
-App 逻辑层取走接收到的二进制数据，返回arrayBuffer，不可重复提取否则返回null
-
 ## 【静态方法】RecordApp.UniSaveLocalFile(fileName,buffer,True,False)
-App 逻辑层保存文件到本地，提供文件名和arrayBuffer，True(savePath)成功保存后回调完整保存路径，False(errMsg)；保存的文件夹为`plus.io.PUBLIC_DOWNLOADS`
+App 逻辑层、小程序环境下保存文件到本地，提供文件名和arrayBuffer，True(savePath)成功保存后回调完整保存路径，False(errMsg)；app保存的文件夹为`plus.io.PUBLIC_DOWNLOADS`，小程序为 `wx.env.USER_DATA_PATH` 路径
 
 ## 【静态方法】RecordApp.UniFindCanvas(componentThis,selectorList,renderjsFunc,mainFunc)
 所有平台逻辑层中均可调用，查找用于可视化绘制的canvas实例
 
 > App、H5会在原位置添加新的html canvas节点，并且隐藏老的canvas，原因是uni创建的canvas不可以使用：如果是隐藏的uni-canvas没法初始化，到显示的时候会篡改canvas已设置的宽高，App中uni-canvas显示有问题 似乎设置了缩放 导致显示不全，重新建一个省心还高效
+> 小细节：如果你的canvas所在的view存在v-if之类的会重新创建了对应的view，必须将可视化波形重新进行初始化才能使用；如果使用的是同一个view，重新初始化后如果上次的动画没有完成时，小程序中开头部分新的波形会和老的波形相互干扰，老动画完成后恢复正常，App、H5无此问题（因为会创建新的canvas节点）
 
 ``` javascript
 // componentThis:this 当前页面或当前组件this
@@ -407,73 +410,274 @@ RecordApp.UniFindCanvas(this,[".recwave-SurferView",".recwave-SurferView-2x"],`
 });
 ```
 
-## 【静态方法】RecordApp.UniBtoa(arrayBuffer)
-base64编码，将arrayBuffer二进制数据转为base64字符串
-
-## 【静态方法】RecordApp.UniAtob(b64)
-base64解码，将base64字符串转为arrayBuffer二进制数据
-
-## 【静态方法】RecordApp.UniB64Enc(str)
-base64编码，将字符串转为base64字符串
-
-## 【静态方法】RecordApp.UniB64Dec(b64)
-base64解码，将base64字符串转为字符串
-
-## 【静态方法】RecordApp.UniStr2Buf(str)
-将文本转成arrayBuffer
-
-## 【静态方法】RecordApp.UniBuf2Str(arrayBuffer)
-将arrayBuffer转成文本
-
 ## 【静态属性】RecordApp.UniJsSource.IsSource
 当前`app-uni-support.js`文件是否是源码版，true为源码版，false为压缩版
 
 ## 【静态属性】RecordApp.UniWithoutAppRenderjs
-仅App环境下设置，在不要使用或没有renderjs时，应当设为true，此时App中RecordApp完全运行在逻辑层，比如nvue页面，此时音频编码之类的操作全部在逻辑层，需要提供UniNativeUtsPlugin配置由原生插件进行录音，可视化绘制依旧可以在renderjs中进行。默认为false，RecordApp将在renderjs中进行实际的工作，然后将处理好的数据传回逻辑层，数据比较大时传输会比较慢（可通过Start时使用takeoffEncodeChunk实时获取音频文件数据可避免Stop时产生超大数据回传）。
+App 逻辑层中可设置，在不要使用或没有renderjs时，应当设为true，此时App中RecordApp完全运行在逻辑层，比如nvue页面，此时音频编码之类的操作全部在逻辑层，需要提供UniNativeUtsPlugin配置由原生插件进行录音，可视化绘制依旧可以在renderjs中进行。默认为false，RecordApp将在renderjs中进行实际的工作，然后将处理好的数据传回逻辑层，数据比较大时传输会比较慢（可通过Start时使用takeoffEncodeChunk实时获取音频文件数据可避免Stop时产生超大数据回传）。
 
 ## 【静态属性】RecordApp.UniAppUseLicense
-仅App环境下设置，`app-uni-support.js`文件在App中使用的授权许可，默认为空字符串，获得授权后请赋值为"我已获得UniAppID=***的商用授权"（星号为你项目的uni-app应用标识），设置了UniNativeUtsPlugin时默认为已授权；如果未授权，将会在App打开后第一次调用`RecordApp.RequestPermission`请求录音权限时，弹出“未获得商用授权时，App上仅供测试”提示框。
+App 逻辑层中可设置，`app-uni-support.js`文件在App中使用的授权许可，默认为空字符串，获得授权后请赋值为"我已获得UniAppID=***的商用授权"（星号为你项目的uni-app应用标识），设置了UniNativeUtsPlugin时默认为已授权；如果未授权，将会在App打开后第一次调用`RecordApp.RequestPermission`请求录音权限时，弹出“未获得商用授权时，App上仅供测试”提示框。
+
+
+[​](?)
+
+## 二进制和Base64相关
+更多转换请参考：[【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
+
+### 【静态方法】RecordApp.UniBtoa(arrayBuffer)
+base64编码，将arrayBuffer二进制数据转为base64字符串
+
+### 【静态方法】RecordApp.UniAtob(b64)
+base64解码，将base64字符串转为arrayBuffer二进制数据
+
+### 【静态方法】RecordApp.UniB64Enc(str)
+base64编码，将字符串转为base64字符串
+
+### 【静态方法】RecordApp.UniB64Dec(b64)
+base64解码，将base64字符串转为字符串
+
+### 【静态方法】RecordApp.UniStr2Buf(str)
+将文本转成arrayBuffer
+
+### 【静态方法】RecordApp.UniBuf2Str(arrayBuffer)
+将arrayBuffer转成文本
+
+
+[​](?)
+
+## App逻辑层与renderjs层交互
+
+### 【静态方法】RecordApp.UniWebViewCallAsync(componentThis,set,jsCode,bigBytes)
+简化 App 逻辑层中对此页面或组件的WebView renderjs层的调用，并异步返回调用结果，出错会抛异常（componentThis为null时使用UniWebViewActivate切换的页面或组件）；方法内部对 UniWebViewEval、UniWebViewVueCall、UniMainCallBack、UniWebViewSendToMain 等方法的调用进行了封装，使用更简单
+
+``` javascript
+//调用示例代码（在async函数内调用）
+var dataMB=new Uint8Array(1*1024*1024); //可选的，假设同时需要传递1MB的数据到renderjs中
+var set={ //可选配置
+    tag:"格式转码" //可选调用标记，抛异常时会添加到错误消息开头，默认为空字符串
+    ,timeout:5000 //可选调用超时，默认5秒超时
+    ,useEval:false //可选是否要通过UniWebViewEval来执行jsCode，默认false使用UniWebViewVueCall来执行jsCode（此时jsCode中的this为renderjs模块的this）
+};
+try{
+    var result=await RecordApp.UniWebViewCallAsync(this,set,`
+        var buffer=BigBytes; //接收到了逻辑层的二进制数据
+        console.log("renderjs已执行 "+buffer.byteLength+" "+typeof(this.$ownerInstance));
+        //调用逻辑层vue的方法，如果配置了useEval=true将没有this
+        //this.$ownerInstance.callMethod("test",{data:{}});
+        
+        //处理完后，需调用CallSuccess(value,bigBytes)、CallFail(errMsg)返回结果给逻辑层，不然会抛处理超时异常
+        //CallFail("转码错误xxxx"); //处理失败就调用CallFail，逻辑层会抛出此错误异常
+
+        //CallSuccess(any); //处理成功回调，可传入任意值，逻辑层将接收到这个值 result=any
+        CallSuccess({abc:123}, new Uint8Array(9).buffer); //可以额外返回一个ArrayBuffer，逻辑层将接收到一个对象 result={ value:{abc:123}, bigBytes:ArrayBuffer }
+    `, dataMB.buffer);
+}catch(e){
+    result={errMsg:e.message};
+}
+uni.showModal({title:"renderjs调用结果", content:JSON.stringify(result)});
+```
+
+### 【静态方法】RecordApp.UniWebViewEval(componentThis,jsCode,bigBytes)
+App 逻辑层中直接调用此页面或组件的WebView renderjs中的eval（componentThis为null时使用UniWebViewActivate切换的页面或组件）；要调用renderjs模块vue组件内的方法请用UniWebViewVueCall；如果需要传递大的数据请用bigBytes参数传入一个ArrayBuffer，jsCode中使用BigBytes变量得到这个数据
+
+``` javascript
+//调用示例代码，可使用UniWebViewCallAsync简化这些调用
+var cb=RecordApp.UniMainCallBack((data)=>{ //可选的，renderjs执行完成后回调
+    uni.showModal({title:"收到了renderjs回调", content:JSON.stringify(data)});
+});
+var dataMB=new Uint8Array(1*1024*1024); //可选的，假设同时需要传递1MB的数据到renderjs中
+
+RecordApp.UniWebViewEval(this,`
+    var buffer=BigBytes; //接收到了逻辑层的二进制数据
+    console.log("renderjs已执行 "+buffer.byteLength); //这里是WebView浏览器环境，随便调用
+    
+    //处理完后，可以回调结果给逻辑层
+    RecordApp.UniWebViewSendToMain({action:"${cb}", abc:buffer.byteLength});
+`, dataMB.buffer);
+```
+
+### 【静态方法】RecordApp.UniWebViewVueCall(componentThis,jsCode,bigBytes)
+App 逻辑层中直接调用此页面或组件的renderjs模块vue组件内的方法（componentThis为null时使用UniWebViewActivate切换的页面或组件），jsCode中的this为renderjs模块的this（也可以用This变量）（如需renderjs中调用逻辑层vue实例方法，请直接用$ownerInstance.callMethod即可）；如果需要传递大的数据请用bigBytes参数传入一个ArrayBuffer，jsCode中使用BigBytes变量得到这个数据
+
+``` javascript
+//调用示例代码，可使用UniWebViewCallAsync简化这些调用
+var cb=RecordApp.UniMainCallBack((data)=>{ //可选的，renderjs执行完成后回调
+    uni.showModal({title:"收到了renderjs回调", content:JSON.stringify(data)});
+});
+var dataMB=new Uint8Array(1*1024*1024); //可选的，假设同时需要传递1MB的数据到renderjs中
+
+RecordApp.UniWebViewVueCall(this,`
+    var buffer=BigBytes; //接收到了逻辑层的二进制数据
+    console.log("renderjs已执行 "+buffer.byteLength+" "+typeof(this.$ownerInstance));
+    //调用逻辑层vue的方法
+    //this.$ownerInstance.callMethod("test",{data:{}});
+    
+    //处理完后，可以回调结果给逻辑层
+    RecordApp.UniWebViewSendToMain({action:"${cb}", abc:typeof(this.$ownerInstance)});
+`, dataMB.buffer);
+```
+
+### 【静态方法】RecordApp.UniMainCallBack(callback)
+App 逻辑层中生成一个回调，renderjs层通过这个回调返回数据给逻辑层，函数参数为renderjs层返回的数据，数据应当是个对象，错误消息统一用errMsg属性，主要和UniWebViewSendToMain一块搭配使用，请参考上面的UniWebViewEval
+
+### 【静态方法】RecordApp.UniWebViewSendToMain(data)
+renderjs层中调用本方法，将数据传回给逻辑层回调，`data={action:"UniMainCallBack等",...需要返回的数据, errMsg:"错误消息"}`，使用请参考上面的UniWebViewEval
+
+### 【静态方法】RecordApp.UniWebViewSendBigBytesToMain(arrayBuffer,True,False)
+renderjs层调用本方法，将超过512KB的二进制数据传回逻辑层，一次性发送1MB以上的数据UniApp太卡，传入arrayBuffer，True(dataID), False(errMsg)，成功后可在逻辑层中通过UniMainTakeBigBytes(dataID)来取到数据
+
+### 【静态方法】RecordApp.UniMainTakeBigBytes(dataID)
+App 逻辑层取走接收到的二进制数据，返回arrayBuffer，不可重复提取否则返回null
 
 
 
-## 【静态属性】RecordApp.UniNativeUtsPlugin
-仅App环境下设置，App中启用原生录音插件或uts插件，由App提供原生录音，将原生插件或uts插件赋值给这个变量即可开启支持；使用原生录音插件只需赋值为`{nativePlugin:true}`即可（提供`nativePluginName`可指定插件名字，默认为`RecorderNativePlugin`），使用uts插件只需import插件后赋值即可（uts插件开发中，暂不可用）；如果未提供任何插件，App中将使用H5录音（在renderjs中提供H5录音）。
+[​](?)
+
+## 原生录音插件配置
+### 【静态属性】RecordApp.UniNativeUtsPlugin
+App 逻辑层中可设置，App中启用原生录音插件或uts插件，由App提供原生录音，将原生插件或uts插件赋值给这个变量即可开启支持；使用原生录音插件只需赋值为`{nativePlugin:true}`即可（提供`nativePluginName`可指定插件名字，默认为`Recorder-NativePlugin`），使用uts插件只需import插件后赋值即可（uts插件还未开发，目前不可集成）；如果未提供任何插件，App中将使用H5录音（在renderjs中提供H5录音）。
 
 **在App中引入原生录音插件来进行录音，兼容性和体验更好，在iOS上的体现更为明显（请参考上面的录音权限描述）。**
 
-`Recorder-UniCore`组件支持uni-app的`App原生语言插件`和`uts插件`两种类型的插件，两种均为原生插件，功能是相同的；根据你的项目需求选择一种插件使用即可，据uni-app官网来看，目前的趋势更偏向于对uts插件的支持。
-
 ### 集成原生录音插件
-原生录音插件暂未上架DCloud插件市场，请阅读下面的授权许可章节，联系客服获取到Android的`.aar module 25KB`、iOS的`.a library 200KB`两个文件，和参考demo项目。
+原生录音插件已上架DCloud插件市场，请到市场购买或试用；测试时无需购买插件，试用是免费的，并且原生插件试用是无限制的。
 
-1. 项目根目录创建 nativeplugins 目录
-2. 复制demo项目 nativeplugins 目录内的插件到你的项目 nativeplugins 目录
-3. 配置项目manifest.json，在`App原生插件配置`项下点击`选择本地插件`，把插件勾选上
-4. 调试需要先打一个自定义基座，然后使用自定义基座进行调试；打包可以自己进行离线打包，或者提交云端打包
+1. 到DCloud插件市场试用或购买[这个原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)
+2. 在项目manifest.json的App原生插件配置中勾选上这个原生录音插件
+3. 调试需要先打一个自定义基座，然后使用自定义基座进行调试；正式打包需要使用云打包
 
-详细请参考uni-app官方文档：[HBuilderX中使用本地插件](https://nativesupport.dcloud.net.cn/NativePlugin/use/use_local_plugin.html)
-
-### 集成uts插件
-uts插件还在开发中，暂时不可集成。
 
 ### 使用原生插件
 ``` javascript
-var RecNativePlugin=null;
-// #ifdef APP
-    import * as RecUtsPlugin from "@/uni_modules/Recorder-UtsPlugin" //使用uts插件，如果不用uts插件就删掉这行并加上 var RecUtsPlugin=null
-    var RecNativePlugin={//使用原生录音插件，跟uts插件二选一
-        nativePlugin:true
-        ,nativePluginName:"xxx" //可指定插件名字，默认为RecorderNativePlugin
-    };
-// #endif
-// #ifndef APP
-    var RecUtsPlugin=null; //非App，给个变量
-// #endif
+//在调用RecordApp.RequestPermission之前进行配置，建议放到import后面直接配置（全局生效）
+//也可以判断一下只在iOS上或Android上启用，不判断就都启用，比如判断iOS：RecordApp.UniIsApp()==2
+RecordApp.UniNativeUtsPlugin={ //目前仅支持原生插件，uts插件不可用
+    nativePlugin:true
+    //,nativePluginName:"xxx" //可指定插件名字，默认为Recorder-NativePlugin
+};
 
-//在调用RecordApp.RequestPermission之前进行配置，可以判断一下只在iOS上或Android上启用，不判断就都启用，比如判断iOS：RecordApp.UniIsApp()==2
-RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin;
+//配置好后在调用录音功能时，会使用原生插件来录音
 ```
 
+### 【静态方法】RecordApp.UniNativeUtsPluginCallAsync(action,args)
+App 逻辑层中可调用，在集成了原生插件时，在App中可以通过本方法调用原生插件的部分扩展能力，主要为文件流读写。本方法异步返回调用结果，出错会抛异常
+``` javascript
+/**App中集成了原生插件后按下面代码进行调用，注意需要先配置RecordApp.UniNativeUtsPlugin
+    参数：action 字符串，要调用的功能；args 对象，调用参数
+    返回：any 根据功能定义返回对应的结果，出错会抛异常
+比如将任意数据保存到文件：**/
+try{
+    var result=await RecordApp.UniNativeUtsPluginCallAsync("writeFile",{path:"test.txt", dataBase64:"dGVzdDEyMw=="});
+}catch(e){
+    console.error(e)
+}
+
+【部分可用action】
+getInfo 获取插件信息
+    参数：{}
+    返回：{ info:"" } //插件信息字符串
+
+setSpeakerOff 切换扬声器外放和听筒播放，随时都可以调用；但需注意打开录音时可能会自动切换播放方式，因此在打开录音后需要明确调用一次切换成你需要的播放方式
+    参数：{ off:true } //必填，true听筒播放，false扬声器播放
+    返回：{  } //空对象
+
+writeFile 数据写入文件，可新建文件、追加写入（文件流写入）
+    参数：{
+        path:"文件路径" //必填，支持的路径请参考下面
+        ,dataBase64:"base64" //必填，写入的任意内容base64编码，可以为空字符串（如仅新建文件）
+        ,append:false //可选，是否追加写入到文件结尾，默认false会新建文件并写入数据
+    }
+    返回：{
+        fullPath:"/文件绝对路径"
+    }
+
+readFile 读取文件，可流式读取
+    参数：{
+        path:"文件路径" //必填，支持的路径请参考下面
+        ,type:"base64" //可选，返回结果类型，默认base64，设为text时将读取成utf-8文本，提供了chunkSize时只支持base64
+        ,chunkSize:0 //可选，本次读取的最大长度，单位字节，默认0读取全部
+        ,chunkOffset:0 //可选，提供了chunkSize时，指定读取的开始位置
+    }
+    返回：{
+        data:"文本或base64" //文件内容，类型取决于提供的type
+        ,isExists:true //文件是否存在；文件不存在时不会返回错误，此时的data为空字符串
+        ,totalSize:0 //文件大小
+        ,fullPath:"/文件绝对路径"
+    }
+
+deleteFile 删除文件或文件夹
+    参数：{
+        path:"文件路径" //必填，支持的路径请参考下面（文件不存在时不会报错）
+        ,isDir:false //可选，true时此路径是文件夹，删除此文件夹，默认false
+    }
+    返回：{ fullPath:"/文件绝对路径" }
+
+moveFile 移动或重命名文件
+    参数：{
+        fromPath:"源文件路径" //必填，支持的路径请参考下面
+        ,path:"新文件路径" //必填，如果存在会覆盖
+    }
+    返回：{ fullPath:"/移动后的文件绝对路径" }
+
+copyFile 复制文件
+    参数：{
+        fromPath:"源文件路径" //必填，支持的路径请参考下面
+        ,path:"新文件路径" //必填，如果存在会覆盖
+    }
+    返回：{ fullPath:"/复制后的文件绝对路径" }
+
+resolvePath 解析路径成绝对路径
+    参数：{
+        path:"文件或文件夹路径" //必填（空字符串时为store目录），支持的路径请参考下面
+        ,pathInfo:false //可选，是否返回路径信息，默认false不返回
+    }
+    返回：{
+        fullPath:"/文件绝对路径"
+        ,pathInfo:{ //可选返回路径信息
+            isExists:true //文件或文件夹是否存在
+            ,isFile:true //true时path为文件，false时为文件夹
+            ,size:123 //isFile时文件大小，文件夹为0
+            ,date:123456 //isFile时文件更新时间，毫秒，文件夹为0
+        }
+    }
+
+listPath 读取文件夹内的文件
+    参数：{ path:"文件夹路径" } //必填（空字符串时为store目录），支持的路径请参考下面
+    返回：{
+        files:[ { //此文件夹下的文件
+                name:"文件名"
+                ,size:123 //文件大小
+                ,date:123456 //文件更新时间，毫秒
+            } ]
+        ,dirs:[ "文件夹名" ] //此文件夹下的文件夹
+        ,fullPath:"/文件夹绝对路径" //结尾不带/
+    }
+
+androidStoragePermission__limited 简易获取Android的外部存储权限，iOS不可调用，当你需要读写当前应用数据以外的文件时（如手机的Download目录文件），需要先获取外部存储权限；注意这个只会请求WRITE_EXTERNAL_STORAGE权限，因此TargetSDK需小于33（Android 13），否则此权限永远是拒绝的（请自行用别的途径获取权限）
+    参数：{}
+    返回：{ code:1 } //权限状态：1有权限，3用户拒绝。（2未用到）
+
+
+【支持的路径】
+"store://文件夹/文件.png" 或 "文件夹/文件.png" （开头不带/）
+    app内部保存文件，文件夹是可选的
+        Android为app的file目录 + 文件夹/文件.png
+        iOS为app的Library/Files目录 + 文件夹/文件.png
+
+"__doc://文件夹/文件.png"
+    app内部保存文件，文件夹是可选的；兼容iOS Documents目录专用的，正常用"store://"就够了
+        Android为app的file/__doc目录 + 文件夹/文件.png
+        iOS为app的Documents目录 + 文件夹/文件.png
+
+"cache://文件夹/文件.png"
+    app内部缓存文件，文件夹是可选的，存储的文件可能会被用户或系统删除
+        Android为app的cache目录 + 文件夹/文件.png
+        iOS为app的Library/Caches目录 + 文件夹/文件.png
+
+"file:///绝对路径/文件.png" 或 "/绝对路径/文件.png" （开头有/）
+    绝对路径，一般只允许读写app自己目录内的文件；Android获取到了外部存储权限时（调用androidStoragePermission__limited），可能可以可读写外部存储中的文件；iOS不支持读写非app自己目录文件
+```
 
 
 
@@ -488,18 +692,9 @@ RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin;
 [​](?)
 
 # 使用Recorder-UniCore组件的授权许可
-**[AD]app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权。
+**app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先到DCloud插件市场购买[此带授权的插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android)（费用为¥199元，赠送Android版原生插件）获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权。
 
-[​](?)
-
-## 获取商用授权和购买原生录音插件
-客服联系方式：QQ 1251654593 ，或者直接联系作者QQ 753610399 （回复可能没有客服及时）。
-- 方式一：联系客服加入VIP支持QQ群，入群费用 **¥199元** ，入群后即获得授权，在群文件中可下载`app-uni-support.js`文件最新源码。
-- 方式二：联系客服或到DCloud插件市场购买配套的原生录音插件或uts插件，购买后即获得授权；购买后可联系客服，同时提供订单信息，客服拉你进入VIP支持QQ群。
-
-**优惠活动：2024年01月01日起付费 ¥199 元入群后，可 ¥1 元购Android版原生录音插件`.aar module`（后续如需iOS版原生录音插件补¥299元差价即可购买）。**
-
-> 目前uts插件还在开发中不可购买；原生录音插件已开发好，但还未上架到DCloud插件市场，如果需要请联系客服付费购买，原生录音插件价格为：**¥499元**（可买单个平台¥299元，已付费入群可补差价购买），购买后客服会发送Android的`.aar module 25KB`、iOS的`.a library 200KB`两个文件给你，和demo项目供参考，集成到项目的`nativeplugins`目录中，详细使用请参考上面的`RecordApp.UniNativeUtsPlugin`属性文档。
+购买后可联系客服，同时提供订单信息，客服拉你进入VIP支持QQ群，在群文件中可下载Recorder-UniCore前端组件的`app-uni-support.js`文件最新源码；客服联系方式：QQ 1251654593 ，或者直接联系作者QQ 753610399 （回复可能没有客服及时）。
 
 > 注：VIP支持群的主要作用是代表你已获得授权许可，可以随时获得`app-uni-support.js`文件最新版源码；不作为问答或售后群使用，当然如果你有问题也可以直接群里问，花费时间不多的，作者免费顺带就解答了，如果复杂花费比较久时间的，可能要适当收点人工费用，或者选择进行付费指导。
 > 

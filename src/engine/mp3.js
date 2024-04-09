@@ -74,16 +74,18 @@ Recorder.prototype.mp3=function(res,True,False){
 		var blockSize=57600;
 		var memory=new Int8Array(500000), mOffset=0;
 		
-		var idx=0;
+		var idx=0,isFlush=0;
 		var run=function(){
 			try{
 				if(idx<size){
 					var buf=mp3.encodeBuffer(res.subarray(idx,idx+blockSize));
 				}else{
+					isFlush=1;
 					var buf=mp3.flush();
 				};
 			}catch(e){ //精简代码调用了abort
 				console.error(e);
+				if(!isFlush) try{ mp3.flush() }catch(r){ console.error(r) }
 				False("MP3 Encoder: "+e.message);
 				return;
 			};
@@ -179,10 +181,12 @@ var newContext=function(setOrNull,_badW){
 		
 		switch(ed.action){
 		case "stop":
+			if(!cur.isCp) try{ cur.encObj.flush() }catch(e){ console.error(e) }
 			cur.encObj=null;
 			delete wk_ctxs[ed.id];
 			break;
 		case "encode":
+			if(cur.isCp)break;
 			cur.pcmSize+=ed.pcm.length;
 			try{
 				var buf=cur.encObj.encodeBuffer(ed.pcm);
@@ -199,6 +203,7 @@ var newContext=function(setOrNull,_badW){
 			};
 			break;
 		case "complete":
+			cur.isCp=1;
 			try{
 				var buf=cur.encObj.flush();
 			}catch(e){ //精简代码调用了abort

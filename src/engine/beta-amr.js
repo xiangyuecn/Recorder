@@ -155,7 +155,6 @@ var newContext=function(setOrNull,_badW){
 			wk_ctxs[ed.id]={
 				takeoff:ed.takeoff
 				
-				,pcmSize:0
 				,memory:new Uint8Array(500000), mOffset:0
 				,encObj:wk_AMR.GetEncoder(ed.bitRate)
 			};
@@ -175,11 +174,12 @@ var newContext=function(setOrNull,_badW){
 		
 		switch(ed.action){
 		case "stop":
+			if(!cur.isCp) try{ cur.encObj.flush() }catch(e){ console.error(e) }
 			cur.encObj=null;
 			delete wk_ctxs[ed.id];
 			break;
 		case "encode":
-			cur.pcmSize+=ed.pcm.length;
+			if(cur.isCp)break;
 			try{
 				var buf=cur.encObj.encode(ed.pcm);
 			}catch(e){ //精简代码调用了abort
@@ -204,19 +204,8 @@ var newContext=function(setOrNull,_badW){
 			};
 			break;
 		case "complete":
-			try{
-				var buf=cur.encObj.flush();
-			}catch(e){ //精简代码调用了abort
-				cur.err=e;
-				console.error(e);
-			};
-			if(buf && buf.length>0){
-				if(cur.takeoff){
-					worker.onmessage({action:"takeoff",id:ed.id,chunk:buf});
-				}else{
-					addBytes(buf);
-				};
-			};
+			cur.isCp=1;
+			try{ cur.encObj.flush() }catch(e){ console.error(e) }; //flush没有结果，只做释放
 			if(cur.err){
 				worker.onmessage({action:ed.action,id:ed.id
 					,err:"AMR Encoder: "+cur.err.message});

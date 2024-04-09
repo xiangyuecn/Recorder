@@ -4,6 +4,19 @@ https://www.webrtc-experiment.com/RecordRTC/ https://github.com/muaz-khan/Record
 https://recorder.zhuyuntao.cn/  https://github.com/2fps/recorder
 
 
+【转码成aac】
+wavBlob=recLogLast.blob //Recorder录制好的wav blob
+if(!window.fdkAac){
+	console.log("加载 https://github.com/salomvary/fdk-aac.js 有两个文件");
+	window.fdkAacWasm="https://cdn.jsdelivr.net/gh/salomvary/fdk-aac.js@ad74652b5bfe08201e98a67e74d25acfef3729d1/aac-enc.wasm"
+	await import("https://cdn.jsdelivr.net/gh/salomvary/fdk-aac.js@ad74652b5bfe08201e98a67e74d25acfef3729d1/fdk-aac.umd.js");
+}
+fdkAac(new Uint8Array(await wavBlob.arrayBuffer()), (err, aac)=>{
+	if(err) return console.error(err);
+	var blob=new Blob([aac.buffer],{type:"audio/aac"});
+	console.log(aac,URL.createObjectURL(blob));
+});
+
 
 【定时开始录音】
 tDur=15000;tTime="11:10:00";

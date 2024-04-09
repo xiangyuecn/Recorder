@@ -6,7 +6,7 @@
 <link rel="shortcut icon" type="image/png" href="../assets/icon.png">
 
 <title reclang="CS4l">RecordApp QuickStart: 快速入门</title>
-<script>var PageLM="2023-12-08 20:41";</script>
+<script>var PageLM="2024-04-09 20:42";</script>
 <!--
 你可以直接将 /app-support-sample/QuickStart.html 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了。
 You can directly copy the /app-support-sample/QuickStart.html file to your (https) website, and you can start testing normally without other files.
@@ -194,6 +194,7 @@ function recStart(){
 		type:"mp3"
 		,bitRate:16
 		,sampleRate:16000
+		//,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true} //配置回声消除，注意：H5中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
 		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
 			//录音实时回调，大约1秒调用12次本回调
 			document.querySelector(".recpowerx").style.width=powerLevel+"%";
@@ -296,12 +297,12 @@ function recUpload(){
 	
 	//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
 	//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
-	var api="https://xx.xx/test_request";
-	var onreadystatechange=function(title){
+	var api="http://127.0.0.1:9528";
+	var onreadystatechange=function(xhr,title){
 		return function(){
 			if(xhr.readyState==4){
 				if(xhr.status==200){
-					reclog(title+Html_$T("DHfL::上传成功"),2);
+					reclog(title+Html_$T("DHfL::上传成功")+' <span style="color:#999">response: '+xhr.responseText+'</span>',2);
 				}else{
 					reclog(title+Html_$T("K1x7::没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。"), "#d8c1a0");
 					
@@ -310,7 +311,7 @@ function recUpload(){
 			};
 		};
 	};
-	reclog(Html_$T("JIr4::开始上传到{1}，请求稍后...",0,api));
+	reclog(Html_$T("JIr4::开始上传到{1}，请稍候... （你可以先到源码 /assets/node-localServer 目录内执行 npm run start 来运行本地测试服务器）",0,api));
 
 	/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
 	var reader=new FileReader();
@@ -321,9 +322,9 @@ function recUpload(){
 		//...其他表单参数
 		
 		var xhr=new XMLHttpRequest();
-		xhr.open("POST", api);
+		xhr.open("POST", api+"/uploadBase64");
 		xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-		xhr.onreadystatechange=onreadystatechange(Html_$T("XVmd::上传方式一【Base64】"));
+		xhr.onreadystatechange=onreadystatechange(xhr,Html_$T("XVmd::上传方式一【Base64】"));
 		xhr.send(postData);
 	};
 	reader.readAsDataURL(blob);
@@ -334,8 +335,8 @@ function recUpload(){
 	//...其他表单参数
 	
 	var xhr=new XMLHttpRequest();
-	xhr.open("POST", api);
-	xhr.onreadystatechange=onreadystatechange(Html_$T("6rhE::上传方式二【FormData】"));
+	xhr.open("POST", api+"/upload");
+	xhr.onreadystatechange=onreadystatechange(xhr,Html_$T("6rhE::上传方式二【FormData】"));
 	xhr.send(form);
 };
 
@@ -436,7 +437,7 @@ if(!window.Html_$T){//没有提供本页面用的国际化多语言支持时 返
 	window.Html_xT=function(v){ return v }
 }
 
-reclog(Html_$T('FaWz::如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~'),"#333;font-size:22px;font-weight:bold");
+reclog(Html_$T('FaWz::如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~'),"#333;font-size:22px;font-weight:bold");
 reclog(Html_$T("98Ry::Recorder App基于Recorder H5的跨平台录音，支持在浏览器环境中使用（H5）、各种使用js来构建的程序中使用（App、小程序、UniApp、Electron、NodeJs）")+unescape("%uD83C%uDF89"),"#f60;font-weight:bold;font-size:24px");
 reclog(Html_$T("p71N::Recorder H5使用简单，功能丰富，支持PC、Android、iOS 14.3+")+unescape("%uD83D%uDCAA"),"#0b1;font-weight:bold;font-size:24px");
 reclog(Html_$T('5hyY::本页面修改时间（有可能修改了忘改）：')+PageLM,"#999");

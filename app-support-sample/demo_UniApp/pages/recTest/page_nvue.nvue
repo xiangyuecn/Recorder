@@ -89,16 +89,9 @@ import RecordApp from 'recorder-core/src/app-support/app.js'
 //【所有平台必须引入】uni-app支持文件
 import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
-/** 引入原生录音插件 **/
-var RecNativePlugin=null;
-// #ifdef APP
-	var RecUtsPlugin=null; //【使用uts插件要删除这句再解开下一句的注释】
-	// import * as RecUtsPlugin from "../../uni_modules/Recorder-UtsPlugin" 【uts插件开发中，暂不支持解开注释】
-	// var RecNativePlugin={nativePlugin:true}; //使用原生录音插件就解开这个注释，跟uts插件二选一
-// #endif
-// #ifndef APP
-	var RecUtsPlugin=null; //非App，给个变量
-// #endif
+/** 引入原生录音插件，原生插件市场地址: https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin （试用无任何限制）
+	在调用RecordApp.RequestPermission之前进行配置，建议放到import后面直接配置（全局生效）*/
+RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //目前仅支持原生插件，uts插件不可用
 
 
 export default {
@@ -117,7 +110,7 @@ export default {
 	mounted() {
 		RecordApp.Current=null;
 		RecordApp.UniWithoutAppRenderjs=true; //nvue内必须在所有操作前先设为true
-		RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin;
+		RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //启用原生插件配置
 		
 		//可选，立即显示出环境信息
 		this.reclog("正在执行Install，请勿操作...","#f60");
@@ -134,7 +127,6 @@ export default {
 		RecordApp.Stop(null,()=>{
 			RecordApp.Current=null; //恢复环境
 			RecordApp.UniWithoutAppRenderjs=false; //恢复环境
-			RecordApp.UniNativeUtsPlugin=null; //停用原生插件
 			console.log(tag+" 已恢复环境");
 		});
 	},
@@ -146,6 +138,7 @@ export default {
 			//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
 			
 			this.reclog("正在请求录音权限...");
+			RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //启用原生插件配置
 			RecordApp.RequestPermission(()=>{
 				this.reclog(RecordApp.Current.Key+" 已获得录音权限，可以开始录音了",2);
 			},(msg,isUserNotAllow)=>{
@@ -155,7 +148,7 @@ export default {
 				this.reclog((RecordApp.Current&&RecordApp.Current.Key||"[?]")
 					+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
 				if(!RecordApp.UniNativeUtsPlugin){
-					this.reclog("本页面的源码中未引入原生录音插件或uts插件，请先修改本页面源码后再测试：到`import * as RecUtsPlugin from ...`这段代码，根据注释里面的提示引入插件","#fa0");
+					this.reclog("请在项目manifest.json原生插件配置中勾选云端插件（先到插件市场 https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin 点试用，试用无任何限制），然后打包自定义基座后再测试","#fa0");
 				}
 			});
 		}

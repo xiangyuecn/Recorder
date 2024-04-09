@@ -1,0 +1,15 @@
+node_modules
+/demo_android/demo_android.iml
+/demo_android/local.properties
+/demo_android/.gradle
+/demo_android/.idea
+/demo_android/app/app.iml
+/demo_android/app/build
+/demo_ios/._recorder.xcodeproj
+/demo_ios/recorder.xcodeproj/._project.xcworkspace
+/demo_ios/recorder.xcodeproj/xcuserdata
+/demo_ios/recorder.xcodeproj/project.xcworkspace/xcuserdata
+/miniProgram-wx/copy-rec-src/src
+/miniProgram-wx/project.private.config.json
+/demo_UniApp/.hbuilderx
+/demo_UniApp/unpackage

@@ -40,7 +40,8 @@
             "ios" : {
                 "privacyDescription" : {
                     "NSMicrophoneUsageDescription" : "录音功能需要访问麦克风"
-                }
+                },
+                "UIBackgroundModes" : "audio"
             },
             /* SDK配置 */
             "sdkConfigs" : {}

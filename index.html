@@ -416,7 +416,7 @@ if(!window.localStorage){window.localStorage={
 
 <div class="mainBox">
 	<div style="color:#0ab;font-size:22px;font-weight:bold">
-		<span reclang="ERHy">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</span>
+		<span reclang="ERHy">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~</span>
 	</div>
 </div>
 
@@ -1054,12 +1054,12 @@ function recUploadLast(){
 	
 	//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
 	//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
-	var api="https://xx.xx/test_request";
-	var onreadystatechange=function(title){
+	var api="http://127.0.0.1:9528";
+	var onreadystatechange=function(xhr,title){
 		return function(){
 			if(xhr.readyState==4){
 				if(xhr.status==200){
-					reclog(title+Html_$T("2C4x::上传成功"),2);
+					reclog(title+Html_$T("2C4x::上传成功")+' <span style="color:#999">response: '+xhr.responseText+'</span>',2);
 				}else{
 					reclog(title+Html_$T("k6Kb::没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。"), "#d8c1a0");
 					
@@ -1068,7 +1068,7 @@ function recUploadLast(){
 			};
 		};
 	};
-	reclog(Html_$T("LzIA::开始上传到{1}，请求稍后...",0,api),"#f60");
+	reclog(Html_$T("LzIA::开始上传到{1}，请稍候... （你可以先到源码 /assets/node-localServer 目录内执行 npm run start 来运行本地测试服务器）",0,api));
 
 	/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
 	var reader=new FileReader();
@@ -1079,9 +1079,9 @@ function recUploadLast(){
 		//...其他表单参数
 		
 		var xhr=new XMLHttpRequest();
-		xhr.open("POST", api);
+		xhr.open("POST", api+"/uploadBase64");
 		xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-		xhr.onreadystatechange=onreadystatechange(Html_$T("SsdM::上传方式一【Base64】"));
+		xhr.onreadystatechange=onreadystatechange(xhr,Html_$T("SsdM::上传方式一【Base64】"));
 		xhr.send(postData);
 	};
 	reader.readAsDataURL(blob);
@@ -1092,8 +1092,8 @@ function recUploadLast(){
 	//...其他表单参数
 	
 	var xhr=new XMLHttpRequest();
-	xhr.open("POST", api);
-	xhr.onreadystatechange=onreadystatechange(Html_$T("Oy4A::上传方式二【FormData】"));
+	xhr.open("POST", api+"/upload");
+	xhr.onreadystatechange=onreadystatechange(xhr,Html_$T("Oy4A::上传方式二【FormData】"));
 	xhr.send(form);
 };
 function recDownLast(){

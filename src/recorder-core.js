@@ -24,7 +24,7 @@ var IsNum=function(v){return typeof v=="number"};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2023-12-24 18:09";
+var LM=Recorder.LM="2024-04-09 19:15";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -111,11 +111,11 @@ Recorder.GetContext=function(tryNew){
 		Recorder.BindDestroy("Ctx",function(){
 			var ctx=Recorder.Ctx;
 			if(ctx&&ctx.close){//能关掉就关掉，关不掉就保留着
-				ctx.close();
+				CloseCtx(ctx);
 				Recorder.Ctx=0;
 			};
 			var arr=Recorder.NewCtxs; Recorder.NewCtxs=[];
-			for(var i=0;i<arr.length;i++)arr[i].close();
+			for(var i=0;i<arr.length;i++)CloseCtx(arr[i]);
 		});
 	};
 	if(tryNew && ctx.close){//没法关闭的不允许再创建
@@ -131,7 +131,7 @@ Recorder.GetContext=function(tryNew){
 //关闭新创建的AudioContext，如果是全局的不关闭
 Recorder.CloseNewCtx=function(ctx){
 	if(ctx && ctx!=Recorder.Ctx){
-		ctx.close && ctx.close();
+		CloseCtx(ctx);
 		var arr=Recorder.NewCtxs||[],L=arr.length;
 		for(var i=0;i<arr.length;i++){
 			if(arr[i]==ctx){ arr.splice(i,1); break; }
@@ -139,9 +139,60 @@ Recorder.CloseNewCtx=function(ctx){
 		CLog($T("mSxV::剩{1}个GetContext未close",0,L+"-1="+arr.length),arr.length?3:0);
 	}
 };
+var CloseCtx=function(ctx){
+	if(ctx && ctx.close){
+		ctx._isC=1;
+		try{ ctx.close() }catch(e){ CLog("ctx close err",1,e) }
+	}
+};
+//当AudioContext的状态是suspended时，调用resume恢复状态，但如果没有用户操作resume可能没有回调，封装解决此回调问题；check(count)返回true继续尝试resume，返回false终止任务（不回调False）
+var ResumeCtx=Recorder.ResumeCtx=function(ctx,check,True,False){
+	var isEnd=0,isBind=0,isLsSC=0,runC=0,EL="EventListener",Tag="ResumeCtx ";
+	var end=function(err,ok){
+		if(isBind){ bind() }
+		if(!isEnd){ isEnd=1; //回调结果
+			err&&False(err,runC);
+			ok&&True(runC);
+		}
+		if(ok){ //监听后续状态变化
+			if(!ctx._LsSC && ctx["add"+EL]) ctx["add"+EL]("statechange",run);
+			ctx._LsSC=1; isLsSC=1;
+		}
+	};
+	var bind=function(add){
+		if(add && isBind) return; isBind=add?1:0;
+		var types=["focus","mousedown","mouseup","touchstart","touchend"];
+		for(var i=0;i<types.length;i++)
+			window[(add?"add":"remove")+EL](types[i],run,true);
+	};
+	var run=function(){
+		var sVal=ctx.state,spEnd=CtxSpEnd(sVal);
+		if(!isEnd && !check(spEnd?++runC:runC))return end(); //终止，不回调
+		if(spEnd){
+			if(isLsSC)CLog(Tag+"sc "+sVal,3);
+			bind(1); //绑定用户事件尝试恢复
+			ctx.resume().then(function(){ //resume回调不可靠
+				if(isLsSC)CLog(Tag+"sc "+ctx.state);
+				end(0,1);
+			})[CatchTxt](function(e){ //出错且无法恢复
+				CLog(Tag+"error",1,e);
+				if(!CtxSpEnd(ctx.state)){
+					end(e.message||"error");
+				}
+			});
+		}else if(sVal=="closed"){
+			if(isLsSC && !ctx._isC)CLog(Tag+"sc "+sVal,1); //无法恢复，打个日志
+			end("ctx closed");
+		}else{ end(0,1) }; //running 或老的无state
+	};
+	run();
+};
+var CtxSpEnd=Recorder.CtxSpEnd=function(v){
+	return v=="suspended"||v=="interrupted"; //后面这个仅iOS有
+};
 var CtxState=function(ctx){
 	var v=ctx.state,msg="ctx.state="+v;
-	if(v=="suspended")msg+=$T("nMIy::（注意：ctx不是running状态，rec.open和start至少要有一个在用户操作(触摸、点击等)时进行调用，否则将在rec.start时尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）");
+	if(CtxSpEnd(v))msg+=$T("nMIy::（注意：ctx不是running状态，rec.open和start至少要有一个在用户操作(触摸、点击等)时进行调用，否则将在rec.start时尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）");
 	return msg;
 };
 
@@ -325,8 +376,8 @@ var connWorklet=function(){
 		CLog($T("yOta::Connect采用{1}，设置{2}可恢复老式{3}",0,audioWorklet,RecTxt+"."+ConnectEnableWorklet+"=false",scriptProcessor)+webMTips+oldIsBest,3);
 	};
 	
-	//如果start时的resume和下面的构造node同时进行，将会导致部分浏览器崩溃，源码assets中 ztest_chrome_bug_AudioWorkletNode.html 可测试。所以，将所有代码套到resume里面（不管catch），避免出现这个问题
-	ctx.resume()[calls&&"finally"](function(){//注释掉这行 观摩浏览器崩溃 STATUS_ACCESS_VIOLATION
+	//如果start时的resume和下面的构造node同时进行，将会导致部分浏览器崩溃 (STATUS_ACCESS_VIOLATION)，源码assets中 ztest_chrome_bug_AudioWorkletNode.html 可测试。所以，将所有代码套到resume里面（不管catch），避免出现这个问题
+	var ctxOK=function(){
 		if(!awNext())return;
 		if(ctx[RecProc]){
 			createNode();
@@ -344,7 +395,8 @@ var connWorklet=function(){
 			CLog(audioWorklet+".addModule Error",1,e);
 			awNext()&&oldScript();
 		});
-	});
+	};
+	ResumeCtx(ctx,function(){ return awNext() } ,ctxOK,ctxOK);
 };
 
 
@@ -426,7 +478,7 @@ var _Disconn_n=function(stream){
 var _Disconn_r=function(stream){
 	stream._ra=null;
 	if(stream._r){
-		stream._r.stop();
+		try{ stream._r.stop() }catch(e){ CLog("mr stop err",1,e) }
 		stream._r=null;
 	};
 };
@@ -1268,19 +1320,17 @@ Recorder.prototype=initFn.prototype={
 				This.resume();
 			}
 		};
-		if(ctx.state=="suspended"){
-			var tag="AudioContext resume: ";
-			This.CLog(tag+"wait...");
-			ctx.resume().then(function(){
-				This.CLog(tag+ctx.state);
-				end();
-			})[CatchTxt](function(e){ //比较少见，可能对录音没有影响
-				This.CLog(tag+ctx.state+$T("upkE::，可能无法录音：")+e.message,1,e);
-				end();
-			});
-		}else{
+		var tag="AudioContext resume: ";
+		ResumeCtx(ctx,function(runC){
+			runC&&This.CLog(tag+"wait...");
+			return This.state==3;
+		},function(runC){
+			runC&&This.CLog(tag+ctx.state);
 			end();
-		};
+		},function(err){ //比较少见，可能对录音没有影响
+			This.CLog(tag+ctx.state+$T("upkE::，可能无法录音：")+err,1);
+			end();
+		});
 	}
 	
 	
@@ -1297,9 +1347,12 @@ Recorder.prototype=initFn.prototype={
 	/*恢复录音*/
 	,resume:function(){
 		var This=this,stream=This._streamStore().Stream;
-		if(This.state){
+		var tag="resume",tag3=tag+"(wait ctx)";
+		if(This.state==3){ //start还在等ctx恢复
+			This.CLog(tag3);
+		}else if(This.state){
 			This.state=1;
-			This.CLog("resume");
+			This.CLog(tag);
 			This.envResume();
 			
 			if(stream){
@@ -1309,6 +1362,19 @@ Recorder.prototype=initFn.prototype={
 					};
 				};
 				ConnAlive(stream);//AudioWorklet只会在ctx激活后运行
+			};
+			
+			var ctx=This._streamCtx();
+			if(ctx){ //AudioContext如果被暂停，尽量恢复
+				ResumeCtx(ctx,function(runC){
+					runC&&This.CLog(tag3+"...");
+					return This.state==1;
+				},function(runC){
+					runC&&This.CLog(tag3+ctx.state);
+					ConnAlive(stream);
+				},function(err){
+					This.CLog(tag3+ctx.state+"[err]"+err,1);
+				});
 			};
 		};
 	}

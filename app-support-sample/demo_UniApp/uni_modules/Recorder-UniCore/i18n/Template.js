@@ -170,29 +170,14 @@ i18n.put(putSet,
 ,"CjMb:"+ //no args
        "" /** TODO: translate to your-language **/
 
-//@@zh="非App环境，不支持保存本地文件"
-//@@en="Non-App environment does not support saving local files"
-,"kxOd:"+ //no args
-       "" /** TODO: translate to your-language **/
-
 //@@zh="保存文件{1}失败："
 //@@en="Failed to save file {1}: "
 ,"UqfI:"+ //args: {1}
        "" /** TODO: translate to your-language **/
 
-//@@zh="renderjs中不支持设置RecordApp.UniNativeUtsPlugin"
-//@@en="Setting RecordApp.UniNativeUtsPlugin is not supported in renderjs"
-,"l6sY:"+ //no args
-       "" /** TODO: translate to your-language **/
-
-//@@zh="配置了RecordApp.UniNativeUtsPlugin，但当前App未打包进原生录音插件[{1}]"
-//@@en="RecordApp.UniNativeUtsPlugin is configured, but the current App is not packaged with the native recording plug-in [{1}]"
-,"SCW9:"+ //args: {1}
-       "" /** TODO: translate to your-language **/
-
-//@@zh="提供的RecordApp.UniNativeUtsPlugin值不是RecordApp的uts原生录音插件"
-//@@en="The provided RecordApp.UniNativeUtsPlugin value is not RecordApp’s uts native recording plug-in"
-,"TGMm:"+ //no args
+//@@zh="当前环境未支持保存本地文件"
+//@@en="The current environment does not support saving local files"
+,"kxOd:"+ //no args
        "" /** TODO: translate to your-language **/
 
 //@@zh=" | RecordApp的uni-app支持文档和示例：{1} "
@@ -270,9 +255,29 @@ i18n.put(putSet,
 ,"dl4f:"+ //args: {1}
        "" /** TODO: translate to your-language **/
 
+//@@zh="renderjs中不支持设置RecordApp.UniNativeUtsPlugin"
+//@@en="Setting RecordApp.UniNativeUtsPlugin is not supported in renderjs"
+,"l6sY:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="配置了RecordApp.UniNativeUtsPlugin，但当前App未打包进原生录音插件[{1}]"
+//@@en="RecordApp.UniNativeUtsPlugin is configured, but the current App is not packaged with the native recording plug-in [{1}]"
+,"SCW9:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
+//@@zh="提供的RecordApp.UniNativeUtsPlugin值不是RecordApp的uts原生录音插件"
+//@@en="The provided RecordApp.UniNativeUtsPlugin value is not RecordApp’s uts native recording plug-in"
+,"TGMm:"+ //no args
+       "" /** TODO: translate to your-language **/
+
 //@@zh="未配置RecordApp.UniNativeUtsPlugin原生录音插件"
 //@@en="RecordApp.UniNativeUtsPlugin native recording plug-in is not configured"
 ,"H753:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="需在App逻辑层中调用原生插件功能"
+//@@en="The native plug-in function needs to be called in the App logic layer"
+,"MrBx:"+ //no args
        "" /** TODO: translate to your-language **/
 
 //@@zh="未开始录音，不可以调用{1}"

@@ -655,6 +655,11 @@ i18n.put(putSet,
  "0XYC:"+ //no args
        "La méthode getAudioSrc est obsolète : veuillez utiliser getMediaStream directement et l'attribuer à audio.srcObject. Cette méthode ne peut être appelée que dans les navigateurs qui ne prennent pas en charge srcObject et attribuée à audio.src pour des raisons de compatibilité."
 
+//@@zh="start被stop终止"
+//@@en="start is terminated by stop"
+,"6DDt:"+ //no args
+       "start est terminé par stop"
+
 //@@zh="{1}多次start"
 //@@en="{1} repeat start"
 ,"I4h4:"+ //args: {1}
@@ -669,11 +674,6 @@ i18n.put(putSet,
 //@@en=" (Note: ctx is not in the running state, start needs to be called when the user operates (touch, click, etc.), otherwise it will try to perform ctx.resume, which may cause compatibility issues (only iOS), please refer to the runningContext configuration in the document) "
 ,"JwDm:"+ //no args
        "(Remarque : ctx n'est pas dans l'état running. start doit être appelé lorsque l'utilisateur opère (toucher, cliquer, etc.), sinon ctx.resume sera tenté, ce qui peut entraîner des problèmes de compatibilité (iOS uniquement). Veuillez vous référer au configuration runningContext dans le document)"
-
-//@@zh="start被stop终止"
-//@@en="start is terminated by stop"
-,"6DDt:"+ //no args
-       "start est terminé par stop"
 
 //@@zh="此浏览器的AudioBuffer实现不支持动态特性，采用兼容模式"
 //@@en="The AudioBuffer implementation of this browser does not support dynamic features, use compatibility mode"
@@ -835,10 +835,10 @@ i18n.put(putSet,
  "uXtA:"+ //args: {1}
        "Importation répétée {1}"
 
-//@@zh="同时多次调用：{1}，旧的回调被丢弃"
-//@@en="Called multiple times at the same time: {1}, old callbacks are discarded"
+//@@zh="注意：因为并发调用了其他录音相关方法，当前 {1} 的调用结果已被丢弃且不会有回调"
+//@@en="Note: Because other recording-related methods are called concurrently, the current call result of {1} has been discarded and there will be no callback"
 ,"kIBu:"+ //args: {1}
-       "Plusieurs appels simultanés: {1}, l'ancien Callback est abandonné"
+       "Remarque : Étant donné que d'autres méthodes liées à l'enregistrement sont appelées simultanément, le résultat de l'appel actuel de {1} a été ignoré et il n'y aura pas de rappel"
 
 //@@zh="重复注册{1}"
 //@@en="Duplicate registration {1}"

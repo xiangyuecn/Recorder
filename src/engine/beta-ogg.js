@@ -58,16 +58,18 @@ Recorder.prototype.ogg=function(res,True,False){
 		var blockSize=set.sampleRate;
 		var memory=new Uint8Array(500000), mOffset=0;
 		
-		var idx=0;
+		var idx=0,isFlush=0;
 		var run=function(){
 			try{
 				if(idx<size){
 					var buf=ogg.encode([res.subarray(idx,idx+blockSize)]);
 				}else{
+					isFlush=1;
 					var buf=ogg.flush();
 				};
 			}catch(e){ //精简代码调用了abort
 				console.error(e);
+				if(!isFlush) try{ ogg.flush() }catch(r){ console.error(r) }
 				False("Ogg Encoder: "+e.message);
 				return;
 			};
@@ -135,7 +137,6 @@ var newContext=function(setOrNull,_badW){
 			wk_ctxs[ed.id]={
 				takeoff:ed.takeoff
 				
-				,pcmSize:0
 				,memory:new Uint8Array(500000), mOffset:0
 				,encObj:new wk_OggEnc(ed.sampleRate, 1, ed.bitVv)
 			};
@@ -155,11 +156,12 @@ var newContext=function(setOrNull,_badW){
 		
 		switch(ed.action){
 		case "stop":
+			if(!cur.isCp) try{ cur.encObj.flush() }catch(e){ console.error(e) }
 			cur.encObj=null;
 			delete wk_ctxs[ed.id];
 			break;
 		case "encode":
-			cur.pcmSize+=ed.pcm.length;
+			if(cur.isCp)break;
 			try{
 				var buf=cur.encObj.encode([ed.pcm]);
 			}catch(e){ //精简代码调用了abort
@@ -175,6 +177,7 @@ var newContext=function(setOrNull,_badW){
 			};
 			break;
 		case "complete":
+			cur.isCp=1;
 			try{
 				var buf=cur.encObj.flush();
 			}catch(e){ //精简代码调用了abort

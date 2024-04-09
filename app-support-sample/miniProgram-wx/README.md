@@ -36,7 +36,7 @@
 
 [​](?)
 
-## 需要注意的细节
+# 部分原理和需要注意的细节
 
 小程序自带的`RecorderManager`录音的时候，如果小程序退到了后台（或触发了`onInterruptionBegin`），录音将会被暂停，小程序显示的时候才允许继续录音，但`RecorderManager`无法感知这些事件或者存在bug，**因此你需要在要录音页面的`onShow`函数内加上`RecordApp.MiniProgramWx_onShow()`这行代码**，如果没有加这行代码，被暂停的录音可能会无法自动恢复。
 
@@ -44,10 +44,38 @@
 
 微信开发者工具对npm支持太差，“构建 npm”功能没什么卵用，npm包内没被main文件引用的js会被全部丢弃，导致文件缺失；似乎也不允许手动`require`含`node_modules`的路径；因此请直接copy根目录内的src文件夹到本小程序源码的`copy-rec-src`文件夹内，直接当做小程序源码调用，好使；或者按需copy仅你require引用到了的js文件到小程序项目中，免得小程序源码过大（一般编译时会忽略掉未引用到的js文件）。
 
-> 已知问题：iOS上微信小程序基础库存在bug，canvas.drawImage(canvas)可能无法绘制，可能会导致可视化插件WaveSurferView在iOS小程序上不能正确显示，其他可视化插件、Android、开发工具均无此兼容性问题；相关链接：[issues#202](https://github.com/xiangyuecn/Recorder/issues/202)，[社区内2023-11-16说在修](https://developers.weixin.qq.com/community/develop/doc/000aaca2148dc8a235a0fb8c66b000)。
+
+[​](?)
+
+## 语音通话、回声消除、声音外放
+
+由于BufferStreamPlayer不支持在小程序中使用，如需实时播放语音，可使用`wx.createWebAudioContext().createBufferSource()`来进进行播放，请参考[/assets/runtime-codes/fragment.playbuffer.js](../../assets/runtime-codes/fragment.playbuffer.js)播放代码；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
+
+配置audioTrackSet可尝试打开回声消除，或者切换成听筒播放，降低回声。
+``` js
+//打开回声消除，仅Android上会生效，实际为RecorderManager.start的audioSource参数
+RecordApp.Start({
+    ... 更多配置参数请参考RecordApp文档
+    //配置echoCancellation后，相当于给android_audioSource配置为7
+    ,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    
+    //Android指定麦克风源，0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)
+    ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高
+});
+
+//尝试切换成听筒播放，iOS不支持配置回声消除，可使用听筒播放，大幅减弱回声
+wx.setInnerAudioOption({ speakerOn:false })
+//尝试切换成扬声器外放
+wx.setInnerAudioOption({ speakerOn:true })
+```
 
 
 [​](?)
+
+## 已知问题
+
+iOS上微信小程序基础库存在bug，canvas.drawImage(canvas)可能无法绘制，可能会导致可视化插件WaveSurferView在iOS小程序上不能正确显示，其他可视化插件、Android、开发工具均无此兼容性问题；相关链接：[issues#202](https://github.com/xiangyuecn/Recorder/issues/202)，[社区内2023-11-16说在修](https://developers.weixin.qq.com/community/develop/doc/000aaca2148dc8a235a0fb8c66b000)。
+
 
 [​](?)
 

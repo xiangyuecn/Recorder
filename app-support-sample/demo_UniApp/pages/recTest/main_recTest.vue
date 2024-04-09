@@ -112,11 +112,21 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 	<view style="padding:5px 10px 0">
 		<view><checkbox :checked="takeoffEncodeChunkSet" @click="takeoffEncodeChunkSet=!takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk，App端推荐开启）</checkbox> {{takeoffEncodeChunkMsg}}</view>
 		<view><checkbox :checked="appUseH5Rec" @click="appUseH5RecClick">App里面总是使用Recorder H5录音（勾选后不启用原生录音插件和uts插件）</checkbox></view>
+		
+		<view><checkbox :checked="useAEC" @click="useAEC=!useAEC">尝试启用回声消除（echoCancellation）</checkbox></view>
+		
+		<view><checkbox :checked="showUpload" @click="showUpload=!showUpload">录音上传、保存本地文件+播放、实时语音通话聊天对讲</checkbox></view>
 	</view>
 	
 	<!-- 手撸播放器 -->
 	<view style="padding-top:10px">
 		<TestPlayer ref="player" />
+	</view>
+	
+	<!-- 上传、语音通话等功能 -->
+	<view v-show="showUpload">
+		<TestUploadView />
+		<TestRtVoiceView />
 	</view>
 	
 	<!-- 日志输出 -->
@@ -126,13 +136,29 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 				{{obj.txt}}
 			</view>
 		</view>
+		<view v-if="reclogLast" style="position:fixed;z-index:2;width:20vw;min-width:200px;max-height:100px;overflow:auto;right:0;bottom:0;background:#fff;padding:5px 10px;border-radius:6px 0 0 0;box-shadow:-1px -1px 3px #ddd;font-size:13px">
+			<view :style="{color:reclogLast.color==1?'red':reclogLast.color==2?'green':reclogLast.color}">
+				{{reclogLast.txt}}
+			</view>
+		</view>
 	</view>
 	<view style="padding-top:80px"></view>
 	
 	<!-- 更多功能按钮 -->
 	<view style="padding:10px 10px">
-		<button size="mini" type="default" @click="loadVConsole">显示vConsole</button>
+		<view>
+			<navigator url="page_vue3____composition_api" style="display: inline;">
+				<button size="mini" type="default">vue3组合式api页面</button>
+			</navigator>
+			
+			<button size="mini" type="default" @click="loadVConsole">显示vConsole</button>
+		</view>
+		<button size="mini" type="default" @click="speakerOnClick">切换成扬声器外放</button>
+		<button size="mini" type="default" @click="speakerOffClick">切换成听筒播放</button>
+		
+		<button size="mini" type="default" @click="testNativePlugin">测试原生插件调用</button>
 	</view>
+	<TestNativePluginView ref="testNP" />
 	
 	<!-- 文档地址提示 -->
 	<view style="height:10px;background:#eee"></view>
@@ -142,7 +168,7 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			<view>RecordApp的uni-app支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp (github可以换成gitee)</view>
 		</view>
 		<view style="color:#0ab;font-size:22px;font-weight:bold">
-			如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~
+			如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~
 		</view>
 	</view>
 	
@@ -176,11 +202,18 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 
 
 <script>
+/**本例子是VUE的选项式 API (Options API)风格，vue2 vue3均支持，如果你使用的vue3 setup组合式 API (Composition API) 编写时，请在import后面取到当前实例this，在需要this的地方传vue3This变量即可，具体调用可以参考 page_vue3____composition_api.vue
+import { getCurrentInstance } from 'vue';
+var vue3This=getCurrentInstance().proxy; //必须定义到最外面，放import后面即可 */
+
 import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放器
+import TestUploadView from './test_upload_saveFile.vue'; //上传功能界面
+import TestRtVoiceView from './test_realtime_voice.vue'; //实时语音通话聊天对讲
+import TestNativePluginView from './test_native_plugin.vue'; //测试原生插件功能
 
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
-import Recorder from 'recorder-core';
+import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 /** H5、小程序环境中：引入需要的格式编码器、可视化插件，App环境中在renderjs中引入 **/
 // #ifdef H5 || MP-WEIXIN
@@ -198,6 +231,8 @@ import Recorder from 'recorder-core';
 	import 'recorder-core/src/extensions/frequency.histogram.view.js'
 	import 'recorder-core/src/extensions/lib.fft.js'
 	
+	//实时播放语音，仅支持h5
+	import 'recorder-core/src/extensions/buffer_stream.player.js'
 	//测试用根据简谱生成一段音乐
 	import 'recorder-core/src/extensions/create-audio.nmn2pcm.js'
 // #endif
@@ -227,20 +262,14 @@ var disableOgg=false;
 // #endif
 
 
-/** 可选：App中引入原生录音插件来进行录音，兼容性和体验更好 **/
-var RecNativePlugin=null;
-// #ifdef APP
-	var RecUtsPlugin=null; //【使用uts插件时先删除这句再解开下一句的注释】
-	// import * as RecUtsPlugin from "../../uni_modules/Recorder-UtsPlugin" 【uts插件开发中，暂不支持解开这行注释】
-	// var RecNativePlugin={nativePlugin:true}; //使用原生录音插件就解开这个注释，跟uts插件二选一
-// #endif
-// #ifndef APP
-	var RecUtsPlugin=null; //非App，给个变量
-// #endif
+/** 可选：App中引入原生录音插件来进行录音，兼容性和体验更好，原生插件市场地址: https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin （试用无任何限制）
+	在调用RecordApp.RequestPermission之前进行配置，建议放到import后面直接配置（全局生效）
+	也可以判断一下只在iOS上或Android上启用，不判断就都启用，比如判断iOS：RecordApp.UniIsApp()==2 */
+RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //目前仅支持原生插件，uts插件不可用
 
 
 export default {
-	components: { TestPlayer },
+	components: { TestPlayer,TestUploadView,TestRtVoiceView,TestNativePluginView },
 	data() {
 		return {
 			recType:"mp3"
@@ -249,7 +278,9 @@ export default {
 			
 			,takeoffEncodeChunkSet:false
 			,takeoffEncodeChunkMsg:""
+			,useAEC:false
 			,appUseH5Rec:false
+			,showUpload:false
 	
 			,recwaveChoiceKey:"WaveView"
 			,recpowerx:0
@@ -257,7 +288,7 @@ export default {
 			,pageDeep:0,pageNewPath:"main_recTest"
 			,disableOgg:disableOgg
 			,evalExecCode:""
-			,reclogs:[]
+			,reclogs:[],reclogLast:""
 		}
 	},
 	mounted() {
@@ -280,7 +311,6 @@ export default {
 		
 		//可选，立即显示出环境信息
 		this.reclog("正在执行Install，请勿操作...","#f60");
-		RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin; //提取设置一下，仅用于打日志
 		RecordApp.Install(()=>{
 			this.reclog("Install成功，环境："+this.currentKeyTag(),2);
 			this.reclog("请先请求录音权限，然后再开始录音");
@@ -311,11 +341,11 @@ export default {
 		}
 		
 		,recReq(){
-			//默认尝试启用原生录音插件支持，可以判断一下只在iOS上或Android上启用，不判断就都启用，比如判断iOS：RecordApp.UniIsApp()==2
-			RecordApp.UniNativeUtsPlugin=RecNativePlugin||RecUtsPlugin;
-			
-			if(this.appUseH5Rec){//明确使用h5录音
+			if(this.appUseH5Rec){//测试时指定使用h5录音
 				RecordApp.UniNativeUtsPlugin=null;
+			}else{
+				RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //恢复原生插件配置值
+				RecordApp.UniCheckNativeUtsPluginConfig(); //可以检查一下原生插件配置是否有效
 			}
 			
 			/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
@@ -328,10 +358,15 @@ export default {
 				this.reclog("当前是在App的renderjs中使用H5进行录音，iOS上只支持14.3以上版本，且iOS上每次进入页面后第一次请求录音权限时、或长时间无操作再请求录音权限时WebView均会弹出录音权限对话框，不同旧iOS版本（低于iOS17）下H5录音可能存在的问题在App中同样会存在；使用配套的原生录音插件或uts插件时无以上问题和版本限制，Android也无以上问题","#f60");
 			}
 			
+			if(this.useAEC){ //这个是Start中的audioTrackSet配置，在h5（H5、App+renderjs）中必须提前配置，因为h5中RequestPermission会直接打开录音
+				RecordApp.RequestPermission_H5OpenSet={ audioTrackSet:{ noiseSuppression:true,echoCancellation:true,autoGainControl:true } };
+			}
+			
 			this.reclog("正在请求录音权限...");
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
 			RecordApp.RequestPermission(()=>{
 				this.reclog(this.currentKeyTag()+" 已获得录音权限，可以开始录音了",2);
+				if(this.reqOkCall)this.reqOkCall(); this.reqOkCall=null; //留别的组件内调用的回调
 			},(msg,isUserNotAllow)=>{
 				if(isUserNotAllow){//用户拒绝了录音权限
 					//这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
@@ -351,6 +386,9 @@ export default {
 				type:this.recType
 				,sampleRate:this.recSampleRate
 				,bitRate:this.recBitRate
+				,audioTrackSet:!this.useAEC?null:{ //配置回声消除，H5、App、小程序均可用，但并不一定会生效；注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+					noiseSuppression:true,echoCancellation:true,autoGainControl:true
+				}
 				
 				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
 					//全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
@@ -368,6 +406,8 @@ export default {
 						wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
 					}
 					// #endif
+					//实时语音通话对讲，实时处理录音数据
+					if(this.wsVoiceProcess) this.wsVoiceProcess(buffers,powerLevel,duration,sampleRate,newBufferIdx);
 				}
 				,onProcess_renderjs:`function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
 					//App中在这里修改buffers才会改变生成的音频文件
@@ -401,6 +441,7 @@ export default {
 				this.reclog(this.currentKeyTag()+" 录制中："+this.recType
 					+" "+this.recSampleRate+" "+this.recBitRate+"kbps"
 					+(this.takeoffEncodeChunkSet?" takeoffEncodeChunk":"")
+					+(this.useAEC?" useAEC":"")
 					+(this.appUseH5Rec?" appUseH5Rec":""),2);
 				//创建音频可视化图形绘制
 				this.initWaveStore();
@@ -452,6 +493,9 @@ export default {
 					aBuf=chunkData.buffer;
 					this.reclog("takeoffEncodeChunk接收到的音频片段，已合并成一个音频文件 "+aBuf.byteLength+"字节");
 				}
+				//用变量保存起来，别的地方调用
+				this.lastRecType=recSet.type;
+				this.lastRecBuffer=aBuf;
 				
 				//播放，部分格式会转码成wav播放
 				this.$refs.player.setPlayBytes(aBuf,aBuf_renderjs,duration,mime,recSet,Recorder);
@@ -470,6 +514,7 @@ export default {
 			var txt="["+t+"]"+msg;
 			console.log(txt);
 			this.reclogs.splice(0,0,{txt:txt,color:color});
+			this.reclogLast={txt:txt,color:color};
 		}
 		,recTypeClick(e){
 			var type=e.target.dataset.type;
@@ -485,8 +530,8 @@ export default {
 		
 		// 可视化波形，这里是一次性创建多个波形，可以参考page_i18n.vue只创建一个波形会简单一点
 		,initWaveStore(){
-			if(this.waveStore)return;
-			var store=this.waveStore=this.waveStore||{};
+			//if(isWx && this.waveStore)return;//可以限制初始化一次；如果你的canvas所在的view存在v-if之类的会重新创建了对应的view，必须将波形重新进行初始化才能使用；如果使用的是同一个view，重新初始化后如果上次的动画没有完成时，小程序中开头部分新的波形会和老的波形相互干扰，老动画完成后恢复正常，App、H5无此问题
+			var store=this.waveStore=this.waveStore||{};//这个测试demo会创建多个可视化，所以用个对象存起来，只有一个的时候请直接用个变量存一下即可 不用搞这么复杂
 			var webStore=`var store=this.waveStore=this.waveStore||{};`;//在renderjs中执行，this是renderjs模块的this
 			webStore+=`this.recwaveChoiceKey="${this.recwaveChoiceKey}";`;//把当前选中的波形也传过去
 			
@@ -622,6 +667,38 @@ export default {
 			}
 			// #endif
 		}
+		
+		//测试原生插件功能
+		,testNativePlugin(){
+			this.$refs.testNP.showTest();
+		}
+		//切换扬声器外放和听筒播放
+		,speakerOnClick(){
+			this.__setSpeakerOff(false);
+		}
+		,speakerOffClick(){
+			this.__setSpeakerOff(true);
+		}
+		,__setSpeakerOff(off){
+			// #ifdef APP
+			RecordApp.UniNativeUtsPluginCallAsync("setSpeakerOff",{off:off}).then(()=>{
+				this.reclog("已切换成"+(off?"听筒播放":"外放"),2);
+			}).catch((e)=>{
+				this.reclog("切换"+(off?"听筒播放":"外放")+"失败："+e.message,1);
+			});
+			return;
+			// #endif
+			// #ifdef MP-WEIXIN
+			wx.setInnerAudioOption({ speakerOn:!off, success:()=>{
+				this.reclog("已切换成"+(off?"听筒播放":"外放"),2);
+			}, fail:(e)=>{
+				this.reclog("切换"+(off?"听筒播放":"外放")+"失败："+e.errMsg,1);
+			}});
+			return;
+			// #endif
+			return this.reclog("目前仅App或小程序支持支持切换外放和听筒播放",1);
+		}
+		
 		,loadVConsole(){
 			var isApp=false, isH5=false;
 			/*#ifdef APP*/ isApp=true; /*#endif*/
@@ -664,7 +741,7 @@ export default {
 <script module="testMainVue" lang="renderjs">
 /**============= App中在renderjs中引入RecordApp，这样App中也能使用H5录音、音频可视化 =============**/
 /** 先引入Recorder **/
-import Recorder from 'recorder-core';
+import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 //按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
 import 'recorder-core/src/engine/mp3.js'
@@ -684,6 +761,8 @@ import 'recorder-core/src/extensions/wavesurfer.view.js'
 import 'recorder-core/src/extensions/frequency.histogram.view.js'
 import 'recorder-core/src/extensions/lib.fft.js'
 
+//实时播放语音，仅支持h5
+import 'recorder-core/src/extensions/buffer_stream.player.js'
 //测试用根据简谱生成一段音乐
 import 'recorder-core/src/extensions/create-audio.nmn2pcm.js'
 

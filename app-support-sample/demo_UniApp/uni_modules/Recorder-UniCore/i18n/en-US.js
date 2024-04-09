@@ -144,25 +144,13 @@ i18n.put(putSet,
 ,"CjMb:"+ //no args
        "Invalid BigBytes return data"
 
-//@@zh="非App环境，不支持保存本地文件"
-,"kxOd:"+ //no args
-       "Non-App environment does not support saving local files"
-
 //@@zh="保存文件{1}失败："
 ,"UqfI:"+ //args: {1}
        "Failed to save file {1}: "
 
-//@@zh="renderjs中不支持设置RecordApp.UniNativeUtsPlugin"
-,"l6sY:"+ //no args
-       "Setting RecordApp.UniNativeUtsPlugin is not supported in renderjs"
-
-//@@zh="配置了RecordApp.UniNativeUtsPlugin，但当前App未打包进原生录音插件[{1}]"
-,"SCW9:"+ //args: {1}
-       "RecordApp.UniNativeUtsPlugin is configured, but the current App is not packaged with the native recording plug-in [{1}]"
-
-//@@zh="提供的RecordApp.UniNativeUtsPlugin值不是RecordApp的uts原生录音插件"
-,"TGMm:"+ //no args
-       "The provided RecordApp.UniNativeUtsPlugin value is not RecordApp’s uts native recording plug-in"
+//@@zh="当前环境未支持保存本地文件"
+,"kxOd:"+ //no args
+       "The current environment does not support saving local files"
 
 //@@zh=" | RecordApp的uni-app支持文档和示例：{1} "
 ,"1f2V:"+ //args: {1}
@@ -224,9 +212,25 @@ i18n.put(putSet,
 ,"dl4f:"+ //args: {1}
        "{1} returned unknown content, "
 
+//@@zh="renderjs中不支持设置RecordApp.UniNativeUtsPlugin"
+,"l6sY:"+ //no args
+       "Setting RecordApp.UniNativeUtsPlugin is not supported in renderjs"
+
+//@@zh="配置了RecordApp.UniNativeUtsPlugin，但当前App未打包进原生录音插件[{1}]"
+,"SCW9:"+ //args: {1}
+       "RecordApp.UniNativeUtsPlugin is configured, but the current App is not packaged with the native recording plug-in [{1}]"
+
+//@@zh="提供的RecordApp.UniNativeUtsPlugin值不是RecordApp的uts原生录音插件"
+,"TGMm:"+ //no args
+       "The provided RecordApp.UniNativeUtsPlugin value is not RecordApp’s uts native recording plug-in"
+
 //@@zh="未配置RecordApp.UniNativeUtsPlugin原生录音插件"
 ,"H753:"+ //no args
        "RecordApp.UniNativeUtsPlugin native recording plug-in is not configured"
+
+//@@zh="需在App逻辑层中调用原生插件功能"
+,"MrBx:"+ //no args
+       "The native plug-in function needs to be called in the App logic layer"
 
 //@@zh="未开始录音，不可以调用{1}"
 ,"0FGq:"+ //args: {1}

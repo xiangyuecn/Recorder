@@ -15,9 +15,9 @@ var IsMobile=/mobile/i.test(navigator.userAgent);
 var IsCN=/\b(zh|cn)\b/i.test(navigator.language.replace(/_/g," "));
 
 //调用$T返回一个国际化文本，如果支持的话
-var Html_$T=function(zh){
+var Html_$T=function(zh,z,v){
 	if(window.Html_$T)return window.Html_$T.apply(null,arguments);
-	return zh.replace(/^.+?::/,"");
+	return zh.replace(/^.+?::/,"").replace("{1}",v);
 };
 
 var DonateWidget=function(set){

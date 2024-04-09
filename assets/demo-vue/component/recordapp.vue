@@ -162,7 +162,7 @@ a:hover{
 <script>
 /*********加载Recorder需要的文件***********/
 //引入核心文件，换成require也是一样的
-import Recorder from 'recorder-core'
+import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 //引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可
 import 'recorder-core/src/engine/mp3'
@@ -241,6 +241,7 @@ module.exports={
 				type:This.type
 				,bitRate:+This.bitRate
 				,sampleRate:+This.sampleRate
+				//,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true} //配置回声消除，注意：H5中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
 				,onProcess:function(buffers,powerLevel,duration,sampleRate){
 					This.duration=duration;
 					This.durationTxt=This.formatMs(duration,1);
@@ -324,12 +325,12 @@ module.exports={
 			
 			//本例子假设使用原始XMLHttpRequest请求方式，实际使用中自行调整为自己的请求方式
 			//录音结束时拿到了blob文件对象，可以用FileReader读取出内容，或者用FormData上传
-			var api="https://xx.xx/test_request";
-			var onreadystatechange=function(title){
+			var api="http://127.0.0.1:9528";
+			var onreadystatechange=function(xhr,title){
 				return function(){
 					if(xhr.readyState==4){
 						if(xhr.status==200){
-							This.reclog(title+"上传成功",2);
+							This.reclog(title+"上传成功"+' <span style="color:#999">response: '+xhr.responseText+'</span>',2);
 						}else{
 							This.reclog(title+"没有完成上传，演示上传地址无需关注上传结果，只要浏览器控制台内Network面板内看到的请求数据结构是预期的就ok了。", "#d8c1a0");
 							
@@ -338,7 +339,7 @@ module.exports={
 					};
 				};
 			};
-			This.reclog("开始上传到"+api+"，请求稍后...","#f60");
+			This.reclog("开始上传到"+api+"，请稍候... （你可以先到源码 /assets/node-localServer 目录内执行 npm run start 来运行本地测试服务器）");
 
 			/***方式一：将blob文件转成base64纯文本编码，使用普通application/x-www-form-urlencoded表单上传***/
 			var reader=new FileReader();
@@ -349,9 +350,9 @@ module.exports={
 				//...其他表单参数
 				
 				var xhr=new XMLHttpRequest();
-				xhr.open("POST", api);
+				xhr.open("POST", api+"/uploadBase64");
 				xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
-				xhr.onreadystatechange=onreadystatechange("上传方式一【Base64】");
+				xhr.onreadystatechange=onreadystatechange(xhr,"上传方式一【Base64】");
 				xhr.send(postData);
 			};
 			reader.readAsDataURL(blob);
@@ -362,8 +363,8 @@ module.exports={
 			//...其他表单参数
 			
 			var xhr=new XMLHttpRequest();
-			xhr.open("POST", api);
-			xhr.onreadystatechange=onreadystatechange("上传方式二【FormData】");
+			xhr.open("POST", api+"/upload");
+			xhr.onreadystatechange=onreadystatechange(xhr,"上传方式二【FormData】");
 			xhr.send(form);
 		}
 		,recDownLast:function(){

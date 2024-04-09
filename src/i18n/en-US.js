@@ -548,6 +548,10 @@ i18n.put(putSet,
  "0XYC:"+ //no args
        "The getAudioSrc method is obsolete: please use getMediaStream directly and then assign it to audio.srcObject, it is only allowed to call this method in browsers that do not support srcObject and assign it to audio.src for compatibility"
 
+//@@zh="start被stop终止"
+,"6DDt:"+ //no args
+       "start is terminated by stop"
+
 //@@zh="{1}多次start"
 ,"I4h4:"+ //args: {1}
        "{1} repeat start"
@@ -559,10 +563,6 @@ i18n.put(putSet,
 //@@zh="（注意：ctx不是running状态，start需要在用户操作(触摸、点击等)时进行调用，否则会尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）"
 ,"JwDm:"+ //no args
        " (Note: ctx is not in the running state, start needs to be called when the user operates (touch, click, etc.), otherwise it will try to perform ctx.resume, which may cause compatibility issues (only iOS), please refer to the runningContext configuration in the document) "
-
-//@@zh="start被stop终止"
-,"6DDt:"+ //no args
-       "start is terminated by stop"
 
 //@@zh="此浏览器的AudioBuffer实现不支持动态特性，采用兼容模式"
 ,"qx6X:"+ //no args
@@ -700,9 +700,9 @@ i18n.put(putSet,
  "uXtA:"+ //args: {1}
        "Duplicate import {1}"
 
-//@@zh="同时多次调用：{1}，旧的回调被丢弃"
+//@@zh="注意：因为并发调用了其他录音相关方法，当前 {1} 的调用结果已被丢弃且不会有回调"
 ,"kIBu:"+ //args: {1}
-       "Called multiple times at the same time: {1}, old callbacks are discarded"
+       "Note: Because other recording-related methods are called concurrently, the current call result of {1} has been discarded and there will be no callback"
 
 //@@zh="重复注册{1}"
 ,"ha2K:"+ //args: {1}

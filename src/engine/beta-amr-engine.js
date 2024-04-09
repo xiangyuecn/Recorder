@@ -114,17 +114,30 @@ function Create(){
 	
 	
 	var AMR = {
+		//获取实时解码器
 		GetDecoder:function(){
-			return new Decoder();
+			return Create().DecG_(); //重新获得一个AMR对象操作，避免出错后内存无法重新分配
 		}
+		//获取实时编码器
 		,GetEncoder:function(bitRate){
-			return new Encoder(bitRate);
+			return Create().EncG_(bitRate);
+		}
+		//解码amr文件得到pcm
+		,decode: function (amrBytes,True,False) {
+			Create().dec__(amrBytes,True,False);
+		}
+		//编码pcm成amr文件
+		,encode: function (pcm,True,False,bitRate) {//pcm : 8000hz Int16Array
+			Create().enc__(pcm,True,False,bitRate);
 		}
 		
-		//解码amr文件得到pcm
-		,decode: (function (amrBytes,True,False) {
-			var This=this,decode=This.GetDecoder();
+		,DecG_: function(){ return new Decoder() }
+		,dec__: function (amrBytes,True,False) {
+			var This=this,decode=new Decoder();
 			var buffers=[],size=0;
+			var endFlush=function(){//flush没有结果，只做释放
+				try{ decode.flush() }catch(e){ console.error(e) }
+			};
 			
 			var inOffset=0,hasHead=0;
 			if (String.fromCharCode.apply(null, amrBytes.subarray(0, this.AMR_HEADER.length)) == this.AMR_HEADER) {
@@ -144,13 +157,13 @@ function Create(){
 						setTimeout(run);
 						return;
 					};
-					var buf=decode.flush();
-					buffers.push(buf); size+=buf.length;
 				}catch(e){
 					console.error(e);
+					endFlush();
 					False("AMR Decoder: "+(hasHead?e.message:"Not an amr audio file"));
 					return;
 				};
+				endFlush();
 				
 				var pcm=new Int16Array(size);
 				for(var i=0,j=0;i<buffers.length;i++){
@@ -160,11 +173,14 @@ function Create(){
 				True(pcm);
 			};
 			run();
-		}),
-		//编码pcm成amr文件
-		encode: (function (pcm,True,False,bitRate) {//pcm : 8000hz Int16Array
-			var This=this,encode=This.GetEncoder(bitRate);
+		}
+		,EncG_: function(bitRate){ return new Encoder(bitRate) }
+		,enc__: function (pcm,True,False,bitRate) {//pcm : 8000hz Int16Array
+			var This=this,encode=new Encoder(bitRate);
 			var buffers=[This.GetHeader()],size=buffers[0].length;
+			var endFlush=function(){//flush没有结果，只做释放
+				try{ encode.flush() }catch(e){ console.error(e) }
+			};
 			
 			var blockSize=40000; blockSize-=blockSize%This.PCM_BUFFER_COUNT;//5秒数据一次
 			var inOffset=0;
@@ -180,13 +196,13 @@ function Create(){
 						setTimeout(run);
 						return;
 					};
-					var buf=encode.flush();
-					buffers.push(buf); size+=buf.length;
 				}catch(e){ //精简代码调用了abort
 					console.error(e);
+					endFlush();
 					False("AMR Encoder: "+e.message);
 					return;
 				};
+				endFlush();
 				
 				var bytes=new Uint8Array(size);
 				for(var i=0,j=0;i<buffers.length;i++){
@@ -196,7 +212,7 @@ function Create(){
 				True(bytes);
 			};
 			run();
-		}),
+		},
 		//获取AMR头二进制数据
 		GetHeader:function(){
 			var str=this.AMR_HEADER;
@@ -2060,8 +2076,12 @@ function Create(){
                     if (R ? q << 16 >> 16 == 0 | r << 16 >> 16 < 61 : 0) {
                         r = b[eb >> 1] | 0;
                         q = b[ib >> 1] | 0
-                    } else {
-                        _abort();//fix cc 精简
+                    } else { //不可精简
+                        b[G >> 1] = b[eb >> 1] | 0;
+                        r = b[E >> 1] | 0;
+                        b[eb >> 1] = r;
+                        b[ib >> 1] = 0;
+                        q = 0
                     }
                     se(c[J >> 2] | 0, r, q, 40, 0, Ta);
                     o = 0;
@@ -8054,8 +8074,21 @@ function Create(){
                     break
                 }
                 c[h >> 2] = 1;
-                if (o) j = 1; else {
-                    _abort();//fix cc 精简
+                if (o) j = 1; else {//不可精简
+                    j = d;
+                    i = 0;
+                    while (1) {
+                        i = (Z(b[e >> 1] >> 2, b[j >> 1] | 0) | 0) + i | 0;
+                        i = i + (Z(b[e + 2 >> 1] >> 2, b[j + 2 >> 1] | 0) | 0) | 0;
+                        i = i + (Z(b[e + 4 >> 1] >> 2, b[j + 4 >> 1] | 0) | 0) | 0;
+                        i = i + (Z(b[e + 6 >> 1] >> 2, b[j + 6 >> 1] | 0) | 0) | 0;
+                        k = k + -1 << 16 >> 16;
+                        if (!(k << 16 >> 16)) break; else {
+                            j = j + 8 | 0;
+                            e = e + 8 | 0
+                        }
+                    }
+                    j = i << 1 | 1
                 }
                 e = (pe(j) | 0) << 16 >> 16;
                 i = e + 65532 & 65535;

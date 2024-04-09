@@ -713,13 +713,22 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 		//ws._s=0 0连接中 1opening 2openOK 3stoping 4closeing -1closed
 		//ws.isStop=0 1已停止识别
 		ws.onclose=function(){
+			if(ws._s==-1)return;
 			var isFail=ws._s!=4;
 			ws._s=-1;
 			This.log("["+id+"]close");
 			
 			isFail&&connFail(ws._err||"连接"+id+"已关闭");
 		};
+		ws.onerror=function(e){
+			if(ws._s==-1)return;
+			var msg="网络连接错误";
+			ws._err||(ws._err=msg);
+			This.log("["+id+"]"+msg,1);
+			ws.onclose();
+		};
 		ws.onopen=function(){
+			if(ws._s==-1)return;
 			ws._s=1;
 			CLog("[ASR "+id+"]open");
 			ws._task=uuid();
@@ -741,9 +750,6 @@ fn.prototype=ASR_Aliyun_Short.prototype={
 				}
 				,context:{ }
 			}));
-		};
-		ws.onerror=function(e){
-			This.log("["+id+"]连接出错",1);
 		};
 		ws.onmessage=function(e){
 			var data=e.data;

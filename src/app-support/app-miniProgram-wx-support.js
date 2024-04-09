@@ -122,6 +122,7 @@ var onRecFn=function(pcm,sampleRate){
 var hasPermission=false;
 var requestPermission=function(success,fail){
 	clearCurMg();
+	initSys();
 	if(hasPermission){
 		success(); return;
 	}
@@ -129,7 +130,7 @@ var requestPermission=function(success,fail){
 	mg.onStart(function(){
 		hasPermission=true;
 		if(next){ next=0;
-			mg.stop();
+			stopMg(mg);
 			success();
 		}
 	});
@@ -137,30 +138,48 @@ var requestPermission=function(success,fail){
 		var msg="请求录音权限出现错误："+res.errMsg;
 		CLog(msg+"。"+UserPermissionMsg,1,res);
 		if(next){ next=0;
-			mg.stop();
+			stopMg(mg);
 			fail(msg,true);
 		}
 	});
-	newStart(mg);
+	newStart("req",mg);
 };
 var UserPermissionMsg="请自行检查wx.getSetting中的scope.record录音权限，如果用户拒绝了权限，请引导用户到小程序设置中授予录音权限。";
 
-var curMg,isDev;
+var curMg,mgStime=0;
 var clearCurMg=function(){
 	var old=curMg;curMg=null;
-	if(old){
-		old.stop();
-	}
+	if(old){ stopMg(old) }
 };
-var newStart=function(mg){ //统一参数进行start调用，不然开发工具上热更新参数不一样直接卡死
-	mg.start({
+var stopMg=function(mg){
+	mgStime=Date.now();
+	mg.stop();
+};
+var newStart=function(tag,mg){ //统一参数进行start调用，不然开发工具上热更新参数不一样直接卡死
+	var obj={
 		duration:600000
 		,sampleRate:48000 //pc端无效
 		,encodeBitRate:320000
 		,numberOfChannels:1
 		,format:"PCM"
 		,frameSize:isDev?1:4 //4=48/12
-	});
+	};
+	var set=onRecFn.param||{},aec=(set.audioTrackSet||{}).echoCancellation;
+	if(sys.platform=="android"){ //Android指定麦克风源 MediaRecorder.AudioSource，0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)
+		var source=set.android_audioSource,asVal="";
+		if(source==null && aec) source=7;
+		if(source==null) source=App.Default_Android_AudioSource;
+		if(source==1) asVal="mic";
+		if(source==5) asVal="camcorder";
+		if(source==6) asVal="voice_recognition";
+		if(source==7) asVal="voice_communication";
+		if(asVal)obj.audioSource=asVal;
+	};
+	if(aec){
+		CLog("mg注意：iOS下无法配置回声消除，Android无此问题，建议都启用听筒播放避免回声：wx.setInnerAudioOption({speakerOn:false})",3);
+	};
+	CLog("["+tag+"]mg.start obj",obj);
+	mg.start(obj);
 };
 var recOnShow=function(){
 	if(curMg && curMg.__pause){
@@ -170,19 +189,13 @@ var recOnShow=function(){
 };
 var recStart=function(success,fail){
 	clearCurMg();
-	if(isDev==null){
-		var sys=wx.getSystemInfoSync();
-		isDev=sys.platform=="devtools"?1:0;
-		if(isDev){
-			devWebCtx=wx.createWebAudioContext();
-		}
-	}
+	initSys();
 	devWebMInfo={};
 	if(isDev){
 		CLog("RecorderManager.onFrameRecorded 在开发工具中测试返回的是webm格式音频，将会尝试进行解码",3);
 	}
 	
-	var startIsEnd=false;
+	var startIsEnd=false,startCount=1;
 	var startEnd=function(err){
 		if(startIsEnd)return; startIsEnd=true;
 		if(err){
@@ -216,41 +229,80 @@ var recStart=function(success,fail){
 	});
 	mg.onError(function(res){
 		if(mg!=curMg)return;
-		CLog("mg onError 开始录音出错："+res.errMsg+"。"+UserPermissionMsg,1,res);
-		startEnd("开始录音出错："+res.errMsg);
+		var msg=res.errMsg,tag="mg onError 开始录音出错：";
+		if(!startIsEnd && !mg._srt && /fail.+is.+recording/i.test(msg)){
+			var st=600-(Date.now()-mgStime); //距离上次停止未超过600毫秒，重试
+			if(st>0){ st=Math.max(100,st);
+				CLog(tag+"等待"+st+"ms重试",3,res);
+				setTimeout(function(){
+					if(mg!=curMg)return; mg._srt=1;
+					CLog(tag+"正在重试",3);
+					newStart("retry start",mg);
+				}, st);
+				return;
+			};
+		};
+		CLog(startCount>1?tag+"可能无法继续录音["+startCount+"]。"+msg
+			:tag+msg+"。"+UserPermissionMsg,1,res);
+		startEnd("开始录音出错："+msg);
 	});
 	mg.onStart(function(){
 		if(mg!=curMg)return;
 		CLog("mg onStart 已开始录音");
+		mg._srt=0; //下次开始失败可以重试
+		mg._st=Date.now();
 		startEnd();
 	});
 	mg.onStop(function(res){
 		CLog("mg onStop res:",res);
 		if(mg!=curMg)return;
+		if(!mg._st || Date.now()-mg._st<600){ CLog("mg onStop但已忽略",3); return }
 		CLog("mg onStop 已停止录音，正在重新开始录音...");
-		newStart(mg);
+		startCount++;
+		mg._st=0;
+		newStart("restart",mg);
 	});
-	mg.onFrameRecorded(function(res){
-		if(mg!=curMg)return;
-		if(!startIsEnd)CLog("mg onStart未触发，但收到了onFrameRecorded",3);
-		startEnd();
-		
-		var aBuf=res.frameBuffer;
-		if(!aBuf.byteLength){
-			return;
-		}
-		if(isDev){
-			devWebmDecode(new Uint8Array(aBuf));
-		}else{
-			onRecFn(new Int16Array(aBuf),48000);
-		};
-	});
-	newStart(mg);
+	
+	var start0=function(){
+		mg.onFrameRecorded(function(res){
+			if(mg!=curMg)return;
+			if(!startIsEnd)CLog("mg onStart未触发，但收到了onFrameRecorded",3);
+			startEnd();
+			
+			var aBuf=res.frameBuffer;
+			if(!aBuf || !aBuf.byteLength){
+				return;
+			}
+			if(isDev){
+				devWebmDecode(new Uint8Array(aBuf));
+			}else{
+				onRecFn(new Int16Array(aBuf),48000);
+			};
+		});
+		newStart("start",mg);
+	};
+	
+	var st=600-(Date.now()-mgStime); //距离上次停止未超过600毫秒，等待一会，一般是第一次请求权限后立马开始录音造成的（录音参数不一样，不共享同一个mg）
+	if(st>0){ st=Math.max(100,st);
+		CLog("mg.start距stop太近需等待"+st+"ms",3);
+		setTimeout(function(){ if(mg!=curMg)return; start0(); }, st);
+	}else{
+		start0();
+	};
 };
 
 
 
 
+var isDev,sys;
+var initSys=function(){
+	if(sys)return;
+	sys=wx.getSystemInfoSync();
+	isDev=sys.platform=="devtools"?1:0;
+	if(isDev){
+		devWebCtx=wx.createWebAudioContext();
+	}
+};
 
 
 /****开发工具内录音返回的webm数据解码成pcm，方便测试****/

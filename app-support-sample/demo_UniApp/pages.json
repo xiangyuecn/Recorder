@@ -41,6 +41,12 @@
 		    "style" : {
 		        "navigationBarTitleText": "RecordApp纯renderjs调用 - uni-app"
 		    }
+		},
+		{
+		    "path" : "pages/recTest/page_vue3____composition_api",
+		    "style" : {
+		        "navigationBarTitleText": "RecordApp vue3组合式api测试 - uni-app"
+		    }
 		}
     ],
 	"globalStyle": {

@@ -48,8 +48,8 @@ RecordApp是在[Recorder](../)基础上为不同平台环境提供底层适配�
 
 [​](?Ref=ImportCode&Start)可以使用`import`、`require`、`html script`等你适合的方式来引入js文件，下面的以import为主要参考，其他引入方式根据文件路径自行调整一下就可以了。
 ``` javascript
-//必须引入的Recorder核心（文件路径是 /src/recorder-core.js 下同）
-import Recorder from 'recorder-core' //这个是npm安装后的引入方式，使用import、require都行；recorder-core会自动往window（浏览器环境）或Object（非浏览器环境）下挂载名称为Recorder对象，全局可调用Recorder
+//必须引入的Recorder核心（文件路径是 /src/recorder-core.js 下同），使用import、require都行；recorder-core会自动往window（浏览器环境）或Object（非浏览器环境）下挂载名称为Recorder对象，全局可调用Recorder
+import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 //import './你clone的目录/src/recorder-core.js' //clone源码可以按这个方式引入，下同
 //require('./你clone的目录/src/recorder-core.js') //clone源码可以按这个方式引入，下同
 //<script src="你clone的目录/src/recorder-core.js"> //这是html中script方式引入，下同
@@ -62,7 +62,7 @@ import 'recorder-core/src/engine/mp3-engine' //如果此格式有额外的编码
 //比如 import 'recorder-core/recorder.mp3.min' //已包含recorder-core和mp3格式支持
 //比如 <script src="你clone的目录/recorder.mp3.min.js">
 
-//可选的插件支持项
+//可选的插件支持项，把需要的插件按需引入进来即可
 import 'recorder-core/src/extensions/waveview'
 
 /****以上均为Recorder的相关文件，下面是RecordApp需要的支持文件****/
@@ -132,6 +132,8 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
 ``` javascript
 /**请求录音权限，Start调用前至少要调用一次RequestPermission**/
 var recReq=function(success){
+    //RecordApp.RequestPermission_H5OpenSet={ audioTrackSet:{ noiseSuppression:true,echoCancellation:true,autoGainControl:true } }; //这个是Start中的audioTrackSet配置，在h5中必须提前配置，因为h5中RequestPermission会直接打开录音
+    
     RecordApp.RequestPermission(function(){
         //注意：有使用到H5录音时，为了获得最佳兼容性，建议RequestPermission、Start至少有一个应当在用户操作（触摸、点击等）下进行调用
         success&&success();
@@ -145,6 +147,9 @@ var recStart=function(success){
     //开始录音的参数和Recorder的初始化参数大部分相同
     RecordApp.Start({
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
+        /*,audioTrackSet:{ //可选，如果需要同时播放声音（比如语音通话），需要打开回声消除（打开后声音可能会从听筒播放，部分环境下（如小程序、uni-app原生接口）可调用接口切换成扬声器外放）
+            //注意：H5中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+            echoCancellation:true,noiseSuppression:true,autoGainControl:true} */
         ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //录音实时回调，大约1秒调用12次本回调，buffers为开始到现在的所有录音pcm数据块(16位小端LE)
             //可实时上传（发送）数据，可实时绘制波形，ASR语音识别，使用可参考Recorder
@@ -246,7 +251,7 @@ public void onPermissionRequest(PermissionRequest request) {
 
 
 ### iOS App录音权限
-在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限。
+在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限；注意：iOS App需要在项目Background Modes中勾选Audio才能在后台保持录音，不然App切到后台后立马会停止录音。
 
 iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
 
@@ -272,7 +277,7 @@ uni-app项目当需要编译成Android、iOS App时，需要在 `manifest.json` 
 
 ## 【QQ群】交流与支持
 
-欢迎加QQ群：①群 781036591、②群 748359095，纯小写口令：`recorder`
+欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519，纯小写口令：`recorder`
 
 <img src="https://xiangyuecn.gitee.io/recorder/assets/qq_group_781036591.png" width="220px">
 
@@ -302,6 +307,7 @@ uni-app项目当需要编译成Android、iOS App时，需要在 `manifest.json` 
 
 `fail`: `fn(errMsg,isUserNotAllow)` 没有权限或者不能录音时回调，如果是用户主动拒绝的录音权限，除了有错误消息外，`isUserNotAllow=true`，方便程序中做不同的提示，提升用户主动授权概率
 
+注意：H5等环境中在请求权限时会调用Recorder的open方法打开录音，并保持打开直到Start时直接录音，会导致部分open会用到的配置参数在Start时不会生效，这些配置参数必须在请求录音权限前配置到`RecordApp.RequestPermission_H5OpenSet={...}`里面才会生效，主要为audioTrackSet、runningContext、sourceStream配置。
 
 ## 【静态方法】RecordApp.Start(set,success,fail)
 开始录音，需先调用`RecordApp.RequestPermission`；成功开始录音后会回调`success()`，失败会回调`fail(errMsg)`。
@@ -334,14 +340,14 @@ set配置默认值（和Recorder的初始化参数大部分相同）：
                 //当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；环境要求比较苛刻：如果当前环境不支持实时编码处理，将在Start时直接走fail逻辑
                 //因此提供此回调后调用Stop方法将无法获得有效的音频数据，因为编码器内没有音频数据，因此Stop时返回的数据长度为0
     
-    //*******H5录音专有配置******
+    //*******H5录音专有配置，部分参数在别的环境下可能也会生效******
         //,sourceStream:MediaStream Object
                 //可选直接提供一个媒体流，从这个流中录制、实时处理音频数据，请参考Recorder
 
         //,runningContext:AudioContext
                 //可选提供一个state为running状态的AudioContext对象(ctx)，请参考Recorder
 
-        /*,audioTrackSet:{ //请参考Recorder
+        /*,audioTrackSet:{ //请参考Recorder，echoCancellation在微信小程序、uni-app也可用；注意：H5等环境中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
              deviceId:"",groupId:"" //指定设备的麦克风，通过navigator.mediaDevices.enumerateDevices拉取设备列表，其中kind为audioinput的是麦克风
             ,noiseSuppression:true //降噪（ANS）开关，不设置时由浏览器控制（一般为默认打开），设为true明确打开，设为false明确关闭
             ,echoCancellation:true //回声消除（AEC）开关，取值和降噪开关一样

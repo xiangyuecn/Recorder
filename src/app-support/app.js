@@ -26,7 +26,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 var App={
-LM:"2023-12-01 20:18"
+LM:"2024-04-09 19:22"
 
 //当前使用的平台实现
 ,Current:0
@@ -52,7 +52,7 @@ var SID=App.__SID=function(){ return ++App.__SID_; };
 var Sync=App.__Sync=function(sid,tag,err){
 	if(App.__SID_!=sid){
 		if(tag){
-			CLog($T("kIBu::同时多次调用：{1}，旧的回调被丢弃",0,tag)+(err?", error: "+err:""),3);
+			CLog($T("kIBu::注意：因为并发调用了其他录音相关方法，当前 {1} 的调用结果已被丢弃且不会有回调",0,tag)+(err?", error: "+err:""),3);
 		}
 		return false;
 	}
@@ -110,7 +110,7 @@ App.__StopOnlyClearMsg=function(){
 };
 
 /****实现默认的H5统一接口*****/
-var KeyH5="Default-H5";
+var KeyH5="Default-H5",H5OpenSet=ReqTxt+"_H5OpenSet";
 (function(){
 var impl={
 	Support:function(call){
@@ -129,12 +129,24 @@ impl[ReqTxt]=function(sid,success,fail){ //impl.RequestPermission=function()
 		old.close();
 		App.__Rec=null;
 	};
+	h5Kill();
 	
-	var rec=Recorder();
+	//h5会提前打开录音，open时需要的配置只能单独配置
+	var h5Set=App[H5OpenSet]; App[H5OpenSet]=null;
+	
+	var rec=Recorder(h5Set||{});
 	rec.open(function(){
 		//rec.close(); keep stream Stop时再关，免得Start再次请求权限
 		success();
 	},fail);
+};
+var h5Kill=function(){ //释放检测权限时已打开的录音
+	if(Recorder.IsOpen()){
+		CLog("kill open...");
+		var rec=Recorder();
+		rec.open();
+		rec.close();
+	};
 };
 impl.Start=function(sid,set,success,fail){
 	var appRec=App.__Rec;
@@ -155,12 +167,7 @@ impl.Stop=function(sid,success,fail){
 	var appRec=App.__Rec;
 	var clearMsg=success?"":App.__StopOnlyClearMsg();
 	if(!appRec){
-		if(Recorder.IsOpen()){
-			//释放检测权限时已打开的录音
-			appRec=Recorder();
-			appRec.open();
-			appRec.close();
-		};
+		h5Kill(); //释放检测权限时已打开的录音
 		fail($T("bpvP::未开始录音")
 			+(clearMsg?" ("+clearMsg+")":""));
 		return;

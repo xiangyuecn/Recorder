@@ -371,6 +371,8 @@ $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 
 $(window).bind("error",function(e){
 	Runtime.Log('【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre>',1);
+}).bind('unhandledrejection',function(e){
+	Runtime.Log('【Promise Reject】:<pre>'+e.originalEvent.reason+'</pre>',1);
 });
 })();
 </script>
@@ -406,12 +408,13 @@ Runtime.CodeRunClick=function(isImport){
 	
 	try{
 		var code=$(".codeEdit").val();
-		window.eval(code);
+		window.eval(code+"\n\n//# sourceURL=RuntimeCodeEval");
 		Runtime.Log("代码已运行",2);
 	}catch(e){
 		if(e.message.indexOf("kill")+1){
 			return;
 		};
+		console.error(e);
 		Runtime.Log("运行出错:"+e.message+"<pre>"+e.stack+"</pre>",1);
 	};
 };
@@ -1142,6 +1145,7 @@ var demos=[
 ,{n:"【测试】【信号处理】FFT频域分析ECharts频谱曲线图",k:"dsp.test.fft.analysis"}
 ,{n:"【测试】WebM格式解析并提取音频",k:"test.webm.extract_audio"}
 ,{n:"【测试】G711、G72X编码和解码播放",k:"test.g7xx.engine"}
+,{n:"【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob",k:"lib.js-binary-bytes"}
 ,{n:"【测试】音乐合成-用波形函数将歌曲简谱文本转成PCM",k:"test.create-audio.nmn2pcm"}
 ,{n:"【测试】音频可视化相关插件测试",k:"test.extensions.visualization"}
 

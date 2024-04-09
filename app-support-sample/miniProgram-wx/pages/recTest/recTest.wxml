@@ -98,7 +98,7 @@
 		<text selectable="true" style="user-select:auto">RecordApp的微信小程序支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx (github可以换成gitee)</text>
 	</view>
 	<view style="padding-top:20px;color:#0ab;font-size:22px;font-weight:bold">
-		<text selectable="true" style="user-select:auto">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~</text>
+		<text selectable="true" style="user-select:auto">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~</text>
 	</view>
 	<view style="padding-top:80px"></view>
 </view>

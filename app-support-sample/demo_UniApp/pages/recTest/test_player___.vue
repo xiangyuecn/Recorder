@@ -1,3 +1,4 @@
+<!-- 要播放录音请直接参考 test_upload_saveFile.vue 中的 audioPlayClick，代码更简单，这个不适合参考使用 -->
 <template>
 <view>
 <view :class="Class" :style="{display:show?'':'none'}">
@@ -67,7 +68,8 @@ export default {
 			return p;
 		}
 		,reclog(){
-			this.getPage().reclog.apply(this.$parent,arguments);
+			var p=this.getPage();
+			p.reclog.apply(p,arguments);
 		}
 		,getTexts(){
 			return {

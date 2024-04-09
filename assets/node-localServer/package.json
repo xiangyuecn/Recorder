@@ -1,0 +1,12 @@
+{
+  "name": "nodejs-localServer-http-websocket",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "recorder-core": "*",
+    "nodejs-websocket": "*",
+    "parse-multipart-data": "*"
+  }
+}

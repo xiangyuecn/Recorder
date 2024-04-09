@@ -73,8 +73,9 @@
 18. [【测试】【信号处理】FFT频域分析ECharts频谱曲线图](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.test.fft.analysis)
 19. [【测试】WebM格式解析并提取音频](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.webm.extract_audio)
 20. [【测试】G711、G72X编码和解码播放](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.g7xx.engine)
-21. [【测试】音乐合成-用波形函数将歌曲简谱文本转成PCM](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.create-audio.nmn2pcm)
-22. [【测试】音频可视化相关插件测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
+21. [【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
+22. [【测试】音乐合成-用波形函数将歌曲简谱文本转成PCM](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.create-audio.nmn2pcm)
+23. [【测试】音频可视化相关插件测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
 
 
 ### App Demo
@@ -91,7 +92,7 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 
 ## 【QQ群】交流与支持
 
-欢迎加QQ群：①群 781036591、②群 748359095，纯小写口令：`recorder`
+欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519，纯小写口令：`recorder`
 
 <img src="https://xiangyuecn.gitee.io/recorder/assets/qq_group_781036591.png" width="220px">
 
@@ -132,7 +133,7 @@ iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/maste
 > 
 > 获取泛域名通配符证书推荐：[在线免费申请（ZeroSSL、Let’s Encrypt）](https://xiangyuecn.gitee.io/acme-html-web-browser-client/ACME-HTML-Web-Browser-Client.html)；不建议自己生成根证书来签发域名证书，一个是流程复杂，每个设备均要导入根证书，致命的是很多现代浏览器不再信任用户目录下导入的根证书（Android）。
 > 
-> 如果必须http访问，Chrome中可尝试打开`chrome://flags/#unsafely-treat-insecure-origin-as-secure`，启用`Insecure origins treated as secure`，把你的地址含端口配置进去。
+> 如果必须http访问，Chrome中可尝试打开`chrome://flags/#unsafely-treat-insecure-origin-as-secure`，启用`Insecure origins treated as secure`，把你的地址含端口配置进去，然后重启浏览器。
 
 ## 【1】加载框架
 Recorder的所有js文件均为手动引入（内部不会自动引用），因此未被你引入的文件均可删除来精简源码大小。
@@ -150,7 +151,7 @@ Recorder的所有js文件均为手动引入（内部不会自动引用），因�
 <script src="src/engine/mp3.js"></script> <!--相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可-->
 <script src="src/engine/mp3-engine.js"></script> <!--如果此格式有额外的编码引擎（*-engine.js）的话，必须要加上-->
 
-<script src="src/extensions/waveview.js"></script>  <!--可选的插件支持项-->
+<script src="src/extensions/waveview.js"></script>  <!--可选的插件支持项，把需要的插件按需引入进来即可-->
 ```
 
 **方式二**：通过import/require引入
@@ -158,7 +159,7 @@ Recorder的所有js文件均为手动引入（内部不会自动引用），因�
 通过 npm 进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可
 ``` javascript
 //必须引入的核心，换成require也是一样的。注意：recorder-core会自动往window下挂载名称为Recorder对象，全局可调用window.Recorder，也许可自行调整相关源码清除全局污染
-import Recorder from 'recorder-core'
+import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 //引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统引入进来即可
 import 'recorder-core/src/engine/mp3'
@@ -167,7 +168,7 @@ import 'recorder-core/src/engine/mp3-engine' //如果此格式有额外的编码
 //以上三个也可以合并使用压缩好的recorder.xxx.min.js
 //比如 import Recorder from 'recorder-core/recorder.mp3.min' //已包含recorder-core和mp3格式支持
 
-//可选的插件支持项
+//可选的插件支持项，把需要的插件按需引入进来即可
 import 'recorder-core/src/extensions/waveview'
 
 //ts import 提示：npm包内已自带了.d.ts声明文件（不过是any类型）
@@ -350,7 +351,7 @@ public void onPermissionRequest(PermissionRequest request) {
 [​](?)
 
 ## 【附】iOS App - WebView中录音示例
-在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限。
+在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限；注意：iOS App需要在项目Background Modes中勾选Audio才能在后台保持录音，不然App切到后台后立马会停止录音。
 
 iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
 
@@ -483,6 +484,7 @@ set={
                 //可选直接提供一个媒体流，从这个流中录制、实时处理音频数据（当前Recorder实例独享此流）；不提供时为普通的麦克风录音，由getUserMedia提供音频流（所有Recorder实例共享同一个流）
                 //比如：audio、video标签dom节点的captureStream方法（实验特性，不同浏览器支持程度不高）返回的流；WebRTC中的remote流；自己创建的流等
                 //注意：流内必须至少存在一条音轨(Audio Track)，比如audio标签必须等待到可以开始播放后才会有音轨，否则open会失败
+                //注意：在rec.close时不会主动关闭此流，需自行管理关闭
 
         //,runningContext:AudioContext
                 //可选提供一个state为running状态的AudioContext对象(ctx)；默认会在rec.open时自动创建一个新的ctx，无用户操作（触摸、点击等）时调用rec.open的ctx.state可能为suspended，会在rec.start时尝试进行ctx.resume，如果也无用户操作ctx.resume可能不会恢复成running状态（目前仅iOS上有此兼容性问题），导致无法去读取媒体流，这时请提前在用户操作时调用Recorder.GetContext(true)来得到一个running状态AudioContext（用完需调用CloseNewCtx(ctx)关闭）
@@ -513,7 +515,9 @@ set={
 *注：如果录音结束后生成的音频文件的比特率和采样率和set中的不同，将会把set中的bitRate、sampleRate更新成音频文件的。*
 
 ### 【方法】rec.open(success,fail)
-请求打开录音资源，如果浏览器不支持录音、用户拒绝麦克风权限、或者非安全环境（非https、file等）将会调用`fail`；打开后需要调用`close`来关闭，因为浏览器或设备的系统可能会显示正在录音。
+普通的麦克风录音时：请求打开录音资源，如果浏览器不支持录音、用户拒绝麦克风权限、或者非安全环境（非https、file等）将会调用`fail`；打开后需要调用`close`来关闭，因为浏览器或设备的系统可能会显示正在录音。
+
+直接提供的流`set.sourceStream`时：会连接上此流进行录制，打开后同样需要调用`close`来断开连接，但不会主动关闭此流，需自行管理此sourceStream的关闭。
 
 `success`=fn();
 
@@ -527,7 +531,7 @@ set={
 ### 【方法】rec.close(success)
 关闭释放录音资源，释放完成后会调用`success()`回调。如果正在录音或者stop调用未完成前调用了close将会强制终止当前录音。
 
-注意：普通的麦克风录音时（所有Recorder实例共享同一个流），如果创建了多个Recorder对象并且调用了open（应避免同时有多个对象进行了open），只有最后一个新建的才有权限进行实际的资源释放（和多个对象close调用顺序无关），浏览器或设备的系统才会不再显示正在录音的提示；直接提供的流 set.sourceStream 无此问题（当前Recorder实例独享此流）。
+注意：普通的麦克风录音时（所有Recorder实例共享同一个流），如果创建了多个Recorder对象并且调用了open（应避免同时有多个对象进行了open），只有最后一个新建的才有权限进行实际的资源释放（和多个对象close调用顺序无关），浏览器或设备的系统才会不再显示正在录音的提示；直接提供的流 set.sourceStream 无此问题（当前Recorder实例独享此流，会直接释放掉录制此流的相关资源），但不会主动关闭此流，需自行管理此sourceStream的关闭。
 
 ### 【方法】rec.start()
 开始录音，需先调用`open`；未close之前可以反复进行调用开始新的录音。注意：open和start至少有一个应当在用户操作（触摸、点击等）下进行调用，原因参考`runningContext`配置。
@@ -610,7 +614,7 @@ prevChunk=chunk; //存起来，下次从当前已转换位置继续转换
 //这就是上面的代码自动截取到的最新未转换pcm数据
 //你也可以自行从buffers中截取出需要转码的pcm
 //或者从其他地方获取到pcm数据，比如用解码其他音频文件得到pcm，即可实现不同音频格式之间转码
-var pcm=chunk.data; 
+var pcm=chunk.data; //pcm=new Int16Array(pcmArrayBuffer) 可以使用16位pcm二进制数据直接构造
 var sampleRate=chunk.sampleRate;
 
 //调用mock方法把pcm转码成mp3或其他格式
@@ -634,7 +638,7 @@ mockRec.stop(function(blob,duration){
 本方法调用一次后，可通过`Recorder.Ctx`来获得此全局对象，可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。已知iOS16中全局对象无法多次用于录音，当前Recorder打开录音时均会尝试创建新的非全局对象，同时会保留一个全局的对象。
 
 ### 【静态方法】Recorder.IsOpen()
-由于Recorder持有的普通麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能。
+由于Recorder持有的普通麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能；注意：此方法无法检测直接提供的流 set.sourceStream 是否已打开，需自行判断。
 
 ### 【静态方法】Recorder.Destroy()
 销毁已持有的所有全局资源（AudioContext、Worker），当要彻底移除Recorder时需要显式的调用此方法。大部分情况下不调用Destroy也不会造成问题。
@@ -1370,6 +1374,8 @@ EncodeMix对象：
 ### Recorder.pcm2wav(data,True,False)
 已实现的一个把pcm转成wav格式来播放的方法，`data = { sampleRate:16000 pcm的采样率 , bitRate:16 pcm的位数 取值：8 或 16 , blob:pcm的blob对象 }`，`True=fn(wavBlob,duration)`。要使用此方法需要带上`wav`格式编码器。
 
+提示：16位的pcm二进制数据可以直接通过`new Int16Array(pcmArrayBuffer)`来构造成Int16Array，然后通过`rec.mock`来转码成其他任意格式。
+
 
 ## wav (raw pcm format) 格式
 依赖文件：`wav.js`（或使用根目录的`recorder.wav.min.js`一个文件即可），不支持实时编码（因为wav文件头中需要提供文件最终长度）只能一次性将所有pcm转成wav格式，wav格式编码器是参考网上资料写的，会发现代码和别人家的差不多。源码4kb大小。[wav转其他格式参考和测试](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
@@ -1411,6 +1417,9 @@ EncodeMix对象：
 ### Recorder.amr2wav(amrBlob,True,False)
 已实现的一个把amr转成wav格式来播放的方法，`True=fn(wavBlob,duration)`。要使用此方法需要带上上面的`wav`格式编码器。仿照此方法可轻松转成别的格式，参考`mock`方法介绍那节。
 
+### AMR实时编码解码
+使用`Recorder.AMR.GetDecoder() | .GetEncoder(12.2)`可以获得amr解码器和编码器，支持实时操作（amr帧、小文件片段连续编解码）；如何使用请阅读`beta-amr-engine.js`源码开头部分代码，`Recorder.amr2wav`底层调用的`Recorder.AMR.decode`方法有用到。
+
 
 ## beta-webm 格式
 依赖文件：`beta-webm.js`，不支持实时编码，这个编码器时通过查阅MDN编写的一个玩意，没多大使用价值：录几秒就至少要几秒来编码。。。原因是：未找到对已有pcm数据进行快速编码的方法。数据导入到MediaRecorder，音频有几秒就要等几秒，类似边播放边收听形。(想接原始录音Stream？我不可能给的!)输出音频虽然可以通过比特率来控制文件大小，但音频文件中的比特率并非设定比特率，采样率由于是我们自己采样的，到这个编码器随他怎么搞。只有比较新的浏览器支持（需实现浏览器MediaRecorder），压缩率和mp3差不多。源码3kb大小。
@@ -1431,6 +1440,8 @@ Recorder.prototype.aac=function(pcmData,successCall,failCall){
 
 //调用
 Recorder({type:"aac"})
+
+//如仅需要得到aac格式文件，你可以尝试直接用Recorder录制wav格式，然后调用 https://github.com/salomvary/fdk-aac.js库 来将wav转码成aac，详细请参考 assets/手动测试脚本.js 里面有可用的测试代码
 ```
 
 

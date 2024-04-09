@@ -57,7 +57,6 @@ var BufferStreamPlayer=function(set){
 	return new fn(set);
 };
 var BufferStreamPlayerTxt="BufferStreamPlayer";
-var CatchTxt="catch";
 var fn=function(set){
 	var This=this;
 	var o={
@@ -121,9 +120,16 @@ fn.prototype=BufferStreamPlayer.prototype={
 	 * False(errMsg) 打开失败回调**/
 	,start:function(True,False){
 		var falseCall=function(msg,noClear){
+			var next=!checkStop();
 			if(!noClear)This._clear();
 			CLog(msg,1);
-			False&&False(msg);
+			next&&False&&False(msg);
+		};
+		var checkStop=function(){
+			if(This.isStop){
+				CLog($T("6DDt::start被stop终止"),3);
+				return true;
+			};
 		};
 		var This=this,set=This.set,__abTest=This.__abTest;
 		if(This._Tc!=null){
@@ -157,8 +163,9 @@ fn.prototype=BufferStreamPlayer.prototype={
 		};
 		
 		var ctx=set.runningContext || Recorder.GetContext(true); This._ctx=ctx;
-		!__abTest&&CLog("start... ctx.state="+ctx.state+(
-			ctx.state=="suspended"?$T("JwDm::（注意：ctx不是running状态，start需要在用户操作(触摸、点击等)时进行调用，否则会尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）"):""
+		var sVal=ctx.state,spEnd=Recorder.CtxSpEnd(sVal);
+		!__abTest&&CLog("start... ctx.state="+sVal+(
+			spEnd?$T("JwDm::（注意：ctx不是running状态，start需要在用户操作(触摸、点击等)时进行调用，否则会尝试进行ctx.resume，可能会产生兼容性问题(仅iOS)，请参阅文档中runningContext配置）"):""
 		));
 		
 		var support=1;
@@ -177,10 +184,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		
 		
 		var end=function(){
-			if(This.isStop){
-				CLog($T("6DDt::start被stop终止"),3);
-				return;
-			};
+			if(checkStop())return;
 			//创建MediaStream
 			var dest=ctx.createMediaStreamDestination();
 			dest.channelCount=1;
@@ -252,21 +256,24 @@ fn.prototype=BufferStreamPlayer.prototype={
 		};
 		
 		var badAB=BufferStreamPlayer.BadAudioBuffer;
-		if(__abTest || badAB!=null){
-			setTimeout(end); //应当setTimeout一下强转成异步，统一调用代码时的行为
-		}else if(ctx.state=="suspended"){
-			var tag="AudioContext resume: ";
-			CLog(tag+"wait...");
-			ctx.resume().then(function(){
-				CLog(tag+ctx.state);
+		var ctxNext=function(){
+			if(__abTest || badAB!=null){
+				setTimeout(end); //应当setTimeout一下强转成异步，统一调用代码时的行为
+			}else{
 				abTest();
-			})[CatchTxt](function(e){ //比较少见，可能没有影响
-				CLog(tag+ctx.state+" "+$T("S2Bu::可能无法播放：{1}",0,e.message),1,e);
-				abTest();
-			});
-		}else{
-			abTest();
+			};
 		};
+		var tag="AudioContext resume: ";
+		Recorder.ResumeCtx(ctx,function(runC){
+			runC&&CLog(tag+"wait...");
+			return !This.isStop;
+		},function(runC){
+			runC&&CLog(tag+ctx.state);
+			ctxNext();
+		},function(err){ //比较少见，可能没有影响
+			CLog(tag+ctx.state+" "+$T("S2Bu::可能无法播放：{1}",0,err),1);
+			ctxNext();
+		});
 	}
 	,_clear:function(){
 		var This=this;
@@ -311,9 +318,22 @@ fn.prototype=BufferStreamPlayer.prototype={
 	}
 	/**恢复播放，实时模式下只会从最新input的数据开始播放，非实时模式下会从暂停的位置继续播放**/
 	,resume:function(){
-		CLog("resume");
-		this.isPause=0;
-		this._updateTime(1);
+		var This=this,tag="resume",tag3=tag+"(wait ctx)";
+		CLog(tag);
+		This.isPause=0;
+		This._updateTime(1);
+		
+		var ctx=This._ctx;
+		if(ctx){ //AudioContext如果被暂停，尽量恢复
+			Recorder.ResumeCtx(ctx,function(runC){
+				runC&&CLog(tag3+"...");
+				return !This.isStop && !This.isPause;
+			},function(runC){
+				runC&&CLog(tag3+ctx.state);
+			},function(err){
+				CLog(tag3+ctx.state+"[err]"+err,1);
+			});
+		};
 	}
 	
 	

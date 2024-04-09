@@ -176,9 +176,9 @@ i18n.put(putSet,
 ,"UKGO:"+ //no args
        "Upload failed"
 
-//@@zh="开始上传到{1}，请求稍后..."
+//@@zh="开始上传到{1}，请稍候... （你可以先到源码 /assets/node-localServer 目录内执行 npm run start 来运行本地测试服务器）"
 ,"JIr4:"+ //args: {1}
-       "Starting upload to {1}, requesting later..."
+       "Starting upload to {1}, requesting later... (You can first go to the source code /assets/node-localServer directory and execute npm run start to run the local test server)"
 
 //@@zh="上传方式一【Base64】"
 ,"XVmd:"+ //no args
@@ -220,9 +220,9 @@ i18n.put(putSet,
 ,"L6RO:"+ //no args
        "can't get error stack"
 
-//@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095，口令recorder，联系群主（即作者），谢谢~"
+//@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~"
 ,"FaWz:"+ //no args
-       "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095, password recorder, contact the group owner (ie the author), thank you~"
+       "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519, password recorder, contact the group owner (ie the author), thank you~"
 
 //@@zh="Recorder App基于Recorder H5的跨平台录音，支持在浏览器环境中使用（H5）、各种使用js来构建的程序中使用（App、小程序、UniApp、Electron、NodeJs）"
 ,"98Ry:"+ //no args
