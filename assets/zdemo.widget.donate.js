@@ -2,9 +2,9 @@
 (function(){
 "use strict";
 
-var BaseUrl="https://xiangyuecn.gitee.io/recorder";
-if(/(^https?:..xiangyuecn\.git[^\/]+\/recorder)/i.test(location.href)){
-	BaseUrl=RegExp.$1;
+var BaseUrl="https://xiangyuecn.github.io/Recorder";
+if(/gitee\.io/i.test(location.host)){ //2024-05-01 pages无通知下线
+	BaseUrl="https://xiangyuecn.gitee.io/recorder";
 }
 var ImgAlipay=BaseUrl+"/assets/donate-alipay.png";
 var ImgWeixin=BaseUrl+"/assets/donate-weixin.png";

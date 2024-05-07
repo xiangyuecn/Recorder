@@ -370,9 +370,9 @@ $(".recwaveChoice[key="+recwaveChoiceKey+"]").click();
 
 
 $(window).bind("error",function(e){
-	Runtime.Log('【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre>',1);
+	Runtime.Log('【Uncaught Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre>',1);
 }).bind('unhandledrejection',function(e){
-	Runtime.Log('【Promise Reject】:<pre>'+e.originalEvent.reason+'</pre>',1);
+	Runtime.Log('【Uncaught Promise Reject】:<pre>'+e.originalEvent.reason+'</pre>',1);
 });
 })();
 </script>
@@ -792,7 +792,7 @@ $(function(){
 			.replace(/\+/g,"-")
 			.replace(/\//g,"_")
 			.replace(/=/g,".");
-		var url="https://xiangyuecn.gitee.io/recorder/assets/"+encodeURIComponent("工具-代码运行和静态分发Runtime")+".html#sha1="+sha1+"&shareCode=v1_"+encodeURIComponent(urlb64);
+		var url="https://xiangyuecn.github.io/Recorder/assets/"+encodeURIComponent("工具-代码运行和静态分发Runtime")+".html#sha1="+sha1+"&shareCode=v1_"+encodeURIComponent(urlb64);
 		
 		Runtime.Log('<textarea style="width:300px;height:80px">'+url+'</textarea>');
 		Runtime.Log("已分发，url大小"+url.length+"b，<a href='"+url+"' target='_blank'>地址</a> <a href='https://www.ft12.com/' target='_blank'>短网址</a>",2);
@@ -1129,8 +1129,8 @@ var demos=[
 
 
 ,{n:"【教程】【音频流】【播放】实时解码播放音频片段",k:"teach.realtime.decode_buffer_stream_player"}
+,{n:"【教程】【播放】【可视化】实时录制处理audio、video播放流",k:"teach.source_stream.capture_stream"}
 ,{n:"【教程】【ASR】实时语音识别、音频文件转文字-阿里云版",k:"teach.realtime.asr.aliyun.short"}
-,{n:"【教程】实时录制处理audio、video标签的captureStream流",k:"teach.source_stream.capture_stream"}
 
 ,{n:"【Demo库】【文件合并】-mp3多个片段文件合并",k:"lib.merge.mp3_merge"}
 ,{n:"【Demo库】【文件合并】-wav多个片段文件合并",k:"lib.merge.wav_merge"}
@@ -1154,7 +1154,7 @@ var demos=[
 var markdown=[];
 for(var i=0;i<demos.length;i++){
 	var o=demos[i];
-	markdown.push((i+1)+'. ['+o.n+'](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
+	markdown.push((i+1)+'. ['+o.n+'](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
 	AddDemoCode(199-i,"",o.n,null,o.k);
 };
 

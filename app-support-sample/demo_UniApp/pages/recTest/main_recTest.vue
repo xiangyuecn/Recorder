@@ -715,7 +715,7 @@ export default {
 				if(window.VConsole)return ok();
 				var elem=document.createElement("script");
 				elem.setAttribute("type","text/javascript");
-				elem.setAttribute("src","https://xiangyuecn.gitee.io/recorder/assets/ztest-vconsole.js");
+				elem.setAttribute("src","https://xiangyuecn.github.io/Recorder/assets/ztest-vconsole.js");
 				document.body.appendChild(elem);
 				elem.onload=function(){
 					new VConsole(); ok()

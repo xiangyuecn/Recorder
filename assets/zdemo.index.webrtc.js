@@ -24,9 +24,9 @@ loadJsList([//加载依赖的js
 var jsLoadEnd=function(){
 	reclog("<span style='font-size:50px;color:#0b1'>↑↑↑按上面的步骤使用↑↑↑</span>");
 	
-	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav、pcm格式外发送间隔尽量不要低于编码速度速度，除wav、pcm外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制（在上面勾选“接管编码器输出”即可开启使用）</span>；参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】【音频流】【上传】实时转码并上传-mp3专版</a>。");
+	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav、pcm格式外发送间隔尽量不要低于编码速度速度，除wav、pcm外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制（在上面勾选“接管编码器输出”即可开启使用）</span>；参考<a target='_blank' href='https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】【音频流】【上传】实时转码并上传-mp3专版</a>。");
 	
-	reclog("<span style='color:#0b1'>BufferStreamPlayer扩展：是专门用来实时播放音频片段文件的；源码在 src/extensions/buffer_stream.player.js ，参考<a target='_blank' href='https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player'>【教程】【音频流】【播放】实时解码播放音频片段</a>。</span>");
+	reclog("<span style='color:#0b1'>BufferStreamPlayer扩展：是专门用来实时播放音频片段文件的；源码在 src/extensions/buffer_stream.player.js ，参考<a target='_blank' href='https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player'>【教程】【音频流】【播放】实时解码播放音频片段</a>。</span>");
 	
 	var i=0;
 	reclog(['已开启实时编码传输模拟'

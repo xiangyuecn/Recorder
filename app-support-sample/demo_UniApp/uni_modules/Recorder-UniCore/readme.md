@@ -1,6 +1,6 @@
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
 # Recorder-UniCore组件：uni-app内使用RecordApp录音
 
@@ -22,9 +22,9 @@
 
 
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
 # 集成到自己项目中
 
@@ -95,9 +95,9 @@ export default {
 ```
 
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
 ## 二、调用录音
 ``` javascript
@@ -254,20 +254,20 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 
 
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
 # 部分原理和需要注意的细节
 ## 编译成H5时录音和权限
 编译成H5时，录音功能由Recorder H5提供，无需额外处理录音权限。
 
 
-[​](?)
+*⠀*
 
 ## 编译成微信小程序时录音和权限
 编译成微信小程序时，录音功能由小程序的`RecorderManager`提供，屏蔽了微信原有的底层细节（无录音时长限制）。
@@ -277,7 +277,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 更多细节请参考 [miniProgram-wx](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx) 测试项目文档。
 
 
-[​](?)
+*⠀*
 
 ## 编译成App时录音和权限
 编译成App录音时，分两种情况：
@@ -302,11 +302,11 @@ NSMicrophoneUsageDescription
 
 
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
 # 本组件的授权许可限制
 **本组件内的app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先到DCloud插件市场购买[此带授权的插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android)（费用为¥199元，赠送Android版原生插件），即可获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权。
@@ -320,8 +320,8 @@ NSMicrophoneUsageDescription
 插件开发维护不易，感谢支持~
 
 
-[​](?)
+*⠀*
 
-[​](?)
+*⠀*
 
 

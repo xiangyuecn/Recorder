@@ -3,73 +3,34 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-<link rel="shortcut icon" type="image/png" href="assets/icon.png">
 
 <title reclang="XvFp">Recorder H5 QuickStart: 快速入门</title>
-<script>var PageLM="2023-12-08 20:41";</script>
+<script>var PageLM="2024-05-07 18:33";</script>
 <!--
 你可以直接将 QuickStart.html 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了。
 You can directly copy the QuickStart.html file to your (https) website, and you can start testing normally without other files.
 -->
+
+<script> //CDN URL 可删掉，选择线路用的
+var GitPageBase="https://xiangyuecn.github.io/Recorder/";
+if(/gitee\.io/.test(location.host)){ //2024-05-01 pages无通知下线
+	GitPageBase="https://xiangyuecn.gitee.io/recorder/";
+};
+document.write('<base href="'+GitPageBase+'" />');
+document.write('<link rel="shortcut icon" type="image/png" href="'+GitPageBase+'assets/icon.png">');
+</script>
+
 </head>
 
 <body>
-<!-- ↓↓↓这部分代码无关紧要，可全部删掉，选择CDN线路用的↓↓↓ -->
-<!-- ↓↓↓This part of the code is irrelevant, you can delete it all, and choose the CDN line↓↓↓ -->
-<script>
-var DisableCDN=!!localStorage["Rec_QuickStart_DisableCDN"];
-if(/xiangyuecn\.git/.test(location.host))DisableCDN=true;
-if(!DisableCDN){
-	console.warn("本页面的js资源采用的CDN链接，这些CDN并不稳定，仅供测试用。The CDN links used by the js resources on this page are not stable and are only for testing.");
-	setCDNUrl("https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder@latest/");
-}
-function setCDNUrl(url){
-	if(DisableCDN)return;
-	var old=document.querySelector("base");
-	if(old)old.parentNode.removeChild(old);
-	if(!url)return;
-	var base=document.createElement("base");
-	base.setAttribute("href",url);
-	document.head.appendChild(base);
-	console.warn("已切换CDN线路。CDN line switched.",url);
-};
-var useCDN={};
-var intBadCDN=setTimeout(function(){ onBadCDN() },10000);
-var onOKCDN=function(){ clearTimeout(intBadCDN) };
-var onBadCDN=function(){
-	if(DisableCDN)return;
-	clearTimeout(intBadCDN);
-	var cdn=useCDN.cdn;
-	var url=!cdn?"https://xiangyuecn.gitee.io/recorder/":"";
-	if(!url){ setCDNUrl(""); return;}
-	location.hash="#useCDN="+encodeURIComponent(JSON.stringify({
-		time:Date.now()
-		,cdn:url
-	}));
-	location.reload();
-};
-if(/useCDN=([^&#]+)/.test(location.href)){
-	useCDN=JSON.parse(decodeURIComponent(RegExp.$1));
-	if(Date.now()-useCDN.time<60000){
-		setCDNUrl(useCDN.cdn);
-	}else{ useCDN={}; }
-	location.hash="";
-}
-</script>
-<!-- ↑↑↑这部分代码无关紧要，可全部删掉，选择CDN线路用的↑↑↑ -->
-<!-- ↑↑↑This part of the code is irrelevant, you can delete it all, and choose the CDN line↑↑↑ -->
-
-
-
-
 <!--
-【1】引入框架文件  Import plugin file   ，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入，这里为了方便copy文件测试起见，使用了JsDelivr CDN，这玩意不一定能正常访问
+【1】引入框架文件  Import plugin file   ，注意自己使用时应当自己把源码clone下来，然后通过src="/src/recorder-core.js"引入
 
 另外：[1.1]、[1.2]可以合并为使用"/recorder.mp3.min.js"，这个文件为压缩版大幅减小文件体积，已经包含了这3个源码文件
 -->
 
 <!-- 【1.1】引入核心文件  Import core file -->
-<script src="改成你clone的源码目录/../src/recorder-core.js" onerror="!window.onBadCDN||onBadCDN()" onload="!window.onOKCDN||onOKCDN()"></script>
+<script src="改成你clone的源码目录/../src/recorder-core.js"></script>
 
 <!-- 【1.2】引入相应格式支持文件；如果需要多个格式支持，把这些格式的编码引擎js文件放到后面统统加载进来即可。  Import the corresponding format support files; if you need multiple format support, put the encoding engine js files of these formats in the back and load them all. -->
 <script src="改成你clone的源码目录/../src/engine/mp3.js"></script>
@@ -83,7 +44,7 @@ if(/useCDN=([^&#]+)/.test(location.href)){
 <script src="改成你clone的源码目录/../assets/ztest-page-i18n.js"></script>
 <script src="改成你clone的源码目录/../assets/zdemo.widget.donate.js"></script>
 
-<script>window.setCDNUrl&&setCDNUrl("");//清除CDN地址  Clear CDN URLs</script>
+<script>var bEL=document.querySelector("base");if(bEL)bEL.parentNode.removeChild(bEL);//清除CDN地址  Clear CDN URLs</script>
 
 
 <!-- 【2】构建界面  Build the web interface  -->
@@ -96,12 +57,12 @@ if(/useCDN=([^&#]+)/.test(location.href)){
 		
 		<div style="padding-top:10px;color:#666">
 			<span reclang="FxZ3">更多Demo：</span>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/" target="_blank">Recorder H5</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/demo-vue/" target="_blank">H5 vue</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/app-support-sample/" target="_blank">Recorder App</a>
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html" target="_blank">App QuickStart</a>
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/" target="_blank">Recorder H5</a>
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/assets/demo-vue/" target="_blank">H5 vue</a>
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/app-support-sample/" target="_blank">Recorder App</a>
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/app-support-sample/QuickStart.html" target="_blank">App QuickStart</a>
 			
-			<a class="lb" href="https://xiangyuecn.gitee.io/recorder/assets/工具-GitHub页面历史版本访问.html#url=xiangyuecn:Recorder@1.0.20032600,/QuickStart.html" target="_blank" reclang="UGOA">切换到老版本测试</a>
+			<a class="lb" href="https://xiangyuecn.github.io/Recorder/assets/工具-GitHub页面历史版本访问.html#url=xiangyuecn:Recorder@1.0.20032600,/QuickStart.html" target="_blank" reclang="UGOA">切换到老版本测试</a>
 		</div>
 	</div>
 	
@@ -424,9 +385,6 @@ reclog("URL: "+location.href.replace(/#.*/g,""), "#999");
 reclog(Html_$T('7gIC::你可以直接将 ')+'<a target="_blank" href="https://github.com/xiangyuecn/Recorder/blob/master/QuickStart.html">/QuickStart.html</a>'+Html_$T('s731:: 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了；相比 Recorder H5 (/index.html) 这个大而全(杂乱)的demo，本文件更适合入门学习')+unescape("%uD83D%uDE04"));
 reclog(Html_$T('ERsK::当前浏览器')+'<span style="color:'+(Recorder.Support()?'#0b1">'+Html_$T('7tuo::支持录音'):'red">'+Html_$T('8Z8O::不支持录音'))+'</span>');
 
-if(window.useCDN && useCDN.cdn){
-	reclog(Html_$T('1YEb::本页面的js资源采用的CDN不稳定，已切换到：')+useCDN.cdn,'#f60');
-}
 if(window.Recorder){
 	reclog(Html_$T('BL9u::页面已准备好，请先点击打开录音，然后点击录制'),2);
 }else{
@@ -435,23 +393,12 @@ if(window.Recorder){
 </script>
 
 <script>
-//url路径前缀
-var BaseUrl="./",BaseUrlGitee="https://xiangyuecn.gitee.io/recorder/";
-if(!window.DisableCDN){
-	BaseUrl=BaseUrlGitee;
-	if(window.PageLangIsZhCN&&!PageLangIsZhCN()){
-		BaseUrl="https://xiangyuecn.github.io/Recorder/";
-	};
-	if(/(^https?:..xiangyuecn\.git[^\/]+\/recorder)/i.test(location.href)){
-		BaseUrl=RegExp.$1+"/";
-	};
-};
 //修改a链接的url
 var els=document.querySelectorAll(".topLinks a");
 for(var i=0;i<els.length;i++){
 	var el=els[i],v=el.getAttribute("href")||"";
-	if(v.indexOf(BaseUrlGitee)==0){
-		el.setAttribute("href", BaseUrl+v.substr(BaseUrlGitee.length));
+	if(/\.io\/Recorder\/(.*)/i.test(v)){
+		el.setAttribute("href", GitPageBase+RegExp.$1);
 	}
 }
 
@@ -459,7 +406,7 @@ if(/mobile/i.test(navigator.userAgent)){
 	//移动端加载控制台组件
 	var elem=document.createElement("script");
 	elem.setAttribute("type","text/javascript");
-	elem.setAttribute("src",BaseUrl+"assets/ztest-vconsole.js");
+	elem.setAttribute("src",GitPageBase+"assets/ztest-vconsole.js");
 	document.body.appendChild(elem);
 	elem.onload=function(){
 		new VConsole();
@@ -481,7 +428,7 @@ DonateWidget({
 <script>
 if(window.PageI18nWidget){
 PageI18nWidget({
-	elem:".i18nBox", rootUrl:BaseUrl
+	elem:".i18nBox", rootUrl:GitPageBase
 	,titleKey:"XvFp"
 	,langs:{
 		"en-US":{urls:[ "#QuickStart_html/en-US.js","#widget_donate/en-US.js" ]}

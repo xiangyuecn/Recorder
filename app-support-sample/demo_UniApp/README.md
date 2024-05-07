@@ -423,7 +423,7 @@ App 逻辑层中可设置，`app-uni-support.js`文件在App中使用的授权�
 [​](?)
 
 ## 二进制和Base64相关
-更多转换请参考：[【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
+更多转换请参考：[【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
 
 ### 【静态方法】RecordApp.UniBtoa(arrayBuffer)
 base64编码，将arrayBuffer二进制数据转为base64字符串

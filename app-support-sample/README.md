@@ -1,4 +1,4 @@
-**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)】如果本文档图片没有显示，请手动切换到Gitee镜像库阅读文档。**
+**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)】本文档中默认使用[github.io部署的链接](https://xiangyuecn.github.io/Recorder/app-support-sample/)，如果无法访问，你可替换链接开头部分成[gitee.io部署的链接](https://xiangyuecn.gitee.io/recorder/app-support-sample/)访问更快。**
 
 
 # :open_book:RecordApp：基于Recorder的跨平台录音解决方案
@@ -7,7 +7,7 @@ RecordApp是在[Recorder](../)基础上为不同平台环境提供底层适配�
 
 使用场景|平台环境|参考Demo
 :-:|-|-
-**App+H5页面**|浏览器、WebView（App、软件内置浏览器）|[ [H5在线测试](https://xiangyuecn.gitee.io/recorder/app-support-sample/) ] [ [QuickStart](https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html) ] [ [App vue](https://xiangyuecn.gitee.io/recorder/assets/demo-vue/recordapp.html) ] <br> [ [Android App](demo_android) ] [ [iOS App](demo_ios) ]
+**App+H5页面**|浏览器、WebView（App、软件内置浏览器）|[ [H5在线测试](https://xiangyuecn.github.io/Recorder/app-support-sample/) ] [ [QuickStart](https://xiangyuecn.github.io/Recorder/app-support-sample/QuickStart.html) ] [ [App vue](https://xiangyuecn.github.io/Recorder/assets/demo-vue/recordapp.html) ] <br> [ [Android App](demo_android) ] [ [iOS App](demo_ios) ]
 **微信小程序**|微信小程序（支持可视化插件）|使用文档和Demo: [ [miniProgram-wx](./miniProgram-wx) ]
 **uni-app**|可编译成：H5、Android iOS App、小程序|使用文档和Demo: [ [demo_UniApp](./demo_UniApp) ]
 **NodeJs**|无录音功能，可对PCM数据实时处理、编码|测试代码: [ [node-codes](../assets/node-codes) ]
@@ -25,7 +25,7 @@ RecordApp是在[Recorder](../)基础上为不同平台环境提供底层适配�
 [​](?)
 
 
-<p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://xiangyuecn.gitee.io/recorder/assets/icon.png" alt="Recorder logo"></a></p>
+<p align="center"><a href="https://github.com/xiangyuecn/Recorder"><img width="100" src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/icon.png" alt="Recorder logo"></a></p>
 
 <p align="center">
   <a title="Stars" href="https://github.com/xiangyuecn/Recorder"><img src="https://img.shields.io/github/stars/xiangyuecn/Recorder?color=0b1&logo=github" alt="Stars"></a>
@@ -80,7 +80,7 @@ import RecordApp from 'recorder-core/src/app-support/app'
 [​](?RefEnd)
 
 ### 在App WebView、H5页面中使用
-可以通过阅读和运行本目录下的[QuickStart.html](https://xiangyuecn.gitee.io/recorder/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将此html文件copy 到你的(https)网站中，无需其他文件，就能正常开始测试了，H5、Android App、iOS App内均适用。
+可以通过阅读和运行本目录下的[QuickStart.html](https://xiangyuecn.github.io/Recorder/app-support-sample/QuickStart.html)文件来快速入门学习，你可以直接将此html文件copy 到你的(https)网站中，无需其他文件，就能正常开始测试了，H5、Android App、iOS App内均适用。
 
 RecordApp默认未开启App内原生录音支持，App内默认也使用H5录音（简单通用），可选开启支持后在App环境中将走Native原生录音（需要App配合）。
 
@@ -279,7 +279,7 @@ uni-app项目当需要编译成Android、iOS App时，需要在 `manifest.json` 
 
 欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519，纯小写口令：`recorder`
 
-<img src="https://xiangyuecn.gitee.io/recorder/assets/qq_group_781036591.png" width="220px">
+<img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
 
 
 

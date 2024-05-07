@@ -11,7 +11,7 @@
 - ws端口默认 `9529`
 - wss端口默认 `9539`
 
-在`main.js`中可以修改端口，如果要开启https、wss，需先在`main.js`中配置ssl证书文件路径；本地测试时建议使用一个域名解析到本地服务器局域网ip，比如：192-168-1-123.xxx.com 解析到 192.168.1.123，用这个域名申请免费的https通配符证书，[在线免费申请（ZeroSSL、Let’s Encrypt）](https://xiangyuecn.gitee.io/acme-html-web-browser-client/ACME-HTML-Web-Browser-Client.html) 
+在`main.js`中可以修改端口，如果要开启https、wss，需先在`main.js`中配置ssl证书文件路径；本地测试时建议使用一个域名解析到本地服务器局域网ip，比如：192-168-1-123.xxx.com 解析到 192.168.1.123，用这个域名申请免费的https通配符证书，[在线免费申请（ZeroSSL、Let’s Encrypt）](https://xiangyuecn.github.io/ACME-HTML-Web-Browser-Client/ACME-HTML-Web-Browser-Client.html) 
 
 
 ## 可用的http接口
