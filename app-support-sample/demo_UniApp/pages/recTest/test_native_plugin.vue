@@ -227,6 +227,14 @@ export default {
 					return "code:"+data.code
 				}]]);
 			}
+			if(RecordApp.UniIsApp()==2){
+				await this.exec("iOS设置categoryOptions",[
+					["iosSetDefault_categoryOptions",{value:123456789}],
+					["iosSetDefault_categoryOptions",{value:0}],
+					["iosSetDefault_categoryOptions",{value:0x1 | 0x2 | 0x4 | 0x8 | 0x20 | 0x40 | 0x80}],
+					["iosSetDefault_categoryOptions",{value:0x1 | 0x4}]
+				]);
+			}
 			
 			this.reclog("测试完成");
 		}

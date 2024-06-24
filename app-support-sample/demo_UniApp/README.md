@@ -323,7 +323,10 @@ RecordApp.Start({
     ,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
     
     //Android指定麦克风源（App搭配原生插件、小程序可用），0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)
-    ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高
+    ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高，默认值为0
+    
+    //iOS的AVAudioSession setCategory的withOptions参数值（App搭配原生插件可用），取值请参考本文档下面的iosSetDefault_categoryOptions
+    //,ios_categoryOptions:0x1|0x4|0x8 //0x8是外放，默认值为0x1|0x4不带0x8是听筒播放，等同于下面的setSpeakerOff
 });
 
 //App搭配原生插件时尝试切换听筒播放或外放
@@ -456,7 +459,7 @@ base64解码，将base64字符串转为字符串
 var dataMB=new Uint8Array(1*1024*1024); //可选的，假设同时需要传递1MB的数据到renderjs中
 var set={ //可选配置
     tag:"格式转码" //可选调用标记，抛异常时会添加到错误消息开头，默认为空字符串
-    ,timeout:5000 //可选调用超时，默认5秒超时
+    ,timeout:5000 //可选调用超时，默认5秒超时，-1不超时
     ,useEval:false //可选是否要通过UniWebViewEval来执行jsCode，默认false使用UniWebViewVueCall来执行jsCode（此时jsCode中的this为renderjs模块的this）
 };
 try{
@@ -473,7 +476,7 @@ try{
         CallSuccess({abc:123}, new Uint8Array(9).buffer); //可以额外返回一个ArrayBuffer，逻辑层将接收到一个对象 result={ value:{abc:123}, bigBytes:ArrayBuffer }
     `, dataMB.buffer);
 }catch(e){
-    result={errMsg:e.message};
+    result={timeout:!!e.isTimeout, errMsg:e.message};
 }
 uni.showModal({title:"renderjs调用结果", content:JSON.stringify(result)});
 ```
@@ -482,7 +485,7 @@ uni.showModal({title:"renderjs调用结果", content:JSON.stringify(result)});
 App 逻辑层中直接调用此页面或组件的WebView renderjs中的eval（componentThis为null时使用UniWebViewActivate切换的页面或组件）；要调用renderjs模块vue组件内的方法请用UniWebViewVueCall；如果需要传递大的数据请用bigBytes参数传入一个ArrayBuffer，jsCode中使用BigBytes变量得到这个数据
 
 ``` javascript
-//调用示例代码，可使用UniWebViewCallAsync简化这些调用
+//调用示例代码，非频繁调用时建议使用UniWebViewCallAsync简化这些调用
 var cb=RecordApp.UniMainCallBack((data)=>{ //可选的，renderjs执行完成后回调
     uni.showModal({title:"收到了renderjs回调", content:JSON.stringify(data)});
 });
@@ -501,7 +504,8 @@ RecordApp.UniWebViewEval(this,`
 App 逻辑层中直接调用此页面或组件的renderjs模块vue组件内的方法（componentThis为null时使用UniWebViewActivate切换的页面或组件），jsCode中的this为renderjs模块的this（也可以用This变量）（如需renderjs中调用逻辑层vue实例方法，请直接用$ownerInstance.callMethod即可）；如果需要传递大的数据请用bigBytes参数传入一个ArrayBuffer，jsCode中使用BigBytes变量得到这个数据
 
 ``` javascript
-//调用示例代码，可使用UniWebViewCallAsync简化这些调用
+//调用示例代码，非频繁调用时建议使用UniWebViewCallAsync简化这些调用
+//jsCode可以传个对象{preCode:"",jsCode:""}，preCode相当于UniWebViewEval调用，会在获取到vue上下文前执行，获取失败时jsCode无法执行，preCode中可重新赋值CallErr函数来绑定失败回调
 var cb=RecordApp.UniMainCallBack((data)=>{ //可选的，renderjs执行完成后回调
     uni.showModal({title:"收到了renderjs回调", content:JSON.stringify(data)});
 });
@@ -557,6 +561,7 @@ RecordApp.UniNativeUtsPlugin={ //目前仅支持原生插件，uts插件不可�
     //,nativePluginName:"xxx" //可指定插件名字，默认为Recorder-NativePlugin
 };
 
+//配置好后可调用RecordApp.UniCheckNativeUtsPluginConfig()来检查配置是否能生效，返回空字符串代表正常，如果无法加载原生录音插件会返回错误消息
 //配置好后在调用录音功能时，会使用原生插件来录音
 ```
 
@@ -580,6 +585,12 @@ getInfo 获取插件信息
 
 setSpeakerOff 切换扬声器外放和听筒播放，随时都可以调用；但需注意打开录音时可能会自动切换播放方式，因此在打开录音后需要明确调用一次切换成你需要的播放方式
     参数：{ off:true } //必填，true听筒播放，false扬声器播放
+    返回：{  } //空对象
+
+iosSetDefault_categoryOptions iOS设置默认值，Android不可调用，为iOS的AVAudioSession setCategory的withOptions参数值；RecordApp.Start开始录音时如果未提供ios_categoryOptions参数，将会使用此默认值，提供了时将赋值给此默认值；setSpeakerOff调用时也会使用到此默认值
+    参数：{
+        value:0x1|0x4|0x8 //必填，0x8是外放，默认不带0x8是听筒播放，取值（多选，默认 0x1|0x4）：0 什么也不设置，0x1 MixWithOthers，0x2 DuckOthers，0x4 AllowBluetooth，0x8 DefaultToSpeaker，0x11 InterruptSpokenAudioAndMixWithOthers，0x20 AllowBluetoothA2DP，0x40 AllowAirPlay，0x80 OverrideMutedMicrophoneInterruption
+    }
     返回：{  } //空对象
 
 writeFile 数据写入文件，可新建文件、追加写入（文件流写入）

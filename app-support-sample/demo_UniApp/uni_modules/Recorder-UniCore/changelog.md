@@ -1,3 +1,5 @@
+## 1.0.240625（2024-06-25）
+调整UniWebViewCallAsync调用失败时返回更详细信息。android_audioSource默认值由1改成0，新增ios_categoryOptions原生插件录音选项
 ## 1.0.240409（2024-04-09）
 增加功能调用，完善demo项目
 ## 1.0.231208（2023-12-08）

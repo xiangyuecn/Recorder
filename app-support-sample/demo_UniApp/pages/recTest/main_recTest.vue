@@ -153,6 +153,13 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			
 			<button size="mini" type="default" @click="loadVConsole">显示vConsole</button>
 		</view>
+<!-- #ifdef APP -->
+		<view>
+			<navigator url="page_renderjsWithout" style="display: inline;">
+				<button size="mini" type="default">逻辑层编码UniWithoutAppRenderjs</button>
+			</navigator>
+		</view>
+<!-- #endif -->
 		<button size="mini" type="default" @click="speakerOnClick">切换成扬声器外放</button>
 		<button size="mini" type="default" @click="speakerOffClick">切换成听筒播放</button>
 		

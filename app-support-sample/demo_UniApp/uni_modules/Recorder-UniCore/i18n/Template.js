@@ -145,6 +145,41 @@ i18n.put(putSet,
 ,"TtoS:"+ //no args
        "" /** TODO: translate to your-language **/
 
+//@@zh="renderjs中未import导入RecordApp"
+//@@en="RecordApp is not imported in renderjs"
+,"U1Be:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="renderjs中的mounted内需要调用RecordApp.UniRenderjsRegister"
+//@@en="RecordApp.UniRenderjsRegister needs to be called in mounted in renderjs"
+,"Bcgi:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="没有找到组件的renderjs模块"
+//@@en="The renderjs module for the component was not found"
+,"URyD:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="{1}连接renderjs超时"
+//@@en="{1} connection renderjs timeout"
+,"KQhJ:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
+//@@zh="{1}处理超时"
+//@@en="{1} processing timeout"
+,"RDcZ:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
+//@@zh="需要在页面中提供一个renderjs，在里面import导入RecordApp、录音格式编码器、可视化插件等"
+//@@en="You need to provide a renderjs in the page, and import RecordApp, recording format encoder, visualization plug-in, etc."
+,"TSmQ:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="需在renderjs中import {1}"
+//@@en="Need to import {1} in renderjs"
+,"AN0e:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
 //@@zh="不应该出现的MainReceiveBind重复绑定"
 //@@en="MainReceiveBind duplicate binding that should not occur"
 ,"vEgr:"+ //no args
@@ -260,6 +295,16 @@ i18n.put(putSet,
 ,"l6sY:"+ //no args
        "" /** TODO: translate to your-language **/
 
+//@@zh="当前App未打包进双端原生插件[{1}]，尝试加载单端[{2}]"
+//@@en="The current App is not packaged into the dual-end native plug-in [{1}], try to load the single-end [{2}]"
+,"kSjQ:"+ //args: {1}-{2}
+       "" /** TODO: translate to your-language **/
+
+//@@zh="已加载原生录音插件[{1}]"
+//@@en="Native recording plugin loaded [{1}]"
+,"Xh1W:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
 //@@zh="配置了RecordApp.UniNativeUtsPlugin，但当前App未打包进原生录音插件[{1}]"
 //@@en="RecordApp.UniNativeUtsPlugin is configured, but the current App is not packaged with the native recording plug-in [{1}]"
 ,"SCW9:"+ //args: {1}
@@ -350,14 +395,9 @@ i18n.put(putSet,
 ,"ksoA:"+ //no args
        "" /** TODO: translate to your-language **/
 
-//@@zh="需要在页面中提供一个renderjs，在里面import导入RecordApp、录音格式编码器、可视化插件等"
-//@@en="You need to provide a renderjs in the page, and import RecordApp, recording format encoder, visualization plug-in, etc."
-,"TSmQ:"+ //no args
-       "" /** TODO: translate to your-language **/
-
-//@@zh="需在renderjs中import {1}"
-//@@en="Need to import {1} in renderjs"
-,"AN0e:"+ //args: {1}
+//@@zh="无法连接到renderjs"
+//@@en="Unable to connect to renderjs"
+,"KnF0:"+ //no args
        "" /** TODO: translate to your-language **/
 
 //@@zh="需先调用RecordApp.UniWebViewActivate，然后才可以调用Start"

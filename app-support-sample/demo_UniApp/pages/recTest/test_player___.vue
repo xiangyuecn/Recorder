@@ -36,7 +36,7 @@ export default {
 		return {
 			...this.getTexts()
 			,show:false, statusMsg:"", Class:("a"+Math.random()).replace(".","")
-			,showControlUI:false, useNvuePlayer:false
+			,showControlUI:false, useNvuePlayer:false, useAppRenderjs:false
 			,playing:false
 			,player_position:0
 			,player_currentTime:"00:00"
@@ -411,7 +411,7 @@ export default {
 			var end=()=>{
 				this.createAudio(recSet.type,aBuf0,mime0,aBuf,duration,mime)
 			}
-			if(!RecordApp.UniIsApp() || RecordApp.UniWithoutAppRenderjs){
+			if(!RecordApp.UniIsApp() || RecordApp.UniWithoutAppRenderjs && !this.useAppRenderjs){
 				var wav=Recorder[recSet.type+"2wav"],t1=Date.now();
 				if(!wav) return end();
 				var wavData=aBuf;

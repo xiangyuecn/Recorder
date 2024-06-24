@@ -28,7 +28,7 @@
 
 # 集成到自己项目中
 
-你可以直接参考插件市场中下载的Demo项目，或者上面GitHub链接上的Demo项目，参考里面的`main_recTest.vue`更容易入门；由于RecordApp实现机制复杂，简单使用可直接照抄Demo代码，高级使用请阅读：[Recorder文档](https://gitee.com/xiangyuecn/Recorder)、[RecordApp文档](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)、[demo_UniApp文档](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp) 这三个文档（均为完整的一个README.md文档），Recorder文档中包含了更丰富的示例代码：基础录音、实时处理、格式转码、音频分析、音频混音、音频生成 等等，大部分能在uniapp中直接使用。
+你可以直接参考插件市场中下载的Demo项目，或者上面GitHub链接上的Demo项目，参考里面的`main_recTest.vue`更容易入门；Demo项目中包含了：录音、播放、上传、保存文件、实时语音识别ASR、实时语音通话对讲 等功能实现源码，简单使用可直接照抄Demo代码到你的项目中。
 
 
 ## 一、引入js文件
@@ -298,6 +298,48 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 NSMicrophoneUsageDescription
 注意：iOS需要在 `App常用其它设置`->`后台运行能力`中提供`audio`配置，不然App切到后台后立马会停止录音
 ```
+
+
+*⠀*
+
+## 语音通话、回声消除、声音外放
+在App、H5中，使用[BufferStreamPlayer](https://gitee.com/xiangyuecn/Recorder/tree/master/src/extensions/buffer_stream.player.js)可以实时播放语音；其中App中需要在renderjs中加载BufferStreamPlayer，在逻辑层中调用`RecordApp.UniWebViewVueCall`等方法将逻辑层中接收到的实时语音数据发送到renderjs中播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
+
+微信小程序请参考 [miniProgram-wx](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx) 文档里面的同名章节，使用WebAudioContext播放。
+
+配置audioTrackSet可尝试打开回声消除，或者切换听筒播放或外放，打开回声消除时，一般会转为听筒播放显著降低回声。
+``` js
+//打开回声消除
+RecordApp.Start({
+    ... 更多配置参数请参考RecordApp文档
+    //此配置App、H5、小程序均可打开回声消除；注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+    ,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    
+    //Android指定麦克风源（App搭配原生插件、小程序可用），0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)
+    ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高，默认值为0
+    
+    //iOS的AVAudioSession setCategory的withOptions参数值（App搭配原生插件可用），取值请参考配套原生插件文档中的iosSetDefault_categoryOptions
+    //,ios_categoryOptions:0x1|0x4|0x8 //0x8是外放，默认值为0x1|0x4不带0x8是听筒播放，等同于下面的setSpeakerOff
+});
+
+//App搭配原生插件时尝试切换听筒播放或外放
+await RecordApp.UniNativeUtsPluginCallAsync("setSpeakerOff",{off:true或false});
+//小程序尝试切换
+wx.setInnerAudioOption({ speakerOn:false或true })
+//H5不支持切换
+```
+
+
+
+
+*⠀*
+
+*⠀*
+
+*⠀*
+
+# 详细文档、RecordApp方法、属性文档
+请先阅读 [demo_UniApp文档](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp)，含Demo项目；更高级使用还需深入阅读 [Recorder文档](https://gitee.com/xiangyuecn/Recorder)、[RecordApp文档](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample) （均为完整的一个README.md文档），Recorder文档中包含了更丰富的示例代码：基础录音、实时处理、格式转码、音频分析、音频混音、音频生成 等等，大部分能在uniapp中直接使用。
 
 
 
