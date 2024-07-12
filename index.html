@@ -64,6 +64,7 @@ for(var i=0;i<initJss.length;i++){
 <script src="src/extensions/lib.fft.js"></script>
 <script src="src/extensions/frequency.histogram.view.js"></script>
 <script src="src/extensions/sonic.js"></script>
+<script src="src/extensions/create-audio.nmn2pcm.js"></script>
 <script src="src/extensions/dtmf.encode.js"></script>
 <script src="src/extensions/dtmf.decode.js"></script>
 
@@ -328,9 +329,11 @@ if(!window.localStorage){window.localStorage={
 		<label><input type="checkbox" class="takeoffEncodeChunkSet"><span reclang="AWXs">接管编码器输出（takeoffEncodeChunk），切换后新打开录音生效</span></label>
 	</div>
 	<div class="pd pcmPageHide">
-		<label><input type="checkbox" class="realTimeSendSet"><span reclang="SUfw">模拟实时编码传输（H5版语音通话聊天），发送间隔</span></label>
-		<input type="text" class="realTimeSend" value="996" style="width:60px">ms
-		<div class="webrtcView" style="display:none;"></div>
+		<label><input type="checkbox" class="useAECSet"><span reclang="vIzT">尝试启用回声消除（echoCancellation）</span></label>
+	</div>
+	<div class="pd pcmPageHide">
+		<label><input type="checkbox" class="realTimeSendSet"><span reclang="SUfw">实时语音通话聊天对讲（WebSocket、WebRTC）</span></label>
+		<div class="realTimeSendView" style="display:none;"></div>
 	</div>
 	<div class="pcmPageHide">
 		<label><input type="checkbox" class="asrSet"><span reclang="lvN7">实时语音识别、音频文件转文字，ASR</span></label>
@@ -528,6 +531,7 @@ if(!window.localStorage){window.localStorage={
 	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.ogg')">ogg</button>
 	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
 	<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
+	<button onclick="recplay2(this,'nmn5')" reclang="t0I5">合成5分钟mp3</button>
 	
 	<span reclang="XHIP">Audio对录音的影响测试</span> (<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>) <span reclang="LfbN">；低版本iOS Safari如果未开始过录音并且播放了音乐，然后后续录音可能会有问题；再现方法</span> (<a href="assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>): <span reclang="T3B7">刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。</span>
 </div>
@@ -605,7 +609,10 @@ window.onerror=function(message, url, lineNo, columnNo, error){
 
 <script>
 var rec;
-function recopen(){
+function recopen(call){
+	call||(call=function(msg){
+		msg&&reclog(msg,1);
+	});
 	if(rec&&Recorder.IsOpen()){//如果有老的，close掉重新开新的
 		recclose();
 	};
@@ -636,10 +643,11 @@ function recopen(){
 	}
 	
 	var audioTrackSet=null;
+	var useAEC=$(".useAECSet")[0].checked;
 	var trackSet_device=$(".trackSet_device").val();
-	var trackSet_noise=$(".trackSet_noise").val();
-	var trackSet_aec=$(".trackSet_aec").val();
-	var trackSet_gain=$(".trackSet_gain").val();
+	var trackSet_noise=useAEC?1:$(".trackSet_noise").val();
+	var trackSet_aec=useAEC?1:$(".trackSet_aec").val();
+	var trackSet_gain=useAEC?1:$(".trackSet_gain").val();
 	if(trackSet_device || trackSet_noise || trackSet_aec || trackSet_gain){
 		audioTrackSet={};
 		if(trackSet_device){
@@ -661,7 +669,6 @@ function recopen(){
 	};
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
-	var realTimeSendTime=+$(".realTimeSend").val();
 	
 	var asrSet=$(".asrSet")[0].checked;
 	
@@ -699,7 +706,10 @@ function recopen(){
 			
 			//实时传输
 			if(realTimeSendSet&&window.realTimeSendTry){
-				realTimeSendTry(rec.set,realTimeSendTime,buffers,sampleRate);
+				realTimeSendTry(rec.set,buffers,sampleRate);
+			};
+			if(realTimeSendSet&&window.RtVoiceProcess){
+				RtVoiceProcess(buffers,powerLevel,duration,sampleRate,newBufferIdx);
 			};
 			//实时语音识别
 			if(asrSet&&window.asrInput){
@@ -735,8 +745,10 @@ function recopen(){
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		initWaveStore(waveStore,".recwave");
+		
+		call();
 	},function(e,isUserNotAllow){
-		reclog((isUserNotAllow?"UserNotAllow, ":"")+Html_$T("YY7k::打开失败：")+e,1);
+		call((isUserNotAllow?"UserNotAllow, ":"")+Html_$T("YY7k::打开失败：")+e);
 	});
 };
 
@@ -995,8 +1007,16 @@ function recplay(key){
 		};
 		
 		if(o.play2Name){
-			audio.src="assets/audio/"+o.play2Name;
-			audio.play();
+			o.play--;
+			if(o.play2Msg){
+				logmsg(o.play2Msg);
+			}else if(o.play2Err){
+				logmsg('<span style="color:red">'+o.play2Err+'</span>');
+			}else{
+				o.play++;
+				audio.src=o.play2Url||("assets/audio/"+o.play2Name);
+				audio.play();
+			}
 			return;
 		};
 		var end=function(blob){
@@ -1026,17 +1046,47 @@ function recplay(key){
 	};
 };
 function recplay2(elem,name){
-	elem=$(elem);
-	var key="recplay2"+elem.html();
-	recblob[key]||(recblob[key]={
-		play2Name:name
-	});
-	if(!$(".p"+key).length){
-		elem.before('<br>');
-		elem.after('<span class="p'+key+'"></span><br>');
+	var url="";
+	var run=function(msg,err){
+		elem=$(elem);
+		var key="recplay2"+elem.html();
+		Object.assign(recblob[key]||(recblob[key]={}),{
+			play2Name:name
+			,play2Url:url
+			,play2Msg:msg
+			,play2Err:err
+		});
+		if(!$(".p"+key).length){
+			elem.before('<br>');
+			elem.after('<span class="p'+key+'"></span><br>');
+		};
+		
+		recplay(key);
 	};
 	
-	recplay(key);
+	if(name=="nmn5"){ //合成一个5分钟的mp3
+		if(window.nmn5Url){
+			url=window.nmn5Url; return run();
+		}
+		var sr=16000;
+		var pcm=Recorder.NMN2PCM.GetExamples().Canon.get(sr).pcm;
+		var pcm5=new Int16Array(5*60*sr),n=0;
+		while(n<pcm5.length){
+			var s=Math.min(pcm.length, pcm5.length-n);
+			pcm5.set(s==pcm.length?pcm:pcm.subarray(0,s),n); n+=pcm.length
+		}
+		run(Html_$T("EmcW::正在合成mp3..."));
+		var mock=Recorder({ type:"mp3",sampleRate:sr,bitRate:16 });
+		mock.mock(pcm5, sr);
+		mock.stop(function(blob){
+			url=window.nmn5Url=(window.URL||webkitURL).createObjectURL(blob);
+			run();
+		},function(err){
+			run("",err);
+		});
+	}else{ //播放音频文件
+		run();
+	}
 };
 function recPlayLast(){
 	if(!recLogLast){
@@ -1396,12 +1446,12 @@ var wakeLockClick=function(){
 //实时传输数据模拟开关
 $(".realTimeSendSet").bind("change",function(e){
 	var open=e.target.checked;
-	$(".webrtcView")[open?"show":"hide"]();
+	$(".realTimeSendView")[open?"show":"hide"]();
 	if(open && !window.webrtcCreate){
-		var file="assets/zdemo.index.webrtc.js";
-		reclog(Html_$T("33ji::正在加载{1} ...",0,file));
+		var files=["assets/zdemo.index.realtime_voice.js","assets/zdemo.index.webrtc.js"];
+		reclog(Html_$T("33ji::正在加载{1} ...",0,JSON.stringify(files)));
 		
-		loadJsList([file]);
+		loadJsList(files);
 	};
 });
 

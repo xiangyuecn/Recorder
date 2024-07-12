@@ -256,10 +256,6 @@ i18n.put(putSet,
 ,"8Z8O:"+ //no args
        "does not support audio recording"
 
-//@@zh="本页面的js资源采用的CDN不稳定，已切换到："
-,"1YEb:"+ //no args
-       "The CDN used by the js resources on this page is unstable and has been switched to: "
-
 //@@zh="页面已准备好，请先点击打开录音，然后点击录制"
 ,"BL9u:"+ //no args
        "The page is ready, please click to open the recording first, then click the Start recording"

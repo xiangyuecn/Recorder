@@ -15,14 +15,27 @@ loadJsList([//加载依赖的js
 		,check:function(){return !window.DemoFragment||!DemoFragment.BindTouchButton}}
 ],function(){
 	reclog("需要的js加载完成");
-	jsLoadEnd();
 	bindTouch();
+	rtConnModeClick();
 },function(err){
 	reclog(err,1);
 });
+window.rtConnModeIsWS=true;
+window.rtConnModeClick=function(){
+	var isWS=$(".rtConnMode_ws")[0].checked;
+	rtConnModeIsWS=isWS;
+	$(".rtVoiceView")[isWS?"show":"hide"]();
+	$(".webrtcView")[!isWS?"show":"hide"]();
+	
+	if(isWS){
+		rtVoiceOnShow();
+	}else{
+		webrtcTips(); webrtcTips=function(){};
+	}
+};
 
-var jsLoadEnd=function(){
-	reclog("<span style='font-size:50px;color:#0b1'>↑↑↑按上面的步骤使用↑↑↑</span>");
+var webrtcTips=function(){
+	reclog("<span style='font-size:30px;color:#0b1'>↑↑↑WebRTC按上面的步骤使用↑↑↑</span>");
 	
 	reclog("<span style='color:#f60'>实时编码未使用takeoffEncodeChunk实现时：除wav、pcm格式外发送间隔尽量不要低于编码速度速度，除wav、pcm外其他格式编码结果可能会比实际的PCM结果音频时长略长或略短，如果涉及到实时解码应留意此问题，长了的时候可截断首尾使解码后的PCM长度和录音的PCM长度一致（可能会增加噪音）</span>，<span style='color:#0b1'>使用takeoffEncodeChunk实现时无此限制（在上面勾选“接管编码器输出”即可开启使用）</span>；参考<a target='_blank' href='https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3'>【教程】【音频流】【上传】实时转码并上传-mp3专版</a>。");
 	
@@ -45,13 +58,24 @@ var jsLoadEnd=function(){
 	,'**************</div>'
 	].join("<br>"));
 	
-	reclog("<span style='font-size:50px;color:#0b1'>↓↓↓按下面的步骤使用↓↓↓</span>");
+	reclog("<span style='font-size:30px;color:#0b1'>↓↓↓WebRTC按下面的步骤使用↓↓↓</span>");
 };
-	
-	$(".webrtcView").html([""
+
+	$(".realTimeSendView").html([""
+,'<div onclick="rtConnModeClick()" style="margin-top:6px;padding:8px;color:#fff;font-weight: bold;background:#5e97d0;border-radius:6px 6px 0 0;">'
+,'	传输通道：'
+,'	<label><input type="radio" name="rtConnMode" class="rtConnMode_ws" value="ws" checked>WebSocket(连服务器)</label>'
+,'	<label><input type="radio" name="rtConnMode" class="rtConnMode_rtc" value="rtc">WebRTC(局域网P2P)</label>'
+,'</div>'
+,'<div style="padding:8px;background:#f3f7fc;border-radius:0 0 6px 6px;">'
+
+,'<div class="rtVoiceView" style="display:none"></div>'
+
+,'<div class="webrtcView" style="display:none">'
+
 ,'<div class="webrtcSend">'
-,'<div style="border:1px solid #ddd;margin-top:6px">'
-,'	<div style="background:#f5f5f5;color:#06c;font-weight:bold;border-bottom:1px solid #ddd;padding:10px 5px">H5版语音通话聊天（上面录音时会自动通过局域网WebRTC P2P传输给对方）</div>'
+,'<div style="border:1px solid #ddd;background:#fff">'
+,'	<div style="background:#f5f5f5;color:#06c;font-weight:bold;border-bottom:1px solid #ddd;padding:10px 5px">WebRTC语音通话聊天（上面录音时会自动通过局域网WebRTC P2P传输给对方）</div>'
 
 ,'	<div style="border-bottom:1px solid #ddd;padding:5px">'
 ,'		<div class="webrtcStatus"></div>'
@@ -81,7 +105,7 @@ var jsLoadEnd=function(){
 ,'<div style="margin-top:15px"><div style="display:inline-block;">'
 ,'	<div style="border:1px solid #ddd;background:#f5f5f5;color:#06c;font-weight:bold;padding:10px 5px">发语音和文本消息（简单演示，需先连接）</div>'
 ,'	<div style="border:2px solid #0b1">'
-,'		<div style="border-bottom:2px solid #0b1; padding:3px;">'
+,'		<div style="border-bottom:2px solid #0b1; padding:3px; background:#fff">'
 ,'			<div class="webrtcVoiceBtn" style="display: inline-block;padding:12px 0;width:110px;text-align: center;background: #0b1;color: #fff;border-radius: 6px;cursor: pointer;">按住发语音</div>'
 ,'			<textarea class="webrtcMsgInput" style="vertical-align: middle;width:130px;height:40px;padding:0"></textarea>'
 ,'			<input type="button" value="发消息" onclick="webrtcMessageSend()">'
@@ -114,6 +138,9 @@ var jsLoadEnd=function(){
 ,'	</div>'
 ,'</div></div>'
 ,'</div>'
+
+,'</div>'
+,'</div>'
 	].join("\n"));
 	
 	
@@ -128,13 +155,18 @@ var bindTouch=function(){
 			rtcVoiceStart=true;
 			
 			//开始录音
-			recstart(function(err){
+			var openFn=window.recreq||recopen;
+			var errEnd=function(err){
 				if(err){
 					rtcVoiceStart=false;
 					rtcMsgView("[错误]"+err,false);
 					cancel("录音错误");
 					return;
 				};
+			};
+			openFn(function(err){
+				if(err) errEnd(err);
+				else recstart(errEnd);
 			});
 		}
 		,function(isCancel,isUser){//结束长按回调
@@ -174,12 +206,16 @@ var realTimeSendTryReset=function(recSet){
 		webrtcStatusSend("reset",recSet);
 	};
 };
-var realTimeSendTry=function(recSet,interval,pcmDatas,sampleRate){
+var realTimeSendTry=function(recSet,pcmDatas,sampleRate){
+	if(rtConnModeIsWS){//websocket，不处理
+		return;
+	};
 	if(rtcVoiceStart){//长按发语音，不实时发送语音
 		realTimeSendTryReset();
 		return;
 	};
 	
+	var interval=window.realTimeSendTime||500;
 	var t1=Date.now(),endT=0,recImpl=Recorder.prototype;
 	if(realTimeSendTryTime==0){
 		realTimeSendTryTime=t1;
@@ -483,7 +519,7 @@ var rtcVoiceView=function(data,isIn){
 var rtcVoiceDatas={};
 var rtcVoicePlay=function(id){
 	var audio=$(".recPlay")[0];
-	audio.controls=true;
+	audio.style.display="inline-block";
 	if(!(audio.ended || audio.paused)){
 		audio.pause();
 	};

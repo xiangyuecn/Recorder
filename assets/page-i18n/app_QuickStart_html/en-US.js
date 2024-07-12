@@ -252,10 +252,6 @@ i18n.put(putSet,
 ,"EA2M:"+ //no args
        " file to your (https) website, and you can start testing normally without other files; this file is more suitable for introductory learning"
 
-//@@zh="本页面的js资源采用的CDN不稳定，已切换到："
-,"LiG4:"+ //no args
-       "The CDN used by the js resources on this page is unstable and has been switched to: "
-
 //@@zh="AppUseH5选项变更，已重置RecordApp，请先进行权限测试"
 ,"Xvin:"+ //no args
        "AppUseH5 option changed, RecordApp has been reset, please test permissions first"

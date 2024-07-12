@@ -10,7 +10,7 @@
 - 支持编译成：H5、Android App、iOS App、微信小程序
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
-- 支持可视化波形显示；可配置回声消除、降噪；注意：不支持通话时录音
+- 支持可视化波形显示；可配置回声消除、降噪；**注意：不支持通话时录音**
 - 支持离线使用，本组件和配套原生插件均不依赖网络
 - App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好
 
@@ -319,7 +319,7 @@ RecordApp.Start({
     ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高，默认值为0
     
     //iOS的AVAudioSession setCategory的withOptions参数值（App搭配原生插件可用），取值请参考配套原生插件文档中的iosSetDefault_categoryOptions
-    //,ios_categoryOptions:0x1|0x4|0x8 //0x8是外放，默认值为0x1|0x4不带0x8是听筒播放，等同于下面的setSpeakerOff
+    //,ios_categoryOptions:0x1|0x4 //默认值为5(0x1|0x4)
 });
 
 //App搭配原生插件时尝试切换听筒播放或外放

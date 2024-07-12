@@ -308,6 +308,35 @@ $.ajax({
 ```
 
 
+[​](?)
+
+## 【附】js中的二进制基础知识：Uint8Array Int16Array ArrayBuffer Blob/File
+更多js二进制数据基础知识请阅读：[js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
+``` javascript
+//XMLHttpRequest、WebSocket等一般都能直接send(TypedArray/ArrayBuffer/Blob)到服务器，服务器会收到二进制数据
+//TypedArray/ArrayBuffer在绝大部分js运行环境中都支持，Blob只在浏览器中支持
+
+//Recorder的buffers是pcm数组，单个pcm是Int16Array（TypedArray子类）
+var arrayBuffer=pcm.buffer; //pcm的Int16Array转ArrayBuffer
+var pcm=new Int16Array(arrayBuffer); //pcm的ArrayBuffer转成Int16Array（共享内存，arrayBuffer.slice(0)截取新的不共享）
+
+//Recorder的takeoffEncodeChunk得到的chunkBytes是Uint8Array（TypedArray子类，类似于无符号byte[]）
+var arrayBuffer=chunkBytes.buffer; //chunkBytes的Uint8Array转ArrayBuffer
+var chunkBytes=new Uint8Array(arrayBuffer); //任意ArrayBuffer均能转成Uint8Array
+
+//ArrayBuffer 与 Blob/File 可以相互转换，File是Blob的一个特例（子类）
+var blob=new Blob([arrayBuffer],{type:"audio/mp3"});
+var file=new File([arrayBuffer],"xxx.mp3");
+var arrayBuffer=reader.result; //用FileReader的readAsArrayBuffer方法读取 Blob/File 成ArrayBuffer
+
+//二进制拼接合并，下面Int16Array换成Uint8Array等其他TypedArray也是一样的
+var pcm1=new Int16Array([1,2]),pcm2=new Int16Array([3,4,5,6]);
+var pcm=new Int16Array(pcm1.length+pcm2.length);
+pcm.set(pcm1,0); //写入pcm1到开头位置
+pcm.set(pcm2,pcm1.length); //写入pcm2到pcm1后面，完成拼接
+```
+
+
 
 
 
@@ -1516,14 +1545,22 @@ $T.G("key-xx2",["v1"], "ru"); //明确返回俄语，不管当前lang设置的�
 
 # :open_book:其它功能介绍
 
-## 语音通话聊天demo：实时编码、传输与播放验证
-在[线测试Demo](https://xiangyuecn.github.io/Recorder/)中包含了一个语音通话聊天的测试功能，没有服务器支持所以仅支持局域网内一对一语音。用两个设备（浏览器打开两个标签也可以）打开demo，勾选H5版语音通话聊天，按提示交换两个设备的信息即可成功进行P2P连接，然后进行语音。实际使用时数据传输可以用WebSocket，会简单好多。
+## 测试用的本地服务器
+在 [/assets/node-localServer](./assets/node-localServer) 目录内提供了一个nodejs服务，实现了http上传接口、websocket接口。多个demo中有使用到，方便测试。
 
-编写本语音测试的目的在于验证H5录音实时转码、传输的可行性，并验证实时转码mp3格式小片段文件接收后的可播放性。经测试发现：除了移动端可能存在设备性能低下的问题以外，录音后实时转码mp3并传输给对方是可行的，对方接收后播放也能连贯的播放（效果还是要看播放代码写的怎么样，目前没有比较完美的播放代码，用BufferStreamPlayer插件播放效果会好点）。另外（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav、pcm 15分钟要37M多流量。
+## WebSocket语音通话聊天demo
+在[线测试Demo](https://xiangyuecn.github.io/Recorder/)中包含了一个WebSocket版的语音通话聊天的测试功能，测试时需先运行上面这个本地服务器。用两个设备（浏览器打开两个标签也可以）打开demo，勾选实时语音通话聊天对讲，配置好双方标识，连接上服务器即可通话和聊天。手机上测试时，应当使用wss连接，本地服务器里面配置上ssl证书开启wss。
 
-另外除wav、pcm外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意（如果类型支持，实时处理时使用`takeoffEncodeChunk`选项可完全避免此问题）。
+对应的源码在 [/assets/zdemo.index.realtime_voice.js](./assets/zdemo.index.realtime_voice.js)，实时传输pcm格式的音频数据（未经过任何编码），用BufferStreamPlayer插件播放。
 
 ![](assets/use_webrtc.png)
+
+## WebRTC语音通话聊天demo
+在[线测试Demo](https://xiangyuecn.github.io/Recorder/)中还包含了一个WebRTC版的语音通话聊天的测试功能，支持局域网内一对一语音无需服务器。用两个设备（浏览器打开两个标签也可以）打开demo，勾选实时语音通话聊天对讲再切换到WebRTC，按提示交换两个设备的信息即可成功进行P2P连接，然后进行语音。实际使用时数据传输用WebSocket的会简单好多。
+
+早期编写本语音测试的目的在于验证H5录音实时转码、传输的可行性，并验证实时转码mp3格式小片段文件接收后的可播放性。经测试发现：除了移动端可能存在设备性能低下的问题以外，录音后实时转码mp3并传输给对方是可行的，对方接收后播放也能连贯的播放（效果还是要看播放代码写的怎么样，目前没有比较完美的播放代码，用BufferStreamPlayer插件播放效果会好点）。另外（16kbps,16khz）MP3开语音15分钟大概3M的流量，wav、pcm 15分钟要37M多流量。
+
+另外除wav、pcm外MP3等格式编码出来的音频的播放时间比PCM原始数据要长一些或短一些，如果涉及到解码或拼接时，这个地方需要注意（如果类型支持，实时处理时使用`takeoffEncodeChunk`选项可完全避免此问题）。
 
 
 

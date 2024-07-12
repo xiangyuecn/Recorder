@@ -51,6 +51,14 @@ var Export=Recorder; //可以整个代码复制过去使用，删掉这句（结
 //var Export={}; export default Export; //import使用：import JsBinary from './copy.js'
 
 
+//=======TypedArray二进制拼接合并======
+	/*直接创建一个大的数组，调用set方法将两个小数组填充进去即可，下面Int16Array换成Uint8Array等其他TypedArray也是一样的
+		var pcm1=new Int16Array([1,2]),pcm2=new Int16Array([3,4,5,6]); //待合并的两个数组
+		var pcm=new Int16Array(pcm1.length+pcm2.length); //创建一个新的大数组
+		pcm.set(pcm1,0); //写入pcm1到开头位置
+		pcm.set(pcm2,pcm1.length); //写入pcm2到pcm1后面，完成拼接
+	*/
+
 //=======ArrayBuffer 和 TypedArray 互转（Uint8Array Int8Array Int16Array Uint16Array Int32Array Uint32Array Float32Array Float64Array）======
 	//【用 arr=new Int16Array(arrayBuffer) 就能创建TypedArray】无需编写转换函数
 	//【用 arr.buffer 就是 ArrayBuffer】无需编写转换函数

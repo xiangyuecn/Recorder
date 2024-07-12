@@ -688,7 +688,7 @@ export default {
 		}
 		,__setSpeakerOff(off){
 			// #ifdef APP
-			RecordApp.UniNativeUtsPluginCallAsync("setSpeakerOff",{off:off}).then(()=>{
+			RecordApp.UniNativeUtsPluginCallAsync("setSpeakerOff",{off:off,headset:off}).then(()=>{
 				this.reclog("已切换成"+(off?"听筒播放":"外放"),2);
 			}).catch((e)=>{
 				this.reclog("切换"+(off?"听筒播放":"外放")+"失败："+e.message,1);

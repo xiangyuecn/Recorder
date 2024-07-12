@@ -1,0 +1,18 @@
+<view style="padding:0 3px">
+
+<view style="border: 1px #666 dashed; padding:8px; margin-top:8px">
+	<view>
+		<text style="font-size:17px;font-weight: bold;color:#f60">上传到服务器</text>
+		<text style="font-size:13px;color:#999;margin-left:10px">源码:test_upload_saveFile__</text>
+	</view>
+	<view>
+		<text>http(s)：</text>
+		<input value="{{httpApi}}" bindinput="inputSet" data-key="httpApi" style="width:260px;display:inline-block;border:1px solid #ddd"/>
+	</view>
+	<view style="font-size:13px;color:#999">需要先在电脑上运行Recorder仓库/assets/node-localServer内的nodejs服务器端脚本，然后填写你电脑局域网ip即可测试（开发工具里面用127.0.0.1），支持http、https测试</view>
+	
+	<button size="mini" bindtap="uploadClick" style="margin-right:10px;vertical-align:middle">上传当前录音到服务器</button>
+	<button size="mini" bindtap="uploadBase64Click" style="vertical-align:middle">使用base64格式上传</button>
+</view>
+
+</view>

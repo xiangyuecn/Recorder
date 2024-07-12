@@ -79,16 +79,31 @@
 	
 	<view style="padding:5px 10px 0">
 		<view><checkbox checked="{{takeoffEncodeChunkSet}}" bindtap="takeoffEncodeChunkSetClick">接管编码器输出（takeoffEncodeChunk）</checkbox> {{takeoffEncodeChunkMsg}}</view>
+		
+		<view><checkbox checked="{{useAEC}}" bindtap="useAEC_Click">尝试启用回声消除（echoCancellation）</checkbox></view>
+		
+		<view><checkbox checked="{{showUpload}}" bindtap="showUploadClick">录音上传、实时语音通话聊天对讲</checkbox></view>
 	</view>
 
 	<!-- 手撸播放器 -->
 	<test-player class="player"></test-player>
+	
+	<!-- 上传、语音通话等功能 -->
+	<view hidden="{{!showUpload}}">
+		<test-upload-view />
+		<test-rtvoice-view />
+	</view>
 
 	<!-- 日志输出 -->
 	<view style="padding-top:30px">
 		<view wx:for="{{reclogs}}" wx:key="index" style="border-bottom:1px dashed #666;padding:5px 0;">
 			<view style="color:{{item.color==1?'red':item.color==2?'green':item.color}}">
 				{{item.txt}}
+			</view>
+		</view>
+		<view wx:if="{{reclogLast}}" style="position:fixed;z-index:2;width:20vw;min-width:200px;max-height:100px;overflow:auto;right:0;bottom:0;background:#fff;padding:5px 10px;border-radius:6px 0 0 0;box-shadow:-1px -1px 3px #ddd;font-size:13px">
+			<view style="color:{{reclogLast.color==1?'red':reclogLast.color==2?'green':reclogLast.color}}">
+				{{reclogLast.txt}}
 			</view>
 		</view>
 	</view>

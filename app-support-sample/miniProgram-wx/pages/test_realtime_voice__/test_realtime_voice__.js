@@ -1,89 +1,44 @@
-<!-- 实时语音通话聊天对讲，websocket实时传输数据 -->
-<template>
-<view style="padding:0 3px">
+// 实时语音通话聊天对讲，websocket实时传输数据
 
-<view style="border: 1px #666 dashed; padding:8px; margin-top:8px">
-	<view>
-		<text style="font-size:17px;font-weight: bold;color:#f60">实时语音通话对讲</text>
-		<text style="font-size:13px;color:#999;margin-left:10px">源码:test_realtime_voice.vue</text>
-	</view>
-	<view>
-		<text>ws(s)：</text>
-		<input v-model="wsApi" style="width:260px;display:inline-block;border:1px solid #ddd"/>
-	</view>
-	<view style="font-size:13px;color:#999">需要先在电脑上运行Recorder仓库/assets/node-localServer内的nodejs服务器端脚本，然后填写你电脑局域网ip即可测试（H5时用127.0.0.1可用ws），支持ws、wss测试WebSocket地址</view>
-	
-	<view>
-		<text>我的标识</text>
-		<input v-model="wsID1" style="width:50px;display:inline-block;border:1px solid #ddd;vertical-align:middle"/>
-		<button size="mini" type="default" @click="wsConnClick" style="margin-left:10px;vertical-align:middle">连接服务器</button>
-		<button size="mini" type="default" @click="wsDisconnClick" style="margin-left:10px;vertical-align:middle">断开</button>
-	</view>
-	<view style="border-top: 1px #ccc dashed;margin:5px 0"></view>
-	<view>
-		<view style="font-size:13px;color:#999">服务器将pcm片段实时发送给客户端，模拟播放语音流</view>
-		<checkbox :checked="ws_readAudioSet" @click="ws_readAudioSet=!ws_readAudioSet" style="font-size:14px">读audio-16k.wav</checkbox>
-		<button size="mini" type="default" @click="wsAudioStartClick" style="margin:0 10px;vertical-align:middle">播放语音流</button>
-		<button size="mini" type="default" @click="wsAudioStopClick" style="vertical-align:middle">结束</button>
-		<view v-if="ws_audioFrameDurTxt">
-			{{ws_audioFrameDurTxt}}，{{ws_audioFrameCount}}帧，{{ws_audioFrameSize}}字节
-		</view>
-	</view>
-	
-	<view style="border-top: 1px #ccc dashed;margin:5px 0"></view>
-	<view>
-		<view style="font-size:13px;color:#999">语音通话聊天对讲，请在上面进行录音操作，音频数据会实时传送给对方播放（实时pcm）</view>
-		<text>对方标识</text>
-		<input v-model="wsID2" style="width:50px;display:inline-block;border:1px solid #ddd;vertical-align:middle"/>
-		<button size="mini" type="default" @click="wsOpenVoiceClick" style="margin-left:10px;vertical-align:middle">开始通话</button>
-		<button size="mini" type="default" @click="wsCloseVoiceClick" style="margin-left:10px;vertical-align:middle">结束</button>
-		<view v-if="ws_voiceSendDurTxt||ws_voiceReceiveDurTxt">
-			<view>接收：{{ws_voiceReceiveDurTxt}}，{{ws_voiceReceiveCount}}帧，{{ws_voiceReceiveSize}}字节</view>
-			<view>发送：{{ws_voiceSendDurTxt}}，{{ws_voiceSendUserCount}}人接收，OK {{ws_voiceSendOKCount}}帧，Err {{ws_voiceSendErrCount}}帧，{{ws_voiceSendSize}}字节</view>
-		</view>
-	</view>
-</view>
+var Recorder=require("../../copy-rec-src/src/recorder-core.js");
 
-</view>
-</template>
-
-<script>
-import Recorder from 'recorder-core';
-import RecordApp from 'recorder-core/src/app-support/app.js';
-
-export default {
-	data(){
-		return {
-			wsApi:"", wsID1:"", wsID2:""
-			, ws_readAudioSet:false, ws_audioFrameCount:0, ws_audioFrameSize:0, ws_audioFrameDur:0, ws_audioFrameDurTxt:""
-			
-			,ws_voiceSendUserCount:0,ws_voiceSendOKCount:0,ws_voiceSendErrCount:0,ws_voiceSendSize:0,ws_voiceSendDur:0,ws_voiceSendDurTxt:""
-			,ws_voiceReceiveCount:0,ws_voiceReceiveSize:0,ws_voiceReceiveDur:0,ws_voiceReceiveDurTxt:""
-		}
+Component({
+	data: {
+		wsApi:"", wsID1:"", wsID2:""
+		, ws_readAudioSet:false, ws_audioFrameCount:0, ws_audioFrameSize:0, ws_audioFrameDur:0, ws_audioFrameDurTxt:""
+		
+		,ws_voiceSendUserCount:0,ws_voiceSendOKCount:0,ws_voiceSendErrCount:0,ws_voiceSendSize:0,ws_voiceSendDur:0,ws_voiceSendDurTxt:""
+		,ws_voiceReceiveCount:0,ws_voiceReceiveSize:0,ws_voiceReceiveDur:0,ws_voiceReceiveDurTxt:""
 	},
-	mounted() {
-		this.wsID1=uni.getStorageSync("page_test_upsf_wsID1")||"1";
-		this.wsID2=uni.getStorageSync("page_test_upsf_wsID2")||"2";
+	attached(){
+		var data={};
+		data.wsID1=wx.getStorageSync("page_test_upsf_wsID1")||"1";
+		data.wsID2=wx.getStorageSync("page_test_upsf_wsID2")||"2";
 		
 		var wsApi="ws://你电脑局域网ip:9529/ws123";
-		// #ifdef H5
-			wsApi="ws://127.0.0.1:9529/ws123";
-		// #endif
-		this.wsApi=uni.getStorageSync("page_test_upsf_wsApi")||wsApi;
+		data.wsApi=wx.getStorageSync("page_test_upsf_wsApi")||wsApi;
+		
+		this.setData(data);
+		
+		var ps=getCurrentPages();
+		this.parentPage=ps[ps.length-1];
+		console.log({test_upload_saveFile__:this});
 	},
-	/*#ifdef VUE3*/unmounted()/*#endif*/ /*#ifndef VUE3*/destroyed()/*#endif*/ {
+	detached(){
 		clearInterval(this.spWxTimer);
 		this.getPage().wsVoiceProcess=null;
 		if(this.socket) this.socket.close();
 	},
-	methods:{
-		getPage(){
-			var p=this.$parent;
-			while(p){
-				if(p.reclog) break;
-				p=p.$parent;
-			}
-			return p;
+	methods: {
+		inputSet(e){
+			var val=e.detail.value;
+			var data=e.target.dataset;
+			if(val && data.type=="number"){ val=+val||0; }
+			var obj={}; obj[data.key]=val;
+			this.setData(obj);
+		}
+		,getPage(){
+			return this.parentPage;
 		}
 		,log(){
 			var p=this.getPage();
@@ -102,33 +57,40 @@ export default {
 		}
 		,checkSet(api){
 			if(api==2){
-				if(!/^wss?:\/\/.+/i.test(this.wsApi) || /局域网/.test(this.wsApi)){
+				if(!/^wss?:\/\/.+/i.test(this.data.wsApi) || /局域网/.test(this.data.wsApi)){
 					this.log("请配置ws地址，比如填写：ws://127.0.0.1:9529/",1);
 					return false;
 				}
-				uni.setStorageSync("page_test_upsf_wsApi", this.wsApi); //测试用的存起来
+				wx.setStorageSync("page_test_upsf_wsApi", this.data.wsApi); //测试用的存起来
 				
-				if(!this.wsID1){
+				if(!this.data.wsID1){
 					this.log("请填写我的标识");
 					return false;
 				}
-				uni.setStorageSync("page_test_upsf_wsID1", this.wsID1); //测试用的存起来
+				wx.setStorageSync("page_test_upsf_wsID1", this.data.wsID1); //测试用的存起来
 			}
 			return true;
 		}
+		
+		
+		,ws_readAudioSetClick(){
+			this.setData({ws_readAudioSet:!this.data.ws_readAudioSet});
+		}
+		
+		
 		
 		
 		
 		//连接websocket
 		,wsConnClick(){
 			if(!this.checkSet(2))return;
-			this.log("正在连接"+this.wsApi+"...");
+			this.log("正在连接"+this.data.wsApi+"...");
 			if(this.socket) this.socket.close();
 			var sid=this.SID=(this.SID||0)+1; //同步操作
 			
 			this.socketIsOpen=false;
-			this.socket=uni.connectSocket({
-				url:this.wsApi
+			this.socket=wx.connectSocket({
+				url:this.data.wsApi
 				,success:()=>{}
 				,fail:(e)=>{ this.log("ws连接fail："+e.errMsg,1) }
 			});
@@ -141,6 +103,9 @@ export default {
 				if(sid!=this.SID) return;
 				this.socketIsOpen=false;
 				this.log("ws因为错误已断开："+e.errMsg,1);
+				if(/No route/i.test(e.errMsg)){
+					this.log("ws因为错误无法连接。如果是iOS，可能由于iOS上不允许App访问本地网络，请到“系统设置 > 隐私 > 本地网络”中打开权限，方便本地测试",1);
+				}
 			});
 			this.socket.onOpen(()=>{
 				if(sid!=this.SID) return;
@@ -149,16 +114,18 @@ export default {
 				this.socket.sendCalls={};
 				this.log("ws已连接",2);
 				
-				this.ws__sendMessage("setMeta",{uid:this.wsID1},null,null,()=>{
-					this.log("ws已绑定标识："+this.wsID1,2);
+				this.ws__sendMessage("setMeta",{uid:this.data.wsID1},null,null,()=>{
+					this.log("ws已绑定标识："+this.data.wsID1,2);
 				},(err)=>{
 					this.log("ws绑定标识出错："+err,1);
 				});
 				
-				this.ws_voiceReceiveCount=0;
-				this.ws_voiceReceiveSize=0;
-				this.ws_voiceReceiveDur=0;
-				this.ws_voiceReceiveDurTxt="00:00";
+				this.setData({
+					ws_voiceReceiveCount:0
+					,ws_voiceReceiveSize:0
+					,ws_voiceReceiveDur:0
+					,ws_voiceReceiveDurTxt:"00:00"
+				});
 				this.resetWsSendVoice();
 				this.initStreamPlay(); //先初始化播放器
 			});
@@ -276,13 +243,15 @@ export default {
 			var socket=this.socket;
 			if(!this.socketIsOpen) return this.log("ws未连接",1);
 			if(socket.audioStartToken) return this.log("请先audioStop",1);
-			this.ws_audioFrameCount=0;
-			this.ws_audioFrameSize=0;
-			this.ws_audioFrameDur=0;
-			this.ws_audioFrameDurTxt="00:00";
-			this.ws__sendMessage("audioStart",{readAudio:!!this.ws_readAudioSet},null,null,(data)=>{
+			this.setData({
+				ws_audioFrameCount:0
+				,ws_audioFrameSize:0
+				,ws_audioFrameDur:0
+				,ws_audioFrameDurTxt:"00:00"
+			});
+			this.ws__sendMessage("audioStart",{readAudio:!!this.data.ws_readAudioSet},null,null,(data)=>{
 				socket.audioStartToken=data.token;
-				this.log("已打开服务器端语音流 readAudio="+(!!this.ws_readAudioSet)+" token="+data.token,2);
+				this.log("已打开服务器端语音流 readAudio="+(!!this.data.ws_readAudioSet)+" token="+data.token,2);
 			},(err)=>{
 				this.log("打开服务器端语音流出错："+err,1);
 			});
@@ -303,10 +272,12 @@ export default {
 		//收到服务器模拟语音流片段数据，进行播放
 		,onMsg__audioFrame(data,binary,msgObj){
 			var pcm=new Int16Array(binary.buffer);
-			this.ws_audioFrameCount++;
-			this.ws_audioFrameSize+=binary.length;
-			this.ws_audioFrameDur=Math.round(this.ws_audioFrameSize/2/data.sampleRate*1000);
-			this.ws_audioFrameDurTxt=this.formatTime(this.ws_audioFrameDur);
+			var set={};
+			set.ws_audioFrameCount=this.data.ws_audioFrameCount=this.data.ws_audioFrameCount+1;
+			set.ws_audioFrameSize=this.data.ws_audioFrameSize=this.data.ws_audioFrameSize+binary.length;
+			set.ws_audioFrameDur=Math.round(set.ws_audioFrameSize/2/data.sampleRate*1000);
+			set.ws_audioFrameDurTxt=this.formatTime(set.ws_audioFrameDur);
+			this.setData(set);
 			
 			this.streamPlay(pcm,data.sampleRate);
 		}
@@ -315,15 +286,16 @@ export default {
 		//语音通话对讲
 		,wsOpenVoiceClick(){
 			if(!this.socketIsOpen) return this.log("ws未连接",1);
-			if(!this.wsID2) return this.log("请填写对方标识",1);
-			if(this.wsID1==this.wsID2) return this.log("对方标识不能和我的标识相同",1);
-			uni.setStorageSync("page_test_upsf_wsID2", this.wsID2); //测试用的存起来
+			if(!this.data.wsID2) return this.log("请填写对方标识",1);
+			if(this.data.wsID1==this.data.wsID2) return this.log("对方标识不能和我的标识相同",1);
+			wx.setStorageSync("page_test_upsf_wsID2", this.data.wsID2); //测试用的存起来
 			this.log("我方已开始语音发送，请在上面进行录音操作",2);
 			
 			//调用 main_recTest.vue 页面中的录音功能
 			var page=this.getPage();
 			page.reqOkCall=()=>{ //重新开始录音
-				page.useAEC=true; //启用回声消除
+				page.data.useAEC=true; //启用回声消除
+				page.setData({ useAEC:true });
 				page.recStart();
 			};
 			page.recReq();
@@ -346,32 +318,36 @@ export default {
 				
 				//发送pcm出去
 				this.ws__sendMessage("sendTo",{
-					toMetaKey:"uid",toMetaValue:this.wsID2 //接收方信息，可以是群组（群组的需控制同时只能一人发，否则多人得服务器端混流）
+					toMetaKey:"uid",toMetaValue:this.data.wsID2 //接收方信息，可以是群组（群组的需控制同时只能一人发，否则多人得服务器端混流）
 					,sendType:"custom_voiceFrame",sendData:{
-						fromMetaKey:"uid",fromMetaValue:this.wsID1//告诉对方是我发的信息
+						fromMetaKey:"uid",fromMetaValue:this.data.wsID1//告诉对方是我发的信息
 						,sampleRate:16000 //采样率
 					}
 				},bytes,null,(data)=>{
-					this.ws_voiceSendUserCount=data.count;
+					var set={};
+					set.ws_voiceSendUserCount=data.count;
 					if(data.count){
-						this.ws_voiceSendOKCount++;
+						set.ws_voiceSendOKCount=this.data.ws_voiceSendOKCount=this.data.ws_voiceSendOKCount+1;
 					}else{ //没有接收方
-						this.ws_voiceSendErrCount++;
+						set.ws_voiceSendErrCount=this.data.ws_voiceSendErrCount=this.data.ws_voiceSendErrCount+1;
 					}
-					this.ws_voiceSendSize+=pcm.byteLength;
-					this.ws_voiceSendDur=Math.round(this.ws_voiceSendSize/2/16000*1000);
-					this.ws_voiceSendDurTxt=this.formatTime(this.ws_voiceSendDur);
+					set.ws_voiceSendSize=this.data.ws_voiceSendSize=this.data.ws_voiceSendSize+pcm.byteLength;
+					set.ws_voiceSendDur=Math.round(set.ws_voiceSendSize/2/16000*1000);
+					set.ws_voiceSendDurTxt=this.formatTime(set.ws_voiceSendDur);
+					this.setData(set);
 				});
 			};
 			this.resetWsSendVoice();
 		}
 		,resetWsSendVoice(){
-			this.ws_voiceSendUserCount=0;
-			this.ws_voiceSendOKCount=0;
-			this.ws_voiceSendErrCount=0;
-			this.ws_voiceSendSize=0;
-			this.ws_voiceSendDur=0;
-			this.ws_voiceSendDurTxt="00:00";
+			this.setData({
+				ws_voiceSendUserCount:0
+				,ws_voiceSendOKCount:0
+				,ws_voiceSendErrCount:0
+				,ws_voiceSendSize:0
+				,ws_voiceSendDur:0
+				,ws_voiceSendDurTxt:"00:00"
+			});
 		}
 		//结束语音通话对讲
 		,wsCloseVoiceClick(){
@@ -381,10 +357,12 @@ export default {
 		//收到对方发来的自定义类型的语音数据
 		,onMsg__custom_voiceFrame(data,binary,msgObj){
 			var pcm=new Int16Array(binary.buffer);
-			this.ws_voiceReceiveCount++;
-			this.ws_voiceReceiveSize+=binary.length;
-			this.ws_voiceReceiveDur=Math.round(this.ws_voiceReceiveSize/2/data.sampleRate*1000);
-			this.ws_voiceReceiveDurTxt=this.formatTime(this.ws_voiceReceiveDur);
+			var set={};
+			set.ws_voiceReceiveCount=this.data.ws_voiceReceiveCount=this.data.ws_voiceReceiveCount+1;
+			set.ws_voiceReceiveSize=this.data.ws_voiceReceiveSize=this.data.ws_voiceReceiveSize+binary.length;
+			set.ws_voiceReceiveDur=Math.round(set.ws_voiceReceiveSize/2/data.sampleRate*1000);
+			set.ws_voiceReceiveDurTxt=this.formatTime(set.ws_voiceReceiveDur);
+			this.setData(set);
 			
 			this.streamPlay(pcm,data.sampleRate);
 		}
@@ -395,80 +373,10 @@ export default {
 			this.initStreamPlay();
 			if(sampleRate!=16000){ console.warn("未适配非16000采样率的pcm播放"); return; }
 			
-			// #ifdef MP-WEIXIN
-			//微信环境，单独创建的播放器播放
 			this.addWxPlayBuffer && this.addWxPlayBuffer(pcm);
-			return;
-			// #endif
-			
-			//App、H5 时使用BufferStreamPlayer播放
-			var funcCode=`(function(pcm16k){ //这里需要独立执行
-				var sp=window.wsStreamPlay;
-				if(!sp || !sp.__isStart) return;
-				sp.input(pcm16k);
-			})`;
-			// #ifdef H5
-			eval(funcCode)(pcm);
-			return;
-			// #endif
-			RecordApp.UniWebViewEval(this.getPage(), funcCode+'(new Int16Array(BigBytes))',pcm.buffer);
 		}
 		//初始化播放器
 		,initStreamPlay(){
-			// #ifdef MP-WEIXIN
-			//微信环境，单独创建播放器
-			this.initWxStreamPlay();
-			return;
-			// #endif
-			
-			//App、H5 时使用BufferStreamPlayer播放
-			if(this.spIsInit)return; //已初始化完成
-			var funcCode=`(function(True,False){ //这里需要独立执行
-				if(window.wsStreamPlay) return True();
-				var Tag="wsStreamPlay";
-				var sp=Recorder.BufferStreamPlayer({
-					decode:false,sampleRate:16000
-					,onInputError:function(errMsg, inputIndex){
-						window["console"].error(Tag+"第"+inputIndex+"次的音频片段input输入出错: "+errMsg);
-					}
-					,onPlayEnd:function(){
-						// 没有可播放的数据了，缓冲中 或者 已播放完成
-					}
-				});
-				sp.start(function(){
-					window["console"].log(Tag+"已打开播放");
-					sp.__isStart=true;
-					window.wsStreamPlay=sp;
-					True();
-				},function(err){
-					window["console"].error(Tag+"开始失败："+err);
-					False(err);
-				});
-			})`;
-			var initOk=()=>{
-				this.spIsInit=true;
-				this.log("streamPlay已打开",2);
-			};
-			var initErr=(err)=>{
-				this.log("streamPlay初始化错误："+err,1);
-			};
-			
-			// #ifdef H5
-			eval(funcCode)(initOk,initErr);
-			return;
-			// #endif
-			var cb=RecordApp.UniMainCallBack((data)=>{
-				if(data.ok)initOk();
-				else initErr(data.errMsg);
-			});
-			RecordApp.UniWebViewEval(this.getPage(), funcCode+`(function(){
-				RecordApp.UniWebViewSendToMain({action:"${cb}",ok:1});
-			},function(err){
-				RecordApp.UniWebViewSendToMain({action:"${cb}",errMsg:err||'-'});
-			})`);
-		}
-		//微信环境，单独创建播放器
-		,initWxStreamPlay(){
 			if(this.spWxCtx && this.spWxCtx.state=="running") return;
 			if(this.spWxCtx){
 				if(Date.now()-this.spWxCtx.__time<2000) return;//wait running
@@ -544,5 +452,4 @@ export default {
 		
 		
 	}
-}
-</script>
+});

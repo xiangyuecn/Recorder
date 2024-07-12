@@ -17,9 +17,6 @@ public class RecordAppJsBridge {
     static private let JsBridgeName="RecordAppJsBridge";
     static private let JsRequestName="AppJsBridgeRequest";
     
-    //默认会把录音数据额外存储到app的cache目录中，仅供分析调试之用
-    static private let SavePCM_ToLogFile=true;
-    
     static private let LogTag="RecordAppJsBridge";
     
     public typealias MicrophoneUsesPermission = (@escaping (Bool)->Void)->Void;
@@ -331,42 +328,69 @@ return [
             
             self.main=main_;
             sampleRate=sampleRateReq;
-            logData=RecordAppJsBridge.SavePCM_ToLogFile;
-            if logData {
-                logStreamFull=NSMutableData();
-            }
             
             RecordApis.Current=self;
             
-            cacheFile=NSTemporaryDirectory() + "/record.tmp.pcm"
-            try? FileManager.default.removeItem(atPath: cacheFile);
-            
             let session = AVAudioSession.sharedInstance()
             do {
-                try session.setCategory(AVAudioSession.Category.playAndRecord)
-                try session.setActive(true)
+                try session.setCategory(AVAudioSession.Category.playAndRecord, options:[.mixWithOthers, .allowBluetooth]);
+                //try session.setPreferredIOBufferDuration(0.093); //指定录音帧时长，会导致蓝牙耳机录音不正常，0.005正常
+                try session.setActive(true);
+                SessionActive=true;
             } catch let err {
                 main.Log.e(RecordApis.LogTag, "设置录音环境出错:"+err.localizedDescription);
                 ready("设置录音环境出错:"+err.localizedDescription);
                 return;
             }
             
-            let sets: [String: Any] = [
-                AVSampleRateKey: NSNumber(value: sampleRate),//采样率
-                AVFormatIDKey: NSNumber(value: kAudioFormatLinearPCM),//音频格式
-                AVLinearPCMBitDepthKey: NSNumber(value: 16),//采样位数
-                AVNumberOfChannelsKey: NSNumber(value: 1),//通道数
-                AVEncoderAudioQualityKey: NSNumber(value: AVAudioQuality.high.rawValue)//录音质量
-            ];
-            //开始录音
-            do {
-                let url = URL(fileURLWithPath: cacheFile)
-                rec = try AVAudioRecorder.init(url: url, settings: sets)
-                rec.prepareToRecord()
-                rec.record()
-            } catch let err {
-                main.Log.e(RecordApis.LogTag, "开始录音出错:"+err.localizedDescription);
-                ready("开始录音出错:"+err.localizedDescription);
+            //初始化AudioUnit
+            var aDesc=AudioComponentDescription();
+            aDesc.componentType = kAudioUnitType_Output;
+            aDesc.componentSubType = kAudioUnitSubType_RemoteIO; //kAudioUnitSubType_VoiceProcessingIO 回声消除AEC
+            aDesc.componentManufacturer = kAudioUnitManufacturer_Apple;
+            aDesc.componentFlags = 0;
+            aDesc.componentFlagsMask = 0;
+            let aComp = AudioComponentFindNext(nil, &aDesc);
+            var aState = AudioComponentInstanceNew(aComp!, &AUnit);
+            if(aState == 0){
+                //打开音频输入
+                var enableFlag: UInt32 = 1;
+                aState=AudioUnitSetProperty(AUnit, kAudioOutputUnitProperty_EnableIO, kAudioUnitScope_Input, 1, &enableFlag, UInt32(MemoryLayout<UInt32>.size))
+            }
+            if(aState == 0){
+                //音频参数
+                var aFormat=AudioStreamBasicDescription();
+                aFormat.mSampleRate = Double(sampleRate);
+                aFormat.mFormatID = kAudioFormatLinearPCM;
+                aFormat.mFormatFlags = kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked;
+                aFormat.mChannelsPerFrame = 1;//单声道
+                aFormat.mBitsPerChannel = 16;//16位
+                aFormat.mFramesPerPacket = 1;//每个包有多少帧
+                aFormat.mBytesPerFrame = 2;//每一帧有多少字节
+                aFormat.mBytesPerPacket = 2;//每一包有多少字节
+                aState = AudioUnitSetProperty(AUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 1, &aFormat, UInt32(MemoryLayout<AudioStreamBasicDescription>.size));
+                if(aState==0){
+                    aState = AudioUnitSetProperty(AUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &aFormat, UInt32(MemoryLayout<AudioStreamBasicDescription>.size));
+                }
+            }
+            if(aState == 0){
+                //音频数据回调
+                var aCB = AURenderCallbackStruct(
+                    inputProc: self.onRecFrame,
+                    inputProcRefCon: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
+                );
+                aState = AudioUnitSetProperty(AUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Output, 0, &aCB, UInt32(MemoryLayout<AURenderCallbackStruct>.size));
+            }
+            if(aState == 0){
+                //开始录音
+                aState = AudioUnitInitialize(AUnit);
+                if(aState==0){
+                    aState = AudioOutputUnitStart(AUnit);
+                }
+            }
+            if(!(aState==0)){
+                main.Log.e(RecordApis.LogTag, "初始化AudioUnit出错["+String(aState)+"]");
+                ready("初始化AudioUnit出错["+String(aState)+"]");
                 return;
             }
             
@@ -376,22 +400,14 @@ return [
             alive();
             main.Log.i(RecordApis.LogTag, "开始录音："+String(sampleRate));
             startTime=Code.GetMS();
-            
-            ThreadX.Run {
-                self.readAsync();
-            }
         }
         private var main:RecordAppJsBridge!;
         private var sampleRate:Int;
-        private var rec:AVAudioRecorder!;
+        private var AUnit:AudioComponentInstance!;
+        private var SessionActive=false;
         private var isRec=false;
         private var aliveInt=0;
         private var startTime=Int64(0);
-        
-        private var cacheFile:String!;
-        
-        private var logData:Bool;
-        private var logStreamFull:NSMutableData!;
         
         private func destroy(){
             objc_sync_enter(Lock);
@@ -406,11 +422,15 @@ return [
             
             ThreadX.ClearTimeout(aliveInt);
             
-            logStreamFull=nil;
-            
-            if(rec != nil){
-                rec.stop();
-                rec=nil;
+            if(AUnit != nil){
+                AudioOutputUnitStop(AUnit);
+                AudioUnitUninitialize(AUnit);
+                AudioComponentInstanceDispose(AUnit);
+                AUnit=nil;
+            }
+            if(SessionActive){
+                SessionActive=false;
+                try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation);
             }
         }
         private func alive(){
@@ -434,93 +454,63 @@ return [
             }
             
             isRec=false;
-            main.Log.i(RecordApis.LogTag, "结束录音，已录制："+String(sendCount)+"段 "+String(duration)+"ms start到stop："+String(Code.GetMS()-startTime)+"ms");
+            main.Log.i(RecordApis.LogTag, "结束录音，(cb:"+String(recCbCount)+") 已录制："+String(sendCount)+"段 "+String(duration)+"ms start到stop："+String(Code.GetMS()-startTime)+"ms");
             
             callback(nil);
             
-            if(logData) {
-                let dir = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last!
-                let fullFile=dir+"/record-full.pcm";
-                
-                if !logStreamFull.write(toFile: fullFile, atomically: false) {
-                    main.Log.e(RecordApis.LogTag, "保存文件失败"+fullFile);
-                }
-            }
             destroy();
         }
         
         private var readTotal=0;
         private var duration=0;
+        private var recCbCount=0;
         private var sendCount=0;
-        private func readAsync(){
-            let sampleRateSrc=sampleRate;
-            var bufferLen=(sampleRateSrc/12)*2;//每秒返回12次，按Int16需要乘2
-            bufferLen+=bufferLen%2;//保证16位
+        private var sendBuffer=NSMutableData();
+        private var firstLog=false;
+        private let onRecFrame: AURenderCallback = { (inRefCon, ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, ioData ) -> OSStatus in
+            if(Current==nil || !Current.isRec){ return 0; }
+            let size = inNumberFrames * 2;
+            let buffer = AudioBuffer(mNumberChannels:1, mDataByteSize: size, mData: malloc(Int(size)));
+            var bufferList = AudioBufferList(mNumberBuffers: 1, mBuffers: buffer);
             
-            let itemMs=1000/12;
-            var prevTime=Int64(0);
-            
-            let cache=NSMutableData();
-            
-            let input=FileHandle.init(forReadingAtPath: cacheFile);
-            var skiped=false;
-            let skipLen=4*1024;//照抄的别人的
-            var firstLog=false;
-            while isRec {
-                var data=input!.readData(ofLength: 256);
-                
-                if data.count==0 {
-                    ThreadX.Sleep(5);
-                    continue;
-                }
-                if !isRec {
-                    break;
-                }
-                
-                cache.append(data);
-                if skiped {
-                    //读取到了回调数量的数据
-                    if cache.count>=bufferLen {
-                        let d1=cache.subdata(with: NSMakeRange(0, bufferLen));
-                        let d2=cache.subdata(with: NSMakeRange(bufferLen, cache.count-bufferLen));
-                        cache.setData(d2);
-                        
-                        if(logData) {
-                            logStreamFull.append(d1);
-                        }
-                        readTotal+=d1.count;
-                        duration=readTotal/(sampleRateSrc/1000)/2;
-                        sendCount+=1;
-                        main.runScript_JsBridge(
-                        "var b64=\"" + d1.base64EncodedString() + "\";" +
-                                "var sampleRate=\(sampleRateSrc);" +
-                                "var postMsg={type:'" + RecordAppJsBridge.JsRequestName + "',action:'Record',data:{pcmDataBase64:b64,sampleRate:sampleRate}};"
-                        , RecordAppJsBridge.JsRequestName + ".Record(b64,sampleRate)"
-                        , "postMsg" );
-                        
-                        if(!firstLog){
-                            main.Log.i(RecordApis.LogTag, "获取到了第一段录音数据：len:\(d1.count) bufferLen:\(bufferLen) sampleRate:\(sampleRateSrc)");
-                            firstLog=true;
-                        }
-                        
-                        
-                        //进行匀速回调，因为AVAudioRecorder写入的数据有蛮大延迟，所以最终结果也会有蛮大延迟，用AudioQueue、AudioUnit低级OC api会好很多，但太低级了，复杂难用。
-                        let delay=Int64(itemMs-10) - (Code.GetMS()-prevTime)
-                        if delay>0 {
-                            ThreadX.Sleep(Int(delay));
-                        }
-                        prevTime=Code.GetMS();
-                    }
-                }else{
-                    //跳过caf文件头
-                    if cache.count>=skipLen {
-                        skiped=true;
-                        let d2=cache.subdata(with: NSMakeRange(skipLen, cache.count-skipLen));
-                        cache.setData(d2);
-                    }
-                }
+            let status = AudioUnitRender(Current.AUnit, ioActionFlags, inTimeStamp, 1, inNumberFrames, &bufferList);
+            if(!(status==0)){
+                free(buffer.mData);
+                Current.main.Log.e("录音实时处理", "AudioUnitRender错误["+String(status)+"]");
+                return 0;
             }
-            input?.closeFile();
+            
+            let data=Data.init(bytes: buffer.mData!, count: Int(buffer.mDataByteSize));
+            free(buffer.mData);
+            Current.onRecFrame__Exec(data);
+            return 0;
+        }
+        private func onRecFrame__Exec(_ data:Data){
+            recCbCount+=1;
+            //先写入缓冲，未配置setPreferredIOBufferDuration回调太快
+            sendBuffer.append(data);
+            let frameSize=max(data.count, sampleRate*2/12); //录音帧时长 1000/12
+            if(sendBuffer.count<frameSize){
+                return;
+            }
+            let d1=sendBuffer.subdata(with: NSMakeRange(0, frameSize));
+            let d2=sendBuffer.subdata(with: NSMakeRange(frameSize, sendBuffer.count-frameSize));
+            sendBuffer.setData(d2);
+            
+            readTotal+=d1.count;
+            duration=readTotal/(sampleRate/1000)/2;
+            sendCount+=1;
+            main.runScript_JsBridge(
+            "var b64=\"" + d1.base64EncodedString() + "\";" +
+                    "var sampleRate=\(sampleRate);" +
+                    "var postMsg={type:'" + RecordAppJsBridge.JsRequestName + "',action:'Record',data:{pcmDataBase64:b64,sampleRate:sampleRate}};"
+            , RecordAppJsBridge.JsRequestName + ".Record(b64,sampleRate)"
+            , "postMsg" );
+            
+            if(!firstLog){
+                main.Log.i(RecordApis.LogTag, "获取到了第一段录音数据：len:\(d1.count) sampleRate:\(sampleRate)");
+                firstLog=true;
+            }
         }
     }
     

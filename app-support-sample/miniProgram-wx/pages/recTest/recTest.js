@@ -36,6 +36,7 @@ Page({
 		this.reclog("正在请求录音权限...");
 		RecordApp.RequestPermission(()=>{
 			this.reclog("已获得录音权限，可以开始录音了",2);
+			if(this.reqOkCall)this.reqOkCall(); this.reqOkCall=null; //留别的组件内调用的回调
 		},(msg,isUserNotAllow)=>{
 			if(isUserNotAllow){//用户拒绝了录音权限
 				//这里你应当编写代码检查wx.getSetting中的scope.record录音权限，引导用户进行授权
@@ -64,6 +65,9 @@ Page({
 			type:this.data.recType
 			,sampleRate:this.data.recSampleRate
 			,bitRate:this.data.recBitRate
+			,audioTrackSet:!this.data.useAEC?null:{ //配置回声消除，小程序的只在Android生效，iOS不支持
+				noiseSuppression:true,echoCancellation:true,autoGainControl:true
+			}
 			,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
 				//可视化图形绘制
 				this.setData({
@@ -74,6 +78,8 @@ Page({
 				if(wave){
 					wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
 				}
+				//实时语音通话对讲，实时处理录音数据
+				if(this.wsVoiceProcess) this.wsVoiceProcess(buffers,powerLevel,duration,sampleRate,newBufferIdx);
 			}
 			,takeoffEncodeChunk:!this.data.takeoffEncodeChunkSet?null:(chunkBytes)=>{
 				//实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
@@ -82,8 +88,22 @@ Page({
 				this.takeEcChunks.push(chunkBytes);
 			}
 		},()=>{
+			var iosSpeakerOff=false;
+			if(this.data.useAEC){
+				this.reclog("小程序的回声消除只在Android中生效，iOS不支持，iOS上将使用听筒播放，大幅减弱回声","#fa0");
+				if(wx.getSystemInfoSync().platform=="ios"){
+					iosSpeakerOff=true;
+					wx.setInnerAudioOption({ speakerOn:false });
+				}
+			}
+			if(!iosSpeakerOff && this.iosSpeakerOff){
+				wx.setInnerAudioOption({ speakerOn:true });
+			}
+			this.iosSpeakerOff=iosSpeakerOff;
+			
 			this.reclog("录音中   type="+this.data.recType
 				+" "+this.data.recSampleRate+" "+this.data.recBitRate+"kbps"
+				+(this.data.useAEC?" useAEC":"")
 				+(this.data.takeoffEncodeChunkSet?" takeoffEncodeChunk":""),2);
 			//创建音频可视化图形绘制
 			this.initWaveStore();
@@ -103,7 +123,15 @@ Page({
 			this.reclog("继续录音中...");
 		}
 	}
+	,__stopClear(){
+		//恢复AEC设置的外放
+		if(this.iosSpeakerOff){
+			this.iosSpeakerOff=false;
+			wx.setInnerAudioOption({ speakerOn:true });
+		}
+	}
 	,recStopX(){
+		this.__stopClear();
 		RecordApp.Stop(
 			null //success传null就只会清理资源，不会进行转码
 			,(msg)=>{
@@ -113,6 +141,7 @@ Page({
 	}
 	,recStop(){
 		this.reclog("正在结束录音...");
+		this.__stopClear();
 		RecordApp.Stop((aBuf,duration,mime)=>{
 			var recSet=RecordApp.GetCurrentRecOrNull().set;
 			this.reclog("已录制["+mime+"]："+duration+"ms "+aBuf.byteLength+"字节 "
@@ -130,6 +159,9 @@ Page({
 				aBuf=chunkData.buffer;
 				this.reclog("takeoffEncodeChunk接收到的音频片段，已合并成一个音频文件 "+aBuf.byteLength+"字节");
 			}
+			//用变量保存起来，别的地方调用
+			this.lastRecType=recSet.type;
+			this.lastRecBuffer=aBuf;
 			
 			this.selectComponent('.player').setPlayFile(aBuf,duration,mime,recSet);
 		},(msg)=>{
@@ -147,9 +179,11 @@ Page({
 		
 		,takeoffEncodeChunkSet:false
 		,takeoffEncodeChunkMsg:""
+		,useAEC:false
+		,showUpload:false
 
 		,recwaveChoiceKey:"WaveView"
-		,reclogs:[]
+		,reclogs:[],reclogLast:""
 	}
 	,onLoad(options) {
 		this.reclog("页面onLoad Recorder.LM="+Recorder.LM+" RecordApp.LM="+RecordApp.LM);
@@ -163,7 +197,7 @@ Page({
 		var txt="["+t+"]"+msg;
 		console.log(txt);
 		this.data.reclogs.splice(0,0,{txt:txt,color:color});
-		this.setData({reclogs:this.data.reclogs});
+		this.setData({reclogs:this.data.reclogs, reclogLast:{txt:txt,color:color}});
 	}
 	,inputSet(e){
 		var val=e.detail.value;
@@ -174,6 +208,12 @@ Page({
 	}
 	,takeoffEncodeChunkSetClick(){
 		this.setData({ takeoffEncodeChunkSet:!this.data.takeoffEncodeChunkSet });
+	}
+	,useAEC_Click(){
+		this.setData({ useAEC:!this.data.useAEC });
+	}
+	,showUploadClick(){
+		this.setData({ showUpload:!this.data.showUpload });
 	}
 	,recTypeClick(res){
 		var type=res.target.dataset.type;

@@ -49,7 +49,7 @@
 
 ## 语音通话、回声消除、声音外放
 
-由于BufferStreamPlayer不支持在小程序中使用，如需实时播放语音，可使用`wx.createWebAudioContext().createBufferSource()`来进进行播放，请参考[/assets/runtime-codes/fragment.playbuffer.js](../../assets/runtime-codes/fragment.playbuffer.js)播放代码；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
+由于BufferStreamPlayer不支持在小程序中使用，如需实时播放语音，可参考[test_realtime_voice__.js](pages/test_realtime_voice__/test_realtime_voice__.js)中的`initStreamPlay`播放代码，底层使用`wx.createWebAudioContext().createBufferSource()`来进进行播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
 
 配置audioTrackSet可尝试打开回声消除，或者切换成听筒播放，降低回声。
 ``` js

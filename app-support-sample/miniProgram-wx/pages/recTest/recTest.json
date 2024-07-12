@@ -2,5 +2,7 @@
 	"navigationBarTitleText":"RecordApp录音测试"
 	,"usingComponents": {
 		"test-player":"../test_player__/test_player__"
+		,"test-upload-view":"../test_upload_saveFile__/test_upload_saveFile__"
+		,"test-rtvoice-view":"../test_realtime_voice__/test_realtime_voice__"
 	}
 }

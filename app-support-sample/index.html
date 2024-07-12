@@ -70,6 +70,7 @@ for(var i=0;i<initJss.length;i++){
 <script src="../src/extensions/wavesurfer.view.js"></script>
 <script src="../src/extensions/lib.fft.js"></script>
 <script src="../src/extensions/frequency.histogram.view.js"></script>
+<script src="../src/extensions/create-audio.nmn2pcm.js"></script>
 <script src="../src/extensions/dtmf.encode.js"></script>
 <script src="../src/extensions/dtmf.decode.js"></script>
 
@@ -348,9 +349,11 @@ if(!window.localStorage){window.localStorage={}};
 		<label><input type="checkbox" class="takeoffEncodeChunkSet"><span reclang="Hyuy">接管编码器输出（takeoffEncodeChunk）</span></label>
 	</div>
 	<div class="pd">
-		<label><input type="checkbox" class="realTimeSendSet"><span reclang="zb16">模拟实时编码传输（H5版语音通话聊天），发送间隔</span></label>
-		<input type="text" class="realTimeSend" value="996" style="width:60px">ms
-		<div class="webrtcView" style="display:none;"></div>
+		<label><input type="checkbox" class="useAECSet"><span reclang="Kz8D">尝试启用回声消除（echoCancellation）</span></label>
+	</div>
+	<div class="pd">
+		<label><input type="checkbox" class="realTimeSendSet"><span reclang="zb16">实时语音通话聊天对讲（WebSocket、WebRTC）</span></label>
+		<div class="realTimeSendView" style="display:none;"></div>
 	</div>
 	<div class="">
 		<label><input type="checkbox" class="asrSet"><span reclang="jCKC">实时语音识别、音频文件转文字，ASR</span></label>
@@ -360,7 +363,7 @@ if(!window.localStorage){window.localStorage={}};
 
 
 <div class="mainBox">
-	<audio class="recPlay" style="width:100%"></audio>
+	<audio class="recPlay" controls style="display:none;width:100%"></audio>
 	<div class="reclog"></div>
 	<div class="recLastLog" style="position:fixed;z-index:2;width:20vw;min-width:200px;max-height:100px;overflow:auto;right:0;bottom:0;background:#fff;padding:5px 10px;border-radius:6px 0 0 0;box-shadow:-1px -1px 3px #ddd;font-size:13px"></div>
 </div>
@@ -378,6 +381,37 @@ if(!window.localStorage){window.localStorage={}};
 	<div style="color:#0ab;font-size:22px;font-weight:bold">
 		<span reclang="Pea3">如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~</span>
 	</div>
+</div>
+	
+<div class="mainBox">
+	<span class="lb" reclang="2fWL">音乐播放测试 :</span>
+	<button onclick="recplay2(this,'rec-4000ms-8kbps-16000hz.wav')">wav</button>
+	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.mp3')">mp3</button>
+	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.ogg')">ogg</button>
+	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
+	<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
+	<button onclick="recplay2(this,'nmn5')" reclang="uad6">合成5分钟mp3</button>
+	
+	<span reclang="z9o0">Audio对录音的影响测试</span> (<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>) <span reclang="yStv">；低版本iOS Safari如果未开始过录音并且播放了音乐，然后后续录音可能会有问题；再现方法</span> (<a href="assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>): <span reclang="4yox">刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。</span>
+</div>
+
+<div class="mainBox">
+	<span class="lb" reclang="fFQq">视频播放测试 :</span>
+	<button onclick="videoTestPlay('')" reclang="6E53">播放mp4</button>
+	<script>var videoTestPlay=function(attr){
+		$('.videoTest').show().html('<video controls '+attr+' webkit-playsinline playsinline x5-video-player-type="h5" '
+		+'style="width:370px;height:160px">'
+		+'<source src="../assets/audio/movie-一代宗师-此一时彼一时.mp4.webm" type="video/mp4"/>' //fix safari
+		+'</'+'video>').find('video')[0].play()
+	}</script>
+	
+	<span reclang="ALiC">Video对录音的影响测试</span> (<a href="https://github.com/xiangyuecn/Recorder/issues/84">issues#84</a>) <span reclang="yshJ">；iOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音，但并未再现。</span>
+	<button onclick="$('.videoTest').show()" reclang="CwnP">显示video</button>
+	<button onclick="$('.videoTest').hide()" reclang="nFEO">隐藏video</button>
+	<button onclick="$('.videoTest').html('')" reclang="WXIx">移除video</button>
+	<button onclick="videoTestPlay(' loop')" reclang="iXZv">循环播放</button>
+	<button onclick="videoTestPlay(' loop muted')" reclang="2RpC">静音循环播放</button>
+	<div class="videoTest"></div>
 </div>
 
 <div class="mainBox">
@@ -443,16 +477,28 @@ function baseSet(){
 	
 	cancelAutoStop();
 };
-function recreq(){
+var reqUseAEC;
+function recreq(call){
+	call||(call=function(msg){
+		msg&&reclog(msg,1);
+	});
 	baseSet();
 	reclog(Html_$T("LnQj::开始请求授权..."));
 	
+	reqUseAEC=$(".useAECSet")[0].checked;
+	if(reqUseAEC){
+		//这个是Start中的audioTrackSet配置，在h5中必须提前配置，因为h5中RequestPermission会直接打开录音
+		RecordApp.RequestPermission_H5OpenSet={ audioTrackSet:{ echoCancellation:true,noiseSuppression:true,autoGainControl:true } };
+		reclog(Html_$T("W5dU::已启用audioTrackSet配置：")+JSON.stringify(RecordApp.RequestPermission_H5OpenSet.audioTrackSet));
+	};
+	
 	RecordApp.RequestPermission(function(){
 		reclog(RecordApp.Current.Key+" "+Html_$T("wnd4::已授权"),2);
+		call();
 	},function(err,isUserNotAllow){
-		reclog((RecordApp.Current&&RecordApp.Current.Key||"[?]")
+		call((RecordApp.Current&&RecordApp.Current.Key||"[?]")
 			+(isUserNotAllow?" UserNotAllow, ":"")
-			+" "+Html_$T("oFqf::授权失败：")+err,1);
+			+" "+Html_$T("oFqf::授权失败：")+err);
 	});
 };
 
@@ -506,7 +552,6 @@ function recstart(call){
 	window.takeoffChunks=[];
 	
 	var realTimeSendSet=$(".realTimeSendSet")[0].checked;
-	var realTimeSendTime=+$(".realTimeSend").val();
 	if(realTimeSendSet&&!RecordApp.Current.CanProcess()){
 		reclog(Html_$T("GM5h::当前环境{1}不支持实时回调，不能模拟实时编码传输",0,RecordApp.Current.Key),1);
 	};
@@ -523,7 +568,7 @@ function recstart(call){
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
-		//,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true} //配置回声消除，注意：H5中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
+		,audioTrackSet:!reqUseAEC?null:{echoCancellation:true,noiseSuppression:true,autoGainControl:true} //配置回声消除，注意：H5中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
 		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
 			$(".recpowerx").css("width",powerLevel+"%");
 			$(".recpowert").text(formatMs(duration,1)+" / "+powerLevel);
@@ -539,7 +584,10 @@ function recstart(call){
 			
 			//实时传输
 			if(realTimeSendSet&&window.realTimeSendTry){
-				realTimeSendTry(set,realTimeSendTime,buffers,sampleRate);
+				realTimeSendTry(set,buffers,sampleRate);
+			};
+			if(realTimeSendSet&&window.RtVoiceProcess){
+				RtVoiceProcess(buffers,powerLevel,duration,sampleRate,newBufferIdx);
 			};
 			//实时语音识别
 			if(asrSet&&window.asrInput){
@@ -741,13 +789,14 @@ function recstop2(){
 	run();
 };
 function recplay(key){
+	var audio=$(".recPlay")[0];
+	audio.style.display="inline-block";
+	if(!(audio.ended || audio.paused)){
+		audio.pause();
+	};
+	
 	var o=recblob[key];
 	if(o){
-		var audio=$(".recPlay")[0];
-		audio.controls=true;
-		if(!(audio.ended || audio.paused)){
-			audio.pause();
-		};
 		o.play=(o.play||0)+1;
 		var logmsg=function(msg){
 			$(".p"+key).html('<span style="color:green">'+o.play+'</span> '+new Date().toLocaleTimeString()+" "+msg);
@@ -757,6 +806,19 @@ function recplay(key){
 			logmsg('<span style="color:red">'+Html_$T("kj0b::播放失败")+'['+audio.error.code+']'+audio.error.message+'</span>');
 		};
 		
+		if(o.play2Name){
+			o.play--;
+			if(o.play2Msg){
+				logmsg(o.play2Msg);
+			}else if(o.play2Err){
+				logmsg('<span style="color:red">'+o.play2Err+'</span>');
+			}else{
+				o.play++;
+				audio.src=o.play2Url||("../assets/audio/"+o.play2Name);
+				audio.play();
+			}
+			return;
+		};
 		var end=function(blob){
 			audio.src=(window.URL||webkitURL).createObjectURL(blob);
 			audio.play();
@@ -782,6 +844,49 @@ function recplay(key){
 			end(o.blob);
 		};
 	};
+};
+function recplay2(elem,name){
+	var url="";
+	var run=function(msg,err){
+		elem=$(elem);
+		var key="recplay2"+elem.html();
+		Object.assign(recblob[key]||(recblob[key]={}),{
+			play2Name:name
+			,play2Url:url
+			,play2Msg:msg
+			,play2Err:err
+		});
+		if(!$(".p"+key).length){
+			elem.before('<br>');
+			elem.after('<span class="p'+key+'"></span><br>');
+		};
+		
+		recplay(key);
+	};
+	
+	if(name=="nmn5"){ //合成一个5分钟的mp3
+		if(window.nmn5Url){
+			url=window.nmn5Url; return run();
+		}
+		var sr=16000;
+		var pcm=Recorder.NMN2PCM.GetExamples().Canon.get(sr).pcm;
+		var pcm5=new Int16Array(5*60*sr),n=0;
+		while(n<pcm5.length){
+			var s=Math.min(pcm.length, pcm5.length-n);
+			pcm5.set(s==pcm.length?pcm:pcm.subarray(0,s),n); n+=pcm.length
+		}
+		run(Html_$T("q2iG::正在合成mp3..."));
+		var mock=Recorder({ type:"mp3",sampleRate:sr,bitRate:16 });
+		mock.mock(pcm5, sr);
+		mock.stop(function(blob){
+			url=window.nmn5Url=(window.URL||webkitURL).createObjectURL(blob);
+			run();
+		},function(err){
+			run("",err);
+		});
+	}else{ //播放音频文件
+		run();
+	}
 };
 function recPlayLast(){
 	if(!recLogLast){
@@ -957,12 +1062,12 @@ if(window.top!=window){
 //实时传输数据模拟开关
 $(".realTimeSendSet").bind("change",function(e){
 	var open=e.target.checked;
-	$(".webrtcView")[open?"show":"hide"]();
+	$(".realTimeSendView")[open?"show":"hide"]();
 	if(open && !window.webrtcCreate){
-		var file="assets/zdemo.index.webrtc.js";
-		reclog(Html_$T("bzvb::正在加载{1} ...",0,file));
+		var files=["assets/zdemo.index.realtime_voice.js","assets/zdemo.index.webrtc.js"];
+		reclog(Html_$T("bzvb::正在加载{1} ...",0,JSON.stringify(files)));
 		
-		loadJsList([file]);
+		loadJsList(files);
 	};
 });
 
@@ -996,6 +1101,7 @@ if(/mobile/i.test(navigator.userAgent)){
 	elem.setAttribute("src","../assets/ztest-vconsole.js");
 	document.body.appendChild(elem);
 	elem.onload=function(){
+		localStorage["vConsole_switch_y"]=localStorage["vConsole_switch_y"]||500;
 		new VConsole();
 	};
 };

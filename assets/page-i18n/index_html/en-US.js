@@ -160,9 +160,13 @@ i18n.put(putSet,
 ,"AWXs:"+ //no args
        "Take over the encoder output (takeoffEncodeChunk), and the newly opened recording takes effect after switching"
 
-//@@zh="模拟实时编码传输（H5版语音通话聊天），发送间隔"
+//@@zh="尝试启用回声消除（echoCancellation）"
+,"vIzT:"+ //no args
+       "Try enabling echoCancellation"
+
+//@@zh="实时语音通话聊天对讲（WebSocket、WebRTC）"
 ,"SUfw:"+ //no args
-       "(Chinese) Simulate real-time encoding transmission (H5 version voice call chat), sending interval"
+       "(Chinese) Real-time voice calls, chats, intercoms (WebSocket, WebRTC)"
 
 //@@zh="实时语音识别、音频文件转文字，ASR"
 ,"lvN7:"+ //no args
@@ -468,6 +472,10 @@ i18n.put(putSet,
 ,"gqjM:"+ //no args
        "Music playback test :"
 
+//@@zh="合成5分钟mp3"
+,"t0I5:"+ //no args
+       "Generate 5 minutes mp3"
+
 //@@zh="Audio对录音的影响测试"
 ,"XHIP:"+ //no args
        "Audio's influence test on recording"
@@ -719,6 +727,10 @@ i18n.put(putSet,
 //@@zh="转码成wav失败："
 ,"ywQN:"+ //no args
        "Transcoding to wav failed: "
+
+//@@zh="正在合成mp3..."
+,"EmcW:"+ //no args
+       "Generating mp3..."
 
 //@@zh="请先录音，然后停止后再播放"
 ,"zGph:"+ //no args

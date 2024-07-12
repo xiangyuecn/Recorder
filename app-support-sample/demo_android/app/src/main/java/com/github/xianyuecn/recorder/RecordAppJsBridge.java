@@ -482,7 +482,7 @@ public class RecordAppJsBridge implements Closeable {
             }
             try {
                 rec = new AudioRecord(
-                        MediaRecorder.AudioSource.MIC
+                        MediaRecorder.AudioSource.DEFAULT
                         , SampleRate
                         , AudioFormat.CHANNEL_IN_MONO
                         , AudioFormat.ENCODING_PCM_16BIT

@@ -8,7 +8,7 @@
 - 支持编译成：H5、Android App、iOS App、微信小程序
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
-- 支持可视化波形显示；可配置回声消除、降噪；注意：不支持通话时录音
+- 支持可视化波形显示；可配置回声消除、降噪；**注意：不支持通话时录音**
 - 支持离线使用，本组件和配套原生插件均不依赖网络
 - App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好
 
@@ -326,7 +326,7 @@ RecordApp.Start({
     ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高，默认值为0
     
     //iOS的AVAudioSession setCategory的withOptions参数值（App搭配原生插件可用），取值请参考本文档下面的iosSetDefault_categoryOptions
-    //,ios_categoryOptions:0x1|0x4|0x8 //0x8是外放，默认值为0x1|0x4不带0x8是听筒播放，等同于下面的setSpeakerOff
+    //,ios_categoryOptions:0x1|0x4 //默认值为5(0x1|0x4)
 });
 
 //App搭配原生插件时尝试切换听筒播放或外放
@@ -584,12 +584,17 @@ getInfo 获取插件信息
     返回：{ info:"" } //插件信息字符串
 
 setSpeakerOff 切换扬声器外放和听筒播放，随时都可以调用；但需注意打开录音时可能会自动切换播放方式，因此在打开录音后需要明确调用一次切换成你需要的播放方式
-    参数：{ off:true } //必填，true听筒播放，false扬声器播放
+    参数：{
+        off:true //必填，true听筒播放，false扬声器播放，连接耳机时此配置无效
+        headset:true //选填，默认true耳机播放，false扬声器播放（同时使用手机上的麦克风），连接耳机时此配置生效
+        //配置场景：当由代码进行主动调用，比如开启回声消除录音时想播放的声音大点，就只提供off:false，这时没连接耳机会从扬声器播放，有耳机就从耳机播放
+        //配置场景：当类似由用户点击外放按钮时调用，同时提供off:false+headset:false，这时不管有没有耳机，都会从扬声器播放
+    }
     返回：{  } //空对象
 
 iosSetDefault_categoryOptions iOS设置默认值，Android不可调用，为iOS的AVAudioSession setCategory的withOptions参数值；RecordApp.Start开始录音时如果未提供ios_categoryOptions参数，将会使用此默认值，提供了时将赋值给此默认值；setSpeakerOff调用时也会使用到此默认值
     参数：{
-        value:0x1|0x4|0x8 //必填，0x8是外放，默认不带0x8是听筒播放，取值（多选，默认 0x1|0x4）：0 什么也不设置，0x1 MixWithOthers，0x2 DuckOthers，0x4 AllowBluetooth，0x8 DefaultToSpeaker，0x11 InterruptSpokenAudioAndMixWithOthers，0x20 AllowBluetoothA2DP，0x40 AllowAirPlay，0x80 OverrideMutedMicrophoneInterruption
+        value:0x1|0x4 //必填，取值（多选，默认值5=0x1|0x4）：0 什么也不设置，0x1 MixWithOthers，0x2 DuckOthers，0x4 AllowBluetooth，0x8 DefaultToSpeaker（不可用，通过setSpeakerOff来切换），0x11 InterruptSpokenAudioAndMixWithOthers，0x20 AllowBluetoothA2DP，0x40 AllowAirPlay，0x80 OverrideMutedMicrophoneInterruption
     }
     返回：{  } //空对象
 

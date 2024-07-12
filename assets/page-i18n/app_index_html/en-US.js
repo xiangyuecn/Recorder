@@ -180,9 +180,13 @@ i18n.put(putSet,
 ,"Hyuy:"+ //no args
        "Take over the encoder output (takeoffEncodeChunk)"
 
-//@@zh="模拟实时编码传输（H5版语音通话聊天），发送间隔"
+//@@zh="尝试启用回声消除（echoCancellation）"
+,"Kz8D:"+ //no args
+       "Try enabling echoCancellation"
+
+//@@zh="实时语音通话聊天对讲（WebSocket、WebRTC）"
 ,"zb16:"+ //no args
-       "(Chinese) Simulate real-time encoding transmission (H5 version voice call chat), sending interval"
+       "(Chinese) Real-time voice calls, chats, intercoms (WebSocket, WebRTC)"
 
 //@@zh="实时语音识别、音频文件转文字，ASR"
 ,"jCKC:"+ //no args
@@ -216,6 +220,62 @@ i18n.put(putSet,
 ,"Pea3:"+ //no args
        "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519, password recorder, contact the group owner (ie the author), thank you~"
 
+//@@zh="音乐播放测试 :"
+,"2fWL:"+ //no args
+       "Music playback test :"
+
+//@@zh="合成5分钟mp3"
+,"uad6:"+ //no args
+       "Generate 5 minutes mp3"
+
+//@@zh="Audio对录音的影响测试"
+,"z9o0:"+ //no args
+       "Audio's influence test on recording"
+
+//@@zh="；低版本iOS Safari如果未开始过录音并且播放了音乐，然后后续录音可能会有问题；再现方法"
+,"yStv:"+ //no args
+       "; If the lower version of iOS Safari has not started recording and played music, then there may be problems with subsequent recordings; reproduction method"
+
+//@@zh="刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。"
+,"4yox:"+ //no args
+       "After refreshing the page, first play the music first, and then start the test recording, and you will find that the waveform shows frame drop or keeps a straight line. Also test the browser's support for audio. "
+
+//@@zh="视频播放测试 :"
+,"fFQq:"+ //no args
+       "Video playback test :"
+
+//@@zh="播放mp4"
+,"6E53:"+ //no args
+       "Play mp4"
+
+//@@zh="Video对录音的影响测试"
+,"ALiC:"+ //no args
+       "Test of the influence of Video on recording"
+
+//@@zh="；iOS Safari可能出现先播放视频，然后再开始录音，会自动播放视频的声音，但并未再现。"
+,"yshJ:"+ //no args
+       "; iOS Safari may appear to play the video first, and then start recording, and the sound of the video will be played automatically, but it is not reproduced. "
+
+//@@zh="显示video"
+,"CwnP:"+ //no args
+       "Display Video"
+
+//@@zh="隐藏video"
+,"nFEO:"+ //no args
+       "Hide Video"
+
+//@@zh="移除video"
+,"WXIx:"+ //no args
+       "Remove Video"
+
+//@@zh="循环播放"
+,"iXZv:"+ //no args
+       "Loop Playback"
+
+//@@zh="静音循环播放"
+,"2RpC:"+ //no args
+       "Mute Loop"
+
 //@@zh="浏览器环境情况 :"
 ,"IClu:"+ //no args
        "Browser environment :"
@@ -243,6 +303,10 @@ i18n.put(putSet,
 //@@zh="开始请求授权..."
 ,"LnQj:"+ //no args
        "Start requesting permissions..."
+
+//@@zh="已启用audioTrackSet配置："
+,"W5dU:"+ //no args
+       "AudioTrackSet configuration enabled: "
 
 //@@zh="已授权"
 ,"wnd4:"+ //no args
@@ -399,6 +463,10 @@ i18n.put(putSet,
 //@@zh="转码成wav失败："
 ,"v8S9:"+ //no args
        "Transcoding to wav failed: "
+
+//@@zh="正在合成mp3..."
+,"q2iG:"+ //no args
+       "Generating mp3..."
 
 //@@zh="请先录音，然后停止后再播放"
 ,"U3nx:"+ //no args

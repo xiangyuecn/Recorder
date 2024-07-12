@@ -1,0 +1,45 @@
+<view style="padding:0 3px">
+
+<view style="border: 1px #666 dashed; padding:8px; margin-top:8px">
+	<view>
+		<text style="font-size:17px;font-weight: bold;color:#f60">实时语音通话对讲</text>
+		<text style="font-size:13px;color:#999;margin-left:10px">源码:test_realtime_voice__</text>
+	</view>
+	<view>
+		<text>ws(s)：</text>
+		<input value="{{wsApi}}" bindinput="inputSet" data-key="wsApi" style="width:260px;display:inline-block;border:1px solid #ddd"/>
+	</view>
+	<view style="font-size:13px;color:#999">需要先在电脑上运行Recorder仓库/assets/node-localServer内的nodejs服务器端脚本，然后填写你电脑局域网ip即可测试（开发工具里面用127.0.0.1可用ws），支持ws、wss测试WebSocket地址</view>
+	
+	<view>
+		<text>我的标识</text>
+		<input value="{{wsID1}}" bindinput="inputSet" data-key="wsID1" style="width:50px;display:inline-block;border:1px solid #ddd;vertical-align:middle"/>
+		<button size="mini" bindtap="wsConnClick" style="margin-left:10px;vertical-align:middle">连接服务器</button>
+		<button size="mini" bindtap="wsDisconnClick" style="margin-left:10px;vertical-align:middle">断开</button>
+	</view>
+	<view style="border-top: 1px #ccc dashed;margin:5px 0"></view>
+	<view>
+		<view style="font-size:13px;color:#999">服务器将pcm片段实时发送给客户端，模拟播放语音流</view>
+		<checkbox checked="{{ws_readAudioSet}}" bindtap="ws_readAudioSetClick" style="font-size:14px">读audio-16k.wav</checkbox>
+		<button size="mini" bindtap="wsAudioStartClick" style="margin:0 10px;vertical-align:middle">播放语音流</button>
+		<button size="mini" bindtap="wsAudioStopClick" style="vertical-align:middle">结束</button>
+		<view wx:if="{{ws_audioFrameDurTxt}}">
+			{{ws_audioFrameDurTxt}}，{{ws_audioFrameCount}}帧，{{ws_audioFrameSize}}字节
+		</view>
+	</view>
+	
+	<view style="border-top: 1px #ccc dashed;margin:5px 0"></view>
+	<view>
+		<view style="font-size:13px;color:#999">语音通话聊天对讲，请在上面进行录音操作，音频数据会实时传送给对方播放（实时pcm）</view>
+		<text>对方标识</text>
+		<input value="{{wsID2}}" bindinput="inputSet" data-key="wsID2" style="width:50px;display:inline-block;border:1px solid #ddd;vertical-align:middle"/>
+		<button size="mini" bindtap="wsOpenVoiceClick" style="margin-left:10px;vertical-align:middle">开始通话</button>
+		<button size="mini" bindtap="wsCloseVoiceClick" style="margin-left:10px;vertical-align:middle">结束</button>
+		<view wx:if="{{ws_voiceSendDurTxt||ws_voiceReceiveDurTxt}}">
+			<view>接收：{{ws_voiceReceiveDurTxt}}，{{ws_voiceReceiveCount}}帧，{{ws_voiceReceiveSize}}字节</view>
+			<view>发送：{{ws_voiceSendDurTxt}}，{{ws_voiceSendUserCount}}人接收，OK {{ws_voiceSendOKCount}}帧，Err {{ws_voiceSendErrCount}}帧，{{ws_voiceSendSize}}字节</view>
+		</view>
+	</view>
+</view>
+
+</view>
