@@ -135,11 +135,13 @@ export default {
 			this.socket.onClose(()=>{
 				if(sid!=this.SID) return;
 				this.socketIsOpen=false;
+				this.destroyStreamPlay();
 				this.log("ws已断开");
 			});
 			this.socket.onError((e)=>{
 				if(sid!=this.SID) return;
 				this.socketIsOpen=false;
+				this.destroyStreamPlay();
 				this.log("ws因为错误已断开："+e.errMsg,1);
 			});
 			this.socket.onOpen(()=>{
@@ -423,9 +425,16 @@ export default {
 			
 			//App、H5 时使用BufferStreamPlayer播放
 			if(this.spIsInit)return; //已初始化完成
+			if(this.spInit_time && Date.now()-this.spInit_time<2000)return; //等待播放器初始化完成
+			var stime=this.spInit_time=Date.now();
+			
 			var funcCode=`(function(True,False){ //这里需要独立执行
 				if(window.wsStreamPlay) return True();
 				var Tag="wsStreamPlay";
+				if(!Recorder.BufferStreamPlayer){
+					var err="H5需要在逻辑层中、App需要在renderjs模块中 imp"+"ort 'recorder-core/src/extensions/buffer_stream.player.js'";
+					window["console"].error(Tag+"缺少文件："+err); False(err); return;
+				}
 				var sp=Recorder.BufferStreamPlayer({
 					decode:false,sampleRate:16000
 					,onInputError:function(errMsg, inputIndex){
@@ -446,10 +455,14 @@ export default {
 				});
 			})`;
 			var initOk=()=>{
+				if(stime!=this.spInit_time) return; //可能调用了destroy
 				this.spIsInit=true;
+				this.spInit_time=0;
 				this.log("streamPlay已打开",2);
 			};
 			var initErr=(err)=>{
+				if(stime!=this.spInit_time) return; //可能调用了destroy
+				this.spInit_time=0;
 				this.log("streamPlay初始化错误："+err,1);
 			};
 			
@@ -466,6 +479,27 @@ export default {
 			},function(err){
 				RecordApp.UniWebViewSendToMain({action:"${cb}",errMsg:err||'-'});
 			})`);
+		}
+		//销毁播放器
+		,destroyStreamPlay(){
+			// #ifdef MP-WEIXIN
+			//微信环境，单独销毁播放器
+			if(this.spWxCtx){
+				this.spWxCtx.close();
+				this.spWxCtx=null;
+			}
+			return;
+			// #endif
+			
+			//App、H5 时销毁
+			this.spIsInit=false;
+			this.spInit_time=0;
+			
+			var funcCode=`if(window.wsStreamPlay){ wsStreamPlay.stop(); wsStreamPlay=null; }`;
+			// #ifdef H5
+			eval(funcCode); return;
+			// #endif
+			RecordApp.UniWebViewEval(this.getPage(), funcCode);
 		}
 		//微信环境，单独创建播放器
 		,initWxStreamPlay(){

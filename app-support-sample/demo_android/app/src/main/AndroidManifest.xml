@@ -18,6 +18,7 @@
 
         <activity android:name=".MainActivity"
             android:launchMode="singleTask"
+            android:exported="true"
             android:configChanges="screenLayout|screenSize|keyboardHidden|orientation"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">

@@ -1,29 +1,32 @@
 [Recorder](https://github.com/xiangyuecn/Recorder/) | [RecordApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)
 
-# :open_book:IOS Hybrid App
+# :open_book:iOS Hybrid App
 
-本目录内包含IOS App测试源码，和核心文件 [RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift) ；clone后用`xcode`打开后编译运行（没有Mac OS? [装个黑苹果](https://www.jianshu.com/p/cbde4ec9f742) ）。本demo为swift代码，兼容IOS 9.0+，已测试IOS 12.3。
+本目录内包含iOS App测试源码，和核心文件 [RecordAppJsBridge.swift](recorder/RecordAppJsBridge.swift) ；clone后用`xcode`打开后编译运行。本demo为swift代码，兼容iOS 9.0+，已测试iOS 17.1。
 
-本Demo是对[/app-support-sample/native-config.js](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/native-config.js)配置示例中定义的JsBridge接口的实现。
+本Demo是对[/app-support-sample/native-config.js](../native-config.js)配置示例中定义的JsBridge接口的实现，支持H5录音、和原生接口录音。
 
-可以直接copy目录内`RecordAppJsBridge.swift`使用，此文件为核心文件，其他文件都是没什么价值的；支持新开发WKWebView界面，或对已有的WKWebView实例升级支持RecordApp。
-
-**xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，太难了**
-
-
-## 【截图】
-![](../../assets/use_native_ios.gif)
+可以直接copy目录内`RecordAppJsBridge.swift`使用，此文件为核心文件；支持新开发WKWebView界面，或对已有的WKWebView实例升级支持RecordApp。
 
 
 ## 【限制】
 
-- 未做古董版本UIWebView适配，理论上并不需要太大改动就能支持，并不打算进行支持
-- 未测试在OC中调用此swift文件，并不打算去改写成OC代码（可参考代码自行改写）
+- **xcode测试项目clone后请修改`PRODUCT_BUNDLE_IDENTIFIER`，不然这个测试id被抢来抢去要闲置7天才能被使用，太难了**
+- 仅H5录音需要iOS 14.3+以上的系统才支持，低于14.3必须使用原生接口
+- 仅H5录音需要iOS 15+以上才支持录音静默授权，如果WebView未适配静默授权、或版本低于15，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框，使用原生接口无此问题
+- 未做古董版本UIWebView适配，理论上并不需要太大改动就能支持，并不打算进行支持、也没有必要进行支持
+- 未测试在OC中调用此swift文件，可参考代码自行改写成OC代码
+
+
+## 需要权限
+需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限；注意：iOS App需要在项目Background Modes中勾选Audio才能在后台保持录音，不然App切到后台后立马会停止录音。
+
+注意：仅使用H5录音时（不使用原生录音接口），需要WKWebView的uiDelegate实现[WKUIDelegate requestMediaCapturePermissionFor接口](https://developer.apple.com/documentation/webkit/wkuidelegate)（iOS 15+支持）才能做到静默授权支持，可参考[MainView.swift](recorder/MainView.swift)中的代码；如果未实现，会导致H5录音每次打开页面后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
 
 
 
 
-# :open_book:原理
+## 原理
 
 通过userContentController往WKWebView注入一个全局对象`RecordAppJsBridgeIsSet`，js中通过`webkit.messageHandlers.RecordAppJsBridgeIsSet`来访问，只有存在这个对象，就代表是在App中；但并不通过这个对象来进行数据交互，因为它仅支持异步操作；数据交互需要一个同步方法来进行支持，因为同步可以实现异步，仅支持异步的只能异步到底，所以选择重写WebView的prompt弹框方法，进行数据的交互。
 
@@ -38,15 +41,7 @@ swift收到js发起的prompt弹框请求，解析弹框携带的数据参数，�
 > 早期版本（2020-11-17）接口对应的方法使用的`AVAudioRecorder`来录音，`AVAudioRecorder`会把录音PCM数据写入到文件，因此我们实时从这个文件中读取出数据，然后定时调用`AppJsBridgeRequest.Record`把数据返回给js端即可完成完整的录音功能；可能是因为`AVAudioRecorder`存在文件写入缓存的原因，数据并非实时的flush到文件的，因此实时发送给js的数据存在300ms左右的滞后，没有AudioUnit的好使。
 
 
-## 需要权限
-在plist中配置麦克风的权限声明：`NSMicrophoneUsageDescription`。
 
-
-## 如何接入使用
-请阅读[RecordAppJsBridge.swift](https://github.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_ios/recorder/RecordAppJsBridge.swift)文件开头的注释文档，可直接copy此文件到你的项目中使用；支持新开发WKWebView界面，或对已有的WKWebView实例升级支持RecordApp。
-
-
-## 为什么不用UserAgent来识别App环境
-
-通过修改WebView的UA来让H5、服务器判断是不是在App里面运行的，此方法非常简单而且实用。但有一个致命缺陷，当UA数据很敏感的场景下，虽然方便了我方H5、服务器来识别这个App，但也同时也暴露给了任何在此WebView中发起的请求，不可避免的会将我们的标识信息随请求而发送给第三方（虽然可通过额外编程把信息抹掉，但代价太大了）。IOS不动UA基本上别人的服务器几乎不太可能识别出我们的App，Android神一样的把包名添加到了X-Requested-With请求头中，还能不能讲理了。
+## 运行截图
+![](../../assets/use_native_ios.gif)
 

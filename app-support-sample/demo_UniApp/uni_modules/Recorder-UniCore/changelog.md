@@ -1,3 +1,8 @@
+## 1.0.240910（2024-09-10）
+- 新增RecordApp.UniMainCallBack_Register接口，允许App renderjs层多次回调数据给逻辑层
+- iOS App请求权限时，会预先检查NSMicrophoneUsageDescription是否声明，避免无声明时调用录音会崩溃
+- 新增appNativePlugin_sampleRate原生插件录音选项
+- Android App已提供后台录音保活功能，启用后App在后台或锁屏后可继续正常录音
 ## 1.0.240625（2024-06-25）
 调整UniWebViewCallAsync调用失败时返回更详细信息。android_audioSource默认值由1改成0，新增ios_categoryOptions原生插件录音选项
 ## 1.0.240409（2024-04-09）

@@ -216,6 +216,34 @@ i18n.put(putSet,
 ,"G0HC:"+ //no args
        "Source code"
 
+//@@zh="原生接口 :"
+,"zIlH:"+ //no args
+       "Native interface :"
+
+//@@zh="显示内存占用"
+,"dPz1:"+ //no args
+       "Display memory usage"
+
+//@@zh="显示后台录音保活通知(Android)"
+,"dPz2:"+ //no args
+       "Display background recording keep-alive notification (Android)"
+
+//@@zh="关闭通知"
+,"dPz3:"+ //no args
+       "Turn off notifications"
+
+//@@zh="切换成扬声器外放"
+,"dPz4:"+ //no args
+       "Switch to external speaker"
+
+//@@zh="切换成听筒播放"
+,"dPz5:"+ //no args
+       "Switch to earpiece playback"
+
+//@@zh="原生接口不一定可用，取决于原生app是否已实现对应接口"
+,"dPz9:"+ //no args
+       "The native interface may not be available, depending on whether the native app has implemented the corresponding interface"
+
 //@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~"
 ,"Pea3:"+ //no args
        "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519, password recorder, contact the group owner (ie the author), thank you~"
@@ -224,9 +252,9 @@ i18n.put(putSet,
 ,"2fWL:"+ //no args
        "Music playback test :"
 
-//@@zh="合成5分钟mp3"
+//@@zh="合成5分钟wav"
 ,"uad6:"+ //no args
-       "Generate 5 minutes mp3"
+       "Generate 5 minutes wav"
 
 //@@zh="Audio对录音的影响测试"
 ,"z9o0:"+ //no args
@@ -360,6 +388,18 @@ i18n.put(putSet,
 ,"bYp4:"+ //no args
        "Recording:"
 
+//@@zh="录音被中断"
+,"eWu1:"+ //no args
+       "Recording interrupted"
+
+//@@zh="录音未能正常开始"
+,"eWu2:"+ //no args
+       "Recording failed to start properly"
+
+//@@zh="当前环境不支持onProcess回调，不启用watchDogTimer"
+,"eWu3:"+ //no args
+       "The current environment does not support onProcess callback, watchDogTimer will not be enabled"
+
 //@@zh="开始录音失败："
 ,"EBjo:"+ //no args
        "Failed to start recording: "
@@ -464,9 +504,9 @@ i18n.put(putSet,
 ,"v8S9:"+ //no args
        "Transcoding to wav failed: "
 
-//@@zh="正在合成mp3..."
+//@@zh="正在合成wav..."
 ,"q2iG:"+ //no args
-       "Generating mp3..."
+       "Generating wav..."
 
 //@@zh="请先录音，然后停止后再播放"
 ,"U3nx:"+ //no args
@@ -647,6 +687,46 @@ i18n.put(putSet,
 //@@zh="RecordApp.Install出错："
 ,"zLUe:"+ //no args
        "RecordApp.Install error: "
+
+//@@zh="原生接口debugInfo调用出错："
+,"uW1i:"+ //no args
+       "Error in calling native interface debugInfo: "
+
+//@@zh="占用内存大小(不一定准)："
+,"uW2i:"+ //no args
+       "Memory size occupied (not necessarily accurate): "
+
+//@@zh="App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）"
+,"zKd2:"+ //no args
+       "Improve the stability of background recording in the App: You need to enable the background recording keep-alive service (not required for iOS). Starting from Android 9, after the screen is locked or the App enters the background for a period of time, the App may be prohibited from accessing the microphone, resulting in muted recording or failure to record (H5 recording in the App is also affected). The native layer needs to provide Android background recording keep-alive services (Foreground services) with permanent notifications."
+
+//@@zh="原生接口androidNotifyService调用出错："
+,"RkeW:"+ //no args
+       "The native interface androidNotifyService calls an error: "
+
+//@@zh="搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)"
+,"kDxI:"+ //no args
+       "Android background recording keep-alive service with resident notification is turned on, ForegroundService is running (notification may not be displayed or will be delayed, which does not affect service operation), notification display status (1 has notification permission 3 may not have permission)"
+
+//@@zh="已关闭搭配常驻通知的Android后台录音保活服务"
+,"KjdO:"+ //no args
+       "Android background recording keep-alive service with resident notification has been disabled"
+
+//@@zh="[外放]"
+,"Tw1M:"+ //no args
+       "[External speaker]"
+
+//@@zh="[听筒播放]"
+,"Tw2M:"+ //no args
+       "[Handset Playing]"
+
+//@@zh="切换失败："
+,"Tw3M:"+ //no args
+       "Switching failed: "
+
+//@@zh="已切换"
+,"Tw4M:"+ //no args
+       "Switched"
 
 ]);
 //*************** End srcFile=../app-support-sample/index.html ***************

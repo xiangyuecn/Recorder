@@ -25,6 +25,17 @@ class MainView: UIViewController {
             completionHandler(nil);
         }
         //此类还需实现alert，confirm弹框
+        
+        //网页的录音权限请求，直接放行，iOS的WebView会自动处理App的系统录音权限，无需自己编写权限处理代码
+        @available(iOS 15.0, *)
+        public func webView(_ webView: WKWebView,
+            requestMediaCapturePermissionFor origin: WKSecurityOrigin,
+            initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType,
+            decisionHandler: @escaping (WKPermissionDecision) -> Void
+        ) {
+            View?.Log.i(MainView.LogTag, "网页请求权限，已自动放行");
+            decisionHandler(.grant);
+        }
     }
     
     
@@ -50,7 +61,9 @@ class MainView: UIViewController {
         config.allowsInlineMediaPlayback=true;
         config.allowsAirPlayForMediaPlayback=true;
         
-        webView=WKWebView(frame: CGRect(x: 0, y: 0, width:self.view.bounds.width,height:self.view.bounds.height), configuration: config);
+        var height=self.view.bounds.height - self.logs.bounds.height;
+        height-=UIApplication.shared.statusBarFrame.height;
+        webView=WKWebView(frame: CGRect(x: 0, y: 0, width:self.view.bounds.width,height:height), configuration: config);
         webViewBox.addSubview(webView);
         
         webView.scrollView.bounces=false;

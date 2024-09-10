@@ -41,7 +41,7 @@ var Fn=function(set){
 	DonateWidget.cur=This;
 	
 	This.view();
-	if(!this.set.viewOnly&&window.addEventListener){
+	/*if(!this.set.viewOnly&&window.addEventListener){
 		document.body.addEventListener("click",function(e){
 			if(/button/i.test(e.target.tagName) || /btn/i.test(e.target.className)){
 				try{
@@ -49,7 +49,7 @@ var Fn=function(set){
 				}catch(e){}
 			};
 		});
-	};
+	};*/
 };
 Fn.prototype=DonateWidget.prototype={
 	log:function(htmlMsg){

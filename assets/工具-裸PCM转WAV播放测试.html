@@ -154,7 +154,7 @@ a:hover{
 	</div>
 	
 	<div class="mainBox">
-		<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦；支持8位、16位、24位的PCM源文件。比如加工一下Android AudioRecord(44100)采集的音频。</div>
+		<div style="color:#0b1;">本工具用来对原始的PCM音频数据进行封装、播放、转码，操作极其简单，免去了动用二进制编辑工具操作的麻烦；支持8位、16位、24位、32位的PCM源文件。比如加工一下Android AudioRecord(44100)采集的音频。</div>
 		
 		<div style="color:#F90;padding-top:12px">.wav（raw pcm format）文件可以反复拖入，只不过前44字节wav头会被删除而已</div>
 		<div style="color:#0b1">一次拖入多个文件时将按文件名排序，然后合并成一个wav文件，音频参数以第一个为准</div>
@@ -286,7 +286,7 @@ var skipWavHead=function(wavView){
 	};
 	if(eq(0,"RIFF")&&eq(8,"WAVEfmt ")){
 		var numCh=wavView[22];
-		if(wavView[20]==1 && (numCh==1||numCh==2)){//raw pcm
+		if((wavView[20]==1||wavView[20]==3) && (numCh==1||numCh==2)){//1 raw pcm，3 IEEE Float
 			var sampleRate=wavView[24]+(wavView[25]<<8)+(wavView[26]<<16)+(wavView[27]<<24);
 			var bitRate=wavView[34]+(wavView[35]<<8);
 			//搜索data块的位置
@@ -323,13 +323,23 @@ var skipWavHead=function(wavView){
 
 
 var createWavClick=function(){
-	var arr=fileData.u8arr;
-	var fileName=fileData.fileName;
-	var div=fileData.div;
-	fileData.div=null;
+	var fdata=fileData||{}, arr=fdata.u8arr;
+	var fileName=fdata.fileName;
+	var div=fdata.div;
+	fdata.div=null;
 	if(!div){
 		div=document.createElement("div");
 		list.prepend?list.prepend(div):list.appendChild(div);
+	};
+	var showErr=function(msg){
+		var span=document.createElement("span");
+		span.style.color="red";
+		span.innerText=msg;
+		div.appendChild(span);
+	};
+	if(!fileData){
+		showErr("请选择文件");
+		return;
 	};
 	
 	var getVal=function(cls,def,name,min,max,range){
@@ -341,7 +351,7 @@ var createWavClick=function(){
 	};
 	try{
 		var sampleRate=getVal(".in_sampleRate",0,"采样率",6000,9999999999);
-		var bitRate=getVal(".in_bitRate",0,"位数",0,0,[8,16,24]);
+		var bitRate=getVal(".in_bitRate",0,"位数",0,0,[8,16,24,32]);
 		var numChannels=getVal(".in_numChannels",0,"声道数",0,0,[1,2]);
 		
 		var sampleRateNew=getVal(".in_new_sampleRate",sampleRate,"新采样率",6000,9999999999);
@@ -351,7 +361,7 @@ var createWavClick=function(){
 		var subA=getVal(".in_new_start",0,"截取开始时间",0,9999999999);
 		var subB=getVal(".in_new_end",0,"截取结束时间",0,9999999999);
 	}catch(e){
-		div.appendChild(document.createTextNode(e.message));
+		showErr(e.message);
 		return;
 	};
 	
@@ -374,6 +384,14 @@ var createWavClick=function(){
 			n=n/16777216;
 			//浮点数转成16位
 			res[i++]=n*0x7FFF;
+		};
+	}else if(bitRate==32){
+		var f32=new Float32Array(arr.buffer.slice(0,arr.length-arr.length%4));
+		var res=new Int16Array(f32.length);
+		for(var j=0;j<f32.length;j++){//floatTo16BitPCM 
+			var s=Math.max(-1,Math.min(1,f32[j]));
+			s=s<0?s*0x8000:s*0x7FFF;
+			res[j]=s;
 		};
 	}
 	

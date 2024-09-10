@@ -124,6 +124,18 @@ i18n.put(putSet,
 ,"qUcx:"+ //no args
        "Recording: "
 
+//@@zh="录音被中断"
+,"eWy1:"+ //no args
+       "Recording interrupted"
+
+//@@zh="录音未能正常开始"
+,"eWy2:"+ //no args
+       "Recording failed to start properly"
+
+//@@zh="当前环境不支持onProcess回调，不启用watchDogTimer"
+,"eWy3:"+ //no args
+       "The current environment does not support onProcess callback, watchDogTimer will not be enabled"
+
 //@@zh="开始录音失败："
 ,"0Rxw:"+ //no args
        "Failed to start recording: "

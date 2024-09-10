@@ -221,8 +221,8 @@ public class MainActivity extends Activity {
         if(fileDir==null){
             fileDir=getFilesDir();
         }
-        set.setAppCacheEnabled(true);
-        set.setAppCachePath(cacheDir.getAbsolutePath());
+        //set.setAppCacheEnabled(true);
+        //set.setAppCachePath(cacheDir.getAbsolutePath());
         set.setDatabaseEnabled(true);
         set.setDatabasePath(fileDir.getAbsolutePath());
         set.setGeolocationEnabled(true);

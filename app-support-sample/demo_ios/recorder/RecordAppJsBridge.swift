@@ -275,6 +275,7 @@ return [
                 if(sampleRate==0){
                     sampleRate=16000;
                 }
+                req.jsBridge.Log.i(LogTag, "录音参数: "+Code.ToJson(param));
                 
                 _=RecordApis(req.jsBridge, sampleRate){ err in
                     if err != nil {
@@ -304,6 +305,24 @@ return [
             }
             req.callback(Dictionary<String,Any?>(), nil);
         });
+    }
+    , "Async_debugInfo":{ req in
+        //获取app的内存占用大小
+        var memoryUsage = Int64(-1);
+        var vmInfo = task_vm_info_data_t();
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info>.size)/4;
+        let result: kern_return_t = withUnsafeMutablePointer(to: &vmInfo) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        if result == KERN_SUCCESS {
+            memoryUsage = Int64(vmInfo.phys_footprint);
+        }
+        
+        var rtv=[:];
+        rtv["appMemoryUsage"]=memoryUsage;
+        req.callback(rtv, nil);
     }
 ];
         }
@@ -346,7 +365,8 @@ return [
             //初始化AudioUnit
             var aDesc=AudioComponentDescription();
             aDesc.componentType = kAudioUnitType_Output;
-            aDesc.componentSubType = kAudioUnitSubType_RemoteIO; //kAudioUnitSubType_VoiceProcessingIO 回声消除AEC
+            aDesc.componentSubType = kAudioUnitSubType_RemoteIO;
+            //aDesc.componentSubType = kAudioUnitSubType_VoiceProcessingIO //回声消除AEC
             aDesc.componentManufacturer = kAudioUnitManufacturer_Apple;
             aDesc.componentFlags = 0;
             aDesc.componentFlagsMask = 0;
@@ -379,7 +399,7 @@ return [
                     inputProc: self.onRecFrame,
                     inputProcRefCon: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
                 );
-                aState = AudioUnitSetProperty(AUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Output, 0, &aCB, UInt32(MemoryLayout<AURenderCallbackStruct>.size));
+                aState = AudioUnitSetProperty(AUnit, kAudioOutputUnitProperty_SetInputCallback, kAudioUnitScope_Output, 1, &aCB, UInt32(MemoryLayout<AURenderCallbackStruct>.size));
             }
             if(aState == 0){
                 //开始录音

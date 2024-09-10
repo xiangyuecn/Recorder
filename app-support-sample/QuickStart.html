@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
 <title reclang="CS4l">RecordApp QuickStart: 快速入门</title>
-<script>var PageLM="2024-05-07 18:33";</script>
+<script>var PageLM="2024-09-09 21:58";</script>
 <!--
 你可以直接将 /app-support-sample/QuickStart.html 文件copy到你的(https)网站中，无需其他文件，就能正常开始测试了。
 You can directly copy the /app-support-sample/QuickStart.html file to your (https) website, and you can start testing normally without other files.
@@ -160,6 +160,7 @@ function recStart(){
 			//录音实时回调，大约1秒调用12次本回调
 			document.querySelector(".recpowerx").style.width=powerLevel+"%";
 			document.querySelector(".recpowert").innerText=formatMs(bufferDuration,1)+" / "+powerLevel;
+			processTime=Date.now();
 			
 			//可视化图形绘制
 			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
@@ -168,12 +169,29 @@ function recStart(){
 	
 	wave=null;
 	recBlob=null;
+	var processTime=0;
 	reclog(RecordApp.Current.Key+" "+Html_$T("ULVy::正在打开..."));
 	RecordApp.Start(set,function(){
 		reclog(RecordApp.Current.Key+" "+Html_$T("qUcx::录制中：")+set.type+" "+set.sampleRate+" "+set.bitRate+"kbps",2);
 		
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		wave=Recorder.FrequencyHistogramView({elem:".recwave"});
+		
+		//【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+		var this_=   RecordApp; //有this就用this，没有就用一个全局对象
+		if(RecordApp.Current.CanProcess()){
+			var wdt=this_.watchDogTimer=setInterval(function(){
+				if(wdt!=this_.watchDogTimer){ clearInterval(wdt); return } //sync
+				if(Date.now()<this_.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值this_.wdtPauseT=Date.now()*2（永不监控），resume时赋值this_.wdtPauseT=Date.now()+1000（1秒后再监控）
+				if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+					reclog(processTime?Html_$T("eWy1::录音被中断"):Html_$T("eWy2::录音未能正常开始"),1);
+					// ... 错误处理，关闭录音，提醒用户
+				}
+			},1000);
+		}else{
+			reclog(Html_$T("eWy3::当前环境不支持onProcess回调，不启用watchDogTimer"),"#aaa"); //目前都支持回调
+		}
+		var startTime=Date.now(); this_.wdtPauseT=0;
 	},function(err){
 		reclog(RecordApp.Current.Key+" "+Html_$T("0Rxw::开始录音失败：")+err,1);
 	});
@@ -183,6 +201,7 @@ function recStart(){
 function recPause(){
 	if(RecordApp.GetCurrentRecOrNull()){
 		RecordApp.Pause();
+		var this_=RecordApp;this_.wdtPauseT=Date.now()*2; //永不监控onProcess超时
 		reclog(Html_$T("S27N::已暂停"));
 	}
 };
@@ -190,6 +209,7 @@ function recPause(){
 function recResume(){
 	if(RecordApp.GetCurrentRecOrNull()){
 		RecordApp.Resume();
+		var this_=RecordApp;this_.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
 		reclog(Html_$T("ChUt::继续录音中..."));
 	}
 };
@@ -201,6 +221,7 @@ function recStop(){
 		return;
 	};
 	
+	var this_=RecordApp;this_.watchDogTimer=0; //停止监控onProcess超时
 	RecordApp.Stop(function(aBuf,duration,mime){
 		var blob=new Blob([aBuf],{type:mime});
 		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"duration:"+duration+"ms");
@@ -212,6 +233,7 @@ function recStop(){
 	});
 };
 function recStopX(){
+	var this_=RecordApp;this_.watchDogTimer=0; //停止监控onProcess超时
 	RecordApp.Stop(
 		null //success传null就只会清理资源，不会进行转码
 		,function(msg){

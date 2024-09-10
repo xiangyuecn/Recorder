@@ -12,7 +12,7 @@ Recorder支持处理audio、video标签dom节点的captureStream方法返回的�
 
 /**=====captureStream兼容函数，用完需close==========
 参数：
-	el:object audio或video dom节点
+	elem:HTMLMediaElement audio或video dom节点
 	set:{
 		play:true //是否播放声音，默认true，false将不会播放声音，只处理
 		onDisconnect:fn() //当流被断开时回调，一般在移动端可能会被系统打断，收到回调后代表此流已非正常停止，需要重新获取流并重新处理
@@ -24,14 +24,15 @@ Recorder支持处理audio、video标签dom节点的captureStream方法返回的�
 		}
 	fail:fn(errMsg) 出错回调
 **/
-Recorder.CaptureStream=function(el,set,success,fail){
+Recorder.CaptureStream=function(elem,set,success,fail){
 	var ctx=Recorder.GetContext(true); //获取一个新的
 	if(!ctx || !ctx.createMediaStreamDestination){
 		fail&&fail("浏览器版本太低，不支持"+(ctx?"MediaStreamDestination":"AudioContext"));
 		return;
 	}
+	//elem.crossOrigin="anonymous"; //跨域资源可能要在开始播放前配置好才能访问
 	
-	var mes=ctx.createMediaElementSource(player);
+	var mes=ctx.createMediaElementSource(elem);
 	var dest=ctx.createMediaStreamDestination();
 	mes.connect(dest);
 	if(set.play==null || set.play){

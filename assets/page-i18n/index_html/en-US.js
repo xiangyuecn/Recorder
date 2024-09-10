@@ -472,9 +472,9 @@ i18n.put(putSet,
 ,"gqjM:"+ //no args
        "Music playback test :"
 
-//@@zh="合成5分钟mp3"
+//@@zh="合成5分钟wav"
 ,"t0I5:"+ //no args
-       "Generate 5 minutes mp3"
+       "Generate 5 minutes wav"
 
 //@@zh="Audio对录音的影响测试"
 ,"XHIP:"+ //no args
@@ -640,6 +640,14 @@ i18n.put(putSet,
 ,"GF0Y:"+ //no args
        "Recording: "
 
+//@@zh="录音被中断"
+,"eWp1:"+ //no args
+       "Recording interrupted"
+
+//@@zh="录音未能正常开始"
+,"eWp2:"+ //no args
+       "Recording failed to start properly"
+
 //@@zh="未打开录音"
 ,"jpoV:"+ //no args
        "Recording not open"
@@ -728,9 +736,9 @@ i18n.put(putSet,
 ,"ywQN:"+ //no args
        "Transcoding to wav failed: "
 
-//@@zh="正在合成mp3..."
+//@@zh="正在合成wav..."
 ,"EmcW:"+ //no args
-       "Generating mp3..."
+       "Generating wav..."
 
 //@@zh="请先录音，然后停止后再播放"
 ,"zGph:"+ //no args

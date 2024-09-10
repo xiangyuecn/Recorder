@@ -198,7 +198,7 @@ Page({
 		,reclogs:[]
 	}
 	,onLoad(options) {
-		this.reclog("本测试页面只提供阿里云版的语音识别（Recorder插件：/src/extensions/asr.aliyun.short.js），如果需要腾讯云一句话语音识别（不支持实时特性），前端基本上没有什么需要做的，仅需让后端提供一个录音文件上传接口（很容易，H5也能用），前端将录制好1分钟内的语音文件直接上传给服务器，由后端调用腾讯云语一句话音识别接口，然后返回结果即可，或者App里面直接前端调用腾讯云语音识别接口。其他厂家的语音识别接口请自行参考对接，如需定制开发请联系作者。");
+		this.reclog("本测试页面只提供阿里云版的语音识别（Recorder插件：/src/extensions/asr.aliyun.short.js），目前暂未提供其他版本的语音识别插件，比如腾讯云、讯飞等，搭配使用RecordApp的onProcess实时处理，可根据自己的业务需求选择对应厂家自行对接即可，如需定制开发请联系作者。");
 		
 		var defaultApi="http://你电脑局域网ip:9527/token";
 		if(wx.getSystemInfoSync().platform=="devtools"){
@@ -256,6 +256,18 @@ Page({
 var wx_ApiRequest=function(url,args,success,fail){
 	wx.setStorageSync("page_asr_asrTokenApi", url); //测试用的存起来
 	
+	//如果你已经获得了token数据，直接success回调即可，不需要发起api请求
+	if(/^\s*\{.*\}\s*$/.test(url)){ //这里是输入框里面填的json数据解析直接返回
+		var data; try{ data=JSON.parse(url); }catch(e){};
+		if(!data || !data.appkey || !data.token){
+			fail("填写的json数据"+(!data?"解析失败":"中缺少appkey或token"));
+		}else{
+			success({ appkey:data.appkey, token:data.token });
+		}
+		return;
+	}
+	
+	//请求url获得token数据，然后通过success返回结果
 	wx.request({
 		url:url, data:args, method:"POST", dataType:"text"
 		,header:{"content-type":"application/x-www-form-urlencoded"}

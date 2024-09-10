@@ -7,7 +7,10 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 <view>
 	<view style="padding:5px 10px 0">
 		<view><text style="font-size:24px;color:#0b1">逻辑层编码UniWithoutAppRenderjs</text></view>
-		<view><text style="font-size:13px;color:#f60">App环境下，设置RecordApp.UniWithoutAppRenderjs=true后，RecordApp完全运行在逻辑层，此时录音和音频编码之类的操作全部在逻辑层，需要提供UniNativeUtsPlugin配置由原生插件进行录音，可视化绘制依旧可以在renderjs中进行。</text></view>
+		<view style="font-size:13px;color:#f60">
+			<view>App环境下，设置RecordApp.UniWithoutAppRenderjs=true后，RecordApp完全运行在逻辑层，此时录音和音频编码之类的操作全部在逻辑层，在后台录音时不受renderjs的WebView运行受限的影响录音更稳定，但会影响逻辑层的性能（正常情况轻微不明显），需要提供UniNativeUtsPlugin配置由原生插件进行录音，可视化绘制依旧可以在renderjs中进行。</view>
+			<view>搭配了原生插件，且需要在后台录音时，建议进行配置为true，可避免受renderjs的WebView在后台运行受限的影响，录音会更稳定。</view>
+		</view>
 	</view>
 
 	<!-- 控制按钮 -->
@@ -29,6 +32,8 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 	<view style="padding:10px 10px 0">
 		<button size="mini" type="default" @click="recPause">暂停</button>
 		<button size="mini" type="default" @click="recResume">继续</button>
+		<button size="mini" type="default" @click="recEnvIn60" style="padding:0 5px;margin-left:10px">注入1小时数据</button>
+		<button size="mini" type="default" @click="testShowMemoryUsage" style="padding:0 5px">显示内存占用</button>
 	</view>
 	
 	<!-- 可视化绘制 -->
@@ -78,6 +83,9 @@ import 'recorder-core/src/engine/mp3-engine.js'
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【所有平台必须引入】uni-app支持文件
 import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+
+//测试用根据简谱生成一段音乐
+import 'recorder-core/src/extensions/create-audio.nmn2pcm.js'
 
 
 /** 引入原生录音插件，原生插件市场地址: https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin （试用无任何限制）
@@ -140,6 +148,11 @@ export default {
 				this.reclog(err,1);
 				return;
 			}
+			RecordApp.UniNativeUtsPlugin_JsCall=(data)=>{ //可以绑定原生插件的jsCall回调
+				if(data.action=="onLog"){ //显示原生插件日志信息
+					this.reclog("[Native.onLog]["+data.tag+"]"+data.message, data.isError?1:"#bbb", {noLog:1});
+				}
+			};
 			
 			this.reclog("正在请求录音权限...");
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
@@ -155,6 +168,7 @@ export default {
 		}
 		,recStart(){
 			this.$refs.player.setPlayBytes(null);
+			this.takeEcChunks=[];
 			
 			this.reclog(this.currentKeyTag()+" 正在打开...");
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
@@ -164,6 +178,8 @@ export default {
 				,bitRate:this.recBitRate
 				
 				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
+					if(buffers[newBufferIdx].length>=sampleRate/4)return;//测试注入的60秒数据，不显示动画
+					
 					//实时处理
 					this.recpowerx=powerLevel;
 					this.recpowert=this.formatTime(duration,1)+" / "+powerLevel;
@@ -174,8 +190,22 @@ export default {
 							this.waveView.input(new Int16Array(BigBytes),${powerLevel},${sampleRate});
 						}
 					`,buffers[buffers.length-1].buffer);
+					
+					//实时释放清理内存，用于支持长时间录音；在指定了有效的type时，编码器内部可能还会有其他缓冲，必须同时提供takeoffEncodeChunk才能清理内存，否则type需要提供unknown格式来阻止编码器内部缓冲，App的onProcess_renderjs中需要进行相同操作
+					if(this.takeEcChunks){
+						if(this.clearBufferIdx>newBufferIdx){ this.clearBufferIdx=0 } //重新录音了就重置
+						for(var i=this.clearBufferIdx||0;i<newBufferIdx;i++) buffers[i]=null;
+						this.clearBufferIdx=newBufferIdx;
+					}
 				}
 				,onProcess_renderjs:`function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+					//此处代码不会执行，因为设置UniWithoutAppRenderjs后，录音操作均在逻辑层中
+				}`
+				
+				,takeoffEncodeChunk:(chunkBytes)=>{
+					this.takeEcChunks.push(chunkBytes);
+				}
+				,takeoffEncodeChunk_renderjs:`function(chunkBytes){
 					//此处代码不会执行，因为设置UniWithoutAppRenderjs后，录音操作均在逻辑层中
 				}`
 			},()=>{
@@ -210,6 +240,16 @@ export default {
 				//全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
 				//App中如果在Start参数中提供了stop_renderjs，renderjs中的函数会比这个函数先执行
 				
+				this.reclog("启用takeoffEncodeChunk后Stop返回的blob长度为0不提供音频数据");
+				var len=0; for(var i=0;i<this.takeEcChunks.length;i++)len+=this.takeEcChunks[i].length;
+				var chunkData=new Uint8Array(len);
+				for(var i=0,idx=0;i<this.takeEcChunks.length;i++){
+					var itm=this.takeEcChunks[i];
+					chunkData.set(itm,idx);
+					idx+=itm.length;
+				};
+				aBuf=chunkData.buffer;
+				
 				var recSet=(RecordApp.GetCurrentRecOrNull()||{set:{type:"mp3"}}).set;
 				this.reclog("已录制["+mime+"]："+this.formatTime(duration,1)+" "+aBuf.byteLength+"字节 "
 						+recSet.sampleRate+"hz "+recSet.bitRate+"kbps",2);
@@ -224,13 +264,13 @@ export default {
 		
 		
 		
-		,reclog(msg,color){
+		,reclog(msg,color,set){
 			var now=new Date();
 			var t=("0"+now.getHours()).substr(-2)
 				+":"+("0"+now.getMinutes()).substr(-2)
 				+":"+("0"+now.getSeconds()).substr(-2);
 			var txt="["+t+"]"+msg;
-			console.log(txt);
+			if(!set||!set.noLog)console.log(txt);
 			this.reclogs.splice(0,0,{txt:txt,color:color});
 		}
 		
@@ -245,6 +285,60 @@ export default {
 			if(showSS)v+="″"+("00"+ss).substr(-3);;
 			return v;
 		}
+		
+		//注入60分钟数据，方便测试
+		,recEnvIn60(){
+			var rec=RecordApp.GetCurrentRecOrNull();
+			if(!rec){
+				this.reclog("未开始录音，无法注入",1);
+				return;
+			}
+			if(this.eRec==rec) return;
+			this.eRec=rec;
+			var sampleRate=rec.srcSampleRate,t1=Date.now();
+			var canon=this.canonPcm=this.canonPcm||Recorder.NMN2PCM.GetExamples().Canon.get(sampleRate).pcm;
+			this.showMemoryUsage("1小时数据注入中... 当前");
+			var len=sampleRate*60*60,size=0,offset=0, tn=0, t1=Date.now();
+			var run=()=>{
+				rec=RecordApp.GetCurrentRecOrNull();
+				if(this.eRec!=rec){
+					if(!rec) this.eRec=null;
+					return;
+				}
+				var n=sampleRate;
+				if(offset+n>canon.length)offset=0;
+				size+=n;
+				if(size<len){
+					rec.envIn(canon.subarray(offset,offset+n),0);
+					offset+=n;
+					var delay=20; if(Date.now()-t1>RecordApp.UniIsApp()==2?3000:10000){ delay=300; t1=Date.now() }
+					setTimeout(run, delay);
+					if(size-tn>=sampleRate*60){
+						tn=size;
+						this.showMemoryUsage("已注入"+~~(size/sampleRate/60)+"分钟，当前");
+					}
+				}else{
+					this.reclog("已按1秒间隔注入了1小时Canon简谱生成的音乐，耗时"+(Date.now()-t1)+"ms");
+					this.eRec=null;
+				}
+			};
+			run();
+		}
+		
+		//显示内存占用
+		,testShowMemoryUsage(){
+			this.showMemoryUsage("");
+		}
+		,showMemoryUsage(msg){
+			RecordApp.UniNativeUtsPluginCallAsync("debugInfo",{}).then((data)=>{
+				var val=data.appMemoryUsage;
+				if(val>0) val=(val/1024/1024).toFixed(2)+" MB";
+				this.reclog(msg+"占用内存大小："+val+" (不一定准)");
+			}).catch((e)=>{
+				this.reclog(msg+"原生插件的debugInfo接口调用出错："+e.message,1);
+			});
+		}
+		
 	}
 }
 </script>

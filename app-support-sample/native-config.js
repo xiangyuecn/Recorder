@@ -66,6 +66,7 @@ var AppJsBridgeRequest=window.AppJsBridgeRequest=function(action,args,call){
 		val=prompt(data);
 	}else{//非App环境
 		json.message=$T("jXZB::非app，不能调用接口",":Non-app, cannot call the interface");
+		if(call) AppJsBridgeRequest.Call(json);
 	};
 	val=val&&JSON.parse(val)||json;
 	

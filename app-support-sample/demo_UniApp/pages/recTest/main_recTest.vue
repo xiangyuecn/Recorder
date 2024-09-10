@@ -110,12 +110,12 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 	</view>
 	
 	<view style="padding:5px 10px 0">
-		<view><checkbox :checked="takeoffEncodeChunkSet" @click="takeoffEncodeChunkSet=!takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk，App端推荐开启）</checkbox> {{takeoffEncodeChunkMsg}}</view>
+		<view><checkbox :checked="takeoffEncodeChunkSet" @click="takeoffEncodeChunkSet=!takeoffEncodeChunkSet">接管编码器输出（takeoffEncodeChunk，App端推荐开启）同时清理内存来长时间录音</checkbox> {{takeoffEncodeChunkMsg}}</view>
 		<view><checkbox :checked="appUseH5Rec" @click="appUseH5RecClick">App里面总是使用Recorder H5录音（勾选后不启用原生录音插件和uts插件）</checkbox></view>
 		
 		<view><checkbox :checked="useAEC" @click="useAEC=!useAEC">尝试启用回声消除（echoCancellation）</checkbox></view>
 		
-		<view><checkbox :checked="showUpload" @click="showUpload=!showUpload">录音上传、保存本地文件+播放、实时语音通话聊天对讲</checkbox></view>
+		<view><checkbox :checked="showUpload" @click="showUpload=!showUpload">录音上传、保存本地文件+播放、实时语音通话聊天对讲（WebSocket）</checkbox></view>
 	</view>
 	
 	<!-- 手撸播放器 -->
@@ -156,16 +156,47 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 <!-- #ifdef APP -->
 		<view>
 			<navigator url="page_renderjsWithout" style="display: inline;">
-				<button size="mini" type="default">逻辑层编码UniWithoutAppRenderjs</button>
+				<button size="mini" type="default">逻辑层编码UniWithoutAppRenderjs后台录音更稳</button>
 			</navigator>
 		</view>
+		<view>
+			<button size="mini" type="default" @click="testRenderjsFunc">测试renderjs功能调用</button>
+			<TestPageRenderjsView ref="testRF" />
+		</view>
+		<view style="padding-top:10px">
+			<button size="mini" type="default" @click="testShowNotifyService">显示后台录音保活通知(Android)</button>
+			<button size="mini" type="default" @click="testCloseNotifyService">关闭通知</button>
+		</view>
+		<view style="padding-bottom:10px;font-size:14px">
+			<checkbox :checked="useANotifySrv" @click="useANotifySrv=!useANotifySrv">本页面录音时自动尝试打开保活(Android)</checkbox>
+		</view>
 <!-- #endif -->
-		<button size="mini" type="default" @click="speakerOnClick">切换成扬声器外放</button>
-		<button size="mini" type="default" @click="speakerOffClick">切换成听筒播放</button>
+		<view>
+			<button size="mini" type="default" @click="speakerOnClick">切换成扬声器外放</button>
+			<button size="mini" type="default" @click="speakerOffClick">切换成听筒播放</button>
+		</view>
+<!-- #ifdef APP -->
+		<view>
+			<button size="mini" type="default" @click="testNativePlugin">测试原生插件调用</button>
+			<button size="mini" type="default" @click="testShowMemoryUsage">显示内存占用</button>
+			<TestNativePluginView ref="testNP" />
+		</view>
+<!-- #endif -->
 		
-		<button size="mini" type="default" @click="testNativePlugin">测试原生插件调用</button>
+		<view>
+			<button size="mini" type="default" @click="clearLogs">清除日志</button>
+<!-- #ifdef APP || H5 -->
+			<button size="mini" type="default" @click="testH5Play5F">播放5分钟wav</button>
+<!-- #endif -->
+		</view>
+		
+		<view class="testH5Play5FView"></view>
+		<view>
+			<view v-for="item in testMsgs" style="border-top:1px dashed #eee; padding:5px 0" :style="{color:item.color==1?'red':item.color==2?'green':item.color}">
+				{{item.msg}}
+			</view>
+		</view>
 	</view>
-	<TestNativePluginView ref="testNP" />
 	
 	<!-- 文档地址提示 -->
 	<view style="height:10px;background:#eee"></view>
@@ -217,12 +248,14 @@ import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放�
 import TestUploadView from './test_upload_saveFile.vue'; //上传功能界面
 import TestRtVoiceView from './test_realtime_voice.vue'; //实时语音通话聊天对讲
 import TestNativePluginView from './test_native_plugin.vue'; //测试原生插件功能
+import TestPageRenderjsView from './test_page_renderjs.vue'; //测试renderjs功能调用
 
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
 import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 /** H5、小程序环境中：引入需要的格式编码器、可视化插件，App环境中在renderjs中引入 **/
+// 注意：如果App中需要在逻辑层中调用Recorder的编码/转码功能，需要去掉此条件编译，否则会报未加载编码器的错误
 // #ifdef H5 || MP-WEIXIN
 	//按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
 	import 'recorder-core/src/engine/mp3.js'
@@ -274,9 +307,15 @@ var disableOgg=false;
 	也可以判断一下只在iOS上或Android上启用，不判断就都启用，比如判断iOS：RecordApp.UniIsApp()==2 */
 RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //目前仅支持原生插件，uts插件不可用
 
+//App中提升后台录音的稳定性：配置了原生插件后，可配置 `RecordApp.UniWithoutAppRenderjs=true` 禁用renderjs层音频编码（WebWorker加速），变成逻辑层中直接编码（但会降低逻辑层性能），后台运行时可避免部分手机WebView运行受限的影响
+
+//App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音也受影响），请调用配套原生插件的`androidNotifyService`接口，或使用第三方保活插件
+
+
+
 
 export default {
-	components: { TestPlayer,TestUploadView,TestRtVoiceView,TestNativePluginView },
+	components: { TestPlayer,TestUploadView,TestRtVoiceView,TestNativePluginView,TestPageRenderjsView },
 	data() {
 		return {
 			recType:"mp3"
@@ -286,6 +325,7 @@ export default {
 			,takeoffEncodeChunkSet:false
 			,takeoffEncodeChunkMsg:""
 			,useAEC:false
+			,useANotifySrv:true
 			,appUseH5Rec:false
 			,showUpload:false
 	
@@ -295,7 +335,7 @@ export default {
 			,pageDeep:0,pageNewPath:"main_recTest"
 			,disableOgg:disableOgg
 			,evalExecCode:""
-			,reclogs:[],reclogLast:""
+			,testMsgs:[],reclogs:[],reclogLast:""
 		}
 	},
 	mounted() {
@@ -353,6 +393,11 @@ export default {
 			}else{
 				RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //恢复原生插件配置值
 				RecordApp.UniCheckNativeUtsPluginConfig(); //可以检查一下原生插件配置是否有效
+				RecordApp.UniNativeUtsPlugin_JsCall=(data)=>{ //可以绑定原生插件的jsCall回调
+					if(data.action=="onLog"){ //显示原生插件日志信息
+						this.reclog("[Native.onLog]["+data.tag+"]"+data.message, data.isError?1:"#bbb", {noLog:1});
+					}
+				};
 			}
 			
 			/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
@@ -386,6 +431,9 @@ export default {
 			this.$refs.player.setPlayBytes(null);
 			this.takeoffEncodeChunkMsg="";var takeEcCount=0,takeEcSize=0;
 			this.takeEcChunks=this.takeoffEncodeChunkSet?[]:null;
+			this.watchDogTimer=0; this.wdtPauseT=0; var processTime=0;
+			
+			if(this.useANotifySrv) this.tryStart_androidNotifyService(); //Android App+原生插件环境下，如需后台或锁屏录音，就必须启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音、原生插件录音均受影响），因此需要调用原生插件的`androidNotifyService`接口保活，或使用第三方保活插件
 			
 			this.reclog(this.currentKeyTag()+" 正在打开...");
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
@@ -405,6 +453,7 @@ export default {
 					
 					this.recpowerx=powerLevel;
 					this.recpowert=this.formatTime(duration,1)+" / "+powerLevel;
+					processTime=Date.now();
 					
 					//H5、小程序等可视化图形绘制，直接运行在逻辑层；App里面需要在onProcess_renderjs中进行这些操作
 					// #ifdef H5 || MP-WEIXIN
@@ -415,13 +464,25 @@ export default {
 					// #endif
 					//实时语音通话对讲，实时处理录音数据
 					if(this.wsVoiceProcess) this.wsVoiceProcess(buffers,powerLevel,duration,sampleRate,newBufferIdx);
+					
+					//实时释放清理内存，用于支持长时间录音；在指定了有效的type时，编码器内部可能还会有其他缓冲，必须同时提供takeoffEncodeChunk才能清理内存，否则type需要提供unknown格式来阻止编码器内部缓冲，App的onProcess_renderjs中需要进行相同操作
+					if(this.takeEcChunks){
+						if(this.clearBufferIdx>newBufferIdx){ this.clearBufferIdx=0 } //重新录音了就重置
+						for(var i=this.clearBufferIdx||0;i<newBufferIdx;i++) buffers[i]=null;
+						this.clearBufferIdx=newBufferIdx;
+					}
 				}
 				,onProcess_renderjs:`function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
 					//App中在这里修改buffers才会改变生成的音频文件
 					//App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
 					var wave=this.waveStore&&this.waveStore[this.recwaveChoiceKey];
-					if(wave){
-						wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
+					if(wave) wave.input(buffers[buffers.length-1],powerLevel,sampleRate);
+					
+					//和onProcess中一样进行释放清理内存，用于支持长时间录音
+					if(${this.takeEcChunks?1:0}){
+						if(this.clearBufferIdx>newBufferIdx){ this.clearBufferIdx=0 } //重新录音了就重置
+						for(var i=this.clearBufferIdx||0;i<newBufferIdx;i++) buffers[i]=null;
+						this.clearBufferIdx=newBufferIdx;
 					}
 				}`
 				
@@ -431,6 +492,9 @@ export default {
 					takeEcCount++; takeEcSize+=chunkBytes.byteLength;
 					this.takeoffEncodeChunkMsg="已接收到"+takeEcCount+"块，共"+takeEcSize+"字节";
 					this.takeEcChunks.push(chunkBytes);
+					
+					//App中使用原生插件时，可方便的将数据实时保存到同一文件，第一帧时append:false新建文件，后面的append:true追加到文件
+					//RecordApp.UniNativeUtsPluginCallAsync("writeFile",{path:"xxx.mp3",append:回调次数!=1, dataBase64:RecordApp.UniBtoa(chunkBytes.buffer)}).then(...).catch(...)
 				}
 				,takeoffEncodeChunk_renderjs:!this.takeoffEncodeChunkSet?null:`function(chunkBytes){
 					//App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
@@ -452,6 +516,21 @@ export default {
 					+(this.appUseH5Rec?" appUseH5Rec":""),2);
 				//创建音频可视化图形绘制
 				this.initWaveStore();
+				
+				//【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+				if(RecordApp.Current.CanProcess()){
+					var wdt=this.watchDogTimer=setInterval(()=>{
+						if(wdt!=this.watchDogTimer){ clearInterval(wdt); return } //sync
+						if(Date.now()<this.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值this.wdtPauseT=Date.now()*2（永不监控），resume时赋值this.wdtPauseT=Date.now()+1000（1秒后再监控）
+						if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+							this.reclog(processTime?"录音被中断":"录音未能正常开始",1);
+							// ... 错误处理，关闭录音，提醒用户
+						}
+					},1000);
+				}else{
+					this.reclog("当前环境不支持onProcess回调，不启用watchDogTimer","#aaa"); //目前都支持回调
+				}
+				var startTime=Date.now();
 			},(msg)=>{
 				this.reclog(this.currentKeyTag()+" 开始录音失败："+msg,1);
 			});
@@ -459,16 +538,20 @@ export default {
 		,recPause(){
 			if(RecordApp.GetCurrentRecOrNull()){
 				RecordApp.Pause();
+				this.wdtPauseT=Date.now()*2; //永不监控onProcess超时
 				this.reclog("已暂停");
 			}
 		}
 		,recResume(){
 			if(RecordApp.GetCurrentRecOrNull()){
 				RecordApp.Resume();
+				this.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
 				this.reclog("继续录音中...");
 			}
 		}
 		,recStopX(){
+			this.tryClose_androidNotifyService(); //关闭后台录音保活服务
+			this.watchDogTimer=0; //停止监控onProcess超时
 			RecordApp.Stop(
 				null //success传null就只会清理资源，不会进行转码
 				,(msg)=>{
@@ -478,48 +561,112 @@ export default {
 		}
 		,recStop(){
 			this.reclog("正在结束录音...");
+			this.tryClose_androidNotifyService(); //关闭后台录音保活服务
+			this.watchDogTimer=0; //停止监控onProcess超时
+			
 			RecordApp.Stop((aBuf,duration,mime)=>{
 				//全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
 				//App中如果在Start参数中提供了stop_renderjs，renderjs中的函数会比这个函数先执行
 				
 				var recSet=(RecordApp.GetCurrentRecOrNull()||{set:{type:this.recType}}).set;
+				var testPlay_aBuf_renderjs="this.audioData";
 				this.reclog("已录制["+mime+"]："+this.formatTime(duration,1)+" "+aBuf.byteLength+"字节 "
 						+recSet.sampleRate+"hz "+recSet.bitRate+"kbps",2);
 				
-				var aBuf_renderjs="this.audioData";
+				//如果使用了takeoffEncodeChunk，Stop的aBuf长度是0，数据早已存到了takeEcChunks数组里面，直接合并成完整音频文件
 				if(this.takeEcChunks){
-					aBuf_renderjs=""; //renderjs的数据是空的
+					testPlay_aBuf_renderjs=""; //renderjs的数据是空的
 					this.reclog("启用takeoffEncodeChunk后Stop返回的blob长度为0不提供音频数据");
 					var len=0; for(var i=0;i<this.takeEcChunks.length;i++)len+=this.takeEcChunks[i].length;
 					var chunkData=new Uint8Array(len);
 					for(var i=0,idx=0;i<this.takeEcChunks.length;i++){
-						var itm=this.takeEcChunks[i];
-						chunkData.set(itm,idx);
-						idx+=itm.length;
-					};
+						var itm=this.takeEcChunks[i]; chunkData.set(itm,idx); idx+=itm.length;
+					}
 					aBuf=chunkData.buffer;
 					this.reclog("takeoffEncodeChunk接收到的音频片段，已合并成一个音频文件 "+aBuf.byteLength+"字节");
 				}
-				//用变量保存起来，别的地方调用
+				
+				
+				/**【保存文件】【上传】示例，详细请参考 test_upload_saveFile.vue 文件
+				//如果是H5环境，也可以直接构造成Blob/File文件对象，和Recorder使用一致
+				// #ifdef H5
+					var blob=new Blob([arrayBuffer],{type:mime});
+					console.log(blob, (window.URL||webkitURL).createObjectURL(blob));
+					var file=new File([arrayBuffer],"recorder.mp3");
+					//uni.uploadFile({file:file, ...}) //直接上传
+				// #endif
+				
+				//如果是App、小程序环境，可以直接保存到本地文件，然后调用相关网络接口上传
+				// #ifdef APP || MP-WEIXIN
+					RecordApp.UniSaveLocalFile("recorder.mp3",arrayBuffer,(savePath)=>{
+						console.log(savePath); //app保存的文件夹为`plus.io.PUBLIC_DOWNLOADS`，小程序为 `wx.env.USER_DATA_PATH` 路径
+						//uni.uploadFile({filePath:savePath, ...}) //直接上传
+					},(errMsg)=>{ console.error(errMsg) });
+				// #endif
+				**/
+				
+				
+				//【测试】用变量保存起来，别的地方调用
 				this.lastRecType=recSet.type;
 				this.lastRecBuffer=aBuf;
 				
-				//播放，部分格式会转码成wav播放
-				this.$refs.player.setPlayBytes(aBuf,aBuf_renderjs,duration,mime,recSet,Recorder);
+				//【测试】播放，部分格式会转码成wav播放
+				this.$refs.player.setPlayBytes(aBuf,testPlay_aBuf_renderjs,duration,mime,recSet,Recorder);
 			},(msg)=>{
 				this.reclog("结束录音失败："+msg,1);
 			});
 		}
 		
 		
+		//Android App启用后台录音保活服务，需要原生插件支持
+		,tryStart_androidNotifyService(){
+			if(RecordApp.UniIsApp() && !this._tips_anfs){ this._tips_anfs=1;
+				this.reclog("App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）；可调用配套原生插件的androidNotifyService接口，或使用第三方保活插件","#4face6");
+			}
+			if(RecordApp.UniIsApp()!=1) return; //非Android App不处理
+			if(!RecordApp.UniNativeUtsPlugin) return; //未使用原生插件
+			
+			this._NotifyService=false;
+			RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{
+				title:"正在录音"
+				,content:"正在录音中，请勿关闭App运行"
+			}).then((data)=>{
+				this._NotifyService=true;
+				var nCode=data.notifyPermissionCode, nMsg=data.notifyPermissionMsg;
+				this.reclog("搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)code="+nCode+" msg="+nMsg,2);
+			}).catch((e)=>{
+				this.reclog("原生插件的androidNotifyService接口调用出错："+e.message,1);
+				this.reclog("如果你已集成了配套的原生录音插件，并且是打包自定义基座运行，请检查本项目根目录的AndroidManifest.xml里面是否已经解开了注释，否则被注释掉的service不会包含在App中",1);
+			});
+		}
+		,tryClose_androidNotifyService(){
+			if(!this._NotifyService) return;   this._NotifyService=false;
+			RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{
+				close:true
+			}).then(()=>{
+				this.reclog("已关闭搭配常驻通知的Android后台录音保活服务");
+			}).catch((e)=>{
+				this.reclog("原生插件的androidNotifyService接口调用出错："+e.message,1);
+			});
+		}
 		
-		,reclog(msg,color){
+		
+		,clearLogs(){ this.testMsgs=[]; this.reclogs=[]; }
+		,addTestMsg(msg,color){
 			var now=new Date();
 			var t=("0"+now.getHours()).substr(-2)
 				+":"+("0"+now.getMinutes()).substr(-2)
 				+":"+("0"+now.getSeconds()).substr(-2);
 			var txt="["+t+"]"+msg;
-			console.log(txt);
+			this.testMsgs.splice(0,0,{msg:txt,color:color});
+		}
+		,reclog(msg,color,set){
+			var now=new Date();
+			var t=("0"+now.getHours()).substr(-2)
+				+":"+("0"+now.getMinutes()).substr(-2)
+				+":"+("0"+now.getSeconds()).substr(-2);
+			var txt="["+t+"]"+msg;
+			if(!set||!set.noLog)console.log(txt);
 			this.reclogs.splice(0,0,{txt:txt,color:color});
 			this.reclogLast={txt:txt,color:color};
 		}
@@ -675,9 +822,24 @@ export default {
 			// #endif
 		}
 		
+		//测试renderjs功能调用
+		,testRenderjsFunc(){
+			this.$refs.testRF.showTest();
+		}
 		//测试原生插件功能
 		,testNativePlugin(){
 			this.$refs.testNP.showTest();
+		}
+		//显示内存占用
+		,testShowMemoryUsage(){
+			this.$refs.testNP.showMemoryUsage();
+		}
+		//显示Android后台录音保活通知服务
+		,testShowNotifyService(){
+			this.$refs.testNP.showNotifyService(true);
+		}
+		,testCloseNotifyService(){
+			this.$refs.testNP.showNotifyService(false);
 		}
 		//切换扬声器外放和听筒播放
 		,speakerOnClick(){
@@ -704,6 +866,47 @@ export default {
 			return;
 			// #endif
 			return this.reclog("目前仅App或小程序支持支持切换外放和听筒播放",1);
+		}
+		
+		//H5播放5分钟wav
+		,testH5Play5F(){
+			var jsCode=`(function(log){
+				var scope=window.testH5Play5FScope=window.testH5Play5FScope||{};
+				var el=document.querySelector(".testH5Play5FView");
+				if(!scope.init){ scope.init=1;
+					el.innerHTML='<div style="padding-top:8px"><audio class="testH5Play5FAudio" controls style="width:100%"></audio></div>';
+				}
+				var audio=document.querySelector(".testH5Play5FAudio");
+				audio.onerror=function(e){ log('播放失败['+audio.error.code+']'+audio.error.message,1) };
+				audio.onpause=function(e){ log('已停止播放') };
+				audio.onplay=function(e){ log("正在播放5分钟wav",2) };
+				var urlOk=function(){
+					if(!(audio.ended || audio.paused)){ audio.pause(); return }
+					audio.src=scope.url; audio.play();
+				}; if(scope.url){ urlOk(); }else{
+					log("正在合成5分钟音频..."); setTimeout(function(){ var sr=16000;
+					var pcm=Recorder.NMN2PCM.GetExamples().Canon.get(sr).pcm;
+					var pcm5=new Int16Array(5*60*sr),n=0;
+					while(n<pcm5.length){
+						var s=Math.min(pcm.length, pcm5.length-n);
+						pcm5.set(s==pcm.length?pcm:pcm.subarray(0,s),n); n+=pcm.length
+					} log("正在转码5分钟wav...");
+					var mock=Recorder({ type:"wav",sampleRate:sr,bitRate:16 }); mock.mock(pcm5, sr);
+					mock.stop(function(blob){
+						scope.url=(window.URL||webkitURL).createObjectURL(blob); urlOk();
+					},function(err){ log(err,1); });
+				}); }
+			})`;
+			var logFn=(msg,color)=>{ this.addTestMsg("[Play5F]"+msg,color) };
+			/*#ifdef H5*/ eval(jsCode)(logFn); return; /*#endif*/
+			/*#ifdef APP*/
+			var cb=RecordApp.UniMainCallBack_Register("Play5F",(data)=>{ logFn(data.msg,data.color) });
+			RecordApp.UniWebViewEval(this,jsCode+`(function(msg,color){
+				RecordApp.UniWebViewSendToMain({action:"${cb}",msg:msg,color:color});
+			})`);
+			return;
+			/*#endif*/
+			this.reclog("当前环境未适配播放",1)
 		}
 		
 		,loadVConsole(){
@@ -745,7 +948,7 @@ export default {
 
 
 <!-- #ifdef APP -->
-<script module="testMainVue" lang="renderjs">
+<script module="testMainVue" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
 /**============= App中在renderjs中引入RecordApp，这样App中也能使用H5录音、音频可视化 =============**/
 /** 先引入Recorder **/
 import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用

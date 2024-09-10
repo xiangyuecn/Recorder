@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" 
+	package="io.dcloud.nativeresouce">
+	<!-- 【注意】如果你不需要后台录音保活（未使用配套的原生录音插件、或未调用原生插件的androidNotifyService接口），可以不需要copy这个文件、或下面这些代码到你项目中，【否则可能会影响到部分应用市场的上架】 -->
+	
+	<!-- 【要后台录音保活就必须加这三行】常驻通知需要的权限，第三条权限取决于下面service的foregroundServiceType -->
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE"/>
+
+	<application>
+	
+		<!--【要后台录音保活就必须加这个service】（不同机型的录音保活效果不一定100%有效）
+			此service为搭配常驻通知的Android后台录音保活服务，前台服务类型（foregroundServiceType）可以自行指定，一般使用microphone即可
+			【注意】targetSdkVersion>=31(Android 12+)时，App必须在前台才能调用此服务接口，在后台时不允许调用；targetSdkVersion>=34(Android 14+)时：使用某种前台服务类型时，必须同时声明对应的android.permission.FOREGROUND_SERVICE_XXX普通权限，此类型如果依赖某种App敏感权限，比如microphone依赖录音权限，必须先有此敏感权限后才能运行前台服务，可用mediaPlayback类型这个不依赖任何敏感权限
+			【注意】使用前台服务后，在上架时可能需要声明需要使用的任何前台服务类型、提供使用说明和具体用例，否则可能会影响到部分应用市场的上架
+			
+			前台服务类型文档：https://developer.android.google.cn/develop/background-work/services/fg-service-types?hl=zh-cn
+			前台服务隐私政策：https://support.google.com/googleplay/android-developer/answer/13392821
+		-->
+		<service
+			android:name="uni.plugin.recorder.RecorderNativePlugin$RecNotifyService"
+			android:foregroundServiceType="microphone"
+			android:exported="false">
+		</service>
+	
+	</application>
+</manifest>

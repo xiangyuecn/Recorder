@@ -79,11 +79,13 @@ PageObject.prototype={
 		this.socket.onclose=(function(){
 			if(sid!=this.SID) return;
 			this.socketIsOpen=false;
+			this.destroyStreamPlay();
 			this.log("ws已断开");
 		}).bind(this);
 		this.socket.onerror=(function(e){
 			if(sid!=this.SID) return;
 			this.socketIsOpen=false;
+			this.destroyStreamPlay();
 			this.log("ws因为错误已断开："+e.message,1);
 		}).bind(this);
 		this.socket.onopen=(function(){
@@ -354,7 +356,9 @@ PageObject.prototype={
 	//初始化播放器
 	,initStreamPlay:function(){
 		if(this.spIsInit)return; //已初始化完成
-		if(this.wsStreamPlay) return True();
+		if(this.spInit_time && Date.now()-this.spInit_time<2000)return; //等待播放器初始化完成
+		var stime=this.spInit_time=Date.now();
+		
 		var Tag="wsStreamPlay";
 		var sp=Recorder.BufferStreamPlayer({
 			decode:false,sampleRate:16000
@@ -366,14 +370,26 @@ PageObject.prototype={
 			}
 		});
 		sp.start((function(){
-			console.log(Tag+"已打开播放");
+			if(stime!=this.spInit_time) return; //可能调用了destroy
 			sp.__isStart=true;
 			this.wsStreamPlay=sp;
 			this.spIsInit=true;
+			this.spInit_time=0;
 			this.log("streamPlay已打开",2);
 		}).bind(this),(function(err){
+			if(stime!=this.spInit_time) return; //可能调用了destroy
+			this.spInit_time=0;
 			this.log("streamPlay初始化错误："+err,1);
 		}).bind(this));
+	}
+	//销毁播放器
+	,destroyStreamPlay(){
+		this.spIsInit=false;
+		this.spInit_time=0;
+		if(this.wsStreamPlay){
+			this.wsStreamPlay.stop();
+			this.wsStreamPlay=null;
+		}
 	}
 };
 window.RtVoiceObj=new PageObject();

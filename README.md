@@ -1,9 +1,9 @@
-**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder)】本文档中默认使用[github.io部署的链接](https://xiangyuecn.github.io/Recorder/)，如果无法访问，你可替换链接开头部分成[gitee.io部署的链接](https://xiangyuecn.gitee.io/recorder/)访问更快。**
+**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder)】本文档中默认使用[github.io部署的链接](https://xiangyuecn.github.io/Recorder/)，如果无法访问，请直接下载仓库源码到本地然后双击打开html文件访问。**
 
 
 # :open_book:Recorder用于html5录音
 
-支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、iOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信、小程序WebView)、Electron、大部分2021年后更新的Android手机自带浏览器、2024年后更新的Android版UC内核(支付宝、钉钉)；不支持：~~Android版UC/夸克浏览器、老旧国产手机自带浏览器、老旧iOS(11.0-14.2)上除Safari外的其他任何形式的浏览器~~。
+支持在大部分已实现`getUserMedia`的移动端、PC端浏览器麦克风录音、实时处理，主要包括：Chrome、Firefox、Safari、iOS 14.3+、Android WebView、腾讯Android X5内核(QQ、微信、小程序WebView)、Electron、大部分2021年后更新的Android手机自带浏览器、2024年后更新的Android版UC内核(UC、支付宝、钉钉)；不支持：~~老旧国产手机自带浏览器、老旧iOS(11.0-14.2)上除Safari外的其他任何形式的浏览器~~。
 
 支持在非浏览器环境中使用部分功能（如nodejs、各种使用js来构建的程序），使用[RecordApp](./app-support-sample)可在微信小程序、uni-app中直接录音。
 
@@ -20,10 +20,8 @@
 
 [​](?)
 
-*提示：如果下面github.io链接无法访问，可尝试替换链接开头部分成 `https://xiangyuecn.gitee.io/recorder/` 访问更快。*
-
 **Recorder H5** ：
-[ [H5在线测试](https://xiangyuecn.github.io/Recorder/)  <sub>| [gitee镜像](https://xiangyuecn.gitee.io/recorder/)</sub> ]
+[ [H5在线测试](https://xiangyuecn.github.io/Recorder/) ]
 [ [H5 QuickStart](https://xiangyuecn.github.io/Recorder/QuickStart.html) ]
 [ [H5 vue](https://xiangyuecn.github.io/Recorder/assets/demo-vue/) ]
 [ [H5 ts](https://xiangyuecn.github.io/Recorder/assets/demo-ts/) ]
@@ -55,39 +53,39 @@
 [​](?)
 
 ### Demo片段列表
-*提示：如果下面github.io链接无法访问，可尝试[点此使用gitee.io访问](https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html)这些Demo。*
 
+1. [【教程】【PCM基础】buffers转pcm、转采样率、pcm转成其他格式等](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.pcm.basic)
+1. [【教程】【音频流】【上传】实时转码上传-实时帧回调版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3)
+1. [【教程】【音频流】【上传】实时转码上传-pcm固定帧大小](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_frame_pcm)
+1. [【教程】【音频流】【上传】实时转码上传-通用转码旧版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
+1. [【教程】【音频流】【播放】实时解码播放音频片段](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player)
+1. [【教程】【播放】【可视化】实时录制处理audio、video播放流](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.source_stream.capture_stream)
+1. [【教程】【ASR】实时语音识别、音频文件转文字-阿里云版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.asr.aliyun.short)
 1. [【Demo库】【格式转换】-mp3等格式解码转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
-2. [【Demo库】【格式转换】-wav格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
-3. [【Demo库】【格式转换】-amr格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.amr2other)
-4. [【教程】【音频流】【上传】实时转码并上传-通用版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer)
-5. [【教程】【音频流】【上传】实时转码并上传-mp3专版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_mp3)
-6. [【教程】【音频流】【上传】实时转码并上传-pcm固定帧大小](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_frame_pcm)
-7. [【教程】【音频流】【播放】实时解码播放音频片段](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player)
-8. [【教程】【播放】【可视化】实时录制处理audio、video播放流](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.source_stream.capture_stream)
-9. [【教程】【ASR】实时语音识别、音频文件转文字-阿里云版](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.asr.aliyun.short)
-10. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
-11. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
-12. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
-13. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
-14. [【教程】新录音从老录音接续、或录制中途插入音频](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.env_in.follow)
-15. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
-16. [【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
-17. [【Demo库】【信号处理】IIR低通、高通滤波](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.lib.filter.iir)
-18. [【测试】【信号处理】FFT频域分析ECharts频谱曲线图](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.test.fft.analysis)
-19. [【测试】WebM格式解析并提取音频](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.webm.extract_audio)
-20. [【测试】G711、G72X编码和解码播放](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.g7xx.engine)
-21. [【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
-22. [【测试】音乐合成-用波形函数将歌曲简谱文本转成PCM](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.create-audio.nmn2pcm)
-23. [【测试】音频可视化相关插件测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
+1. [【Demo库】【格式转换】-wav格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.wav2other)
+1. [【Demo库】【格式转换】-amr格式转成其他格式](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.amr2other)
+1. [【Demo库】【文件合并】-mp3多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.mp3_merge)
+1. [【Demo库】【文件合并】-wav多个片段文件合并](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)
+1. [【教程】实时多路音频混音](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.mix_multiple)
+1. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
+1. [【教程】新录音从老录音接续、或录制中途插入音频](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.env_in.follow)
+1. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
+1. [【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
+1. [【Demo库】【信号处理】IIR低通、高通滤波](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.lib.filter.iir)
+1. [【测试】【信号处理】FFT频域分析ECharts频谱曲线图](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.test.fft.analysis)
+1. [【测试】WebM格式解析并提取音频](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.webm.extract_audio)
+1. [【测试】G711、G72X编码和解码播放](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.g7xx.engine)
+1. [【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.js-binary-bytes)
+1. [【测试】音乐合成-用波形函数将歌曲简谱文本转成PCM](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.create-audio.nmn2pcm)
+1. [【测试】音频可视化相关插件测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.extensions.visualization)
 
 
 ### App Demo
 Android Demo App ：
-[下载APK](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip)（40kb，删除.zip后缀，
-[源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)）
+[下载APK](app-support-sample/demo_android/app-debug.apk.zip)（40kb，删除.zip后缀，
+[源码](app-support-sample/demo_android)）
 
-iOS Demo App ：[下载源码](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios) 自行编译
+iOS Demo App ：[下载源码](app-support-sample/demo_ios) 自行编译
 
 
 
@@ -160,7 +158,7 @@ Recorder的所有js文件均为手动引入（内部不会自动引用），因�
 
 **方式二**：通过import/require引入
 
-通过 npm 进行安装 `npm install recorder-core` ，如果直接clone的源码下面文件路径调整一下即可
+通过 npm 进行安装 `npm install recorder-core --registry=https://registry.npmmirror.com/` ，如果直接clone的源码下面文件路径调整一下即可
 ``` javascript
 //必须引入的核心，换成require也是一样的。注意：recorder-core会自动往window下挂载名称为Recorder对象，全局可调用window.Recorder，也许可自行调整相关源码清除全局污染
 import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
@@ -182,10 +180,10 @@ import 'recorder-core/src/extensions/waveview'
 [​](?Ref=Codes&Start)这里假设只录3秒，录完后立即播放，[在线编辑运行此代码>>](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?idf=self_base_demo)。录音结束后得到的是Blob二进制文件对象，可以下载保存成文件、用`FileReader`读取成`ArrayBuffer`或者`Base64`给js处理，或者参考下一节上传示例直接上传。
 ``` javascript
 //简单控制台直接测试方法：在任意(无CSP限制)页面内加载需要的js，加载成功后再执行一次本代码立即会有效果
-//①加载Recorder+mp3：import("https://unpkg.com/recorder-core/recorder.mp3.min.js").then(()=>console.log("import ok"))
-//②可视化插件和显示：import("https://unpkg.com/recorder-core/src/extensions/waveview.js").then(()=>console.log("import ok")); div=document.createElement("div");div.innerHTML='<div style="height:100px;width:300px;" class="recwave"></div>';document.body.prepend(div);
+//①加载Recorder+mp3：await import("https://unpkg.com/recorder-core/recorder.mp3.min.js"); console.log("import ok")
+//②可视化插件和显示：await import("https://unpkg.com/recorder-core/src/extensions/waveview.js"); console.log("import ok"); div=document.createElement("div");div.innerHTML='<div style="height:100px;width:300px;" class="recwave"></div>';document.body.prepend(div);
 
-var rec,wave;
+var rec,processTime,wave;
 /**调用open打开录音请求好录音权限**/
 var recOpen=function(success){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
     rec=Recorder({ //本配置参数请参考下面的文档，有详细介绍
@@ -194,6 +192,7 @@ var recOpen=function(success){//一般在显示出录音按钮或相关的录音
             //录音实时回调，大约1秒调用12次本回调，buffers为开始到现在的所有录音pcm数据块(16位小端LE)
             //可利用extensions/sonic.js插件实时变速变调，此插件计算量巨大，onProcess需要返回true开启异步模式
             //可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+            processTime=Date.now();
 
             //可实时绘制波形（extensions目录内的waveview.js、wavesurfer.view.js、frequency.histogram.view.js插件功能）
             wave&&wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
@@ -214,10 +213,22 @@ var recOpen=function(success){//一般在显示出录音按钮或相关的录音
 /**开始录音**/
 function recStart(){//打开了录音后才能进行start、stop调用
     rec.start();
+    
+    //【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+    var wdt=rec.watchDogTimer=setInterval(function(){
+        if(!rec || wdt!=rec.watchDogTimer){ clearInterval(wdt); return } //sync
+        if(Date.now()<rec.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值rec.wdtPauseT=Date.now()*2（永不监控），resume时赋值rec.wdtPauseT=Date.now()+1000（1秒后再监控）
+        if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+            console.error(processTime?"录音被中断":"录音未能正常开始");
+            // ... 错误处理，关闭录音，提醒用户
+        }
+    },1000);
+    var startTime=Date.now(); rec.wdtPauseT=0; processTime=0;
 };
 
 /**结束录音**/
 function recStop(){
+    rec.watchDogTimer=0; //停止监控onProcess超时
     rec.stop(function(blob,duration){
         
         //简单利用URL生成本地文件地址，注意不用了时需要revokeObjectURL，否则霸占内存
@@ -345,50 +356,37 @@ pcm.set(pcm2,pcm1.length); //写入pcm2到pcm1后面，完成拼接
 [​](?)
 
 ## 【附】Android App - WebView中录音示例
-在Android App WebView中使用本库来录音，需要在App源码中实现以下两步分：
+[app-support-sample/demo_android](app-support-sample/demo_android)目录中提供了Android测试项目源码（如果不想自己打包可以用打包好的apk来测试，demo_android目录下的`app-debug.apk.zip`，自行去掉.zip后缀）。
 
-1. 在`AndroidManifest.xml`声明需要用到的两个权限
+在Android App WebView中使用本库来H5录音，需要在App源码中实现以下几部分：
+
+1. 在`AndroidManifest.xml`声明需要用到的两个权限，第二个也必须的
 ``` xml
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 ```
 
-2. `WebChromeClient`中实现`onPermissionRequest`网页授权请求
-``` java
-@Override
-public void onPermissionRequest(PermissionRequest request) {
-    //需判断request.getResources()中包含了PermissionRequest.RESOURCE_AUDIO_CAPTURE才进行权限处理，否则不认识的请求直接deny()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        //录音是敏感权限，必须app先有录音权限后，网页才会有录音权限，伪代码：
-        App的系统录音权限请求()
-            .用户已授权(()->{
-                //直接静默授权，或者再弹个确认对话框让用户确认是否允许此网页录音后grant|deny
-                request.grant(request.getResources());
-            })
-            .用户拒绝授权(()->{
-                request.deny();
-            })
-    }
-}
-```
+2. WebView的WebChromeClient中实现`onPermissionRequest`网页授权请求
+如果未实现此方法，WebView默认会拒绝H5录音权限；onPermissionRequest中需要先获取App的系统录音权限（Activity里面必须先用this.checkSelfPermission检测权限，否则直接this.requestPermissions会造成WebView触发touchcancel打断长按），然后再grant网页权限，可参考Android Demo中的[MainActivity.java](app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/MainActivity.java)中的实现代码。
 
-> 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，默认他会自己弹框询问（如果点了拒绝就很惨了），可以通过调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理，参考此篇[X5集成文章](https://www.cnblogs.com/xiangyuecn/p/13450916.html)最后面的网页权限处理代码。
+注：如果应用的`腾讯X5内核`，可能还须提供`android.permission.CAMERA`权限，和调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理
 
-如果不出意外，App内显示的网页就能正常录音了。
-
-[app-support-sample/demo_android](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android)目录中提供了Android测试源码（如果不想自己打包可以用打包好的apk来测试，文件名为`app-debug.apk.zip`，自行去掉.zip后缀）。
-
-> 排查 [#46](https://github.com/xiangyuecn/Recorder/issues/46) `Android WebView`内长按录音不能收到`touchend`问题时，发现touch事件会被打断，反复折腾，最终发现是每次检测权限都会调用`Activity.requestPermissions`，而`requestPermissions`会造成WebView打断touch事件，进而产生H5、AppNative原生录都会产生此问题；最后老实把精简掉的`checkSelfPermission`加上检测一下是否已授权，就没有此问题了，囧。
+3. 如需后台录音，还需要实现Android后台录音保活服务
+自`Android 9`开始，为了保护用户隐私，锁屏或进入后台一段时间后App可能会被禁止访问麦克风、摄像头等功能，导致无法录音、或录音数据全部是静音，因此需要使用保活机制才能在后台录音，详细请参考[app-support-sample/demo_android](app-support-sample/demo_android)，里面专门有一个章节讲解保活。
 
 
 [​](?)
 
 ## 【附】iOS App - WebView中录音示例
+[app-support-sample/demo_ios](app-support-sample/demo_ios)目录中提供了iOS测试项目源码（需自行用xcode编译运行）。
+
 在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限；注意：iOS App需要在项目Background Modes中勾选Audio才能在后台保持录音，不然App切到后台后立马会停止录音。
 
-iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
+iOS 14.3+以上版本才支持WebView中进行H5录音。
 
-iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios)，含iOS App源码。
+iOS 15+以上版本提供了静默授权支持，需要WKWebView的uiDelegate实现[WKUIDelegate requestMediaCapturePermissionFor接口](https://developer.apple.com/documentation/webkit/wkuidelegate)，可参考iOS Demo中的[MainView.swift](app-support-sample/demo_ios/recorder/MainView.swift)中的代码；如果未实现，会导致H5录音每次打开页面后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
+
+iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层的支持，具体参考RecordApp中的[app-support-sample/demo_ios](app-support-sample/demo_ios)测试项目源码。
 
 
 [​](?)
@@ -458,6 +456,10 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 ## 已知问题
 
 > 此处已清除7个已知问题，大部分无法解决的问题会随着时间消失；问题主要集中在iOS部分版本上（不同系统版本问题不重样），好在这玩意能更新
+
+*2024-09-09* [#230](https://github.com/xiangyuecn/Recorder/issues/230) 已知open源码中的`trackSet[sampleRateTxt]=...`强制设置采样率会导致部分设备无法正常打开麦克风，导致录音无声（或无法使用蓝牙等外设），需要修改源码去掉这行源码，同时设置`Recorder.ConnectEnableWebM=false`，TODO: 下个版本将移除此代码，并且停止MediaRecorder支持。
+
+*2024-09-09* 部分iOS上（含新系统）第二次打开录音后无法正常开始录音，在开始录音前调用一次`Recorder.Destroy()`清除掉已打开的`AudioContext`可能会恢复正常，TODO: 下个版本将不再保留打开状态的Recorder.Ctx。
 
 *2023-12-06* iOS上反复弹出的权限弹框：据QQ群内`1806152243`开发者反馈，进入页面打开一次录音并关闭后，如果没有在页面上进行任何用户交互操作（点击、触摸、滑动等），大约35秒左右之后，重新打开录音时，浏览器将会再次弹出录音权限对话框；iOS Safari上稳定复现；这是浏览器自己的行为，js无法控制，设计交互逻辑时应当注意。
 
@@ -606,7 +608,7 @@ rec.buffers中的PCM数据为浏览器采集的原始音频数据，采样率为
 如果你需要长时间实时录音（如长时间语音通话），并且不需要得到最终完整编码的音频文件：
 1. 未提供set.takeoffEncodeChunk时，Recorder初始化时应当使用一个未知的类型进行初始化（如: type:"unknown"，仅仅用于初始化而已，实时转码可以手动转成有效格式，因为有效格式可能内部还有其他类型的缓冲，`unknown`类型`onProcess buffers`和`rec.buffers`是同一个数组）；提供set.takeoffEncodeChunk接管了编码器实时输出时，无需特殊处理，因为编码器内部将不会使用缓冲；
 2. 实时在`onProcess`中修改`buffers`参数数组，可以只保留最后两个元素，其他元素设为null（代码：`onProcess: buffers[buffers.length-3]=null`），不保留也行，全部设为null，以释放占用的内存；`rec.buffers`将会自动清理，无需手动清理；注意：提供set.takeoffEncodeChunk时，应当延迟一下清理，不然buffers被清理掉时，这个buffers还未推入编码器进行编码；
-3. 录音结束时可以不用调用`stop`，直接调用`close`丢弃所有数据即可。只要buffers[0]==null时调用`stop`永远会直接走fail回调。
+3. wav等不支持实时编码的格式录音结束时可以不用调用`stop`，直接调用`close`丢弃所有数据即可，因为只要buffers[0]==null时wav格式调用`stop`永远会直接走fail回调；mp3、pcm等支持实时编码的格式无此限制，且需要调用`stop`来编码输出最后一段音频数据。
 
 ### 【属性】rec.dataType
 stop时返回的录音数据类型，取值：`blob`、`arraybuffer`，默认为`blob`（返回Blob文件对象）；非浏览器环境中一般需要设为`arraybuffer`（返回ArrayBuffer对象），或直接设置全局属性`Recorder.DefaultDataType`。
@@ -822,7 +824,7 @@ IIR低通、高通滤波；可重新赋值一个函数，来改变Recorder的默
 [​](?)
 
 ## WaveView插件
-[waveview.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/waveview.js)，7kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此插件参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
+[waveview.js](src/extensions/waveview.js)，7kb大小源码，录音时动态显示波形，具体样子参考演示地址页面。此插件参考[MCVoiceWave](https://github.com/HaloMartin/MCVoiceWave)库编写的，具体代码在`https://github.com/HaloMartin/MCVoiceWave/blob/f6dc28975fbe0f7fc6cc4dbc2e61b0aa5574e9bc/MCVoiceWave/MCVoiceWaveView.m`中；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
 
 此插件是在录音时`onProcess`回调中使用。基础使用方法：
 ``` javascript
@@ -881,7 +883,7 @@ set={
 [​](?)
 
 ## WaveSurferView插件
-[wavesurfer.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/wavesurfer.view.js)，8kb大小源码，音频可视化波形显示，具体样子参考演示地址页面；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
+[wavesurfer.view.js](src/extensions/wavesurfer.view.js)，8kb大小源码，音频可视化波形显示，具体样子参考演示地址页面；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
 
 此插件的使用方式和`WaveView`插件完全相同，请参考上面的`WaveView`来使用；本插件的波形绘制直接简单的使用PCM的采样数值大小来进行线条的绘制，同一段音频绘制出的波形和Audition内显示的波形外观上几乎没有差异。
 
@@ -930,7 +932,7 @@ set={
 [​](?)
 
 ## FrequencyHistogramView插件
-[frequency.histogram.view.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/frequency.histogram.view.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)，12kb大小源码，音频可视化频率直方图显示，具体样子参考演示地址页面。此插件核心算法参考Java开源库[jmp123](https://sourceforge.net/projects/jmp123/files/)的代码编写的，`jmp123`版本`0.3`；直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可通过配置fullFreq来恢复成完整的线性频谱，或自行修改源码修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
+[frequency.histogram.view.js](src/extensions/frequency.histogram.view.js) + [lib.fft.js](src/extensions/lib.fft.js)，12kb大小源码，音频可视化频率直方图显示，具体样子参考演示地址页面。此插件核心算法参考Java开源库[jmp123](https://sourceforge.net/projects/jmp123/files/)的代码编写的，`jmp123`版本`0.3`；直方图特意优化主要显示0-5khz语音部分（线性），其他高频显示区域较小，不适合用来展示音乐频谱，可通过配置fullFreq来恢复成完整的线性频谱，或自行修改源码修改成倍频程频谱（伯德图、对数频谱）；本可视化插件可以移植到其他语言环境，如需定制可联系作者。
 
 此插件的使用方式和`WaveView`插件完全相同，请参考上面的`WaveView`来使用；请注意：必须同时引入`lib.fft.js`才能正常工作。
 
@@ -995,7 +997,7 @@ set={
 [​](?)
 
 ## BufferStreamPlayer插件
-[buffer_stream.player.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/buffer_stream.player.js)，31kb大小源码，实时播放录音片段文件，把片段文件转换成MediaStream流，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player)。
+[buffer_stream.player.js](src/extensions/buffer_stream.player.js)，31kb大小源码，实时播放录音片段文件，把片段文件转换成MediaStream流，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player)。
 
 BufferStreamPlayer可以通过input方法一次性输入整个音频文件，或者实时输入音频片段文件，然后播放出来；输入支持格式：pcm、wav、mp3等浏览器支持的音频格式，非pcm格式会自动解码成pcm（播放音质效果比pcm、wav格式差点）；输入前输入后都可进行处理要播放的音频，比如：混音、变速、变调；输入的音频会写入到内部的MediaStream流中，完成将连续的音频片段文件转换成流。
 
@@ -1088,25 +1090,22 @@ anyData: any 具体类型取决于：
 [​](?)
 
 ## ASR_Aliyun_Short插件
-[asr.aliyun.short.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/asr.aliyun.short.js)，29kb大小源码，ASR，阿里云语音识别（语音转文字），支持实时语音识别、单个音频文件转文字，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.asr.aliyun.short)。
+[asr.aliyun.short.js](src/extensions/asr.aliyun.short.js)，29kb大小源码，ASR，阿里云语音识别（语音转文字），支持实时语音识别、单个音频文件转文字，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.asr.aliyun.short)。
 
 - 本插件通过调用 阿里云-智能语音交互-一句话识别 接口来进行语音识别，无时长限制。
 - 识别过程中采用WebSocket直连阿里云，语音数据无需经过自己服务器。
-- 自己服务器仅需提供一个Token生成接口即可（本库已实现一个本地测试NodeJs后端程序 [/assets/demo-asr/NodeJsServer_asr.aliyun.short.js](https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-asr/NodeJsServer_asr.aliyun.short.js)）。
+- 自己服务器仅需提供一个Token生成接口即可（本库已实现一个本地测试NodeJs后端程序 [/assets/demo-asr](assets/demo-asr)）。
 - 也支持在非浏览器环境中使用，比如微信小程序、uni-app，提供`compatibleWebSocket`进行适配即可。
 
 > 本插件单次语音识别时虽长无限制，最佳使用场景还是1-5分钟内的语音识别；60分钟以上的语音识别本插件也能胜任（需自行进行重试容错处理），但太长的识别场景不太适合使用阿里云一句话识别（阿里云单次一句话识别最长60秒，本插件自带拼接过程，所以无时长限制）；为什么采用一句话识别：因为便宜。
 
-> 【关于腾讯云版的对接说明】
-> 腾讯云一句话语音识别（不支持实时特性），前端基本上没有什么需要做的，仅需让后端提供一个录音文件上传接口（很容易），前端将录制好1分钟内的语音文件直接上传给服务器，由后端调用腾讯云语一句话音识别接口，然后返回结果即可。暂不提供插件、测试代码。
-> 
-> 相较于阿里云的一句话语音识别：前端直接对接阿里云很容易（后端对接会很难，音频数据前端直连阿里云，无需走后端），后端对接腾讯云很容易（前端无法直连腾讯云，音频数据必须走后端）；根据自己的业务需求选择合适的云进行对接，避免多走弯路。
+> 目前暂未提供其他版本的语音识别插件，比如腾讯云、讯飞等，搭配使用Recorder的onProcess实时处理，可根据自己的业务需求选择对应厂家自行对接即可，如需定制开发请联系作者。
 
 ### 对接流程
 1. 到阿里云开通 一句话识别 服务（可试用一段时间，正式使用时应当开通商用版，很便宜），得到AccessKey、Secret，参考：https://help.aliyun.com/document_detail/324194.html ；
 2. 到阿里云智能语音交互控制台创建相应的语音识别项目，并配置好项目，得到Appkey，每个项目可以设置一种语言模型，要支持多种语言就创建多个项目；
-3. 需要后端提供一个Token生成接口（用到上面的Key和Secret），可直接参考或本地运行此NodeJs后端测试程序：[/assets/demo-asr/NodeJsServer_asr.aliyun.short.js](https://github.com/xiangyuecn/Recorder/blob/master/assets/demo-asr/NodeJsServer_asr.aliyun.short.js)，配置好代码里的阿里云账号后，在目录内直接命令行执行`node NodeJsServer_asr.aliyun.short.js`即可运行提供本地测试接口；
-4. 前端调用ASR_Aliyun_Short，传入tokenApi，即可很简单的实现语音识别功能；
+3. 需要后端提供一个Token生成接口（用到上面的Key和Secret），可直接参考或本地运行此NodeJs后端测试程序：[/assets/demo-asr](assets/demo-asr)，配置好代码里的阿里云账号后，在目录内直接命令行执行`node NodeJsServer_asr.aliyun.short.js`即可运行提供本地测试接口；
+4. 前端调用ASR_Aliyun_Short，传入tokenApi，即可很简单的实现语音识别功能。
 
 ### ASR_Aliyun_Short文档
 ``` javascript
@@ -1216,9 +1215,9 @@ asr.pcmToText(buffer,sampleRate,success,fail)
 [​](?)
 
 ## Sonic插件
-[sonic.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/sonic.js)，38kb大小源码，音频变速变调转换，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)。此插件从[Sonic.java](https://github.com/waywardgeek/sonic/blob/71c51195de71627d7443d05378c680ba756545e8/Sonic.java)移植，并做了适当精简。
+[sonic.js](src/extensions/sonic.js)，38kb大小源码，音频变速变调转换，[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)。此插件从[Sonic.java](https://github.com/waywardgeek/sonic/blob/71c51195de71627d7443d05378c680ba756545e8/Sonic.java)移植，并做了适当精简。
 
-可到[assets/sonic-java](https://github.com/xiangyuecn/Recorder/tree/master/assets/sonic-java)目录运行java代码测试原版效果。
+可到[assets/sonic-java](assets/sonic-java)目录运行java代码测试原版效果。
 
 ### 本插件支持
 1. `Pitch`：变调不变速（会说话的汤姆猫），男女变声，只调整音调，不改变播放速度
@@ -1269,7 +1268,7 @@ sonic.flush(callback) //callback:fn(pcm)，和同步方法相同，只是返回�
 [​](?)
 
 ## NMN2PCM插件
-[create-audio.nmn2pcm.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/create-audio.nmn2pcm.js)，14kb大小源码，简单用 正弦波、方波、锯齿波、三角波 函数生成一段音乐简谱的pcm数据，主要用于测试时提供音频数据；[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.create-audio.nmn2pcm)。
+[create-audio.nmn2pcm.js](src/extensions/create-audio.nmn2pcm.js)，14kb大小源码，简单用 正弦波、方波、锯齿波、三角波 函数生成一段音乐简谱的pcm数据，主要用于测试时提供音频数据；[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.create-audio.nmn2pcm)。
 
 ### NMN2PCM文档
 ``` javascript
@@ -1307,7 +1306,7 @@ Recorder.NMN2PCM.GetExamples() 可获取内置的简谱
 [​](?)
 
 ## DTMF插件
-[dtmf.decode.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/dtmf.decode.js) + [lib.fft.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/lib.fft.js)、[dtmf.encode.js](https://github.com/xiangyuecn/Recorder/blob/master/src/extensions/dtmf.encode.js)，两个js一个解码、一个编码，体积小均不超过10kb，纯js实现易于移植。[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)。
+[dtmf.decode.js](src/extensions/dtmf.decode.js) + [lib.fft.js](src/extensions/lib.fft.js)、[dtmf.encode.js](src/extensions/dtmf.encode.js)，两个js一个解码、一个编码，体积小均不超过10kb，纯js实现易于移植。[参考此demo片段在线测试使用](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)。
 
 1. DTMF（电话拨号按键信号）解码器，解码得到按键值：可实现实时从音频数据流中解码得到电话拨号按键信息，用于电话录音软解，软电话实时提取DTMF按键信号等；识别DTMF按键准确度高，误识别率低，支持识别120ms以上按键间隔+30ms以上的按键音，纯js实现易于移植；请注意：使用dtmf.decode.js必须同时引入`lib.fft.js`（由java移植过来的）才能正常工作。
 2. DTMF（电话拨号按键信号）编码生成器，生成按键对应的音频PCM信号：可实现生成按键对应的音频PCM信号，用于DTMF按键信号生成，软电话实时发送DTMF按键信号等；生成信号代码、原理简单粗暴，纯js实现易于移植，0依赖。

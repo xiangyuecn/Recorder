@@ -1,9 +1,5 @@
 <template>
-<view v-if="show">
-	<view v-for="item in msgs" style="border-top:1px dashed #eee; padding:5px 10px" :style="{color:item.err?'#f00':'#0a0'}">
-		{{item.msg}}
-	</view>
-</view>
+<view></view>
 </template>
 
 <script>
@@ -11,12 +7,7 @@ import 'recorder-core';
 import RecordApp from 'recorder-core/src/app-support/app.js';
 
 export default {
-	data(){
-		return {
-			show:false
-			,msgs:[]
-		}
-	},
+	data(){ return { } },
 	methods:{
 		getPage(){
 			var p=this.$parent;
@@ -31,8 +22,7 @@ export default {
 			p.reclog.apply(p,arguments);
 		}
 		,showTest(){
-			this.show=true;
-			this.msgs=[];
+			this.getPage().testMsgs=[];
 			RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //启用原生插件
 			RecordApp.UniNativeUtsPluginCallAsync("resolvePath",{path:""}).then((data)=>{
 				this.test();
@@ -40,8 +30,37 @@ export default {
 				this.addMsg("err","测试原生插件调用失败，不可以进行原生插件测试："+e.message,1);
 			});
 		}
+		,showMemoryUsage(){
+			RecordApp.UniNativeUtsPluginCallAsync("debugInfo",{}).then((data)=>{
+				var val=data.appMemoryUsage;
+				if(val>0) val=(val/1024/1024).toFixed(2)+" MB";
+				this.addMsg("占用内存大小", val+" (不一定准)");
+			}).catch((e)=>{
+				this.addMsg("原生插件的debugInfo接口调用出错", e.message,1);
+			});
+		}
+		//Android后台录音保活通知的显示和关闭，Android在后台录音需要开启通知，否则可能无法正常录音或录到的都是静音
+		,showNotifyService(show){
+			var args=show?{
+				title:"正在录音的标题"
+				,content:"正在录音的内容文本"
+			}:{
+				close:true
+			};
+			if(show) this.getPage().addTestMsg("App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）；可调用配套原生插件的androidNotifyService接口，或使用第三方保活插件","#4face6");
+			RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",args).then((data)=>{
+				if(show){
+					var nCode=data.notifyPermissionCode, nMsg=data.notifyPermissionMsg;
+					this.getPage().addTestMsg("搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)code="+nCode+" msg="+nMsg,2);
+				}else{
+					this.getPage().addTestMsg("已关闭搭配常驻通知的Android后台录音保活服务");
+				}
+			}).catch((e)=>{
+				this.addMsg("原生插件的androidNotifyService接口调用出错", e.message,1);
+			});
+		}
 		,addMsg(tag,msg,err){
-			this.msgs.splice(0,0,{msg:(err?"[Error]":"[OK]")+" "+tag+"："+msg,err:err});
+			this.getPage().addTestMsg((err?"[Error]":"[OK]")+" "+tag+"："+msg,err?1:2);
 		}
 		
 		
@@ -72,6 +91,8 @@ export default {
 			}
 		}
 		,async test(){
+			this.reclog("开始测试原生插件调用...");
+			
 			var testFile="test.txt";
 			var b64Txt="测试😜123\n";
 			var b64=RecordApp.UniB64Enc(b64Txt);
@@ -80,6 +101,11 @@ export default {
 			
 			await this.exec("插件信息",[["getInfo",{},(data)=>{
 				return data.info;
+			}]]);
+			await this.exec("内存信息",[["debugInfo",{},(data)=>{
+				var val=data.appMemoryUsage;
+				if(val>0) val=(val/1024/1024).toFixed(2)+" MB";
+				return "占用内存大小："+val+" (不一定准)";
 			}]]);
 			await this.exec("调用未知方法",[["abc123",{},null,true]]);
 			await this.exec("路径解析测试",[
@@ -116,6 +142,9 @@ export default {
 				}],
 			]);
 			
+			await this.exec("请求录音权限",[["recordPermission",{},(data)=>{
+				return (data==1?"有权限":data==3?"用户拒绝":"未知结果")+" "+data;
+			}]]);
 			await this.exec("听筒播放",[["setSpeakerOff",{off:true}]]);
 			await this.exec("扬声器播放",[["setSpeakerOff",{off:false}]]);
 			
@@ -136,7 +165,27 @@ export default {
 				}]
 			]);
 			
-			await this.exec("分段读写",[
+			await this.exec("文件seek位置写入",[
+				["deleteFile",{path:testFile}],
+				["writeFile",{path:testFile,dataBase64:b64,append:true}],
+				["writeFile",{path:testFile,dataBase64:b64,append:true}],
+				["writeFile",{path:testFile,dataBase64:RecordApp.UniB64Enc("新值"),seekOffset:0}],
+				["writeFile",{path:testFile,dataBase64:RecordApp.UniB64Enc("NEW\n"),seekOffset:b64Len-4}],
+				["writeFile",{path:testFile,dataBase64:RecordApp.UniB64Enc("add"),seekOffset:9999999}],
+				["readFile",{path:testFile,type:"text"},(data)=>{
+					var str=b64Txt.substr(2); str=str.substr(0, str.length-4);
+					str="新值"+str+"NEW\n"+b64Txt+"add";
+					if(data.data!=str)throw new Error("读取结果不一致");
+				}],
+				
+				["deleteFile",{path:testFile}], //文件不存在时seek，只会写到新文件开头
+				["writeFile",{path:testFile,dataBase64:b64,seekOffset:99999}],
+				["readFile",{path:testFile,type:"text"},(data)=>{
+					if(data.data!=b64Txt)throw new Error("读取结果不一致");
+				}]
+			]);
+			
+			await this.exec("文件分段读写",[
 				["deleteFile",{path:testFile}],
 				["writeFile",{path:testFile,dataBase64:b64,append:true}],
 				["writeFile",{path:testFile,dataBase64:b64,append:true}],
@@ -229,14 +278,15 @@ export default {
 			}
 			if(RecordApp.UniIsApp()==2){
 				await this.exec("iOS设置categoryOptions",[
-					["iosSetDefault_categoryOptions",{value:123456789}],
+					["iosSetDefault_categoryOptions",{value:0x7fffffff}],
 					["iosSetDefault_categoryOptions",{value:0}],
 					["iosSetDefault_categoryOptions",{value:0x1 | 0x2 | 0x4 | 0x8 | 0x20 | 0x40 | 0x80}],
 					["iosSetDefault_categoryOptions",{value:0x1 | 0x4}]
 				]);
 			}
 			
-			this.reclog("测试完成");
+			this.getPage().addTestMsg("原生插件调用测试完成");
+			this.reclog("原生插件调用测试完成");
 		}
 	}
 }

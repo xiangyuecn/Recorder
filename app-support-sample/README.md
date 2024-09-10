@@ -1,4 +1,4 @@
-**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)】本文档中默认使用[github.io部署的链接](https://xiangyuecn.github.io/Recorder/app-support-sample/)，如果无法访问，你可替换链接开头部分成[gitee.io部署的链接](https://xiangyuecn.gitee.io/recorder/app-support-sample/)访问更快。**
+**【[源GitHub仓库](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample)】 | 【[Gitee镜像库](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample)】本文档中默认使用[github.io部署的链接](https://xiangyuecn.github.io/Recorder/app-support-sample/)，如果无法访问，请直接下载仓库源码到本地然后双击打开html文件访问。**
 
 
 # :open_book:RecordApp：基于Recorder的跨平台录音解决方案
@@ -44,7 +44,7 @@ RecordApp是在[Recorder](../)基础上为不同平台环境提供底层适配�
 # :open_book:快速使用
 
 ## 一、引入js文件
-可以通过 npm 进行安装 `npm install recorder-core` ，或者直接git clone得到源码直接引用。所有js文件均为手动引入（内部不会自动引用），因此未被你引入的文件均可删除来精简源码大小。
+可以通过 npm 进行安装 `npm install recorder-core --registry=https://registry.npmmirror.com/` ，或者直接git clone得到源码直接引用。所有js文件均为手动引入（内部不会自动引用），因此未被你引入的文件均可删除来精简源码大小。
 
 [​](?Ref=ImportCode&Start)可以使用`import`、`require`、`html script`等你适合的方式来引入js文件，下面的以import为主要参考，其他引入方式根据文件路径自行调整一下就可以了。
 ``` javascript
@@ -144,6 +144,8 @@ var recReq=function(success){
 
 /**开始录音**/
 var recStart=function(success){
+    var processTime=0;
+    
     //开始录音的参数和Recorder的初始化参数大部分相同
     RecordApp.Start({
         type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
@@ -153,12 +155,29 @@ var recStart=function(success){
         ,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
             //录音实时回调，大约1秒调用12次本回调，buffers为开始到现在的所有录音pcm数据块(16位小端LE)
             //可实时上传（发送）数据，可实时绘制波形，ASR语音识别，使用可参考Recorder
+            processTime=Date.now();
         }
         
         //...  不同环境的专有配置，根据文档按需配置
     },function(){
         //开始录音成功
         success&&success();
+        
+        //【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+        var this_=   RecordApp; //有this就用this，没有就用一个全局对象
+        if(RecordApp.Current.CanProcess()){
+            var wdt=this_.watchDogTimer=setInterval(function(){
+                if(wdt!=this_.watchDogTimer){ clearInterval(wdt); return } //sync
+                if(Date.now()<this_.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值this_.wdtPauseT=Date.now()*2（永不监控），resume时赋值this_.wdtPauseT=Date.now()+1000（1秒后再监控）
+                if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+                    console.error(processTime?"录音被中断":"录音未能正常开始");
+                    // ... 错误处理，关闭录音，提醒用户
+                }
+            },1000);
+        }else{
+            console.warn("当前环境不支持onProcess回调，不启用watchDogTimer"); //目前都支持回调
+        }
+        var startTime=Date.now(); this_.wdtPauseT=0;
     },function(msg){
         console.log("开始录音失败："+msg);
     });
@@ -169,6 +188,7 @@ var recStart=function(success){
 var recPause=function(){
     if(RecordApp.GetCurrentRecOrNull()){
         RecordApp.Pause();
+        var this_=RecordApp;this_.wdtPauseT=Date.now()*2; //永不监控onProcess超时
         console.log("已暂停");
     }
 };
@@ -176,6 +196,7 @@ var recPause=function(){
 var recResume=function(){
     if(RecordApp.GetCurrentRecOrNull()){
         RecordApp.Resume();
+        var this_=RecordApp;this_.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
         console.log("继续录音中...");
     }
 };
@@ -183,6 +204,8 @@ var recResume=function(){
 
 /**停止录音，清理资源**/
 var recStop=function(){
+    var this_=RecordApp;this_.watchDogTimer=0; //停止监控onProcess超时
+    
     RecordApp.Stop(function(arrayBuffer,duration,mime){
         //arrayBuffer就是录音文件的二进制数据，不同平台环境下均可进行播放、上传
         console.log(arrayBuffer,mime,"时长:"+duration+"ms");
@@ -218,44 +241,35 @@ recReq(function(){
 App的WebView中打开网页进行录音时，如果未使用原生录音，将默认使用Recorder H5进行录音（和普通网页录音没有任何区别），此时必须在`RecordApp.RequestPermission`前先获取到App的系统录音权限，如果App没有系统录音权限，将无法录音。
 
 ### Android App录音权限
-在Android App WebView中使用本库来录音，需要在App源码中实现以下两步分：
+[demo_android](demo_android)目录中提供了Android测试项目源码（如果不想自己打包可以用打包好的apk来测试，demo_android目录下的`app-debug.apk.zip`，自行去掉.zip后缀）。
 
-1. 在`AndroidManifest.xml`声明需要用到的两个权限
+在Android App WebView中使用本库来H5录音，需要在App源码中实现以下几部分：
+
+1. 在`AndroidManifest.xml`声明需要用到的两个权限，第二个也必须的
 ``` xml
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 ```
 
-2. `WebChromeClient`中实现`onPermissionRequest`网页授权请求
-``` java
-@Override
-public void onPermissionRequest(PermissionRequest request) {
-    //需判断request.getResources()中包含了PermissionRequest.RESOURCE_AUDIO_CAPTURE才进行权限处理，否则不认识的请求直接deny()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        //录音是敏感权限，必须app先有录音权限后，网页才会有录音权限，伪代码：
-        App的系统录音权限请求()
-            .用户已授权(()->{
-                //直接静默授权，或者再弹个确认对话框让用户确认是否允许此网页录音后grant|deny
-                request.grant(request.getResources());
-            })
-            .用户拒绝授权(()->{
-                request.deny();
-            })
-    }
-}
-```
+2. WebView的WebChromeClient中实现`onPermissionRequest`网页授权请求
+如果未实现此方法，WebView默认会拒绝H5录音权限；onPermissionRequest中需要先获取App的系统录音权限（Activity里面必须先用this.checkSelfPermission检测权限，否则直接this.requestPermissions会造成WebView触发touchcancel打断长按），然后再grant网页权限，可参考[MainActivity.java](demo_android/app/src/main/java/com/github/xianyuecn/recorder/MainActivity.java)中的实现代码。
 
-> 注：如果应用的`腾讯X5内核`，除了上面两个权限外，还必须提供`android.permission.CAMERA`权限。另外无法重写此`onPermissionRequest`方法，默认他会自己弹框询问（如果点了拒绝就很惨了），可以通过调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理，参考此篇[X5集成文章](https://www.cnblogs.com/xiangyuecn/p/13450916.html)最后面的网页权限处理代码。
+注：如果应用的`腾讯X5内核`，可能还须提供`android.permission.CAMERA`权限，和调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理
 
-如果不出意外，App内显示的网页就能正常录音了。
+3. 如需后台录音，还需要实现Android后台录音保活服务
+自`Android 9`开始，为了保护用户隐私，锁屏或进入后台一段时间后App可能会被禁止访问麦克风、摄像头等功能，导致无法录音、或录音数据全部是静音，因此需要使用保活机制才能在后台录音，详细请参考[demo_android](demo_android)，里面专门有一个章节讲解保活。
 
 
 ### iOS App录音权限
+[demo_ios](demo_ios)目录中提供了iOS测试项目源码（需自行用xcode编译运行）。
+
 在iOS App WebView中使用本库来录音，需要在App源码 `Info.plist` 中声明使用麦克风 `NSMicrophoneUsageDescription`，无需其他处理，WebView会自己处理好录音权限；注意：iOS App需要在项目Background Modes中勾选Audio才能在后台保持录音，不然App切到后台后立马会停止录音。
 
-iOS 14.3+以上版本才支持WebView中进行H5录音；iOS 15+提供了静默授权支持，参考[WKUIDelegate](https://developer.apple.com/documentation/webkit/wkuidelegate)中的 `Requesting Permissions` -> `requestMediaCapturePermissionFor`，默认未实现，会导致WebView每次打开后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
+iOS 14.3+以上版本才支持WebView中进行H5录音。
 
-iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层原生录音的支持，具体参考 [demo_ios](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_ios) 目录，含iOS App源码。
+iOS 15+以上版本提供了静默授权支持，需要WKWebView的uiDelegate实现[WKUIDelegate requestMediaCapturePermissionFor接口](https://developer.apple.com/documentation/webkit/wkuidelegate)，可参考iOS Demo中的[MainView.swift](demo_ios/recorder/MainView.swift)中的代码；如果未实现，会导致H5录音每次打开页面后第一次录音时、或长时间无操作再打开录音时均会弹出录音权限对话框。
+
+iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Native层的支持，具体参考[demo_ios](demo_ios)测试项目源码。
 
 
 ### 微信小程序录音权限

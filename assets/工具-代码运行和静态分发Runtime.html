@@ -34,6 +34,12 @@ body{
 pre{
 	white-space:pre-wrap;
 }
+label,label *{
+	cursor: pointer;
+}
+label:hover{
+	color:#06c;
+}
 a{
 	text-decoration: none;
 	color:#06c;
@@ -200,11 +206,19 @@ window.Runtime={
 	}
 	
 	,Import:function(jsList,win){
+		Runtime.ImportJs(jsList,function(){
+			Runtime.CodeRunClick(1);
+		},function(err){
+			Runtime.Log(err,1);
+		},function(){},win);
+		Runtime.CodeRunImport();
+	}
+	,ImportJs:function(jsList,True,False,inLoad,win){
 		win=win||window;
-		var doc=win.document;
+		var doc=win.document,count=0;
 		var load=function(idx){
 			if(idx>=jsList.length){
-				Runtime.CodeRunClick(1);
+				True&&True(count);
 				return;
 			};
 			var itm=jsList[idx];
@@ -214,6 +228,7 @@ window.Runtime={
 				return;
 			};
 			
+			inLoad&&inLoad(count,idx,url); count++;
 			var elem=doc.createElement("script");
 			elem.setAttribute("type","text/javascript");
 			elem.setAttribute("src",url);
@@ -221,15 +236,13 @@ window.Runtime={
 				load(idx+1);
 			};
 			elem.onerror=function(e){
-				Runtime.Log("请求失败:"+(e.message||"-")+"，"+url,1);
+				False&&False("请求失败:"+(e.message||"-")+"，"+url,idx);
 			};
 			doc.body.appendChild(elem);
 		};
 		setTimeout(function(){
 			load(0);
 		});
-		
-		Runtime.CodeRunImport();
 	}
 	
 	,Process:function(buffers,powerLevel,bufferDuration,bufferSampleRate){
@@ -1117,23 +1130,26 @@ function recStop(){
 
 <script>
 (function(){
-var demos=[
+var demos=[ 0
+,{n:"【教程】【PCM基础】buffers转pcm、转采样率、pcm转成其他格式等",k:"teach.pcm.basic"}
 
-{n:"【Demo库】【格式转换】-mp3等格式解码转成其他格式",k:"lib.transform.mp32other"}
-,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
-,{n:"【Demo库】【格式转换】-amr格式转成其他格式",k:"lib.transform.amr2other"}
-
-,{n:"【教程】【音频流】【上传】实时转码并上传-通用版",k:"teach.realtime.encode_transfer"}
-,{n:"【教程】【音频流】【上传】实时转码并上传-mp3专版",k:"teach.realtime.encode_transfer_mp3"}
-,{n:"【教程】【音频流】【上传】实时转码并上传-pcm固定帧大小",k:"teach.realtime.encode_transfer_frame_pcm"}
+,{n:"【教程】【音频流】【上传】实时转码上传-实时帧回调版",k:"teach.realtime.encode_transfer_mp3"}
+,{n:"【教程】【音频流】【上传】实时转码上传-pcm固定帧大小",k:"teach.realtime.encode_transfer_frame_pcm"}
+,{n:"【教程】【音频流】【上传】实时转码上传-通用转码旧版",k:"teach.realtime.encode_transfer"}
 
 
 ,{n:"【教程】【音频流】【播放】实时解码播放音频片段",k:"teach.realtime.decode_buffer_stream_player"}
 ,{n:"【教程】【播放】【可视化】实时录制处理audio、video播放流",k:"teach.source_stream.capture_stream"}
 ,{n:"【教程】【ASR】实时语音识别、音频文件转文字-阿里云版",k:"teach.realtime.asr.aliyun.short"}
 
+
+,{n:"【Demo库】【格式转换】-mp3等格式解码转成其他格式",k:"lib.transform.mp32other"}
+,{n:"【Demo库】【格式转换】-wav格式转成其他格式",k:"lib.transform.wav2other"}
+,{n:"【Demo库】【格式转换】-amr格式转成其他格式",k:"lib.transform.amr2other"}
+
 ,{n:"【Demo库】【文件合并】-mp3多个片段文件合并",k:"lib.merge.mp3_merge"}
 ,{n:"【Demo库】【文件合并】-wav多个片段文件合并",k:"lib.merge.wav_merge"}
+
 
 ,{n:"【教程】实时多路音频混音",k:"teach.realtime.mix_multiple"}
 ,{n:"【教程】变速变调音频转换",k:"teach.sonic.transform"}
@@ -1152,9 +1168,9 @@ var demos=[
 ];
 
 var markdown=[];
-for(var i=0;i<demos.length;i++){
+for(var i=1;i<demos.length;i++){
 	var o=demos[i];
-	markdown.push((i+1)+'. ['+o.n+'](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
+	markdown.push('1. ['+o.n+'](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname='+o.k+')');
 	AddDemoCode(199-i,"",o.n,null,o.k);
 };
 

@@ -1,5 +1,5 @@
 /*******************************************
-ASR 阿里云-智能语音交互-一句话识别 生成Token的api接口，本地测试http后端服务
+ASR 阿里云-智能语音交互-一句话识别 生成token的api接口，本地测试http后端服务
 https://github.com/xiangyuecn/Recorder
 
 【运行】直接在当前文件夹内用命令行执行命令，即可运行：
@@ -14,7 +14,7 @@ global.Config={
 	
 	//请到阿里云智能语音交互控制台创建相应的语音识别项目，每个项目可以设置一种语言模型，要支持多种语言就创建多个项目，然后填写每个项目对应的Appkey到这里，前端调用本接口的时候传入lang参数来获取到对应的Appkey
 	,Langs:{
-		"普通话":"" //【必填】至少创建一个普通话语言模型的项目用于测试
+		"普通话":"" //【必填】至少创建一个普通话语言模型的项目用于测试，填对应的Appkey
 		,"粤语":""
 		,"英语":""
 		,"日语":""
@@ -34,11 +34,17 @@ var fs = require("fs");
 var localFile="NodeJsServer_asr.aliyun.short__local.js";
 fs.existsSync(localFile) && require("./"+localFile);
 
+var GetLangKeys=function(){
+	var keys=[];
+	for(var k in Config.Langs) if(Config.Langs[k])keys.push(k);
+	return keys;
+};
 
 /***************一句话识别Token生成***************/
 var GetAsrToken=async function(ctx, args){
 	var lang=args.lang;//unsafe
 	var rtv={};
+	ctx.setValue(rtv);
 	var errTag="[GetAsrToken]";
 	
 	if(!Config.AccessKey || !Config.Secret){
@@ -48,7 +54,9 @@ var GetAsrToken=async function(ctx, args){
 	//根据前端需要的语言获得appkey，一种语言模型对应一个项目
 	var appkey=Config.Langs[lang];
 	if(!appkey){
-		return ctx.error(errTag+"lang["+lang+"]未配置Appkey");
+		var errMsg="lang["+lang+"]未配置Appkey";
+		if(!lang) errMsg="请求需要提供lang参数";
+		return ctx.error(errTag+errMsg+"，已配置的可用lang值"+JSON.stringify(GetLangKeys()));
 	}
 	rtv.appkey=appkey;
 	
@@ -69,7 +77,10 @@ var GetAsrToken=async function(ctx, args){
 	}
 	rtv.token=cache.Id;
 	
-	ctx.v=rtv;
+	ctx.endLog=function(){
+		console.log("    \x1B[32m"+lang+"token:"+JSON.stringify(rtv)+"\x1B[0m"
+			+"\n    此token可重复使用，有效期到："+new Date(cache.ExpireTime*1000).toLocaleString());
+	};
 	return ctx;
 };
 
@@ -145,62 +156,97 @@ var HMAC=function(hash,key,data,resType){
 
 
 
+/***************提供接口***************/
+var Api={}; //async method_path0(ctx,args)
 
+//内容回显
+Api.GET_=Api.GET_echo=async function(ctx,args){
+	ctx.setValue('<h1>阿里云一句话识别TokenApi服务正在运行...</h1>','html');
+};
+Api.POST_=Api.POST_echo=async function(ctx,args){
+	ctx.setValue({url:ctx.req.url, method:ctx.req.method, headers:ctx.req.headers, args:args});
+};
 
-/***************开启http服务***********************/
+//token接口
+Api.GET_token=Api.POST_token=async function(ctx,args){
+	await GetAsrToken(ctx,args);
+};
+
+/***开启http服务***/
 var http = require('http');
 var https = require('https');
 var querystring = require('querystring');
 var reqProcess=function(req, rep) {
-	var ctx={c:0,m:"",v:""},status=200;
+	var ctx={
+		req:req,rep:req
+		,data:{c:0,m:"",v:""}
+		,status:200,setCT:false,contentType:"text/json; charset=utf-8"
+	};
+	ctx.setValue=function(val,contentType){
+		if(contentType!=null){
+			ctx.setCT=true;
+			ctx.contentType=!contentType||contentType=="html"?"text/html; charset=utf-8":contentType;
+		};
+		ctx.data.v=val;
+	};
 	ctx.error=function(msg){
-		ctx.c=1;
-		ctx.m=msg;
+		ctx.data.c=1;
+		ctx.data.m=msg;
 		return ctx;
 	};
 	ctx.isError=function(){
-		return ctx.c!=0;
+		return ctx.data.c!=0;
 	};
 	ctx.getMsg=function(){
-		return ctx.m;
+		return ctx.data.m;
 	};
+	ctx.endLog=function(){};
 	
-	var post = '';
+	var post = Buffer.alloc(0);
 	req.on('data', function(chunk){
-		post += chunk;
+		post = Buffer.concat([post, chunk], post.length+chunk.length);
 	});
 	req.on('end', function(){
 		(async function(){
-			try{
-				var params = querystring.parse(post);
-				var isPost=req.method=="POST";
-			
-				var path0=(/^\/([^\/]+)/.exec(req.url)||[])[1]||"";
-				if(path0=="echo"){
-					ctx.v=params;
-				}else if(path0=="token" && isPost){
-					await GetAsrToken(ctx, params);
+			if(req.method!="GET" && req.method!="POST"){
+				ctx.setValue("Method: "+req.method, "html");
+			}else try{
+				//解析url查询参数 和 post表单
+				var params = querystring.parse((/\?(.+)/.exec(req.url)||[])[1]||"");
+				params = Object.assign(params, querystring.parse(post.toString()));
+				
+				var path0=(/^\/([^\/\?]+)/.exec(req.url)||[])[1]||"";
+				var fn=Api[req.method+"_"+path0]
+				if(fn){
+					await fn(ctx, params);
 				}else{
-					status=404;
-					ctx.error(req.method+"路径不存在");
+					ctx.status=404;
+					ctx.error(req.method+"路径不存在："+req.url);
 				};
 			}catch(e){
 				ctx.error("执行出错："+e.stack);
 			};
-			try{
-				var sendData=JSON.stringify(ctx);
-			}catch(e){
-				ctx={c:1,m:"返回数据失败："+e.stack};
-				sendData=JSON.stringify(ctx);
+			if(!ctx.setCT){
+				try{
+					var sendData=JSON.stringify(ctx.data);
+				}catch(e){
+					sendData=JSON.stringify({c:1,m:"返回数据失败："+e.stack});
+				}
+			}else{
+				var sendData=ctx.data.v;
 			}
 			
-			rep.writeHead(status, {
-				'Content-Type': 'text/json; charset=utf-8'
+			rep.writeHead(ctx.status, {
+				'Content-Type': ctx.contentType
 				, 'Access-Control-Allow-Origin':'*'
 			});
 			rep.end(sendData);
 			
-			console.log("["+new Date().toLocaleString()+"] "+req.method+" "+req.url+" "+status+" "+Buffer.byteLength(sendData));
+			console.log("["+new Date().toLocaleString()+"]:"+Port+" "+req.method+" "+ctx.status+" "+Buffer.byteLength(sendData)+" "+post.length+" "+req.url);
+			if(ctx.isError()){
+				console.log("    \x1B[31m"+ctx.getMsg()+"\x1B[0m");
+			}
+			ctx.endLog();
 		})();
 	});
 };
@@ -229,4 +275,8 @@ console.log(`
     ${UrlProtocol}://localhost${UrlPort}/token
     ${UrlProtocol}://你的局域网IP${UrlPort}/token
     ${UrlProtocol}://你的域名${UrlPort}/token
-\x1B[0m`);
+\x1B[0m
+如果你的测试页面\x1B[35m无法访问http地址\x1B[0m或\x1B[35m存在跨域问题\x1B[0m时，请在本电脑上直接访问 \x1B[33m${UrlProtocol}://127.0.0.1${UrlPort}/token?lang=你需要lang语言\x1B[0m
+然后手动复制 \x1B[33m{appkey:'...',token:'...'}\x1B[0m json到页面中使用，复制的token可以重复使用，本控制台中会显示有效期
+    已配置的可用lang语言\x1B[33m${JSON.stringify(GetLangKeys())}\x1B[0m
+`);

@@ -156,6 +156,10 @@ i18n.put(putSet,
 ,"vEgr:"+ //no args
        "MainReceiveBind duplicate binding that should not occur"
 
+//@@zh="从renderjs发回数据但UniMainCallBack回调不存在："
+,"kZx6:"+ //no args
+       "Sending data back from renderjs but UniMainCallBack callback does not exist: "
+
 //@@zh="[MainReceive]从renderjs发回未知数据："
 ,"ZHwv:"+ //no args
        "[MainReceive] Unknown data sent back from renderjs: "
@@ -200,13 +204,17 @@ i18n.put(putSet,
 ,"xYRb:"+ //no args
        "Currently RecordApp runs in the logical layer (performance will be slightly lower, and plug-ins such as visualization are not available) "
 
-//@@zh="未找到当前页面renderjs所在的WebView，如果确实没有renderjs，请设置RecordApp.UniWithoutAppRenderjs=true"
+//@@zh="未找到当前页面renderjs所在的WebView"
 ,"S3eF:"+ //no args
-       "The WebView where the renderjs of the current page is located has not been found. If there is indeed no renderjs, please set RecordApp.UniWithoutAppRenderjs=true"
+       "The WebView where renderjs of the current page is located is not found"
 
 //@@zh="当前RecordApp运行在renderjs所在的WebView中（逻辑层中只能做有限的实时处理，可视化等插件均需要在renderjs中进行调用）"
 ,"0hyi:"+ //no args
        "The current RecordApp runs in the WebView where renderjs is located (only limited real-time processing can be done in the logic layer, and visualization and other plug-ins need to be called in renderjs) "
+
+//@@zh="，请检查此页面代码中是否编写了lang=renderjs的module，并且调用了RecordApp.UniRenderjsRegister；如果确实没有renderjs，比如nvue页面，请设置RecordApp.UniWithoutAppRenderjs=true并且搭配配套的原生插件在逻辑层中直接录音"
+,"e6Mo:"+ //no args
+       ", please check whether the module with lang=renderjs is written in the code of this page and RecordApp.UniRenderjsRegister is called; if there is indeed no renderjs, such as nvue page, please set RecordApp.UniWithoutAppRenderjs=true and use the matching native plug-in to record directly in the logic layer"
 
 //@@zh="【在App内使用{1}的授权许可】"
 ,"FabE:"+ //args: {1}
@@ -240,6 +248,10 @@ i18n.put(putSet,
 ,"dl4f:"+ //args: {1}
        "{1} returned unknown content, "
 
+//@@zh="未配置RecordApp.UniNativeUtsPlugin原生录音插件"
+,"H753:"+ //no args
+       "RecordApp.UniNativeUtsPlugin native recording plug-in is not configured"
+
 //@@zh="renderjs中不支持设置RecordApp.UniNativeUtsPlugin"
 ,"l6sY:"+ //no args
        "Setting RecordApp.UniNativeUtsPlugin is not supported in renderjs"
@@ -260,10 +272,6 @@ i18n.put(putSet,
 ,"TGMm:"+ //no args
        "The provided RecordApp.UniNativeUtsPlugin value is not RecordApp’s uts native recording plug-in"
 
-//@@zh="未配置RecordApp.UniNativeUtsPlugin原生录音插件"
-,"H753:"+ //no args
-       "RecordApp.UniNativeUtsPlugin native recording plug-in is not configured"
-
 //@@zh="需在App逻辑层中调用原生插件功能"
 ,"MrBx:"+ //no args
        "The native plug-in function needs to be called in the App logic layer"
@@ -283,6 +291,10 @@ i18n.put(putSet,
 //@@zh="正在调用plus.ios@AVAudioSession请求iOS原生录音权限"
 ,"Y3rC:"+ //no args
        "Calling plus.ios@AVAudioSession to request iOS native recording permissions"
+
+//@@zh="项目配置中未声明iOS录音权限{1}"
+,"9xoE:"+ //args: {1}
+       "iOS recording permission {1} is not declared in the project configuration"
 
 //@@zh="已获得iOS原生录音权限"
 ,"j15C:"+ //no args

@@ -59,6 +59,7 @@ Page({
 		
 		var takeEcCount=0,takeEcSize=0; this.setData({takeoffEncodeChunkMsg:""});
 		this.takeEcChunks=this.data.takeoffEncodeChunkSet?[]:null;
+		this.watchDogTimer=0; this.wdtPauseT=0; var processTime=0;
 		
 		this.reclog("正在开始录音...");
 		RecordApp.Start({
@@ -69,6 +70,7 @@ Page({
 				noiseSuppression:true,echoCancellation:true,autoGainControl:true
 			}
 			,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
+				processTime=Date.now();
 				//可视化图形绘制
 				this.setData({
 					recpowerx:powerLevel
@@ -107,6 +109,21 @@ Page({
 				+(this.data.takeoffEncodeChunkSet?" takeoffEncodeChunk":""),2);
 			//创建音频可视化图形绘制
 			this.initWaveStore();
+			
+			//【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+			if(RecordApp.Current.CanProcess()){
+				var wdt=this.watchDogTimer=setInterval(()=>{
+					if(wdt!=this.watchDogTimer){ clearInterval(wdt); return } //sync
+					if(Date.now()<this.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值this.wdtPauseT=Date.now()*2（永不监控），resume时赋值this.wdtPauseT=Date.now()+1000（1秒后再监控）
+					if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+						this.reclog(processTime?"录音被中断":"录音未能正常开始",1);
+						// ... 错误处理，关闭录音，提醒用户
+					}
+				},1000);
+			}else{
+				this.reclog("当前环境不支持onProcess回调，不启用watchDogTimer","#aaa"); //目前都支持回调
+			}
+			var startTime=Date.now();
 		},(msg)=>{
 			this.reclog("开始录音失败："+msg,1);
 		});
@@ -114,12 +131,14 @@ Page({
 	,recPause(){
 		if(RecordApp.GetCurrentRecOrNull()){
 			RecordApp.Pause();
+			this.wdtPauseT=Date.now()*2; //永不监控onProcess超时
 			this.reclog("已暂停");
 		}
 	}
 	,recResume(){
 		if(RecordApp.GetCurrentRecOrNull()){
 			RecordApp.Resume();
+			this.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
 			this.reclog("继续录音中...");
 		}
 	}
@@ -129,6 +148,7 @@ Page({
 			this.iosSpeakerOff=false;
 			wx.setInnerAudioOption({ speakerOn:true });
 		}
+		this.watchDogTimer=0; //停止监控onProcess超时
 	}
 	,recStopX(){
 		this.__stopClear();

@@ -6,6 +6,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Build;
+import android.os.Debug;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -218,6 +219,17 @@ public class RecordAppJsBridge implements Closeable {
                     case "recordAlive":
                         isAsync=false;
                         RecordApis.Sync_recordAlive(this);
+                        break;
+                    case "debugInfo":
+                        isAsync=true;
+
+                        //获取app的内存占用大小
+                        Debug.MemoryInfo info=new Debug.MemoryInfo();
+                        Debug.getMemoryInfo(info);
+                        long memoryUsage = 1024L * info.getTotalPss();
+                        JSONObject rtv=new JSONObject();
+                        rtv.put("appMemoryUsage", memoryUsage);
+                        callback(rtv, null);
                         break;
                     default:
                         jsBridge.Log.e(LogTag, "request." + action + "不存在");
@@ -470,6 +482,7 @@ public class RecordAppJsBridge implements Closeable {
 
 
 
+        @SuppressLint("MissingPermission")
         synchronized private void init(RecordAppJsBridge main_, int sampleRateReq, Callback<Object, Object> ready){
             Current=this;
             this.main=main_;
@@ -481,6 +494,8 @@ public class RecordAppJsBridge implements Closeable {
                 logStreamVal=new ByteArrayOutputStream();
             }
             try {
+                //Android如果要蓝牙录音，检测到蓝牙后，需要先调用 AudioManager .startBluetoothSco()，结束录音时.stopBluetoothSco()
+
                 rec = new AudioRecord(
                         MediaRecorder.AudioSource.DEFAULT
                         , SampleRate
@@ -627,7 +642,7 @@ public class RecordAppJsBridge implements Closeable {
                 folder = main.context.getCacheDir();
             }
             File file=new File(folder, "/recorder/"+name);
-            file.getParentFile().mkdirs();
+            File fileP=file.getParentFile(); if(fileP!=null)fileP.mkdirs(); //不可能为null
 
             FileOutputStream out = new FileOutputStream(file);
 

@@ -8,7 +8,7 @@
 <title reclang="PZM5">RecordApp测试</title>
 
 <script>
-var PageLM="2024-05-07 18:33";
+var PageLM="2024-09-09 21:58";
 (function(){
 console.log("【温馨提示】本页面用于测试RecordApp的主要功能，代码难看臃肿，不建议阅读本页面源码；如果想要快速入门，请参考app-support-sample/QuickStart.html页面。    "
 +"[Reminder] This page is used to test the main functions of RecordApp. The code is ugly and bloated. It is not recommended to read the source code of this page; if you want to get started quickly, please refer to the app-support-sample/QuickStart.html page.");
@@ -17,8 +17,8 @@ console.log("【温馨提示】本页面用于测试RecordApp的主要功能，�
 var srcC="src/recorder-core.js",distC="dist/recorder-core.js";
 var initJss=[srcC];
 var tei=window.TypeEngineImports={//不同类型编码器需要加载的js文件
-	mp3:{src:[srcC,"src/engine/mp3.js","src/engine/mp3-engine.js"]
-		,dist:["recorder.mp3.min.js"]}
+	mp3:{src:[srcC,"src/engine/mp3.js","src/engine/mp3-engine.js",0,"src/engine/wav.js"]
+		,dist:["recorder.mp3.min.js",0,"src/engine/wav.js"]}
 	,wav:{src:[srcC,"src/engine/wav.js"]
 		,dist:["recorder.wav.min.js"]}
 	,pcm:{src:[srcC,"src/engine/pcm.js",0,"src/engine/wav.js"]
@@ -83,7 +83,7 @@ body{
 	word-wrap: break-word;
 	word-break: break-all;
 	background:#f5f5f5 center top no-repeat;
-    background-size: auto 680px;
+	background-size: auto 680px;
 }
 pre{
 	white-space:pre-wrap;
@@ -375,6 +375,16 @@ if(!window.localStorage){window.localStorage={}};
 	
 	，Android Demo App: <a href="https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_android/app-debug.apk.zip" reclang="Uf5q">下载APK</a>
 	(<span reclang="5zSj">40kb，删除.zip后缀，</span><a href="https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_android" reclang="G0HC">源码</a>)
+	
+	<div>
+		<span class="lb" reclang="zIlH">原生接口 :</span>
+		<button onclick="callNative_showMemoryUsage()" reclang="dPz1">显示内存占用</button>
+		<button onclick="callNative_notifyService(1)" reclang="dPz2">显示后台录音保活通知(Android)</button>
+		<button onclick="callNative_notifyService(0)" reclang="dPz3">关闭通知</button>
+		<button onclick="callNative_setSpeakerOff(false)" reclang="dPz4">切换成扬声器外放</button>
+		<button onclick="callNative_setSpeakerOff(true)" reclang="dPz5">切换成听筒播放</button>
+		<div style="color:#aaa;font-size:13px" reclang="dPz9">原生接口不一定可用，取决于原生app是否已实现对应接口</div>
+	</div>
 </div>
 
 <div class="mainBox">
@@ -390,7 +400,7 @@ if(!window.localStorage){window.localStorage={}};
 	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.ogg')">ogg</button>
 	<button onclick="recplay2(this,'rec-4000ms-64kbps-16000hz.webm')">webm</button>
 	<button onclick="recplay2(this,'rec-4000ms-12.8kbps-8000hz.amr')">amr</button>
-	<button onclick="recplay2(this,'nmn5')" reclang="uad6">合成5分钟mp3</button>
+	<button onclick="recplay2(this,'nmn5')" reclang="uad6">合成5分钟wav</button>
 	
 	<span reclang="z9o0">Audio对录音的影响测试</span> (<a href="https://github.com/xiangyuecn/Recorder/issues/34">issues#34</a>) <span reclang="yStv">；低版本iOS Safari如果未开始过录音并且播放了音乐，然后后续录音可能会有问题；再现方法</span> (<a href="assets/ztest_apple_developer_forums_getusermedia.html">test apple developer forums</a>): <span reclang="4yox">刷新页面后首先先播放音乐，然后开始测试录音，会发现波形显示掉帧或者保持直线。另测试浏览器对音频的支持情况。</span>
 </div>
@@ -572,6 +582,7 @@ function recstart(call){
 		,onProcess:function(buffers,powerLevel,duration,sampleRate,newBufferIdx){
 			$(".recpowerx").css("width",powerLevel+"%");
 			$(".recpowert").text(formatMs(duration,1)+" / "+powerLevel);
+			processTime=Date.now();
 			
 			//可视化图形绘制
 			if(waveStore[recwaveChoiceKey]){
@@ -598,6 +609,7 @@ function recstart(call){
 			takeoffChunks.push(chunkBytes);
 		}
 	};
+	var processTime=0;
 	curSet=null;
 	reclog(RecordApp.Current.Key+" "+Html_$T("wFnI::正在打开..."));
 	RecordApp.Start(set,function(){
@@ -608,6 +620,22 @@ function recstart(call){
 		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
 		initWaveStore(waveStore,".recwave");
 		
+		//【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+		var this_=   RecordApp; //有this就用this，没有就用一个全局对象
+		if(RecordApp.Current.CanProcess()){
+			var wdt=this_.watchDogTimer=setInterval(function(){
+				if(wdt!=this_.watchDogTimer){ clearInterval(wdt); return } //sync
+				if(Date.now()<this_.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值this_.wdtPauseT=Date.now()*2（永不监控），resume时赋值this_.wdtPauseT=Date.now()+1000（1秒后再监控）
+				if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+					reclog(processTime?Html_$T("eWu1::录音被中断"):Html_$T("eWu2::录音未能正常开始"),1);
+					// ... 错误处理，关闭录音，提醒用户
+				}
+			},1000);
+		}else{
+			reclog(Html_$T("eWu3::当前环境不支持onProcess回调，不启用watchDogTimer"),"#aaa"); //目前都支持回调
+		}
+		var startTime=Date.now(); this_.wdtPauseT=0;
+		
 		call();
 	},function(err){
 		call(RecordApp.Current.Key+" "+Html_$T("EBjo::开始录音失败：")+err);
@@ -616,17 +644,20 @@ function recstart(call){
 function recpause(){
 	if(RecordApp.GetCurrentRecOrNull()){
 		RecordApp.Pause();
+		var this_=RecordApp;this_.wdtPauseT=Date.now()*2; //永不监控onProcess超时
 		reclog(Html_$T("z2B2::已暂停"));
 	}
 };
 function recresume(){
 	if(RecordApp.GetCurrentRecOrNull()){
 		RecordApp.Resume();
+		var this_=RecordApp;this_.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
 		reclog(Html_$T("sTFX::继续录音中..."));
 	}
 };
 function recstopX(){
 	cancelAutoStop();
+	var this_=RecordApp;this_.watchDogTimer=0; //停止监控onProcess超时
 	RecordApp.Stop(
 		null //success传null就只会清理资源，不会进行转码
 		,function(msg){
@@ -692,6 +723,7 @@ function recstopFn(call,isClick,endCall,rec){
 		reclog(RecordApp.Current.Key+" "+Html_$T("s99V::正在结束")+" "+setData.type+"...");
 	};
 	
+	var this_=RecordApp;this_.watchDogTimer=0; //停止监控onProcess超时
 	RecordApp.Stop(function(aBuf,time,mime){
 		var blob=new Blob([aBuf],{type:mime});
 		endCall("",blob,time);
@@ -864,7 +896,7 @@ function recplay2(elem,name){
 		recplay(key);
 	};
 	
-	if(name=="nmn5"){ //合成一个5分钟的mp3
+	if(name=="nmn5"){ //合成一个5分钟的wav
 		if(window.nmn5Url){
 			url=window.nmn5Url; return run();
 		}
@@ -875,8 +907,8 @@ function recplay2(elem,name){
 			var s=Math.min(pcm.length, pcm5.length-n);
 			pcm5.set(s==pcm.length?pcm:pcm.subarray(0,s),n); n+=pcm.length
 		}
-		run(Html_$T("q2iG::正在合成mp3..."));
-		var mock=Recorder({ type:"mp3",sampleRate:sr,bitRate:16 });
+		run(Html_$T("q2iG::正在合成wav..."));
+		var mock=Recorder({ type:"wav",sampleRate:sr,bitRate:16 });
 		mock.mock(pcm5, sr);
 		mock.stop(function(blob){
 			url=window.nmn5Url=(window.URL||webkitURL).createObjectURL(blob);
@@ -1101,7 +1133,7 @@ if(/mobile/i.test(navigator.userAgent)){
 	elem.setAttribute("src","../assets/ztest-vconsole.js");
 	document.body.appendChild(elem);
 	elem.onload=function(){
-		localStorage["vConsole_switch_y"]=localStorage["vConsole_switch_y"]||500;
+		localStorage["vConsole_switch_y"]=localStorage["vConsole_switch_y"]||Math.min(innerHeight-100,500);
 		new VConsole();
 	};
 };
@@ -1322,6 +1354,51 @@ RecordApp.Install(function(){
 },function(err){
 	reclog(Html_$T("zLUe::RecordApp.Install出错：")+err,1);
 });
+
+var callNative_showMemoryUsage=function(){
+	AppJsBridgeRequest("debugInfo",{},function(data){
+		if(data.status!="success"){
+			reclog(Html_$T("uW1i::原生接口debugInfo调用出错：")+data.message,1);
+		}else{
+			var val=data.value.appMemoryUsage;
+			if(val>0) val=(val/1024/1024).toFixed(2)+" MB";
+			reclog(Html_$T("uW2i::占用内存大小(不一定准)：")+val,2);
+		}
+	});
+};
+var callNative_notifyService=function(show){
+	var txt="一二三四五六七八九十";
+	var args=show?{
+		title:"录音中的标题七八九十"+txt+txt+txt+txt
+		,content:"通知内容五六七八九十"+txt+txt+txt+txt+txt+txt+txt+txt+txt
+	}:{
+		close:true
+	};
+	
+	if(show) reclog(Html_$T("zKd2::App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）"), "#4face6");
+	AppJsBridgeRequest("androidNotifyService",args,function(data){
+		if(data.status!="success"){
+			reclog(Html_$T("RkeW::原生接口androidNotifyService调用出错：")+data.message,1);
+		}else if(show){
+			var nCode=data.value.notifyPermissionCode;
+			var nMsg=data.value.notifyPermissionMsg;
+			reclog(Html_$T("kDxI::搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)")+"code="+nCode+" msg="+nMsg,2);
+		}else{
+			reclog(Html_$T("KjdO::已关闭搭配常驻通知的Android后台录音保活服务"));
+		}
+	});
+};
+var callNative_setSpeakerOff=function(off){
+	AppJsBridgeRequest("setSpeakerOff",{off:off,headset:off},function(data){
+		var tag=Html_$T("Tw1M::[外放]");
+		if(off)tag=Html_$T("Tw2M::[听筒播放]");
+		if(data.status!="success"){
+			reclog(tag+Html_$T("Tw3M::切换失败：")+data.message,1);
+		}else{
+			reclog(tag+Html_$T("Tw4M::已切换"),2);
+		}
+	});
+};
 </script>
 
 <!-- 加载打赏挂件 -->

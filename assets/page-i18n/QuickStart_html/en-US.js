@@ -112,6 +112,14 @@ i18n.put(putSet,
 ,"CGdy:"+ //no args
        "Started recording..."
 
+//@@zh="录音被中断"
+,"eWo1:"+ //no args
+       "Recording interrupted"
+
+//@@zh="录音未能正常开始"
+,"eWo2:"+ //no args
+       "Recording failed to start properly"
+
 //@@zh="未打开录音"
 ,"ajKR:"+ //no args
        "Recording not open"

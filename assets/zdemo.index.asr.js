@@ -24,8 +24,11 @@ $(".asrView").html('<div style="border:1px solid #ddd;margin-top:6px">\
 	<label><input type="radio" name="arsLang" value="日语">日语</label>\
 </div>\
 <div style="border-bottom:1px solid #ddd;padding:10px">Token Api：\
-	<input class="asrTokenApi" value="'+localTokenApi(1)+'" style="width:240px"/>\
-	<span class="asrTokenApiCheck" style="font-size:12px"></span>\
+	<input class="asrTokenApi" value="'+localTokenApi(1).replace(/"/g,"&quot;")+'" placeholder="请填写api地址 或 token的json数据" style="width:240px"/>\
+	<div style="font-size:13px;color:#999;word-break:break-all;">\
+		<div>你可以下载Recorder仓库<a href="https://gitee.com/xiangyuecn/Recorder/tree/master/assets/demo-asr" target="_blank">/assets/demo-asr</a>内的nodejs服务器端脚本到电脑上，配置好代码里的阿里云账号，然后运行此服务器端脚本即可提供本地测试接口</div>\
+		<div>如果无法访问此api地址，比如手机上，你可以根据服务器脚本中的提示在电脑上打http地址，手动复制或自行提供 {appkey:"...",token:"..."} ，先删掉上面输入框中的url再粘贴json进去即可使用</div>\
+	</div>\
 </div>\
 \
 <div style="border-bottom:1px solid #ddd;padding:10px">\
@@ -55,18 +58,14 @@ $(".asrView").html('<div style="border:1px solid #ddd;margin-top:6px">\
 </div>\
 \
 <div style="background:#f5f5f5;color:#06c;font-weight:bold;border-bottom:1px solid #ddd;padding:10px 10px">\
-	实时语音识别 [腾讯云版] [其他云]\
+	实时语音识别 [腾讯云版] [讯飞] 等\
 </div>\
 <div style="padding:10px;color:#aaa;font-size:14px">\
-	腾讯云一句话语音识别（不支持实时特性），前端基本上没有什么需要做的，仅需让后端提供一个录音文件上传接口（很容易），前端将录制好1分钟内的语音文件直接上传给服务器，由后端调用腾讯云语一句话音识别接口，然后返回结果即可。暂不提供插件、测试代码。\
-	<div style="margin-top:10px">\
-		相较于阿里云的一句话语音识别：前端直接对接阿里云很容易（后端对接会很难，音频数据前端直连阿里云，无需走后端），后端对接腾讯云很容易（前端无法直连腾讯云，音频数据必须走后端）；根据自己的业务需求选择合适的云进行对接，避免多走弯路。\
-	</div>\
+	目前暂未提供其他版本的语音识别插件，比如腾讯云、讯飞等，搭配使用Recorder的onProcess实时处理，可根据自己的业务需求选择对应厂家自行对接即可，如需定制开发请联系作者。\
 </div>\
 \
 </div>');
 
-recAsrStatus("请先在上面打开录音得到权限后再来语音识别哦~","#ccc");
 //长按识别
 DemoFragment.BindTouchButton(
 	"recTouchBtn"
@@ -80,54 +79,6 @@ DemoFragment.BindTouchButton(
 $(".asrTokenApi").bind("change",function(){
 	localStorage["ASR_Aliyun_Short_TokenApi"]=this.value==localTokenApi()?"":this.value;
 });
-
-//检查tokenApi本地服务是否已开启
-(function(){
-var checkOK=0;
-var run=function(){
-	var tipsElem=$(".asrTokenApiCheck");
-	if(!$(".asrTokenApi").length){
-		clearInterval(tokenApiCheckInt);
-		return;
-	}
-	var url=$(".asrTokenApi").val();
-	if(!url || url!=localTokenApi()){
-		checkOK=0;
-		tipsElem.html("");
-		return;
-	}
-	if(window.asrTokenApiCheckReset){
-		asrTokenApiCheckReset=0;
-		checkOK=0;
-	}
-	if(checkOK){
-		tipsElem.html('<span style="color:#0b1">本地服务已运行</span>');
-		return;
-	}
-	var xhr=new XMLHttpRequest();
-	xhr.open("GET",url.replace(/token$/g,"echo"));
-	xhr.onreadystatechange=function(){
-		if(xhr.readyState==4){
-			if(xhr.status==200){
-				checkOK=1;
-				run();
-			}else{
-				var tips='<span style="color:red;word-break:break-all;">检测到本地服务未运行，请先下载'
-				+'<a href="https://gitee.com/xiangyuecn/Recorder/blob/master/assets/demo-asr/NodeJsServer_asr.aliyun.short.js" target="_blank">NodeJsServer_asr.aliyun.short.js</a>'
-				+'文件到本地，配置好代码里的阿里云账号后，然后命令行执行命令 `node NodeJsServer_asr.aliyun.short.js` 运行此程序即可提供本地测试接口</span>';
-				if(tipsElem.html().indexOf("检测到本地服务未运行")==-1){
-					tipsElem.html(tips);
-				}
-			}
-		}
-	};
-	xhr.send();
-};
-clearInterval(window.tokenApiCheckInt);
-window.tokenApiCheckInt=setInterval(run,1000);
-run();
-})();
-
 
 },function(err){
 	reclog(err,1);
@@ -171,11 +122,26 @@ window.asrLastRecBlobToText=function(){
 	$(".recAsrTxt").text("");
 	$(".recAsrTime").html("");
 	
+	var url=$(".asrTokenApi").val();
+	var urlReq=null;
+	if(/^\s*\{.*\}\s*$/.test(url)){
+		//这里是输入框里面填的json数据，直接success回调即可
+		urlReq=function(url,args,success,fail){
+			var data; try{ data=JSON.parse(url); }catch(e){};
+			if(!data || !data.appkey || !data.token){
+				fail("填写的json数据"+(!data?"解析失败":"中缺少appkey或token"));
+			}else{
+				success({ appkey:data.appkey, token:data.token });
+			}
+		}
+	};
+	
 	var asr2=asr=Recorder.ASR_Aliyun_Short({
-		tokenApi:$(".asrTokenApi").val()
+		tokenApi:url
 		,apiArgs:{
 			lang:$("[name=arsLang]:checked").val()
 		}
+		,apiRequest:urlReq //如果提供了token数据，可不发起api请求
 		,asrProcess:function(text,nextDuration,abortMsg){
 			/***识别中间结果实回调，必须返回true才能继续识别，否则立即超时停止识别***/
 			if(abortMsg){
@@ -242,28 +208,47 @@ var asrOnTouchStart=function(cancel){
 	};
 	
 	rec_isStart=false;
-	//开始录音
-	recstart(function(err){
-		if(err){
-			cancel("录音错误");
-			recAsrStatus("[错误]"+err,1);
-			return;
-		};
-		
-		rec_isStart=true;
-		asrOnTouchStart__(cancel);
+	//调用页面中的录音功能
+	var openFn=window.recreq||recopen;
+	openFn(function(err){
+		//开始录音
+		recstart(function(err){
+			if(err){
+				cancel("录音错误");
+				recAsrStatus("[错误]"+err,1);
+				return;
+			};
+			
+			rec_isStart=true;
+			asrOnTouchStart__(cancel);
+		});
 	});
 };
 var asrOnTouchStart__=function(cancel){
 	$(".recAsrTxt").text("");
 	$(".recAsrTime").html("");
 	
+	var url=$(".asrTokenApi").val();
+	var urlReq=null;
+	if(/^\s*\{.*\}\s*$/.test(url)){
+		//这里是输入框里面填的json数据，直接success回调即可
+		urlReq=function(url,args,success,fail){
+			var data; try{ data=JSON.parse(url); }catch(e){};
+			if(!data || !data.appkey || !data.token){
+				fail("填写的json数据"+(!data?"解析失败":"中缺少appkey或token"));
+			}else{
+				success({ appkey:data.appkey, token:data.token });
+			}
+		}
+	};
+	
 	//创建语音识别对象，每次识别都要新建，asr不能共用
 	var asr2=asr=Recorder.ASR_Aliyun_Short({
-		tokenApi:$(".asrTokenApi").val()
+		tokenApi:url
 		,apiArgs:{
 			lang:$("[name=arsLang]:checked").val()
 		}
+		,apiRequest:urlReq //如果提供了token数据，可不发起api请求
 		,asrProcess:function(text,nextDuration,abortMsg){
 			/***实时识别结果，必须返回true才能继续识别，否则立即超时停止识别***/
 			if(abortMsg){

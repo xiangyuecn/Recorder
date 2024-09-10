@@ -11,6 +11,7 @@
 		<text>Token Api：</text>
 		<input value="{{asrTokenApi}}" bindinput="inputSet" data-key="asrTokenApi" style="width:200px;display:inline-block;border:1px solid #ddd"/>
 		<view style="font-size:13px;color:#999">你可以在电脑上运行Recorder仓库/assets/demo-asr内的nodejs服务器端脚本，然后填写你电脑局域网ip即可测试（调试时用127.0.0.1）</view>
+		<view style="font-size:13px;color:#999">如果无法访问此api地址，比如手机上，你可以根据服务器脚本中的提示在电脑上打http地址，手动复制或自行提供 {appkey:"...",token:"..."} ，先删掉上面输入框中的url再粘贴json进去即可使用</view>
 		<view style="font-size:13px;color:#fa0">需要将阿里云的ws地址也加入白名单，测试时还可设置不校验域名</view>
 	</view>
 	
