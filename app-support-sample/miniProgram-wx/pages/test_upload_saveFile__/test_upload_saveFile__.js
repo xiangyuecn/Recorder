@@ -1,3 +1,7 @@
+var Recorder=require("../../copy-rec-src/src/recorder-core.js");
+var RecordApp=require("../../copy-rec-src/src/app-support/app.js");
+Recorder.a=1;
+
 // 上传保存录音文件
 Component({
 	data: {
@@ -118,12 +122,10 @@ var SaveLocalFile=function(arrayBuffer,type,success,fail){
 	//生成一个文件名
 	var fileName=type.fileName||__LocalFileName(type);
 	
-	var path=wx.env.USER_DATA_PATH+"/"+fileName;
-	var mg=wx.getFileSystemManager();
-	mg.writeFile({
-		filePath:path, data:arrayBuffer, encoding:"binary"
-		,success:()=>{ success(path); }
-		,fail:(e)=>{ fail("保存文件"+fileName+"失败："+e.errMsg); }
+	RecordApp.MiniProgramWx_WriteLocalFile(fileName, arrayBuffer, (path)=>{
+		success(path);
+	}, (errMsg)=>{
+		fail("保存文件"+fileName+"失败："+errMsg);
 	});
 };
 /**生成一个文件名*/
@@ -144,10 +146,10 @@ var __LocalFileName=function(type){
 savePath：SaveLocalFile得到的保存路径
 */
 var DeleteLocalFile=function(savePath){
-	wx.getFileSystemManager().unlink({
-		filePath:savePath
-		,success:()=>{ console.log("DeleteLocalFile 已删除文件 path="+savePath); }
-		,fail:(e)=>{ console.error("DeleteLocalFile 删除文件失败："+e.errMsg+" path="+savePath); }
+	RecordApp.MiniProgramWx_DeleteLocalFile(savePath,()=>{
+		console.log("DeleteLocalFile 已删除文件 path="+savePath);
+	},(errMsg)=>{
+		console.error("DeleteLocalFile 删除文件失败："+errMsg+" path="+savePath);
 	});
 };
 

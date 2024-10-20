@@ -76,6 +76,10 @@ i18n.put(putSet,
 ,"7kJS:"+ //no args
        "RecordApp.UniRenderjsRegister has registered the renderjs module of the current page"
 
+//@@zh="严重兼容性问题：无法获取页面或组件this.$root.$scope或.$page"
+,"KpY6:"+ //no args
+       "Serious compatibility issue: Unable to get page or component this.$root.$scope or .$page"
+
 //@@zh="需要先调用RecordApp.UniWebViewActivate方法"
 ,"AGd7:"+ //no args
        "You need to call the RecordApp.UniWebViewActivate method first"

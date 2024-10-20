@@ -382,6 +382,11 @@ if(!window.localStorage){window.localStorage={
 		<span reclang="gjGg">自动增益（AGC）配置开关</span>
 	</div>
 	<div>
+		<span class="lb" reclang="h7dA">sampleRate :</span>
+		<input class="trackSet_sr" style="width:60px">
+		<span reclang="h7dB">（仅供测试）强制指定流的采样率，可能会出现浏览器不能正确选用麦克风、移动端无法启用回声消除等现象</span>
+	</div>
+	<div>
 		<span style="color:#f60" reclang="fP77">以上参数设置后需重新打开录音</span><span reclang="7ots">；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效；这些参数不设置时浏览器给的默认状态是打开还是关闭将不确定；</span>
 		<span style="color:#aaa" reclang="40Wa">移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放音量变小），但iOS上如果关闭又可能导致录音没有声音，如需更改配置请Android和iOS分别配置，并测试好</span>
 	</div>
@@ -648,7 +653,8 @@ function recopen(call){
 	var trackSet_noise=useAEC?1:$(".trackSet_noise").val();
 	var trackSet_aec=useAEC?1:$(".trackSet_aec").val();
 	var trackSet_gain=useAEC?1:$(".trackSet_gain").val();
-	if(trackSet_device || trackSet_noise || trackSet_aec || trackSet_gain){
+	var trackSet_sr=+$(".trackSet_sr").val()||0;
+	if(trackSet_device || trackSet_noise || trackSet_aec || trackSet_gain || trackSet_sr){
 		audioTrackSet={};
 		if(trackSet_device){
 			var device=DeviceList[+trackSet_device];
@@ -663,6 +669,9 @@ function recopen(call){
 		}
 		if(trackSet_gain){
 			audioTrackSet.autoGainControl=+trackSet_gain==1;
+		}
+		if(trackSet_sr){
+			audioTrackSet.sampleRate=trackSet_sr;
 		}
 		
 		reclog(Html_$T("W5cU::已启用audioTrackSet配置：")+JSON.stringify(audioTrackSet));

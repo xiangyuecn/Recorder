@@ -70,7 +70,7 @@
 1. [【教程】变速变调音频转换](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.sonic.transform)
 1. [【教程】新录音从老录音接续、或录制中途插入音频](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.env_in.follow)
 1. [【教程】DTMF（电话拨号按键信号）解码、编码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.dtmf.decode_and_encode)
-1. [【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
+1. [【测试】PCM采样率转换测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)
 1. [【Demo库】【信号处理】IIR低通、高通滤波](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.lib.filter.iir)
 1. [【测试】【信号处理】FFT频域分析ECharts频谱曲线图](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=dsp.test.fft.analysis)
 1. [【测试】WebM格式解析并提取音频](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=test.webm.extract_audio)
@@ -120,7 +120,7 @@ iOS Demo App ：[下载源码](app-support-sample/demo_ios) 自行编译
   <a title="License" href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
   <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://img.shields.io/badge/CDN-JsDelivr-0b1" alt="JsDelivr CDN"></a>
   <a title="unpkg CDN" href="https://unpkg.com/recorder-core/"><img src="https://img.shields.io/badge/CDN-unpkg-0b1" alt="unpkg CDN"></a>
-  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
+  <a title="51LA" href="https://web.51.la/report/main?comId=20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
 </p>
 
 
@@ -367,11 +367,13 @@ pcm.set(pcm2,pcm1.length); //写入pcm2到pcm1后面，完成拼接
 ```
 
 2. WebView的WebChromeClient中实现`onPermissionRequest`网页授权请求
+
 如果未实现此方法，WebView默认会拒绝H5录音权限；onPermissionRequest中需要先获取App的系统录音权限（Activity里面必须先用this.checkSelfPermission检测权限，否则直接this.requestPermissions会造成WebView触发touchcancel打断长按），然后再grant网页权限，可参考Android Demo中的[MainActivity.java](app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/MainActivity.java)中的实现代码。
 
 注：如果应用的`腾讯X5内核`，可能还须提供`android.permission.CAMERA`权限，和调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理
 
 3. 如需后台录音，还需要实现Android后台录音保活服务
+
 自`Android 9`开始，为了保护用户隐私，锁屏或进入后台一段时间后App可能会被禁止访问麦克风、摄像头等功能，导致无法录音、或录音数据全部是静音，因此需要使用保活机制才能在后台录音，详细请参考[app-support-sample/demo_android](app-support-sample/demo_android)，里面专门有一个章节讲解保活。
 
 
@@ -457,9 +459,9 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 
 > 此处已清除7个已知问题，大部分无法解决的问题会随着时间消失；问题主要集中在iOS部分版本上（不同系统版本问题不重样），好在这玩意能更新
 
-*2024-09-09* [#230](https://github.com/xiangyuecn/Recorder/issues/230) 已知open源码中的`trackSet[sampleRateTxt]=...`强制设置采样率会导致部分设备无法正常打开麦克风，导致录音无声（或无法使用蓝牙等外设），需要修改源码去掉这行源码，同时设置`Recorder.ConnectEnableWebM=false`，TODO: 下个版本将移除此代码，并且停止MediaRecorder支持。
+*2024-09-09* [#230](https://github.com/xiangyuecn/Recorder/issues/230) 已知open源码中的`trackSet[sampleRateTxt]=...`强制设置采样率会导致部分设备无法正常打开麦克风，导致录音无声（或无法使用蓝牙等外设），~~需要修改源码去掉这行源码，同时设置`Recorder.ConnectEnableWebM=false`，~~ 241020版本开始已移除此代码进行了修复，并增强了MediaRecorder的支持。
 
-*2024-09-09* 部分iOS上（含新系统）第二次打开录音后无法正常开始录音，在开始录音前调用一次`Recorder.Destroy()`清除掉已打开的`AudioContext`可能会恢复正常，TODO: 下个版本将不再保留打开状态的Recorder.Ctx。
+*2024-09-09* 部分iOS上（含新系统）第二次打开录音后无法正常开始录音，~~在开始录音前调用一次`Recorder.Destroy()`清除掉已打开的`AudioContext`可能会恢复正常~~，241020版本开始将不再保留打开状态的Recorder.Ctx。
 
 *2023-12-06* iOS上反复弹出的权限弹框：据QQ群内`1806152243`开发者反馈，进入页面打开一次录音并关闭后，如果没有在页面上进行任何用户交互操作（点击、触摸、滑动等），大约35秒左右之后，重新打开录音时，浏览器将会再次弹出录音权限对话框；iOS Safari上稳定复现；这是浏览器自己的行为，js无法控制，设计交互逻辑时应当注意。
 
@@ -526,14 +528,14 @@ set={
 
         /*,audioTrackSet:{
              deviceId:"",groupId:"" //指定设备的麦克风，通过navigator.mediaDevices.enumerateDevices拉取设备列表，其中kind为audioinput的是麦克风
-            ,noiseSuppression:true //降噪（ANS）开关，不设置时由浏览器控制（一般为默认打开），设为true明确打开，设为false明确关闭
-            ,echoCancellation:true //回声消除（AEC）开关，取值和降噪开关一样
-            ,autoGainControl:true //自动增益（AGC）开关，取值和降噪开关一样
+            ,echoCancellation:true //回声消除（AEC）开关，不设置时由浏览器控制（一般为默认自动打开），设为true明确打开，设为false明确关闭
+            ,noiseSuppression:true //降噪（ANS）开关，取值和回声消除开关一样
+            ,autoGainControl:true //自动增益（AGC）开关，取值和回声消除开关一样
         }*/
                 //普通麦克风录音时getUserMedia方法的audio配置参数；注意：不同浏览器的支持程度不同，提供的任何配置值都不一定会生效
-                //回声消除、降噪开关这两个参数浏览器一般默认为打开， 注意：移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放音量变小），但iOS上如果关闭又可能导致录音没有声音，如需更改配置请Android和iOS分别配置，并测试好，PC端没有这些问题
+                //回声消除、降噪开关这些参数浏览器一般默认自动打开，移动端未明确禁用时可能会降低系统播放音量（关闭录音后可恢复）和仅提供16k采样率的音频流（不需要回声消除时可明确配置成禁用来获得48k高音质的流）
                 //由于麦克风是全局共享的，所以新配置后需要close掉以前的再重新open
-                //更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+                //同样可配置videoTrackSet，更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
                 
         //,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能，如果不清楚作用请勿随意使用
         
@@ -668,9 +670,9 @@ mockRec.stop(function(blob,duration){
 判断浏览器是否支持录音，随时可以调用。注意：仅仅是检测浏览器支持情况，不会判断和调起用户授权（rec.open()会判断用户授权），不会判断是否支持特定格式录音。
 
 ### 【静态方法】Recorder.GetContext(tryNew)
-获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用`Recorder.CloseNewCtx(ctx)`关闭。注意：非用户操作（触摸、点击等）时调用返回的ctx.state可能是suspended状态，需要在用户操作时调用ctx.resume恢复成running状态，参考rec的`runningContext`配置。
+获取AudioContext对象，如果浏览器不支持将返回null。tryNew=false时返回全局的Recorder.Ctx，Ctx.state可能是closed，仅限用于解码等操作。tryNew=true时会尝试创建新的ctx（不支持close的老浏览器依旧返回全局的），注意用完必须自己调用CloseNewCtx(ctx)关闭；注意：非用户操作（触摸、点击等）时调用返回的ctx.state可能是suspended状态，需要在用户操作时调用ctx.resume恢复成running状态，参考rec的runningContext配置。
 
-本方法调用一次后，可通过`Recorder.Ctx`来获得此全局对象，可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。已知iOS16中全局对象无法多次用于录音，当前Recorder打开录音时均会尝试创建新的非全局对象，同时会保留一个全局的对象。
+本方法调用一次后，可通过`Recorder.Ctx`来获得全局对象，但仅可用于音频文件解码：`Recorder.Ctx.decodeAudioData(fileArrayBuffer)`。本方法是从老版本的`Recorder.Support()`中剥离出来的，调用Support会自动调用一次本方法。已知iOS16中全局对象无法多次用于录音，当前Recorder打开录音时均会尝试创建新的非全局对象，同时会保留一个全局的对象。
 
 ### 【静态方法】Recorder.IsOpen()
 由于Recorder持有的普通麦克风录音资源是全局唯一的，可通过此方法检测是否有Recorder已调用过open打开了麦克风录音功能；注意：此方法无法检测直接提供的流 set.sourceStream 是否已打开，需自行判断。
@@ -684,7 +686,7 @@ mockRec.stop(function(blob,duration){
 ### 【静态属性】Recorder.TrafficImgUrl
 流量统计用1像素图片地址，在Recorder首次被实例化时将往这个地址发送一个请求，请求是通过Image对象来发送，安全可靠；默认开启统计，url为本库的51la统计用图片地址，为空响应流量消耗非常小，因此对使用几乎没有影响。
 
-设置为空字符串后将不参与统计，大部分情况下无需关闭统计，如果你网页的url私密性要求很高，请在调用Recorder之前将此url设为空字符串；本功能于2019-11-09添加，[点此](https://www.51.la/?20469973)前往51la查看统计概况。
+设置为空字符串后将不参与统计，大部分情况下无需关闭统计，如果你网页的url私密性要求很高，请在调用Recorder之前将此url设为空字符串；本功能于2019-11-09添加，[点此](https://web.51.la/report/main?comId=20469973)前往51la查看统计概况。
 
 ### 【静态属性】Recorder.i18n
 内置的简版国际化多语言支持实现，详细请参考下面的i18n章节。
@@ -727,13 +729,13 @@ mockRec.stop(function(blob,duration){
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option)
 对pcm数据的采样率进行转换，可配合mock方法可转换成音频文件，比如实时转换成小片段语音文件。
 
-注意：本方法只会将高采样率的pcm转成低采样率的pcm，当newSampleRate>pcmSampleRate想转成更高采样率的pcm时，本方法将不会进行转换处理（由低的采样率转成高的采样率没有存在的意义）；在特殊场合下如果确实需要提升采样率，比如8k必须转成16k，可参考[【Demo库】PCM采样率提升](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.samplerate.raise)自行编写代码转换一下即可。
+注意：从241020版本开始，支持任意采样率转换；之前的老版本只会将高采样率的pcm转成低采样率的pcm，老版本由低转高时不会进行转换处理。
 
-`pcmDatas`: [[Int16,...]] pcm片段列表，二维数组，比如可以是：rec.buffers、onProcess中的buffers
+`pcmDatas`: [[Int16,...]] pcm片段列表，二维数组，比如可以是：rec.buffers、onProcess中的buffers；二维数组里面是Int16Array，也可传Float32Array（会转成Int16Array）
 
 `pcmSampleRate`:48000 pcm数据的采样率，比如用：rec.srcSampleRate、onProcess中的bufferSampleRate
 
-`newSampleRate`:16000 需要转换成的采样率，newSampleRate>=pcmSampleRate时不会进行任何处理，小于时会进行重新采样
+`newSampleRate`:16000 需要转换成的采样率，241020版本后支持转成任意采样率，之前老版本仅支持转成低采样率<=pcmSampleRate
 
 `prevChunkInfo`:{} 可选，上次调用时的返回值，用于连续转换，本次调用将从上次结束位置开始进行处理。或可自行定义一个ChunkInfo从pcmDatas指定的位置开始进行转换
 
@@ -750,15 +752,16 @@ mockRec.stop(function(blob,duration){
 ``` javascript
 {
     //可定义，从指定位置开始转换到结尾
-    index:0 pcmDatas已处理到的索引
-    offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置
+    index:0 pcmDatas已处理到的索引；比如每次都是单个pcm需要连续处理时，可每次调用前重置成0，pcmDatas仅需传入`[pcm]`固定一个元素
+    offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置（提升采样率时为结果的pcm）
+    raisePrev:null 提升采样率时的前一个pcm结果采样值
     
-    //可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，新采样率大于pcm采样率的75%时不默认滤波），如果提供了配置但fn为null时将不滤波；sr为此滤波函数对应的初始化采样率，当采样率和pcmSampleRate参数不一致时将重新设为默认函数
-    filter:null||{fn:fn(sample),sr:pcmSampleRate}
+    //可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，小采样率大于高采样率的75%时不默认滤波），如果提供了配置但fn为null时将不滤波；sr、srn为此滤波函数对应的初始化采样率，当采样率和参数的不一致时将重新设为默认函数
+    filter:null||{fn:fn(sample),sr:pcmSampleRate,srn:newSampleRate}
     
     //仅作为返回值
     frameNext:null||[Int16,...] 下一帧的部分数据，frameSize设置了的时候才可能会有
-    sampleRate:16000 结果的采样率，<=newSampleRate
+    sampleRate:16000 结果的采样率=newSampleRate，241020版本前的老版本<=newSampleRate
     data:[Int16,...] 转换后的PCM结果(16位小端LE)，为一维数组，可直接new Blob([data],{type:"audio/pcm"})生成Blob文件，或者使用mock方法转换成其他音频格式；注意：如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 ```

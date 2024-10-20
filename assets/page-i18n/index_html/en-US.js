@@ -208,6 +208,14 @@ i18n.put(putSet,
 ,"gjGg:"+ //no args
        "Auto Gain Control (AGC) configuration switch"
 
+//@@zh="sampleRate :"
+,"h7dA:"+ //no args
+       "sampleRate :"
+
+//@@zh="（仅供测试）强制指定流的采样率，可能会出现浏览器不能正确选用麦克风、移动端无法启用回声消除等现象"
+,"h7dB:"+ //no args
+       "(For testing only) Force the sampleRate of the specified stream. This may cause the browser to not select the microphone correctly, or the mobile terminal to not enable echoCancellation."
+
 //@@zh="以上参数设置后需重新打开录音"
 ,"fP77:"+ //no args
        "After setting the above parameters, you need to reopen the recording"

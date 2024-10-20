@@ -78,11 +78,11 @@
 	</view>
 	
 	<view style="padding:5px 10px 0">
-		<view><checkbox checked="{{takeoffEncodeChunkSet}}" bindtap="takeoffEncodeChunkSetClick">接管编码器输出（takeoffEncodeChunk）</checkbox> {{takeoffEncodeChunkMsg}}</view>
+		<view><checkbox checked="{{takeoffEncodeChunkSet}}" bindtap="takeoffEncodeChunkSetClick">接管编码器输出（takeoffEncodeChunk）实时写入到文件、清理内存</checkbox> {{takeoffEncodeChunkMsg}}</view>
 		
 		<view><checkbox checked="{{useAEC}}" bindtap="useAEC_Click">尝试启用回声消除（echoCancellation）</checkbox></view>
 		
-		<view><checkbox checked="{{showUpload}}" bindtap="showUploadClick">录音上传、实时语音通话聊天对讲</checkbox></view>
+		<view><checkbox checked="{{showUpload}}" bindtap="showUploadClick">录音上传、实时语音通话聊天对讲（WebSocket）</checkbox></view>
 	</view>
 
 	<!-- 手撸播放器 -->

@@ -761,8 +761,9 @@ function Create(){
                         j = Z(j, j) | 0;
                         if ((j | 0) != 1073741824) {
                             i = (j << 1) + k | 0;
-                            if ((j ^ k | 0) > 0 & (i ^ k | 0) < 0) {
-                                _abort();//fix cc 精简
+                            if ((j ^ k | 0) > 0 & (i ^ k | 0) < 0) { //不可精简
+                                c[h >> 2] = 1;
+                                k = (k >>> 31) + 2147483647 | 0
                             } else k = i
                         } else {
                             c[h >> 2] = 1;
@@ -818,8 +819,9 @@ function Create(){
                         l = Z(l, l) | 0;
                         if ((l | 0) != 1073741824) {
                             j = (l << 1) + k | 0;
-                            if ((l ^ k | 0) > 0 & (j ^ k | 0) < 0) {
-                                _abort();//fix cc 精简
+                            if ((l ^ k | 0) > 0 & (j ^ k | 0) < 0) { //不可精简
+                                c[h >> 2] = 1;
+                                k = (k >>> 31) + 2147483647 | 0
                             } else k = j
                         } else {
                             c[h >> 2] = 1;
@@ -975,8 +977,9 @@ function Create(){
                 if (l << 16 >> 16 > 0) {
                     i = j << k;
                     if ((i >> k | 0) == (j | 0)) j = i; else j = j >> 31 ^ 2147483647
-                } else {
-                    _abort();//fix cc 精简
+                } else {//不可精简
+                    k = 0 - k << 16;
+                    if ((k | 0) < 2031616) j = j >> (k >> 16); else j = 0
                 }
                 i = n - (l & 65535) | 0;
                 k = i & 65535;

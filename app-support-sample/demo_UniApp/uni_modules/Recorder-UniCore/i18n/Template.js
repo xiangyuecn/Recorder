@@ -85,6 +85,11 @@ i18n.put(putSet,
 ,"7kJS:"+ //no args
        "" /** TODO: translate to your-language **/
 
+//@@zh="严重兼容性问题：无法获取页面或组件this.$root.$scope或.$page"
+//@@en="Serious compatibility issue: Unable to get page or component this.$root.$scope or .$page"
+,"KpY6:"+ //no args
+       "" /** TODO: translate to your-language **/
+
 //@@zh="需要先调用RecordApp.UniWebViewActivate方法"
 //@@en="You need to call the RecordApp.UniWebViewActivate method first"
 ,"AGd7:"+ //no args

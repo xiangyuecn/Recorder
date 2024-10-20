@@ -18,6 +18,13 @@ var CLog=App.CLog;
 
 var platform={
 	Support:function(call){
+		if(IsWx && isBrowser){ //有的h5里面有wx对象，又有的wx里面有window对象
+			var win=window,doc=win.document,loc=win.location,body=doc.body;
+			if(loc && loc.href && loc.reload && body && body.appendChild){
+				CLog("识别是浏览器但又检测到wx",3);
+				call(false); return; //多判断一些稳妥一点
+			}
+		}
 		call(IsWx);
 	}
 	,CanProcess:function(){
@@ -192,7 +199,7 @@ var recStart=function(success,fail){
 	initSys();
 	devWebMInfo={};
 	if(isDev){
-		CLog("RecorderManager.onFrameRecorded 在开发工具中测试返回的是webm格式音频，将会尝试进行解码",3);
+		CLog("RecorderManager.onFrameRecorded 在开发工具中测试返回的是webm格式音频，将会尝试进行解码。开发工具中录音偶尔会非常卡，建议使用真机测试（各种奇奇怪怪的毛病就都正常了）",3);
 	}
 	
 	var startIsEnd=false,startCount=1;
@@ -254,7 +261,7 @@ var recStart=function(success,fail){
 		startEnd();
 	});
 	mg.onStop(function(res){
-		CLog("mg onStop res:",res);
+		CLog("mg onStop 请勿尝试使用此原始结果中的文件路径（此原始文件的格式、采样率等和录音配置不相同）；如需本地文件：可在RecordApp.Stop回调中将得到的ArrayBuffer（二进制音频数据）用RecordApp.MiniProgramWx_WriteLocalFile接口保存到本地，即可得到有效路径。res:",res);
 		if(mg!=curMg)return;
 		if(!mg._st || Date.now()-mg._st<600){ CLog("mg onStop但已忽略",3); return }
 		CLog("mg onStop 已停止录音，正在重新开始录音...");
@@ -290,6 +297,76 @@ var recStart=function(success,fail){
 		start0();
 	};
 };
+
+
+
+
+
+
+
+
+//保存文件到本地，提供文件名或set和arrayBuffer，True(savePath)，False(errMsg)
+App.MiniProgramWx_WriteLocalFile=function(fileName,buffer,True,False){
+	var set=fileName; if(typeof(set)=="string") set={fileName:fileName};
+	fileName=set.fileName;
+	var append=set.append; //追加写入到文件结尾
+	var seek_=set.seekOffset, seek=+seek_||0; //覆盖写入到指定位置
+	if(!seek_ && seek_!==0) seek=-1;
+	
+	var EnvUsr=wx.env.USER_DATA_PATH, savePath=fileName;
+	if(fileName.indexOf(EnvUsr)==-1) savePath=EnvUsr+"/"+fileName;
+	
+	//如果上次还在写入，就等待，保证顺序写入
+	var tasks=writeTasks[savePath]=writeTasks[savePath]||[];
+	var tk={a:set,b:buffer,c:True,d:False};
+	if(tasks.length>0){ CLog("wx文件等待写入"+savePath,3);
+		set._tk=1; tasks.push(tk); return; }
+	if(set._tk) CLog("wx文件继续写入"+savePath);
+	tasks.splice(0,0,tk);
+	
+	var mg=wx.getFileSystemManager(), fd=0;
+	var endCall=function(){ //操作完成，清理环境
+		if(fd) mg.close({ fd:fd });
+		tasks.shift(); var tk=tasks.shift();
+		if(tk){ //执行等待的
+			setTimeout(function(){ App.MiniProgramWx_WriteLocalFile(tk.a,tk.b,tk.c,tk.d) });
+		}
+	};
+	var okCall=function(){ endCall(); True&&True(savePath) };
+	var failCall=function(e){ endCall();
+		var msg=e.errMsg||"-";
+		CLog("wx文件"+savePath+"写入出错："+msg,1);
+		False&&False(msg);
+	};
+	
+	if(seek>-1 || append){
+		mg.open({
+			filePath:savePath ,flag:"a"
+			,success:function(res){
+				fd=res.fd;
+				var opt={ fd:fd, data:buffer, success:okCall, fail:failCall };
+				if(seek>-1) opt.position=seek;
+				mg.write(opt);
+			}
+			,fail:failCall
+		});
+	}else{
+		mg.writeFile({
+			filePath:savePath, encoding:"binary", data:buffer
+			,success:okCall, fail:failCall
+		});
+	}
+};
+var writeTasks={};
+//删除已保存到本地的文件，savePath必须是WriteLocalFile得到的路径 True() False(errMsg)
+App.MiniProgramWx_DeleteLocalFile=function(savePath,True,False){
+	wx.getFileSystemManager().unlink({
+		filePath:savePath
+		,success:function(){ True&&True() }
+		,fail:function(e){ False&&False(e.errMsg||"-") }
+	});
+};
+
 
 
 

@@ -55,6 +55,11 @@ i18n.put(putSet,
 ,"nMIy:"+ //no args
        " (Remarque : ctx n'est pas dans l'état running. Au moins l'un des rec.open et start doit être appelé pendant l'opération de l'utilisateur (toucher, cliquer, etc.), sinon ctx.resume sera tenté pendant rec.start, ce qui peut entraîner une compatibilité. problèmes (iOS uniquement), voir la configuration de runningContext dans la documentation) "
 
+//@@zh="Stream的采样率{1}不等于{2}，将进行采样率转换（注意：音质不会变好甚至可能变差），主要在移动端未禁用回声消除时会产生此现象，浏览器有回声消除时可能只会返回16k采样率的音频数据，"
+//@@en="The sampleRate of the Stream {1} is not equal to {2}, so the sampleRate conversion will be performed (note: the sound quality will not improve and may even deteriorate). This phenomenon mainly occurs when echoCancellation is not disabled on the mobile terminal. When the browser has echoCancellation, it may only return audio data with a sampleRate of 16k. "
+,"eS8i:"+ //args: {1}-{2}
+       "Si le sampleRate {1} du Stream n'est pas égal à {2}, la conversion sampleRate sera effectuée (attention : la qualité du son ne s'améliorera pas ou pourra même se dégrader. Ce phénomène se produit principalement lorsque echoCancellation n'est pas désactivé sur le mobile). terminal Lorsque le navigateur a echoCancellation, seules les données audio avec un taux d'échantillonnage de 16k seront renvoyées. "
+
 //@@zh="。由于{1}内部1秒375次回调，在移动端可能会有性能问题导致回调丢失录音变短，PC端无影响，暂不建议开启{1}。"
 //@@en=". Due to 375 callbacks in 1 second in {1}, there may be performance problems on the mobile side, which may cause the callback to be lost and the recording to be shortened, but it will not affect the PC side. It is not recommended to enable {1} for now."
 ,"ZGlf:"+ //args: {1}
@@ -165,6 +170,11 @@ i18n.put(putSet,
 ,"Nclz:"+ //args: {1}
        "Aucune autorisation d'enregistrement (inter-domaine, veuillez essayer d'ajouter une stratégie d'accès au microphone à l'iframe, telle que {1})"
 
+//@@zh="，无可用麦克风"
+//@@en=", no microphone available"
+,"jBa9:"+ //no args
+       ", pas de micro disponible"
+
 //@@zh="用户拒绝了录音权限"
 //@@en="User denied recording permission"
 ,"gyO5:"+ //no args
@@ -174,11 +184,6 @@ i18n.put(putSet,
 //@@en="Browser prohibits recording of unsafe pages, which can be resolved by enabling HTTPS"
 ,"oWNo:"+ //no args
        "Le navigateur interdit l'enregistrement des pages dangereuses, ce qui peut être résolu en activant https"
-
-//@@zh="，无可用麦克风"
-//@@en=", no microphone available"
-,"jBa9:"+ //no args
-       ", pas de micro disponible"
 
 //@@zh="此浏览器不支持录音"
 //@@en="This browser does not support recording"
@@ -195,6 +200,11 @@ i18n.put(putSet,
 ,"Q1GA:"+ //no args
        "La fonction d'enregistrement ne fonctionne pas : pas de flux audio"
 
+//@@zh="，将尝试禁用回声消除后重试"
+//@@en=", will try to disable echoCancellation and try again"
+,"KxE2:"+ //no args
+       ", je vais essayer de désactiver echoCancellation et réessayer"
+
 //@@zh="请求录音权限错误"
 //@@en="Error requesting recording permission"
 ,"xEQR:"+ //no args
@@ -205,10 +215,15 @@ i18n.put(putSet,
 ,"bDOG:"+ //no args
        "Impossible d'enregistrer : "
 
-//@@zh="，未配置noiseSuppression和echoCancellation时浏览器可能会自动打开降噪和回声消除，移动端可能会降低系统播放音量（关闭录音后可恢复），请参阅文档中audioTrackSet配置"
-//@@en=", when noiseSuppression and echoCancellation are not configured, the browser may automatically enable noise suppression and echo cancellation, and the mobile terminal may reduce the system playback volume (recovery after the recording is closed), please refer to the audioTrackSet configuration in the document."
-,"RiWe:"+ //no args
-       ", lorsque noiseSuppression et echoCancellation ne sont pas configurés, le navigateur peut activer automatiquement la réduction du bruit et l'annulation de l'écho, et le terminal mobile peut réduire le volume de lecture du système (récupérable après avoir désactivé l'enregistrement), veuillez vous référer à la configuration audioTrackSet dans le document"
+//@@zh="注意：已配置{1}参数，可能会出现浏览器不能正确选用麦克风、移动端无法启用回声消除等现象"
+//@@en="Note: The {1} parameter has been configured, which may cause the browser to not correctly select the microphone, or the mobile terminal to not enable echoCancellation, etc. "
+,"IjL3:"+ //args: {1}
+       "Remarque : Le paramètre {1} a été configuré, ce qui peut empêcher le navigateur de sélectionner correctement le microphone ou le terminal mobile de ne pas activer echoCancellation, etc. "
+
+//@@zh="，未配置 {1} 时浏览器可能会自动启用回声消除，移动端未禁用回声消除时可能会降低系统播放音量（关闭录音后可恢复）和仅提供16k采样率的音频流（不需要回声消除时可明确配置成禁用来获得48k高音质的流），请参阅文档中{2}配置"
+//@@en=", when {1} is not configured, the browser may automatically enable echoCancellation. When echoCancellation is not disabled on the mobile terminal, the system playback volume may be reduced (can be restored after closing the recording) and only 16k sampleRate audio stream is provided (when echoCancellation is not required, it can be explicitly configured to disable to obtain 48k high-quality stream). Please refer to the {2} configuration in the document"
+,"RiWe:"+ //args: {1}-{2}
+       ", lorsque {1} n'est pas configuré, le navigateur peut activer automatiquement echoCancellation. Lorsque echoCancellation n'est pas désactivé sur le terminal mobile, le volume de lecture du système peut être réduit (peut être restauré après la fermeture de l'enregistrement) et seul le flux audio à 16 k de fréquence d'échantillonnage est fourni (lorsque echoCancellation n'est pas requis, il peut être explicitement configuré pour être désactivé afin d'obtenir un flux de haute qualité à 48 k). Veuillez vous référer à la configuration {2} dans le document"
 
 //@@zh="close被忽略（因为同时open了多个rec，只有最后一个会真正close）"
 //@@en="close is ignored (because multiple recs are open at the same time, only the last one will actually close)"

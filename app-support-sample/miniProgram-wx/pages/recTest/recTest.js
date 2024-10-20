@@ -82,12 +82,31 @@ Page({
 				}
 				//实时语音通话对讲，实时处理录音数据
 				if(this.wsVoiceProcess) this.wsVoiceProcess(buffers,powerLevel,duration,sampleRate,newBufferIdx);
+				
+				//实时释放清理内存，用于支持长时间录音；在指定了有效的type时，编码器内部可能还会有其他缓冲，必须同时提供takeoffEncodeChunk才能清理内存，否则type需要提供unknown格式来阻止编码器内部缓冲
+				if(this.takeEcChunks){
+					if(this.clearBufferIdx>newBufferIdx){ this.clearBufferIdx=0 } //重新录音了就重置
+					for(var i=this.clearBufferIdx||0;i<newBufferIdx;i++) buffers[i]=null;
+					this.clearBufferIdx=newBufferIdx;
+				}
 			}
 			,takeoffEncodeChunk:!this.data.takeoffEncodeChunkSet?null:(chunkBytes)=>{
 				//实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
 				takeEcCount++; takeEcSize+=chunkBytes.byteLength;
 				this.setData({takeoffEncodeChunkMsg:"已接收到"+takeEcCount+"块，共"+takeEcSize+"字节"});
 				this.takeEcChunks.push(chunkBytes);
+				
+				//可以实时写入到文件
+				var isFirst=takeEcCount==1;
+				if(isFirst) this.takeEcFile="recTest_takeEc_"+Date.now()+"."+this.data.recType;
+				RecordApp.MiniProgramWx_WriteLocalFile({
+					fileName:this.takeEcFile
+					,append:!isFirst //第一帧新建文件，后面的帧append到文件
+				},chunkBytes.buffer,(savePath)=>{
+					if(isFirst) this.reclog("实时写入到文件："+savePath);
+				},(errMsg)=>{
+					this.reclog("实时写入文件出错："+errMsg,1);
+				});
 			}
 		},()=>{
 			var iosSpeakerOff=false;
@@ -172,9 +191,7 @@ Page({
 				var len=0; for(var i=0;i<this.takeEcChunks.length;i++)len+=this.takeEcChunks[i].length;
 				var chunkData=new Uint8Array(len);
 				for(var i=0,idx=0;i<this.takeEcChunks.length;i++){
-					var itm=this.takeEcChunks[i];
-					chunkData.set(itm,idx);
-					idx+=itm.length;
+					var itm=this.takeEcChunks[i]; chunkData.set(itm,idx); idx+=itm.length;
 				};
 				aBuf=chunkData.buffer;
 				this.reclog("takeoffEncodeChunk接收到的音频片段，已合并成一个音频文件 "+aBuf.byteLength+"字节");

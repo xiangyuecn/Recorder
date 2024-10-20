@@ -21,10 +21,24 @@ window.DemoFragment||(window.DemoFragment={})
 	var arr=store.PlayBufferArr||[];
 	var st=store.PlayBufferDisable?0:sampleRate/1000*300;//缓冲播放，不然间隔太短接续爆音明显
 	
+	var ctx=store.PlayBufferCtx; //自动管理一个AudioContext的释放
+	if(!ctx){
+		Recorder.CLog("PlayBuffer new ctx");
+		ctx=Recorder.GetContext(true);
+		store.PlayBufferCtx=ctx;
+		var ctxInt=setInterval(function(){ //长时间未使用，就自动释放掉
+			if(Date.now()-ctx._useTime<5000)return;
+			clearInterval(ctxInt);
+			Recorder.CLog("PlayBuffer close ctx");
+			Recorder.CloseNewCtx(ctx);
+			store.PlayBufferCtx=0;
+		},1000);
+	}
+	ctx._useTime=Date.now();
+	
 	size+=buffer.length;
 	arr.push(buffer);
 	if(size>=st){
-		var ctx=Recorder.Ctx;
 		var audio=ctx.createBuffer(1,size,sampleRate);
 		var channel=audio.getChannelData(0);
 		var sd=sampleRate/1000*1;//1ms的淡入淡出 大幅减弱爆音

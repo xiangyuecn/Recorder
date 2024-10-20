@@ -65,6 +65,10 @@ export default {
 				if(p.reclog) break;
 				p=p.$parent;
 			}
+			if(!p){ //HBuilder X 4.28.2024092502，vue3组合式API和老版本不一致 $parent不好使了
+				var ps=getCurrentPages();
+				p=ps[ps.length-1];
+			}
 			return p;
 		}
 		,reclog(){

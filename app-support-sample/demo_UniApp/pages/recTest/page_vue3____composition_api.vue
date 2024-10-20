@@ -47,6 +47,10 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 	</view>
 	
+	<view style="padding:5px 10px 0">
+		<view><checkbox :checked="appUseH5Rec" @click="appUseH5RecClick">App里面总是使用Recorder H5录音（勾选后不启用原生录音插件和uts插件）</checkbox></view>
+	</view>
+	
 	<!-- 手撸播放器 -->
 	<view style="padding-top:10px">
 		<TestPlayer ref="player" />
@@ -60,6 +64,17 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			</view>
 		</view>
 	</view>
+	
+	<!-- 测试 -->
+	<view style="padding-top:10px">
+		<view style="color:#f60" v-if="HBuilder_4_28V">{{HBuilder_4_28Tips}}</view>
+		<view>
+			<button size="mini" @click="traceThis">显示vue3This可用属性</button>
+		</view>
+		<view class="testPerfRJsLogs" v-html="traceThisHtml"></view>
+	</view>
+	
+	<view style="padding-top:80px"></view>
 </view>
 <!-- #endif -->
 
@@ -98,6 +113,7 @@ import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app'
 const isVue3=ref(true);
+const appUseH5Rec=ref(false);
 const recpowerx=ref(0);
 const recpowert=ref("");
 const reclogs=ref([]);
@@ -118,9 +134,33 @@ onShow(()=>{
 });
 
 
+var appUseH5RecClick=()=>{
+	appUseH5Rec.value=!appUseH5Rec.value;
+	RecordApp.Current=null;
+	reclog('切换了appUseH5Rec='+appUseH5Rec.value+'，重新请求录音权限后生效',"#f60");
+};
+var currentKeyTag=()=>{
+	if(!RecordApp.Current) return "[?]";
+	// #ifdef APP
+	var tag2="Renderjs+H5";
+	if(RecordApp.UniNativeUtsPlugin){
+		tag2=RecordApp.UniNativeUtsPlugin.nativePlugin?"NativePlugin":"UtsPlugin";
+	}
+	return RecordApp.Current.Key+"("+tag2+")";
+	// #endif
+	return RecordApp.Current.Key;
+};
+
+
 
 
 var recReq=()=>{
+	if(appUseH5Rec.value){//测试时指定使用h5录音
+		RecordApp.UniNativeUtsPlugin=null;
+	}else{
+		RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //恢复原生插件配置值
+	}
+	
 	/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
 	获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
 	****/
@@ -132,18 +172,19 @@ var recReq=()=>{
 	reclog("正在请求录音权限...");
 	RecordApp.UniWebViewActivate(vue3This); //App环境下必须先切换成当前页面WebView
 	RecordApp.RequestPermission(()=>{
-		reclog("已获得录音权限，可以开始录音了",2);
+		reclog(currentKeyTag()+" 已获得录音权限，可以开始录音了",2);
 	},(msg,isUserNotAllow)=>{
 		if(isUserNotAllow){//用户拒绝了录音权限
 			//这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
 		}
-		reclog((isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
+		reclog(currentKeyTag()+" "
+			+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
 	});
 }
 var recStart=()=>{
 	vue3This.$refs.player.setPlayBytes(null);
 	
-	reclog("正在打开...");
+	reclog(currentKeyTag()+" 正在打开...");
 	RecordApp.UniWebViewActivate(vue3This); //App环境下必须先切换成当前页面WebView
 	RecordApp.Start({
 		type:"mp3"
@@ -191,7 +232,7 @@ var recStart=()=>{
 			this.audioData=aBuf; //留着给Stop时进行转码成wav播放
 		}`
 	},()=>{
-		reclog("录制中 mp3",2);
+		reclog(currentKeyTag()+" 录制中 mp3"+(appUseH5Rec.value?" appUseH5Rec":""),2);
 		
 		//创建音频可视化图形绘制，App环境下是在renderjs中绘制，H5、小程序等是在逻辑层中绘制，因此需要提供两段相同的代码（宽高值需要和canvas style的宽高一致）
 		RecordApp.UniFindCanvas(vue3This,[".recwave-WaveView"],`
@@ -200,7 +241,7 @@ var recStart=()=>{
 			vue3This.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
 		});
 	},(msg)=>{
-		reclog("开始录音失败："+msg,1);
+		reclog(currentKeyTag()+" 开始录音失败："+msg,1);
 	});
 }
 var recStop=()=>{
@@ -245,6 +286,72 @@ var formatTime=(ms,showSS)=>{
 	if(showSS)v+="″"+("00"+ss).substr(-3);;
 	return v;
 }
+
+//测试用，兼容性问题
+var isHBuilder_4_28=false;
+if((!vue3This.$root || !vue3This.$root.$scope) && vue3This.$scope){
+	isHBuilder_4_28=true;
+}
+const HBuilder_4_28V=ref(isHBuilder_4_28);
+const HBuilder_4_28Tips=ref('是否存在兼容问题：'+(isHBuilder_4_28?'存在':'不存在')+'，已知：仅限于使用vue3的组合式API写法时(setup)，在HBuilder 4.28.2024092502上存在和老版本不兼容问题（4.29已修复，其他新的版本未知），无法获取到vue3This.$root下面的属性，老版本4.24无此问题，使用选项式API也无此问题，新版本组件已做好了兼容适配。注意：当存在兼容问题时，别的测试页面中使用到的this.$XXX属性在组合式API中一样可能无法使用，比如this.$parent就不好使了');
+if(isHBuilder_4_28) console.warn(HBuilder_4_28Tips.value); else console.log(HBuilder_4_28Tips.value);
+
+//测试用，打印this里面的对象
+var traceThis=(function(){
+	var vals=["逻辑层可用：<pre style='white-space:pre-wrap'>"];
+	var trace=(val)=>{
+		if(/func/i.test(typeof val))val="[Func]";
+		try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
+		return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
+	}
+	for(var k in globalThis){
+		//vals.push('globalThis.'+k);
+	}
+	for(var k in this){
+		vals.push('this.'+k+trace(this[k]));
+	}
+	for(var k in this.$){
+		vals.push('this.$.'+k+trace(this.$[k]));
+	}
+	vals.push('this.$root'+trace(this.$root));
+	for(var k in this.$root){
+		vals.push('this.$root.'+k+trace(this.$root[k]));
+	}
+	vals.push('this.$root.$vm'+trace(this.$root.$vm));
+	vals.push('this.$vm'+trace(this.$vm));
+	for(var k in this.$root.$vm){
+		vals.push('this.$root.$vm.'+k+trace(this.$root.$vm[k]));
+	}
+	vals.push('this.$root.$scope'+trace(this.$root.$scope));
+	vals.push('this.$scope'+trace(this.$scope));
+	if(this.$root.$scope){
+		for(var k in this.$root.$scope){
+			vals.push('this.$root.$scope.'+k+trace(this.$root.$scope[k]));
+		}
+		for(var k in this.$root.$scope.$page){
+			vals.push('this.$root.$scope.$page.'+k+trace(this.$root.$scope.$page[k]));
+		}
+	}else{
+		if(this.$scope){
+			for(var k in this.$scope){
+				vals.push('this.$scope.'+k+trace(this.$scope[k]));
+			}
+			for(var k in this.$scope.$page){
+				vals.push('this.$scope.$page.'+k+trace(this.$scope.$page[k]));
+			}
+		}
+		for(var k in this.$page){
+			vals.push('this.$page.'+k+trace(this.$page[k]));
+		}
+	}
+	vals.push("</pre>");
+	traceThisHtml.value=vals.join("\n	");
+	
+	setTimeout(()=>{
+		RecordApp.UniWebViewEval(this,'traceThis__vue3_capi()');
+	});
+}).bind(vue3This);
+const traceThisHtml=ref('');
 </script>
 <!-- #endif -->
 
@@ -289,6 +396,8 @@ export default {
 	mounted(){
 		//App的renderjs必须调用的函数，传入当前模块this
 		RecordApp.UniRenderjsRegister(this);
+		//测试用
+		rjsThis=this;
 	},
 	methods: {
 		//这里定义的方法，在逻辑层中可通过 RecordApp.UniWebViewVueCall(this,'this.xxxFunc()') 直接调用
@@ -297,6 +406,33 @@ export default {
 			this.$ownerInstance.callMethod("reclog",'逻辑层调用renderjs中的testCall结果：'+val);
 		}
 	}
+}
+
+//测试用，打印this里面的对象
+var rjsThis;
+window.traceThis__vue3_capi=function(){
+	var obj=rjsThis;
+	var str="renderjs可用：<pre style='white-space:pre-wrap'>";
+	var trace=(val)=>{
+		if(/func/i.test(typeof val))val="[Func]";
+		try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
+		return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
+	}
+	for(var k in obj){
+		str+='\n	this.'+k+trace(obj[k]);
+	}
+	for(var k in obj.$ownerInstance){
+		str+='\n	this.$ownerInstance.'+k+trace(obj.$ownerInstance[k]);
+	}
+	for(var k in obj.$ownerInstance.$vm){
+		str+='\n	this.$ownerInstance.$vm.'+k+trace(obj.$ownerInstance.$vm[k]);
+	}
+	for(var k in uni){
+		str+='\n	uni.'+k+trace(uni[k]);
+	}
+	str+='</pre>';
+	var el=document.querySelector('.testPerfRJsLogs');
+	el.innerHTML+=str;
 }
 </script>
 <!-- #endif -->

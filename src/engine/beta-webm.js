@@ -38,7 +38,10 @@ Recorder.prototype.webm=function(res,True,False){
 		};
 		var This=this, set=This.set,size=res.length,sampleRate=set.sampleRate;
 		
-		var ctx=Recorder.Ctx;
+		var ctx=Recorder.GetContext(true);
+		var endCall=function(){
+			Recorder.CloseNewCtx(ctx);
+		};
 		
 		var dest=ctx.createMediaStreamDestination();
 		dest.channelCount=1;
@@ -56,11 +59,13 @@ Recorder.prototype.webm=function(res,True,False){
 			var blob=new Blob(chunks,{type:mime});
 			var reader=new FileReader();
 			reader.onloadend=function(){
+				endCall();
 				True(reader.result,mime);
 			};
 			reader.readAsArrayBuffer(blob);
 		};
 		recorder.onerror=function(e){
+			endCall();
 			False($T("PIX0::转码webm出错：{1}",0,e.message));
 		};
 		recorder.start();

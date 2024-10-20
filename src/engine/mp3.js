@@ -459,7 +459,7 @@ rm:Recorder.mp3ReadMeta
 ,fn:function(mp3Buffers,length,pcmLength,pcmSampleRate){
 	var meta=this.rm(mp3Buffers,length);
 	if(!meta){
-		return {err:"mp3 unknown format"};
+		return {size:length, err:"mp3 unknown format"};
 	};
 	var pcmDuration=Math.round(pcmLength/pcmSampleRate*1000);
 	
@@ -522,7 +522,7 @@ var mp3TrimFixSetMeta=function(meta,set){
 	};
 	
 	if(meta.err){
-		Recorder.CLog(tag,1,meta.err,meta);
+		Recorder.CLog(tag,meta.size?1:0,meta.err,meta);
 	}else{
 		Recorder.CLog(tag,meta);
 	};

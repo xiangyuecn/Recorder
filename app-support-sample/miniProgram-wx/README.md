@@ -36,7 +36,37 @@
 
 [​](?)
 
+# RecordApp增加的属性和方法文档
+RecordApp基础的属性和方法请阅读[RecordApp文档](../)，比如`RequestPermission`、`Start`、`Stop`这些方法。下面的属性和方法是微信支持文件给RecordApp增加的，引入`app-miniProgram-wx-support.js`文件后才可以使用。
+
+## 【静态方法】RecordApp.MiniProgramWx_onShow()
+当使用到录音的页面onShow时进行一次调用，用于恢复被暂停的录音（比如按了home键会暂停录音）
+
+## 【静态方法】RecordApp.MiniProgramWx_WriteLocalFile(fileName,buffer,True,False)
+保存文件到小程序本地，提供文件名和arrayBuffer，True(savePath)成功保存后回调完整保存路径，False(errMsg)；保存后得到的savePath为 `wx.env.USER_DATA_PATH` 路径，可以用来播放、上传。
+
+``` javascript
+fileName可以是："xxx.mp3" "文件夹/xxx.mp3" 或 传一个配置对象{}
+配置对象：{
+    fileName:"" //必填，fileName字符串
+    ,append:false //可选，是否追加写入到文件结尾，默认false会新建文件并写入数据
+    ,seekOffset:-1 //可选，从现有文件指定位置写入并覆盖对应内容，取值：-1不指定（默认），0 到 文件长度（0为文件开头位置，append配置无效）
+}
+```
+
+## 【静态方法】RecordApp.MiniProgramWx_DeleteLocalFile(savePath,True,False)
+删除已保存到本地的文件，savePath必须是WriteLocalFile得到的路径，True()删除成功回调，False(errMsg)删除失败回调
+
+
+
+
+[​](?)
+
+[​](?)
+
 # 部分原理和需要注意的细节
+
+**上架小程序需要到小程序管理后台《[用户隐私保护指引](https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/miniprogram-intro.html)》中声明录音权限，否则正式版将无法调用录音功能（请求权限时会直接走错误回调）。**
 
 小程序自带的`RecorderManager`录音的时候，如果小程序退到了后台（或触发了`onInterruptionBegin`），录音将会被暂停，小程序显示的时候才允许继续录音，但`RecorderManager`无法感知这些事件或者存在bug，**因此你需要在要录音页面的`onShow`函数内加上`RecordApp.MiniProgramWx_onShow()`这行代码**，如果没有加这行代码，被暂停的录音可能会无法自动恢复。
 

@@ -238,7 +238,10 @@ Export.ArrayBufferHash=async function(algorithm,arrayBuffer){
 	返回值：ArrayBuffer对象
 */
 Export.NumberToArrayBuffer=function(num,len,be){
-	var hex4="00000000";
+	var hex4="00000000",isF=0;
+	if(num<0){ //负数转正数-1
+		num=-(num+1); isF=1;
+	};
 	var hex=num.toString(16);
 	hex=(hex4+hex4+hex).substr(-16);
 	if(!be){
@@ -254,20 +257,37 @@ Export.NumberToArrayBuffer=function(num,len,be){
 			arr=arr.slice(0, len);
 		}
 	}
+	if(isF){ //负数取反
+		arr=new Uint8Array(arr);
+		for(var i=0,L=arr.length;i<L;i++) arr[i]=~arr[i];
+		arr=arr.buffer;
+	}
 	return arr;
 };
 /**字节转成数字
-	参数：arrayBuffer对象，支持1-8字节
+	参数：arrayBuffer对象，支持1-8字节（4、8字节时有符号，其他无符号）
 			be boolean：true大端序，默认小端序
 	返回值：number整数数字
 */
 Export.ArrayBufferToNumber=function(arrayBuffer,be){
 	var arr=[],bytes=new Uint8Array(arrayBuffer);
-	if(bytes.length<1)return 0;
-	for(var i=0;i<bytes.length;i++)arr.push(bytes[i]);
+	var size=bytes.length,isF=0;
+	if(size<1)return 0;
+	for(var i=0;i<size;i++)arr.push(bytes[i]);
 	if(!be) arr.reverse();
-	var hex=Export.ArrayBufferToHex(new Uint8Array(arr).buffer);
-	return parseInt("0x"+hex);
+	
+	arr=new Uint8Array(arr);
+	if((size==4 || size==8) && arr[0]>0x7F){ //负数取反
+		isF=1;
+		for(var i=0;i<size;i++){
+			arr[i]=~arr[i];
+		}
+	}
+	
+	var hex=Export.ArrayBufferToHex(arr.buffer);
+	var num=parseInt("0x"+hex);
+	if(isF) num=-num-1; //转负数-1
+	return num;
 };
 
 /**
@@ -590,6 +610,7 @@ Runtime.Ctrls([
 				class="testInRes" readonly></textarea>
 		</div>
 	`}
+	,{name:"数值转换测试",click:"numberTestClick"}
 	,{name:"当前时间Long转8字节",click:"showNowTimeClick"}
 	,{choiceFile:{cls:"choiceFile1"
 		,multiple:false,name:"",title:"设为待处理ArrayBuffer"
@@ -602,6 +623,7 @@ Runtime.Ctrls([
 $(".testChoiceFile").append($(".choiceFile1"));
 $(".testResTagBox").append($(".testResTagBox1"));
 
+//当前时间long值
 window.showNowTimeClick=function(){
 	var now=Date.now();
 	var be=JsBinary.NumberToArrayBuffer(now,8,true);
@@ -610,6 +632,36 @@ window.showNowTimeClick=function(){
 	var leNum=JsBinary.ArrayBufferToNumber(le);
 	Runtime.Log("当前时间(大端)："+JsBinary.ArrayBufferToHex(be).toUpperCase()+" -> "+beNum+" "+(beNum==now?"==":"!=")+" "+now);
 	Runtime.Log("当前时间(小端)："+JsBinary.ArrayBufferToHex(le).toUpperCase()+" -> "+leNum+" "+(leNum==now?"==":"!=")+" "+now);
+};
+//各种数值转换，int long两种
+window.numberTestClick=function(){
+	var run=function(zNum, fNum, len){
+		var zAB=JsBinary.NumberToArrayBuffer(zNum,len,true);
+		var fAB=JsBinary.NumberToArrayBuffer(fNum,len,true);
+		var zVal=JsBinary.ArrayBufferToNumber(zAB,true);
+		var fVal=JsBinary.ArrayBufferToNumber(fAB,true);
+		Runtime.Log("byte"+len+": "+JsBinary.ArrayBufferToHex(zAB).toUpperCase()+" +"+zNum+(zNum==zVal?'==':'!=')+zVal);
+		Runtime.Log("byte"+len+": "+JsBinary.ArrayBufferToHex(fAB).toUpperCase()+" "+(fNum<0?"":"-")+fNum+(fNum==fVal?'==':'!=')+fVal);
+		
+		var isOF=false, isOk=zNum==zVal && fNum==fVal;
+		if(len==4 && typeof(BigInt)!='undefined'){ //计算是否溢出，使用高版本API来验证
+			var zOF=new Int32Array(new BigInt64Array([BigInt(zNum)]).buffer)[0];
+			var fOF=new Int32Array(new BigInt64Array([BigInt(fNum)]).buffer)[0];
+			isOF=zOF==zVal && fOF==fVal;
+		}
+		Runtime.Log(isOk?"OK":isOF?"溢出 OK":"Error", isOk?2:isOF?"#fa0":1);
+	};
+	run(+0, -0, 4);
+	run(+1, -1, 4);
+	run(+1234, -1234, 4);
+	run(+123456789, -123456789, 4);
+	run(+2147483647, -2147483648, 4); //Integer.MAX_VALUE
+	run(+2147483648, -2147483649, 4); //溢出
+	run(+2147483648, -2147483649, 8);
+	run(+4278190080, -4278190080, 4); //溢出
+	run(+4278190080, -4278190080, 8);
+	run(+1234567890123456, -1234567890123456, 8);
+	run(+9007199254740991, -9007199254740991, 8); //Number.MAX_SAFE_INTEGER
 };
 
 })();

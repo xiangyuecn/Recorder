@@ -13,6 +13,115 @@ Recorder的buffers和onProcess回调中的buffers都是[Int16Array,Int16Array,..
 
 附带base64和pcm二进制互转，更多js中的二进制知识请参考《【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob》
 ******************/
+
+//=====将pcm转成wav，wav格式简单可以直接pcm前面拼接个wav头即可，或者通用点用下面的mock转码成wav=====
+var pcm_to_wav=function(pcm,sampleRate,bitRate,tag){ //pcm:Int16Array
+	var recSet={type:"wav",sampleRate:sampleRate,bitRate:bitRate};
+	var pcmDur=Math.round(pcm.length/sampleRate*1000);
+	var header=Recorder.wav_header(1,1,sampleRate,bitRate,pcm.byteLength);
+	var bytes=new Uint8Array(header.length+pcm.byteLength);
+	bytes.set(header);
+	bytes.set(new Uint8Array(pcm.buffer), header.length);
+	
+	var blob=new Blob([bytes.buffer],{type:"audio/wav"});
+	Runtime.LogAudio(blob,pcmDur,{set:recSet},(tag||"实时处理的所有pcm")+"转wav");
+};
+
+//=====将pcm转成mp3，需要转成其他格式也是支持的=====
+var pcm_to_mp3=function(pcm,sampleRate,tag){ //pcm:Int16Array
+	var newSampleRate=sampleRate; //可转换成你需要的采样率
+	
+	var recMock=Recorder({ type:"mp3",sampleRate:newSampleRate,bitRate:16 });
+	recMock.mock(pcm,sampleRate);
+	//recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
+	recMock.stop(function(blob,duration){
+		Runtime.LogAudio(blob,duration,recMock,(tag||"实时处理的所有pcm")+"转mp3");
+	},function(msg){
+		//转码错误？没想到什么时候会产生错误！
+		Runtime.Log("不应该出现的错误:"+msg,1);
+	});
+};
+
+
+
+//=====base64和pcm二进制互转=====
+var pcm_to_base64=function(pcm,sampleRate){ //pcm:Int16Array
+	var bytes=new Uint8Array(pcm.buffer); //相当于无符号byte[]
+	var str=""; for(var i=0;i<bytes.length;i++) str+=String.fromCharCode(bytes[i]);
+	var base64=btoa(str); //已得到base64
+	
+	var tips="实时处理的所有pcm二进制数据（"+bytes.length+"字节）已转成base64（"+base64.length+"个字符）";
+	console.log(tips,base64);
+	Runtime.Log(tips+"，base64文本太长，请打开浏览器控制台查看","#aaa");
+	lastBase64=base64;
+	lastBase64SampleRate=sampleRate; //base64中的pcm的采样率
+};
+var base64_to_pcm=function(base64, sampleRate){
+	var str=atob(base64);
+	var bytes=new Uint8Array(str.length); //相当于无符号byte[]
+	for(var i=0;i<bytes.length;i++) bytes[i]=str.charCodeAt(i);
+	var pcm=new Int16Array(bytes.buffer); //已还原得到16位pcm数据
+	
+	Runtime.Log("base64（"+base64.length+"个字符）已转回pcm二进制数据（"+bytes.length+"字节）","#aaa");
+	pcm_to_wav(pcm,sampleRate,16,"base64转回pcm");
+	pcm_to_mp3(pcm,sampleRate,"base64转回pcm");
+};
+
+var lastBase64,lastBase64SampleRate;
+var base64_to_pcmClick=function(){
+	if(!lastBase64) return Runtime.Log("请先录个音",1);
+	base64_to_pcm(lastBase64,lastBase64SampleRate);
+};
+
+
+//=====pcm 8位 16 位互转=====
+	//更多的 24位 32位 转换，请参考 assets/工具-裸PCM转WAV播放测试.html 里面的源码
+var pcm_8_16_Click=function(){
+	var pcm16=pcmBuffer, sampleRate=pcmBufferSampleRate;
+	Runtime.Log("pcm16位转8位，再8位转回16位","#aaa");
+	
+	//16位转8位
+	var pcm8=new Uint8Array(pcm16.length); //pcm16:Int16Array
+	for(var i=0,L=pcm16.length;i<L;i++){
+		//16转8据说是雷霄骅的 https://blog.csdn.net/sevennight1989/article/details/85376149 细节比blqw的按比例的算法清晰点
+		var val=(pcm16[i]>>8)+128;
+		pcm8[i]=val;
+	};
+	
+	//8位转16位
+	var pcm16=new Int16Array(pcm8.length); //pcm8:Uint8Array
+	for(var i=0,L=pcm8.length;i<L;i++){
+		var b=pcm8[i];
+		pcm16[i]=(b-128)<<8;
+	};
+	
+	console.log("8位16位互转", pcmBuffer, pcm8, pcm16);
+	pcm_to_wav(pcm8,sampleRate,8,"16位转8位 | ");
+	pcm_to_wav(pcm16,sampleRate,16,"8位转16位 | ");
+};
+
+
+
+//=====加载框架=====
+Runtime.Import([
+	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
+	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
+	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
+	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
+]);
+
+//显示控制按钮
+Runtime.Ctrls([
+	{name:"开始录音",click:"recStart"}
+	,{name:"结束录音",click:"recStop"}
+	
+	,{html:'<span style="margin-left:30px"></span>'}
+	,{name:"base64转回pcm",click:"base64_to_pcmClick"}
+	,{name:"8位16位pcm互转",click:"pcm_8_16_Click"}
+]);
+
+
+
 var pcmBuffer=new Int16Array(0); //所有pcm拼接到一起放到这个缓冲里面
 var pcmBufferSampleRate=16000;
 
@@ -61,95 +170,11 @@ function recStop(){
 		rec2.close();//关闭录音
 		Runtime.LogAudio(blob,duration,rec2,"stop得到的录音");
 		
-		pcmBuffer_to_base64(); //pcm二进制数据转成base64
-		pcmBuffer_to_wav(); //pcm转wav
-		pcmBuffer_to_mp3(); //pcm转mp3
+		pcm_to_base64(pcmBuffer, pcmBufferSampleRate); //pcm二进制数据转成base64
+		pcm_to_wav(pcmBuffer, pcmBufferSampleRate, 16); //pcm转wav
+		pcm_to_mp3(pcmBuffer, pcmBufferSampleRate); //pcm转mp3
 	},function(msg){
 		rec.close();
 		Runtime.Log("录音失败:"+msg, 1);
 	});
 };
-
-
-
-//将onProcess里面实时处理后的pcm转成wav，wav格式简单可以直接pcm前面拼接个wav头即可，或者通用点用下面的mock转码成wav
-var pcmBuffer_to_wav=function(tag){
-	var pcm=pcmBuffer,pcmSampleRate=pcmBufferSampleRate;
-	
-	var recSet={type:"wav",sampleRate:pcmSampleRate,bitRate:16};
-	var pcmDur=Math.round(pcm.length/pcmSampleRate*1000);
-	var header=Recorder.wav_header(1,1,pcmSampleRate,16,pcm.byteLength);
-	var bytes=new Uint8Array(header.length+pcm.byteLength);
-	bytes.set(header);
-	bytes.set(new Uint8Array(pcm.buffer), header.length);
-	
-	var blob=new Blob([bytes.buffer],{type:"audio/wav"});
-	Runtime.LogAudio(blob,pcmDur,{set:recSet},(tag||"实时处理的所有pcm")+"转wav");
-};
-
-//将onProcess里面实时处理后的pcm转成mp3，需要转成其他格式也是支持的
-var pcmBuffer_to_mp3=function(tag){
-	var pcm=pcmBuffer,pcmSampleRate=pcmBufferSampleRate;
-	var newSampleRate=8000;
-	
-	var recMock=Recorder({ type:"mp3",sampleRate:newSampleRate,bitRate:16 });
-	recMock.mock(pcm,pcmSampleRate);
-	//recMock.dataType="arraybuffer"; //下面stop默认返回blob文件，可以改成返回ArrayBuffer
-	recMock.stop(function(blob,duration){
-		Runtime.LogAudio(blob,duration,recMock,(tag||"实时处理的所有pcm")+"转mp3");
-	},function(msg){
-		//转码错误？没想到什么时候会产生错误！
-		Runtime.Log("不应该出现的错误:"+msg,1);
-	});
-};
-
-
-
-//=====base64和pcm二进制互转=====
-var pcmBuffer_to_base64=function(){
-	var bytes=new Uint8Array(pcmBuffer.buffer); //相当于无符号byte[]
-	var str=""; for(var i=0;i<bytes.length;i++) str+=String.fromCharCode(bytes[i]);
-	var base64=btoa(str); //已得到base64
-	
-	var tips="实时处理的所有pcm二进制数据（"+bytes.length+"字节）已转成base64（"+base64.length+"个字符）";
-	console.log(tips,base64);
-	Runtime.Log(tips+"，base64文本太长，请打开浏览器控制台查看","#aaa");
-	lastBase64=base64;
-	lastBase64SampleRate=pcmBufferSampleRate; //base64中的pcm的采样率
-};
-
-var lastBase64,lastBase64SampleRate;
-var base64_to_pcm=function(){
-	var base64=lastBase64, sampleRate=lastBase64SampleRate;
-	if(!base64) return Runtime.Log("请先录个音",1);
-	
-	var str=atob(base64);
-	var bytes=new Uint8Array(str.length); //相当于无符号byte[]
-	for(var i=0;i<bytes.length;i++) bytes[i]=str.charCodeAt(i);
-	var pcm=new Int16Array(bytes.buffer); //已还原得到16位pcm数据
-	
-	Runtime.Log("base64（"+base64.length+"个字符）已转回pcm二进制数据（"+bytes.length+"字节）","#aaa");
-	pcmBuffer=pcm;
-	pcmBufferSampleRate=sampleRate;
-	pcmBuffer_to_wav("base64转回pcm");
-	pcmBuffer_to_mp3("base64转回pcm");
-};
-
-
-
-//=====加载框架=====
-Runtime.Import([
-	{url:RootFolder+"/src/recorder-core.js",check:function(){return !window.Recorder}}
-	,{url:RootFolder+"/src/engine/mp3.js",check:function(){return !Recorder.prototype.mp3}}
-	,{url:RootFolder+"/src/engine/mp3-engine.js",check:function(){return !Recorder.lamejs}}
-	,{url:RootFolder+"/src/engine/wav.js",check:function(){return !Recorder.prototype.wav}}
-]);
-
-//显示控制按钮
-Runtime.Ctrls([
-	{name:"开始录音",click:"recStart"}
-	,{name:"结束录音",click:"recStop"}
-	
-	,{html:'<span style="margin-left:30px"></span>'}
-	,{name:"base64转回pcm",click:"base64_to_pcm"}
-]);

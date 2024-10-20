@@ -35,7 +35,7 @@ RecordApp是在[Recorder](../)基础上为不同平台环境提供底层适配�
   <a title="License" href="https://github.com/xiangyuecn/Recorder/blob/master/LICENSE"><img src="https://img.shields.io/github/license/xiangyuecn/Recorder?color=0b1&logo=github" alt="License"></a>
   <a title="JsDelivr CDN" href="https://www.jsdelivr.com/package/gh/xiangyuecn/Recorder"><img src="https://img.shields.io/badge/CDN-JsDelivr-0b1" alt="JsDelivr CDN"></a>
   <a title="unpkg CDN" href="https://unpkg.com/recorder-core/"><img src="https://img.shields.io/badge/CDN-unpkg-0b1" alt="unpkg CDN"></a>
-  <a title="51LA" href="https://www.51.la/?20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
+  <a title="51LA" href="https://web.51.la/report/main?comId=20469973"><img src="https://img.shields.io/badge/51LA-available-0b1" alt="51LA"></a>
 </p>
 
 
@@ -252,11 +252,13 @@ App的WebView中打开网页进行录音时，如果未使用原生录音，将�
 ```
 
 2. WebView的WebChromeClient中实现`onPermissionRequest`网页授权请求
+
 如果未实现此方法，WebView默认会拒绝H5录音权限；onPermissionRequest中需要先获取App的系统录音权限（Activity里面必须先用this.checkSelfPermission检测权限，否则直接this.requestPermissions会造成WebView触发touchcancel打断长按），然后再grant网页权限，可参考[MainActivity.java](demo_android/app/src/main/java/com/github/xianyuecn/recorder/MainActivity.java)中的实现代码。
 
 注：如果应用的`腾讯X5内核`，可能还须提供`android.permission.CAMERA`权限，和调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理
 
 3. 如需后台录音，还需要实现Android后台录音保活服务
+
 自`Android 9`开始，为了保护用户隐私，锁屏或进入后台一段时间后App可能会被禁止访问麦克风、摄像头等功能，导致无法录音、或录音数据全部是静音，因此需要使用保活机制才能在后台录音，详细请参考[demo_android](demo_android)，里面专门有一个章节讲解保活。
 
 
@@ -363,9 +365,9 @@ set配置默认值（和Recorder的初始化参数大部分相同）：
 
         /*,audioTrackSet:{ //请参考Recorder，echoCancellation在微信小程序、uni-app也可用；注意：H5等环境中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
              deviceId:"",groupId:"" //指定设备的麦克风，通过navigator.mediaDevices.enumerateDevices拉取设备列表，其中kind为audioinput的是麦克风
-            ,noiseSuppression:true //降噪（ANS）开关，不设置时由浏览器控制（一般为默认打开），设为true明确打开，设为false明确关闭
-            ,echoCancellation:true //回声消除（AEC）开关，取值和降噪开关一样
-            ,autoGainControl:true //自动增益（AGC）开关，取值和降噪开关一样
+            ,echoCancellation:true //回声消除（AEC）开关，不设置时由浏览器控制（一般为默认自动打开），设为true明确打开，设为false明确关闭
+            ,noiseSuppression:true //降噪（ANS）开关，取值和回声消除开关一样
+            ,autoGainControl:true //自动增益（AGC）开关，取值和回声消除开关一样
         }*/
     
     //*******uni-app编译成app时专有配置，详细请参考 demo_UniApp 目录******

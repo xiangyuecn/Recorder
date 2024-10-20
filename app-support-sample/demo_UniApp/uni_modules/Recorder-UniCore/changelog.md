@@ -1,3 +1,5 @@
+## 1.0.241020（2024-10-20）
+适配HBuilder4.28 vue3 setup编译环境下$root.$scope无法读取的bug，HBuilder4.29已修复此编译bug，但似乎还是有不能使用的问题。如果setup内不能使用，可尝试新建个vue组件，然后使用选项式api来调用录音功能，页面的setup内使用此vue组件
 ## 1.0.240910（2024-09-10）
 - 新增RecordApp.UniMainCallBack_Register接口，允许App renderjs层多次回调数据给逻辑层
 - iOS App请求权限时，会预先检查NSMicrophoneUsageDescription是否声明，避免无声明时调用录音会崩溃

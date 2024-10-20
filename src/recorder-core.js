@@ -20,11 +20,12 @@ https://github.com/xiangyuecn/Recorder
 
 var NOOP=function(){};
 var IsNum=function(v){return typeof v=="number"};
+var ToJson=function(v){return JSON.stringify(v)};
 
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2024-04-09 19:15";
+var LM=Recorder.LM="2024-10-20 22:15";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -44,8 +45,7 @@ if(WRec2&&WRec2.LM==LM){
 Recorder.IsOpen=function(){
 	var stream=Recorder.Stream;
 	if(stream){
-		var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
-		var track=tracks[0];
+		var tracks=Tracks_(stream), track=tracks[0];
 		if(track){
 			var state=track.readyState;
 			return state=="live"||state==track.LIVE;
@@ -91,7 +91,7 @@ Recorder.Support=function(){
 	};
 	return true;
 };
-//获取全局的AudioContext对象，如果浏览器不支持将返回null。tryNew时尝试创建新的非全局对象并返回，失败时依旧返回全局的；成功时返回新的，注意用完必须自己调用CloseNewCtx(ctx)关闭。注意：非用户操作（触摸、点击等）时调用返回的ctx.state可能是suspended状态，需要在用户操作时调用ctx.resume恢复成running状态，参考rec的runningContext配置
+//获取AudioContext对象，如果浏览器不支持将返回null。tryNew=false时返回全局的Recorder.Ctx，Ctx.state可能是closed，仅限用于解码等操作。tryNew=true时会尝试创建新的ctx（不支持close的老浏览器依旧返回全局的），注意用完必须自己调用CloseNewCtx(ctx)关闭；注意：非用户操作（触摸、点击等）时调用返回的ctx.state可能是suspended状态，需要在用户操作时调用ctx.resume恢复成running状态，参考rec的runningContext配置
 Recorder.GetContext=function(tryNew){
 	if(!isBrowser) return null;
 	var AC=window.AudioContext;
@@ -102,10 +102,10 @@ Recorder.GetContext=function(tryNew){
 		return null;
 	};
 	
-	var ctx=Recorder.Ctx;
-	if(!ctx||ctx.state=="closed"){
+	var ctx=Recorder.Ctx, isNew=0;
+	if(!ctx){ //241020版本后不再保留打开状态的ctx，原因是iOS不全部关闭时新的ctx有可能不正常
 		//不能反复构造，低版本number of hardware contexts reached maximum (6)
-		ctx=Recorder.Ctx=new AC();
+		ctx=Recorder.Ctx=new AC(); isNew=1;
 		Recorder.NewCtxs=Recorder.NewCtxs||[];
 		
 		Recorder.BindDestroy("Ctx",function(){
@@ -119,18 +119,18 @@ Recorder.GetContext=function(tryNew){
 		});
 	};
 	if(tryNew && ctx.close){//没法关闭的不允许再创建
-		try{
-			ctx=new AC();
-			Recorder.NewCtxs.push(ctx);
-		}catch(e){
-			CLog("GetContext tryNew Error",1,e);
-		}
+		if(!isNew){
+			if(!ctx._useC) CloseCtx(ctx); //关闭全局的，不再保留打开状态
+			ctx=new AC(); //如果是上面新建的就用上面的，不然就用全新的
+		};
+		ctx._useC=1;
+		Recorder.NewCtxs.push(ctx);
 	};
 	return ctx;
 };
-//关闭新创建的AudioContext，如果是全局的不关闭
+//关闭新创建的AudioContext（之前老版本如果是全局的不关闭，241020版本后全部关闭）
 Recorder.CloseNewCtx=function(ctx){
-	if(ctx && ctx!=Recorder.Ctx){
+	if(ctx && ctx.close){
 		CloseCtx(ctx);
 		var arr=Recorder.NewCtxs||[],L=arr.length;
 		for(var i=0;i<arr.length;i++){
@@ -140,9 +140,11 @@ Recorder.CloseNewCtx=function(ctx){
 	}
 };
 var CloseCtx=function(ctx){
-	if(ctx && ctx.close){
+	if(ctx && ctx.close && !ctx._isC){
 		ctx._isC=1;
-		try{ ctx.close() }catch(e){ CLog("ctx close err",1,e) }
+		if(ctx.state!="closed"){
+			try{ ctx.close() }catch(e){ CLog("ctx close err",1,e) }
+		}
 	}
 };
 //当AudioContext的状态是suspended时，调用resume恢复状态，但如果没有用户操作resume可能没有回调，封装解决此回调问题；check(count)返回true继续尝试resume，返回false终止任务（不回调False）
@@ -206,12 +208,23 @@ var ConnectEnableWorklet="ConnectEnableWorklet";
 Recorder[ConnectEnableWorklet]=false;
 
 /*初始化H5音频采集连接。如果自行提供了sourceStream将只进行一次简单的连接处理。如果是普通麦克风录音，此时的Stream是全局的，Safari上断开后就无法再次进行连接使用，表现为静音，因此使用全部使用全局处理避免调用到disconnect；全局处理也有利于屏蔽底层细节，start时无需再调用底层接口，提升兼容、可靠性。*/
-var Connect=function(streamStore,isUserMedia){
+var Connect=function(streamStore){
 	var bufferSize=streamStore.BufferSize||Recorder.BufferSize;
 	
 	var stream=streamStore.Stream;
-	var ctx=stream._RC || stream._c || Recorder.GetContext(true);//2023-06 尽量创建新的ctx，免得Safari再次连接无回调
-	stream._c=ctx;
+	var ctx=stream._c, ctxSR=ctx[sampleRateTxt], srChunk={};
+	
+	//获取音频流信息
+	var tracks=Tracks_(stream),track=tracks[0],trackSet=null,tsMsg="";
+	if(track && track.getSettings){
+		trackSet=track.getSettings();
+		var trackSR=trackSet[sampleRateTxt];
+		if(trackSR && trackSR!=ctxSR){
+			tsMsg=$T("eS8i::Stream的采样率{1}不等于{2}，将进行采样率转换（注意：音质不会变好甚至可能变差），主要在移动端未禁用回声消除时会产生此现象，浏览器有回声消除时可能只会返回16k采样率的音频数据，",0,trackSR,ctxSR);
+		}
+	}
+	stream._ts=trackSet;
+	CLog(tsMsg+"Stream TrackSet: "+ToJson(trackSet), tsMsg?3:0);
 	
 	var mediaConn=function(node){
 		var media=stream._m=ctx.createMediaStreamSource(stream);
@@ -226,17 +239,25 @@ var Connect=function(streamStore,isUserMedia){
 	var calls=stream._call;
 	
 	//浏览器回传的音频数据处理
-	var onReceive=function(float32Arr){
+	var onReceive=function(float32Arr, arrSR){
 		for(var k0 in calls){//has item
-			var size=float32Arr.length;
-			
-			var pcm=new Int16Array(size);
-			var sum=0;
-			for(var j=0;j<size;j++){//floatTo16BitPCM 
-				var s=Math.max(-1,Math.min(1,float32Arr[j]));
-				s=s<0?s*0x8000:s*0x7FFF;
-				pcm[j]=s;
-				sum+=Math.abs(s);
+			if(arrSR!=ctxSR){ //MediaRecorder录制的采样率可能和ctx的采样率不同（16k），转换采样率方便统一处理代码也更简单，但音质不会变好，甚至可能会变差一点
+				srChunk.index=0;
+				srChunk=Recorder.SampleData([float32Arr],arrSR,ctxSR,srChunk,{_sum:1});
+				var pcm=srChunk.data;
+				var sum=srChunk._sum;
+			}else{ //采样率相同，不需要转换采样率
+				srChunk={};
+				var size=float32Arr.length;
+				
+				var pcm=new Int16Array(size);
+				var sum=0;
+				for(var j=0;j<size;j++){//floatTo16BitPCM 
+					var s=Math.max(-1,Math.min(1,float32Arr[j]));
+					s=s<0?s*0x8000:s*0x7FFF;
+					pcm[j]=s;
+					sum+=Math.abs(s);
+				};
 			};
 			
 			for(var k in calls){
@@ -274,7 +295,7 @@ var Connect=function(streamStore,isUserMedia){
 		
 		process.onaudioprocess=function(e){
 			var arr=e.inputBuffer.getChannelData(0);
-			onReceive(arr);
+			onReceive(arr, ctxSR);
 		};
 	};
 
@@ -368,7 +389,7 @@ var connWorklet=function(){
 				clearTimeout(badInt);badInt="";
 			};
 			if(awNext()){
-				onReceive(e.data.val);
+				onReceive(e.data.val, ctxSR);
 			}else if(!isWorklet){
 				CLog($T("XUap::{1}多余回调",0,audioWorklet),3);
 			};
@@ -410,15 +431,15 @@ var connWebM=function(){
 	
 	var supportMR=MR && (onData in MR.prototype) && MR.isTypeSupported(webmType);
 	webMTips=supportMR?"":$T("VwPd::（此浏览器不支持{1}）",0,MRWebMPCM);
-	if(!isUserMedia || !isWebM || !supportMR){
-		connWorklet(); //非麦克风录音（MediaRecorder采样率不可控） 或 被禁用 或 不支持MediaRecorder 或 不支持webm+pcm
+	if(!isWebM || !supportMR){
+		connWorklet(); //被禁用 或 不支持MediaRecorder 或 不支持webm+pcm
 		return;
 	}
 	
 	var mrNext=function(){//可以继续，没有调用断开
 		return isWebM && stream._ra;
 	};
-	var mrAlive=stream._ra=function(){
+	stream._ra=function(){
 		//start时会调用，只要没有收到数据就断定MediaRecorder有问题，降级处理
 		if(badInt!==""){//没有回调过数据
 			clearTimeout(badInt);
@@ -434,7 +455,7 @@ var connWebM=function(){
 	
 	var mrSet=Object.assign({mimeType:webmType}, Recorder.ConnectWebMOptions);
 	var mr=stream._r=new MR(stream, mrSet);
-	var webmData=stream._rd={sampleRate:ctx[sampleRateTxt]};
+	var webmData=stream._rd={};
 	mr[onData]=function(e){
 		//提取webm中的pcm数据，提取失败就等着badInt超时降级处理
 		var reader=new FileReader();
@@ -450,7 +471,7 @@ var connWebM=function(){
 				if(badInt){
 					clearTimeout(badInt);badInt="";
 				};
-				onReceive(f32arr);
+				onReceive(f32arr, webmData.webmSR);
 			}else if(!isWebM){
 				CLog($T("O9P7::{1}多余回调",0,MediaRecorderTxt),3);
 			};
@@ -515,18 +536,28 @@ var Disconnect=function(streamStore){
 };
 //关闭一个音频流
 var StopS_=Recorder.StopS_=function(stream){
-	var tracks=stream.getTracks&&stream.getTracks()||stream.audioTracks||[];
+	var tracks=Tracks_(stream);
 	for(var i=0;i<tracks.length;i++){
 		var track=tracks[i];
 		track.stop&&track.stop();
 	};
 	stream.stop&&stream.stop();
 };
+//获取流中的所有轨道
+var Tracks_=function(stream){
+	var arr1=0,arr2=0,arr=[];
+	//stream.getTracks() 得到的sourceStream还得去排序 不然第一个可能是video
+	if(stream.getAudioTracks){ arr1=stream.getAudioTracks(); arr2=stream.getVideoTracks(); }
+	if(!arr1){ arr1=stream.audioTracks; arr2=stream.videoTracks; }
+	for(var i=0,L=arr1?arr1.length:0;i<L;i++)arr.push(arr1[i]); //音频放前面，方便取[0]
+	for(var i=0,L=arr2?arr2.length:0;i<L;i++)arr.push(arr2[i]);
+	return arr;
+};
 
 /*对pcm数据的采样率进行转换
-pcmDatas: [[Int16,...]] pcm片段列表
+pcmDatas: [[Int16,...]] pcm片段列表，二维数组里面是Int16Array，也可传Float32Array（会转成Int16Array）
 pcmSampleRate:48000 pcm数据的采样率
-newSampleRate:16000 需要转换成的采样率，newSampleRate>=pcmSampleRate时不会进行任何处理，小于时会进行重新采样
+newSampleRate:16000 需要转换成的采样率，241020版本后支持转成任意采样率，之前老版本newSampleRate>=pcmSampleRate时不会进行任何处理，小于时会进行重新采样
 prevChunkInfo:{} 可选，上次调用时的返回值，用于连续转换，本次调用将从上次结束位置开始进行处理。或可自行定义一个ChunkInfo从pcmDatas指定的位置开始进行转换
 option:{ 可选，配置项
 		frameSize:123456 帧大小，每帧的PCM Int16的数量，采样率转换后的pcm长度为frameSize的整数倍，用于连续转换。目前仅在mp3格式时才有用，frameSize取值为1152，这样编码出来的mp3时长和pcm的时长完全一致，否则会因为mp3最后一帧录音不够填满时添加填充数据导致mp3的时长变长。
@@ -536,15 +567,16 @@ option:{ 可选，配置项
 
 返回ChunkInfo:{
 	//可定义，从指定位置开始转换到结尾
-	index:0 pcmDatas已处理到的索引
-	offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置
+	index:0 pcmDatas已处理到的索引；比如每次都是单个pcm需要连续处理时，可每次调用前重置成0，pcmDatas仅需传入`[pcm]`固定一个元素
+	offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置（提升采样率时为结果的pcm）
+	raisePrev:null 提升采样率时的前一个pcm结果采样值
 	
-	//可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，新采样率大于pcm采样率的75%时不默认滤波），如果提供了配置但fn为null时将不滤波；sr为此滤波函数对应的初始化采样率，当采样率和pcmSampleRate参数不一致时将重新设为默认函数
-	filter:null||{fn:fn(sample),sr:pcmSampleRate}
+	//可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，小采样率大于高采样率的75%时不默认滤波），如果提供了配置但fn为null时将不滤波；sr、srn为此滤波函数对应的初始化采样率，当采样率和参数的不一致时将重新设为默认函数
+	filter:null||{fn:fn(sample),sr:pcmSampleRate,srn:newSampleRate}
 	
 	//仅作为返回值
 	frameNext:null||[Int16,...] 下一帧的部分数据，frameSize设置了的时候才可能会有
-	sampleRate:16000 结果的采样率，<=newSampleRate
+	sampleRate:16000 结果的采样率=newSampleRate，老版本<=newSampleRate
 	data:[Int16,...] 转换后的PCM结果；如果是连续转换，并且pcmDatas中并没有新数据时，data的长度可能为0
 }
 */
@@ -553,16 +585,23 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	prevChunkInfo||(prevChunkInfo={});
 	var index=prevChunkInfo.index||0;
 	var offset=prevChunkInfo.offset||0;
+	var raisePrev=prevChunkInfo.raisePrev||0;
 	
 	var filter=prevChunkInfo.filter;
-	if(filter&&filter.fn&&filter.sr!=pcmSampleRate){
+	if(filter&&filter.fn&&(filter.sr&&filter.sr!=pcmSampleRate || filter.srn&&filter.srn!=newSampleRate)){
 		filter=null; CLog($T("d48C::{1}的filter采样率变了，重设滤波",0,Txt),3);
 	};
-	if(!filter){//采样率差距比较大才开启低通滤波，最高频率用新采样率频率的3/4
-		var freq=newSampleRate>pcmSampleRate*3/4?0: newSampleRate/2 *3/4;
-		filter={fn:freq?Recorder.IIRFilter(true,pcmSampleRate,freq):0};
+	if(!filter){ //采样率差距比较大才开启低通滤波
+		if(newSampleRate<=pcmSampleRate){ //降低采样率或不变，最高频率用新采样率频率的3/4
+			var freq=newSampleRate>pcmSampleRate*3/4?0: newSampleRate/2 *3/4;
+			filter={fn:freq?Recorder.IIRFilter(true,pcmSampleRate,freq):0};
+		}else{ //提升采样率，最高频率用原始采样率频率的3/4
+			var freq=pcmSampleRate>newSampleRate*3/4?0: pcmSampleRate/2 *3/4;
+			filter={fn:freq?Recorder.IIRFilter(true,newSampleRate,freq):0};
+		};
 	};
 	filter.sr=pcmSampleRate;
+	filter.srn=newSampleRate;
 	var filterFn=filter.fn;
 	
 	var frameNext=prevChunkInfo.frameNext||[];
@@ -571,6 +610,7 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	if(option.frameType){
 		frameSize=option.frameType=="mp3"?1152:1;
 	};
+	var useSum=option._sum, _sum=0; //内部用的，sum不考虑配置了frame
 	
 	var nLen=pcmDatas.length;
 	if(index>nLen+1){
@@ -580,15 +620,15 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	for(var i=index;i<nLen;i++){
 		size+=pcmDatas[i].length;
 	};
-	size=Math.max(0,size-Math.floor(offset));
 	
 	//采样 https://www.cnblogs.com/blqw/p/3782420.html
 	var step=pcmSampleRate/newSampleRate;
 	if(step>1){//新采样低于录音采样，进行抽样
+		size=Math.max(0,size-Math.floor(offset));
 		size=Math.floor(size/step);
-	}else{//新采样高于录音采样不处理，省去了插值处理
-		step=1;
-		newSampleRate=pcmSampleRate;
+	}else if(step<1){//新采样高于录音采样，插值处理
+		var raiseStep=1/step;
+		size=Math.floor(size*raiseStep);
 	};
 	
 	size+=frameNext.length;
@@ -601,20 +641,62 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	};
 	//处理数据
 	for (;index<nLen;index++) {
-		var o=pcmDatas[index];
+		var o=pcmDatas[index], isF32=o instanceof Float32Array;
 		var i=offset,il=o.length;
 		var F=filterFn&&filterFn.Embed,F1=0,F2=0,Fx=0,Fy=0;//低通滤波后的数据
+		
+		if(step<1){ //提升采样率
+			var idx1=idx+i, prev=raisePrev;
+			for(var i0=0;i0<il;i0++){
+				var oVal=o[i0];
+				if(isF32){//floatTo16BitPCM 
+					oVal=Math.max(-1,Math.min(1,oVal));
+					oVal=oVal<0?oVal*0x8000:oVal*0x7FFF;
+				}
+				
+				var pos=Math.floor(idx1);
+				idx1+=raiseStep;
+				var end=Math.floor(idx1);
+			
+				//简单的从prev平滑填充到cur，有效减少转换引入的杂音
+				var n=(oVal-prev)/(end-pos);
+				for(var j=1;pos<end;pos++,j++){
+					var s=Math.floor(prev+(j*n));
+					if(F){//IIRFilter代码内置，比函数调用快4倍
+						Fx=s;
+						Fy=F.b0 * Fx + F.b1 * F.x1 + F.b0 * F.x2 - F.a1 * F.y1 - F.a2 * F.y2;
+						F.x2 = F.x1; F.x1 = Fx; F.y2 = F.y1; F.y1 = Fy;
+						s=Fy;
+					}else{ s=filterFn?filterFn(s):s; }
+					
+					if(s>0x7FFF) s=0x7FFF; else if(s<-0x8000) s=-0x8000; //Int16越界处理
+					if(useSum) _sum+=Math.abs(s);
+					res[pos]=s;
+					idx++;
+				};
+				
+				prev=raisePrev=oVal;
+				i+=raiseStep;//插值
+			}
+			offset=i%1;
+			continue;
+		};
+		//降低采样率或不变
 		for(var i0=0,i2=0;i0<il;i0++,i2++){
 			if(i2<il){
+				var oVal=o[i2];
+				if(isF32){//floatTo16BitPCM 
+					oVal=Math.max(-1,Math.min(1,oVal));
+					oVal=oVal<0?oVal*0x8000:oVal*0x7FFF;
+				}
 				if(F){//IIRFilter代码内置，比函数调用快4倍
-					Fx=o[i2];
+					Fx=oVal;
 					Fy=F.b0 * Fx + F.b1 * F.x1 + F.b0 * F.x2 - F.a1 * F.y1 - F.a2 * F.y2;
 					F.x2 = F.x1; F.x1 = Fx; F.y2 = F.y1; F.y1 = Fy;
-				}else{ Fy=filterFn?filterFn(o[i2]):o[i2]; }
+				}else{ Fy=filterFn?filterFn(oVal):oVal; }
 			}
 			F1=F2; F2=Fy;
 			if(i2==0){ i0--; continue; } //首次只计算o[0]
-			//res[idx]=o[Math.round(i)]; 直接简单抽样
 			
 			//https://www.cnblogs.com/xiaoqi/p/6993912.html
 			//当前点=当前点+到后面一个点之间的增量，音质比直接简单抽样好些
@@ -628,6 +710,7 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 			var val=beforeVal+(afterVal-beforeVal)*atPoint;
 			
 			if(val>0x7FFF) val=0x7FFF; else if(val<-0x8000) val=-0x8000; //Int16越界处理
+			if(useSum) _sum+=Math.abs(val);
 			res[idx]=val;
 			
 			idx++;
@@ -635,24 +718,32 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		};
 		offset=Math.max(0, i-il); //不太可能出现负数
 	};
+	if(step<1 && idx+1==size){ //提升采样率时可能缺1个，直接删除结尾1个
+		size--; res=new Int16Array(res.buffer.slice(0, size*2));
+	};
+	if(idx-1!=size && idx!=size)CLog(Txt+" idx:"+idx+" != size:"+size,3); //越界1个
+	
 	//帧处理
 	frameNext=null;
-	var frameNextSize=res.length%frameSize;
+	var frameNextSize=size%frameSize;
 	if(frameNextSize>0){
-		var u8Pos=(res.length-frameNextSize)*2;
+		var u8Pos=(size-frameNextSize)*2;
 		frameNext=new Int16Array(res.buffer.slice(u8Pos));
 		res=new Int16Array(res.buffer.slice(0,u8Pos));
 	};
 	
-	return {
+	var obj={
 		index:index
 		,offset:offset
+		,raisePrev:raisePrev
 		,filter:filter
 		
 		,frameNext:frameNext
 		,sampleRate:newSampleRate
 		,data:res
 	};
+	if(useSum) obj._sum=_sum;
+	return obj;
 };
 
 /*IIR低通、高通滤波，移植自：https://gitee.com/52jian/digital-audio-filter AudioFilter.java
@@ -792,7 +883,7 @@ function initFn(set){
 		//,audioTrackSet:{ deviceId:"",groupId:"", autoGainControl:true, echoCancellation:true, noiseSuppression:true }
 				//普通麦克风录音时getUserMedia方法的audio配置参数，比如指定设备id，回声消除、降噪开关；注意：提供的任何配置值都不一定会生效
 				//由于麦克风是全局共享的，所以新配置后需要close掉以前的再重新open
-				//更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+				//同样可配置videoTrackSet，更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
 		
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
 		
@@ -833,9 +924,13 @@ Recorder.prototype=initFn.prototype={
 			return Recorder;
 		}
 	}
+	//当前实例用到的Stream，可能是全局的，也可能是独享的
+	,_streamGet:function(){
+		return this._streamStore().Stream;
+	}
 	//当前实例用到的AudioContext，可能是全局的，也可能是独享的
 	,_streamCtx:function(){
-		var m=this._streamStore().Stream;
+		var m=this._streamGet();
 		return m&&m._c;
 	}
 	
@@ -890,6 +985,12 @@ Recorder.prototype=initFn.prototype={
 			return;
 		};
 		
+		//尽量先创建好ctx，不然异步下创建可能不是running状态
+		var ctx;
+		var getCtx=function(){
+			ctx=set.runningContext;
+			if(!ctx)ctx=newCtx=Recorder.GetContext(true); //2023-06 尽量创建新的ctx，免得Safari再次连接无回调
+		};
 		
 		//***********已直接提供了音频流************
 		if(set.sourceStream){
@@ -898,9 +999,11 @@ Recorder.prototype=initFn.prototype={
 				failCall($T("1iU7::不支持此浏览器从流中获取录音"));
 				return;
 			};
+			getCtx();
 			
 			Disconnect(streamStore);//可能已open过，直接先尝试断开
 			var stream=This.Stream=set.sourceStream;
+			stream._c=ctx;
 			stream._RC=set.runningContext;
 			stream._call={};
 			
@@ -925,14 +1028,21 @@ Recorder.prototype=initFn.prototype={
 				return;
 			};
 			
+			if(codeErr1(1,code)){
+				if(/Found/i.test(code)){//可能是非安全环境导致的没有设备
+					failCall(msg+$T("jBa9::，无可用麦克风"));
+				}else{
+					failCall(msg);
+				};
+			};
+		};
+		var codeErr1=function(call,code){ //排除几个明确原因的错误
 			if(/Permission|Allow/i.test(code)){
-				failCall($T("gyO5::用户拒绝了录音权限"),true);
+				if(call) failCall($T("gyO5::用户拒绝了录音权限"),true);
 			}else if(window.isSecureContext===false){
-				failCall($T("oWNo::浏览器禁止不安全页面录音，可开启https解决"));
-			}else if(/Found/i.test(code)){//可能是非安全环境导致的没有设备
-				failCall(msg+$T("jBa9::，无可用麦克风"));
+				if(call) failCall($T("oWNo::浏览器禁止不安全页面录音，可开启https解决"));
 			}else{
-				failCall(msg);
+				return 1;
 			};
 		};
 		
@@ -946,12 +1056,10 @@ Recorder.prototype=initFn.prototype={
 			codeFail("",$T("COxc::此浏览器不支持录音"));
 			return;
 		};
-		//尽量先创建好ctx，不然异步下创建可能不是running状态
-		var ctx=set.runningContext;
-		if(!ctx)ctx=newCtx=Recorder.GetContext(true);
+		getCtx();
 		
 		//请求权限，如果从未授权，一般浏览器会弹出权限请求弹框
-		var f1=function(stream){
+		var f1=function(stream){ //请求成功回调
 			//https://github.com/xiangyuecn/Recorder/issues/14 获取到的track.readyState!="live"，刚刚回调时可能是正常的，但过一下可能就被关掉了，原因不明。延迟一下保证真异步。对正常浏览器不影响
 			setTimeout(function(){
 				stream._call={};
@@ -968,37 +1076,65 @@ Recorder.prototype=initFn.prototype={
 				if(Recorder.IsOpen()){
 					if(oldStream)This.CLog($T("upb8::发现同时多次调用open"),1);
 					
-					Connect(streamStore,1);
-					ok();
+					Connect(streamStore);
+					ok(); //只连接，因为AudioContext不一定在运行，无法知道是否有数据回调
 				}else{
 					failCall($T("Q1GA::录音功能无效：无音频流"));
 				};
 			},100);
 		};
-		var f2=function(e){
+		var f2=function(e){ //请求失败回调
 			var code=e.name||e.message||e.code+":"+e;
-			This.CLog($T("xEQR::请求录音权限错误"),1,e);
+			var tryMsg="";
+			if(callUmCount==1 && codeErr1(0,code)){ 
+				tryMsg=$T("KxE2::，将尝试禁用回声消除后重试");
+			}
+			This.CLog($T("xEQR::请求录音权限错误")+tryMsg+"|"+e,tryMsg?3:1,e);
 			
-			codeFail(code,$T("bDOG::无法录音：")+code);
+			if(tryMsg){//重试
+				callUserMedia(1);
+			}else{
+				codeFail(code,$T("bDOG::无法录音：")+e);
+			};
 		};
 		
-		var trackSet=set.audioTrackSet||{};
-		trackSet[sampleRateTxt]=ctx[sampleRateTxt];//必须指明采样率，不然手机上MediaRecorder采样率16k
-		
-		var mSet={audio:trackSet};
-		try{
-			var pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
-		}catch(e){//不能设置trackSet就算了
-			This.CLog(getUserMediaTxt,3,e);
-			mSet={audio:true};
-			pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
+		var callUmCount=0;
+		var callUserMedia=function(retry){
+			callUmCount++;
+			var atsTxt="audioTrackSet";
+			var t_AGC="autoGainControl",t_AEC="echoCancellation",t_ANS="noiseSuppression";
+			var atsTxtJs=atsTxt+":{"+t_AEC+","+t_ANS+","+t_AGC+"}";
+			var trackSet=JSON.parse(ToJson(set[atsTxt]||true)); //true 跟 {} 兼容性？
+			This.CLog("open... "+callUmCount+" "+atsTxt+":"+ToJson(trackSet));
+			
+			if(retry){ //回声消除有些浏览器可能导致无法打开录音，尝试明确禁用来保证能最基础的录
+				if(typeof(trackSet)!="object")trackSet={}; //默认true
+				trackSet[t_AGC]=false;
+				trackSet[t_AEC]=false;
+				trackSet[t_ANS]=false;
+			};
+			//这里指明采样率，虽然可以解决手机上MediaRecorder采样率16k的问题，是回声消除导致的只能获取到16k的流，禁用回声消除可恢复48k。(issues#230)而且会导致乱用音频输入设备，MediaStreamTrack的applyConstraints也无法修改采样率
+			//trackSet[sampleRateTxt]=ctx[sampleRateTxt];
+			if(trackSet[sampleRateTxt]){
+				This.CLog($T("IjL3::注意：已配置{1}参数，可能会出现浏览器不能正确选用麦克风、移动端无法启用回声消除等现象",0,atsTxt+"."+sampleRateTxt),3);
+			};
+			
+			var mSet={audio:trackSet, video:set.videoTrackSet||false};
+			try{
+				var pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
+			}catch(e){//不能设置trackSet就算了
+				This.CLog(getUserMediaTxt,3,e);
+				mSet={audio:true, video:false};
+				pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
+			};
+			This.CLog(getUserMediaTxt+"("+ToJson(mSet)+") "+CtxState(ctx)
+				+$T("RiWe::，未配置 {1} 时浏览器可能会自动启用回声消除，移动端未禁用回声消除时可能会降低系统播放音量（关闭录音后可恢复）和仅提供16k采样率的音频流（不需要回声消除时可明确配置成禁用来获得48k高音质的流），请参阅文档中{2}配置",0,atsTxtJs,atsTxt)
+				+"("+GitUrl+") LM:"+LM+" UA:"+navigator.userAgent);
+			if(pro&&pro.then){
+				pro.then(f1)[CatchTxt](f2); //fix 关键字，保证catch压缩时保持字符串形式
+			};
 		};
-		This.CLog(getUserMediaTxt+"("+JSON.stringify(mSet)+") "+CtxState(ctx)
-			+$T("RiWe::，未配置noiseSuppression和echoCancellation时浏览器可能会自动打开降噪和回声消除，移动端可能会降低系统播放音量（关闭录音后可恢复），请参阅文档中audioTrackSet配置")
-			+"("+GitUrl+") LM:"+LM+" UA:"+navigator.userAgent);
-		if(pro&&pro.then){
-			pro.then(f1)[CatchTxt](f2); //fix 关键字，保证catch压缩时保持字符串形式
-		};
+		callUserMedia();
 	}
 	//关闭释放录音资源
 	,close:function(call){
@@ -1321,6 +1457,13 @@ Recorder.prototype=initFn.prototype={
 			}
 		};
 		var tag="AudioContext resume: ";
+		
+		//如果有数据回调，就不等待ctx resume
+		var stream=This._streamGet();
+		stream._call[This.id]=function(){
+			This.CLog(tag+ctx.state+'|stream ok');
+			end();
+		};
 		ResumeCtx(ctx,function(runC){
 			runC&&This.CLog(tag+"wait...");
 			return This.state==3;
@@ -1337,7 +1480,7 @@ Recorder.prototype=initFn.prototype={
 	
 	/*暂停录音*/
 	,pause:function(){
-		var This=this,stream=This._streamStore().Stream;
+		var This=this,stream=This._streamGet();
 		if(This.state){
 			This.state=2;
 			This.CLog("pause");
@@ -1346,7 +1489,7 @@ Recorder.prototype=initFn.prototype={
 	}
 	/*恢复录音*/
 	,resume:function(){
-		var This=this,stream=This._streamStore().Stream;
+		var This=this,stream=This._streamGet();
 		var tag="resume",tag3=tag+"(wait ctx)";
 		if(This.state==3){ //start还在等ctx恢复
 			This.CLog(tag3);
@@ -1611,11 +1754,12 @@ var WebM_Extract=function(inBytes, scope){
 	//校验音频参数信息，如果不符合代码要求，统统拒绝处理
 	var track0=scope.track0;
 	if(!track0)return;
+	var trackSR=track0[sampleRateTxt]; scope.webmSR=trackSR;
 	if(track0.bitDepth==16 && /FLOAT/i.test(track0.codec)){
 		track0.bitDepth=32; //chrome v66 实际为浮点数
 		CLog("WebM 16->32 bit",3);
 	}
-	if(track0[sampleRateTxt]!=scope[sampleRateTxt] || track0.bitDepth!=32 || track0.channels<1 || !/(\b|_)PCM\b/i.test(track0.codec)){
+	if(trackSR<8000 || track0.bitDepth!=32 || track0.channels<1 || !/(\b|_)PCM\b/i.test(track0.codec)){
 		scope.bytes=[];//格式非预期 无法处理，清空缓冲数据
 		if(!scope.bad)CLog("WebM Track Unexpected",3,scope);
 		scope.bad=1;
