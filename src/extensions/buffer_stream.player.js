@@ -11,7 +11,7 @@ BufferStreamPlayer可以用于：
 	3. 单个音频文件的实时播放处理，比如：播放一段音频，并同时进行可视化绘制（其实自己解码+播放绘制比直接调用这个更有趣，但这个省事、配套功能多点）。
 
 在线测试例子：
-	https://xiangyuecn.gitee.io/recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player
+	https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.decode_buffer_stream_player
 调用示例：
 	var stream=Recorder.BufferStreamPlayer(set)
 	//创建好后第一件事就是start打开流，打开后就会开始播放input输入的音频，set具体配置看下面源码；注意：start需要在用户操作(触摸、点击等)时进行调用，原因参考runningContext配置
@@ -32,6 +32,7 @@ BufferStreamPlayer可以用于：
 
 	//随时都能调用input，会等到start成功后播放出来，不停的调用input，就能持续的播放出声音了，需要暂停播放就不要调用input就行了
 	stream.input(anyData); //anyData数据格式 和更多说明，请阅读下面的input方法源码注释
+	stream.clearInput(keepDuration); //清除已输入但还未播放的数据，一般用于非实时模式打断老的播放；返回清除的音频时长，默认会从总时长duration中减去此时长，keepDuration=true时不减去
 	
 	//暂停播放，暂停后：实时模式下会丢弃所有input输入的数据（resume时只播放新input的数据），非实时模式下所有input输入的数据会保留到resume时继续播放
 	stream.pause();
@@ -449,13 +450,16 @@ fn.prototype=BufferStreamPlayer.prototype={
 		}
 		
 		//加入队列，纠正input执行顺序，解码、transform均有可能会导致顺序不一致
-		This.inputQueue[inputN]=pcm;
+		if(inputN>This.inputQueueIdx){ //clearInput移动了队列位置的丢弃
+			This.inputQueue[inputN]=pcm;
+		}
 		
 		if(This._dest){//已start，可以开始处理队列
 			This._inputProcess();
 		}
 	}
 	,_inputErr:function(errMsg, inputN){
+		if(!this.inputQueue) return;//stop了
 		this.inputQueue[inputN]=1;//出错了，队列里面也要占个位
 		this.set.onInputError(errMsg, inputN);
 	}
@@ -467,7 +471,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		}
 		
 		var queue=This.inputQueue;
-		for(var i=This.inputQueueIdx+1;i<queue.length;i++){
+		for(var i=This.inputQueueIdx+1;i<queue.length;i++){ //inputN是从1开始，所以+1
 			var pcm=queue[i];
 			if(pcm==1){
 				This.inputQueueIdx=i;//跳过出错的input
@@ -509,6 +513,23 @@ fn.prototype=BufferStreamPlayer.prototype={
 		}else{
 			This._writeBad();
 		}
+	}
+	
+	/**清除已输入但还未播放的数据，一般用于非实时模式打断老的播放；返回清除的音频时长，默认会从总时长duration中减去此时长，keepDuration时不减去*/
+	,clearInput:function(keepDuration){
+		var This=this, sampleRate=This.bufferSampleRate, size=0;
+		if(This.inputQueue){//未stop
+			This.inputQueueIdx=This.inputN;//队列位置移到结尾
+			
+			var pcms=This.pcmBuffer;
+			size=pcms[0].length+pcms[1].length;
+			This._subClear();
+			if(!keepDuration) This._Td-=size;//减掉已输入总时长
+			This._updateTime(1);
+		}
+		var dur = size? Math.round(size/sampleRate*1000) : 0;
+		CLog("clearInput "+dur+"ms "+size);
+		return dur;
 	}
 	
 	
@@ -579,8 +600,8 @@ fn.prototype=BufferStreamPlayer.prototype={
 			return;
 		};
 		var pcms=This.pcmBuffer;
-		var pcm0=pcms[0],pcm1=pcms[1];
-		if(pcm0.length+pcm1.length==0){//无可用数据，退出
+		var pcm0=pcms[0],pcm1=pcms[1],pcm1Len=pcm1.length;
+		if(pcm0.length+pcm1Len==0){//无可用数据，退出
 			This._playEnd();//无可播放数据回调
 			return;
 		};
@@ -600,7 +621,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 			//堆积的在300ms内按正常播放
 			if(dSize<dMax){
 				//至少要延迟播放新数据
-				var d150Size=Math.floor(delaySecond*sampleRate-dSize-pcm1.length);
+				var d150Size=Math.floor(delaySecond*sampleRate-dSize-pcm1Len);
 				if(oldAudioBufferIdx==0 && d150Size>0){
 					//开头加上少了的延迟
 					This.audioBufferIdx=Math.max(This.audioBufferIdx, d150Size);
@@ -612,24 +633,24 @@ fn.prototype=BufferStreamPlayer.prototype={
 			//堆积的太多，配置为全丢弃
 			if(realMode.discardAll){
 				if(dSize>dMax*1.333){//超过400ms，取200ms正常播放，300ms中位数
-					pcm0=This._cutPcm0(Math.round(dMax*0.666-wnSize));
+					pcm0=This._cutPcm0(Math.round(dMax*0.666-wnSize-pcm1Len));
 				}
 				realMode=false;//切换成顺序播放
 				break;
 			}
 			
 			//堆积的太多，要加速播放了，最多播放积压最后3秒的量，超过的直接丢弃
-			pcm0=This._cutPcm0(3*sampleRate-wnSize);
+			pcm0=This._cutPcm0(3*sampleRate-wnSize-pcm1Len);
 			
 			speed=1.6;//倍速，重采样
 			//计算要截取出来量
-			pcmSize=Math.min(maxSize, Math.floor((pcm0.length+pcm1.length)/speed));
+			pcmSize=Math.min(maxSize, Math.floor((pcm0.length+pcm1Len)/speed));
 			break;
 		}
 		if(!realMode){
 			//*******按顺序取数据播放*********
 			//计算要截取出来量
-			pcmSize=Math.min(maxSize, pcm0.length+pcm1.length);
+			pcmSize=Math.min(maxSize, pcm0.length+pcm1Len);
 		}
 		if(!pcmSize){
 			return;
@@ -663,8 +684,8 @@ fn.prototype=BufferStreamPlayer.prototype={
 			return;
 		};
 		var pcms=This.pcmBuffer;
-		var pcm0=pcms[0],pcm1=pcms[1];
-		var allSize=pcm0.length+pcm1.length;
+		var pcm0=pcms[0],pcm1=pcms[1],pcm1Len=pcm1.length;
+		var allSize=pcm0.length+pcm1Len;
 		if(allSize==0 || allSize<st){//无可用数据 不够缓冲量，退出
 			This._playEnd();//无可播放数据回调，最后一丁点会始终等缓冲满导致卡住
 			return;
@@ -687,24 +708,24 @@ fn.prototype=BufferStreamPlayer.prototype={
 			//堆积的太多，配置为全丢弃
 			if(realMode.discardAll){
 				if(dSize>dMax*1.333){//超过400ms，取200ms正常播放，300ms中位数
-					pcm0=This._cutPcm0(Math.round(dMax*0.666));
+					pcm0=This._cutPcm0(Math.round(dMax*0.666-pcm1Len));
 				}
 				realMode=false;//切换成顺序播放
 				break;
 			}
 			
 			//堆积的太多，要加速播放了，最多播放积压最后3秒的量，超过的直接丢弃
-			pcm0=This._cutPcm0(3*sampleRate);
+			pcm0=This._cutPcm0(3*sampleRate-pcm1Len);
 			
 			speed=1.6;//倍速，重采样
 			//计算要截取出来量
-			pcmSize=Math.min(maxSize, Math.floor((pcm0.length+pcm1.length)/speed));
+			pcmSize=Math.min(maxSize, Math.floor((pcm0.length+pcm1Len)/speed));
 			break;
 		}
 		if(!realMode){
 			//*******按顺序取数据播放*********
 			//计算要截取出来量
-			pcmSize=Math.min(maxSize, pcm0.length+pcm1.length);
+			pcmSize=Math.min(maxSize, pcm0.length+pcm1Len);
 		}
 		if(!pcmSize){
 			return;
@@ -739,9 +760,12 @@ fn.prototype=BufferStreamPlayer.prototype={
 	
 	,_cutPcm0:function(pcmNs){//保留堆积的数据到指定的时长数量
 		var pcms=this.pcmBuffer,pcm0=pcms[0];
+		if(pcmNs<0)pcmNs=0;
 		if(pcm0.length>pcmNs){//丢弃超过秒数的
-			pcm0=pcm0.subarray(pcm0.length-pcmNs);
+			var size=pcm0.length-pcmNs, dur=Math.round(size/this.bufferSampleRate*1000);
+			pcm0=pcm0.subarray(size);
 			pcms[0]=pcm0;
+			CLog($T("L8sC::延迟过大，已丢弃{1}ms {2}",0,dur,size),3);
 		}
 		return pcm0;
 	}
@@ -751,9 +775,12 @@ fn.prototype=BufferStreamPlayer.prototype={
 			return 0;
 		};
 		if(This.set.realtime){//实时模式，丢弃所有未消费的数据，resume时从最新input的数据开始播放
-			This.pcmBuffer=[[],[]];
+			This._subClear();
 		};
 		return 1;
+	}
+	,_subClear:function(){ //清除缓冲数据
+		this.pcmBuffer=[[],[]];
 	}
 	,_subWrite:function(buffer, pcmSize, offset, speed){
 		var This=this;

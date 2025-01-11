@@ -117,6 +117,20 @@ methods: {
 		return v;
 	}
 	
+	,setPlayPath(duration, path, toWavPath){
+		this.playStop();
+		this.playSid=(this.playSid||0)+1;
+		
+		this.playUrl_wav=toWavPath||"";
+		this.setData({
+			playUrl:path
+			,playing:false
+			,player_durationNum:duration||0
+			,player_duration:this.formatTime(duration||0)
+			,player_currentTime:"00:00"
+			,player_position:0
+		});
+	}
 	,setPlayFile(aBuf,duration,mime,recSet){
 		this.playStop();
 		this.playSid=(this.playSid||0)+1;

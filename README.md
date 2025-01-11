@@ -340,11 +340,19 @@ var blob=new Blob([arrayBuffer],{type:"audio/mp3"});
 var file=new File([arrayBuffer],"xxx.mp3");
 var arrayBuffer=reader.result; //用FileReader的readAsArrayBuffer方法读取 Blob/File 成ArrayBuffer
 
-//二进制拼接合并，下面Int16Array换成Uint8Array等其他TypedArray也是一样的
+//pcm二进制拼接合并，下面Int16Array换成Uint8Array等其他TypedArray也是一样的
 var pcm1=new Int16Array([1,2]),pcm2=new Int16Array([3,4,5,6]);
 var pcm=new Int16Array(pcm1.length+pcm2.length);
 pcm.set(pcm1,0); //写入pcm1到开头位置
 pcm.set(pcm2,pcm1.length); //写入pcm2到pcm1后面，完成拼接
+
+//二进制封装包头，比如要发送特定封包格式的数据包
+var bytes=new Uint8Array(pcm.buffer); //需要封装的音频二进制数据
+var header=new Uint8Array(2); //假设2字节包头
+header[0]=0xEF; header[1]=0x01; //填充任意需要的内容
+var packet=new Uint8Array(header.length+bytes.length); //拼接
+packet.set(header,0);
+packet.set(bytes,header.length); //拼接完成
 ```
 
 
@@ -1060,6 +1068,8 @@ stream.start(()=>{
 
 //随时都能调用input，会等到start成功后播放出来，不停的调用input，就能持续的播放出声音了，需要暂停播放就不要调用input就行了
 stream.input(anyData);
+//清除已输入但还未播放的数据，一般用于非实时模式打断老的播放；返回清除的音频时长，默认会从总时长duration中减去此时长，keepDuration=true时不减去
+stream.clearInput(keepDuration);
 
 //暂停播放，暂停后：实时模式下会丢弃所有input输入的数据（resume时只播放新input的数据），非实时模式下所有input输入的数据会保留到resume时继续播放
 stream.pause();
@@ -1404,12 +1414,12 @@ EncodeMix对象：
 所有音频格式的编码器都在`/src/engine`目录中（或`/dist/engine`目录的压缩版），每个格式一般有一个同名的js文件，如果这个格式有额外的编码引擎文件（`*-engine.js`）的话，使用时必须要一起加上。
 
 ## pcm 格式
-依赖文件：`pcm.js`，支持实时编码（边录边转码），pcm编码器输出的数据其实就是Recorder中的buffers原始数据（经过了重新采样），16位时为LE小端模式（Little Endian），并未经过任何编码处理；pcm为未封装的原始音频数据，pcm数据文件无法直接播放，pcm加上一个44字节wav头即成wav文件，可通过wav格式来正常播放。两个参数相同的pcm文件直接二进制拼接在一起即可成为长的pcm文件，[pcm片段文件合并+可移植源码：PCMMerge](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.realtime.encode_transfer_frame_pcm)。
+依赖文件：`pcm.js`，支持实时编码（边录边转码），pcm编码器输出的数据其实就是Recorder中的buffers原始数据（经过了重新采样），16位时为LE小端模式（Little Endian），并未经过任何编码处理；pcm为未封装的原始音频数据，pcm数据文件无法直接播放，pcm加上一个44字节wav头即成wav文件，可通过wav格式来正常播放。两个参数相同的pcm文件直接二进制拼接在一起即可成为长的pcm文件。
 
 ### Recorder.pcm2wav(data,True,False)
 已实现的一个把pcm转成wav格式来播放的方法，`data = { sampleRate:16000 pcm的采样率 , bitRate:16 pcm的位数 取值：8 或 16 , blob:pcm的blob对象 }`，`True=fn(wavBlob,duration)`。要使用此方法需要带上`wav`格式编码器。
 
-提示：16位的pcm二进制数据可以直接通过`new Int16Array(pcmArrayBuffer)`来构造成Int16Array，然后通过`rec.mock`来转码成其他任意格式。
+提示：pcm二进制数据可以直接在数据开头添加个wav头(`Recorder.wav_header`)即成wav文件；16位的pcm可直接通过`new Int16Array(pcmArrayBuffer)`来构造成Int16Array，然后通过`rec.mock`来转码成其他任意格式。
 
 
 ## wav (raw pcm format) 格式
@@ -1417,6 +1427,11 @@ EncodeMix对象：
 
 ### wav转pcm
 生成的wav文件内音频数据的编码为未压缩的pcm数据（raw pcm），只是在pcm数据前面加了一个44字节的wav头；因此直接去掉前面44字节就能得到原始的pcm数据，如：`blob.slice(44,blob.size,"audio/pcm")`；注意：其他wav编码器可能不是44字节的头，要从任意wav文件中提取pcm数据，请参考：`assets/runtime-codes/fragment.decode.wav.js`。
+
+### Recorder.wav_header(format,numCh,sampleRate,bitRate,dataLength)
+生成一个wav头(Uint8Array)，添加到pcm二进制数据开头即成wav文件。比如实时保存pcm时（追加写入文件），可在文件开头预留44字节的位置，等录音结束后再来生成wav头并写入到文件开头。使用例子[PCM基础教程](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=teach.pcm.basic)。
+
+`format: 1 (raw pcm) 2 (ADPCM) 3 (IEEE Float) 6 (g711a) 7 (g711u)，比如pcm传1`，`numCh: 声道数，比如1`，`sampleRate: 音频数据采样率，比如16000`，`bitRate: 音频数据位数，比如16`，`dataLength: wav中的音频数据二进制长度，比如pcm.byteLength`。
 
 ### 简单将多段小的wav片段合成长的wav文件
 由于RAW格式的wav内直接就是pcm数据，因此将小的wav片段文件去掉wav头后得到的原始pcm数据合并到一起，再加上新的wav头即可合并出长的wav文件；要求待合成的所有wav片段的采样率和位数需一致。[wav合并参考和测试+可移植源码](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.merge.wav_merge)

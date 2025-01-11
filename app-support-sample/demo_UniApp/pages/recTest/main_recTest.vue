@@ -4,7 +4,7 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 -->
 
 <template>
-<view>
+<view> <!-- 建议template下只有一个根节点（最外面套一层view），如果不小心踩到了vue3的Fragments(multi-root 多个根节点)特性（vue2编译会报错，vue3不会），可能会出现奇奇怪怪的兼容性问题 -->
 	<view style="padding:5px 10px 0">
 		<text style="vertical-align: top;"></text>
 		
@@ -177,6 +177,9 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 <!-- #ifdef APP -->
 		<view>
+			<button size="mini" type="default" @click="testWritePcm2Wav">pcm数据实时写入到wav文件测试(原生插件)</button>
+		</view>
+		<view>
 			<button size="mini" type="default" @click="testNativePlugin">测试原生插件调用</button>
 			<button size="mini" type="default" @click="testShowMemoryUsage">显示内存占用</button>
 			<TestNativePluginView ref="testNP" />
@@ -239,7 +242,7 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 </template>
 
 
-<script>
+<script> /**这里是逻辑层**/
 /**本例子是VUE的选项式 API (Options API)风格，vue2 vue3均支持，如果你使用的vue3 setup组合式 API (Composition API) 编写时，请在import后面取到当前实例this，在需要this的地方传vue3This变量即可，具体调用可以参考 page_vue3____composition_api.vue
 import { getCurrentInstance } from 'vue';
 var vue3This=getCurrentInstance().proxy; //必须定义到最外面，放import后面即可 */
@@ -826,6 +829,10 @@ export default {
 		,testRenderjsFunc(){
 			this.$refs.testRF.showTest();
 		}
+		//pcm数据实时写入到wav文件测试(原生插件)
+		,testWritePcm2Wav(){
+			this.$refs.testNP.realtimeWritePcm2Wav();
+		}
 		//测试原生插件功能
 		,testNativePlugin(){
 			this.$refs.testNP.showTest();
@@ -868,6 +875,18 @@ export default {
 			return this.reclog("目前仅App或小程序支持支持切换外放和听筒播放",1);
 		}
 		
+		//显示测试用的H5播放器
+		,showH5Player(url,play){
+			var jsCode=`
+				var el=document.querySelector(".testH5Play5FView");
+				el.innerHTML='<div style="padding-top:8px"><audio class="testH5Play5FAudio" controls style="width:100%"></audio></div>';
+				var audio=document.querySelector(".testH5Play5FAudio");
+				audio.src=${JSON.stringify(url||"")};
+				if(${!!play}) audio.play();
+			`;
+			/*#ifdef H5*/ eval(jsCode); return; /*#endif*/
+			/*#ifdef APP*/ RecordApp.UniWebViewEval(this,jsCode); return; /*#endif*/
+		}
 		//H5播放5分钟wav
 		,testH5Play5F(){
 			var jsCode=`(function(log){
@@ -948,7 +967,12 @@ export default {
 
 
 <!-- #ifdef APP -->
-<script module="testMainVue" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
+<script module="testMainVue" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
+/**需要编译成App时，你需要添加一个renderjs模块，然后一模一样的import上面那些js（微信的js除外）
+	，因为App中默认是在renderjs（WebView）中进行录音和音频编码
+	。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
+	，可不提供此renderjs模块，同时逻辑层中需要将相关import的条件编译去掉**/
+
 /**============= App中在renderjs中引入RecordApp，这样App中也能使用H5录音、音频可视化 =============**/
 /** 先引入Recorder **/
 import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用

@@ -26,6 +26,9 @@ var RecordApp=require("../../copy-rec-src/src/app-support/app.js");
 require("../../copy-rec-src/src/app-support/app-miniProgram-wx-support.js");
 
 
+//仅测试用的
+var TestOther__=require("../test_other__/test_other__.js");
+
 
 Page({
 	onShow(){
@@ -220,11 +223,22 @@ Page({
 		,showUpload:false
 
 		,recwaveChoiceKey:"WaveView"
-		,reclogs:[],reclogLast:""
+		,testMsgs:[],reclogs:[],reclogLast:""
 	}
 	,onLoad(options) {
 		this.reclog("页面onLoad Recorder.LM="+Recorder.LM+" RecordApp.LM="+RecordApp.LM);
 		this.reclog("请先请求录音权限，然后再开始录音");
+	}
+	,clearLogs(){ this.setData({ testMsgs:[], reclogs:[] }) }
+	,addTestMsg(msg,color){
+		var now=new Date();
+		var t=("0"+now.getHours()).substr(-2)
+			+":"+("0"+now.getMinutes()).substr(-2)
+			+":"+("0"+now.getSeconds()).substr(-2);
+		var txt="["+t+"]"+msg;
+		console.log(txt);
+		this.data.testMsgs.splice(0,0,{msg:txt,color:color});
+		this.setData({ testMsgs:this.data.testMsgs });
 	}
 	,reclog(msg,color){
 		var now=new Date();
@@ -334,6 +348,13 @@ Page({
 		return v;
 	}
 	
+	//一些功能测试
+	,testMethods(){
+		TestOther__.testMethods(this);
+	}
+	,testWritePcm2Wav(){
+		TestOther__.testWritePcm2Wav(this);
+	}
 	,reloadPage(){
 		var url="/"+this.route;
 		console.log("刷新页面 url="+url);

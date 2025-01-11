@@ -125,6 +125,13 @@ var resume=function(){
 };
 
 
+var clearInput=function(){
+	if(stream){
+		stream.clearInput();
+		Runtime.Log("已清除已输入但还未播放的数据，打断老的播放，播放新的");
+	}
+};
+
 
 var setRealtimeOn=function(rtDiscardAll){
 	if(stream){
@@ -239,16 +246,21 @@ Runtime.Ctrls([
 	
 	,{html:"<hr/>"}
 	
-	,{name:"实时模式，卡了就丢",click:"setRealtimeOn"}
-	,{name:"非实时模式，完整播放",click:"setRealtimeOff"}
-	,{html:"<span style='margin-left:78px'></span>"}
+	,{name:"实时模式，卡了就丢弃",click:"setRealtimeOn"}
 	,{name:"实时模式+discardAll",click:"setRealtimeOn(1);Date.now"}
+	,{html:'<span style="font-size:12px">延迟过大默认会加速播放，discardAll不加速直接丢弃</span>'}
 	,{html:"<div/>"}
+	,{name:"非实时模式，完整播放",click:"setRealtimeOff"}
+	,{name:"清除未播放数据，打断老的播放",click:"clearInput"}
+	,{html:'<span style="font-size:12px">搭配下面的全部缓冲，可模拟大量老数据</span>'}
+	,{html:"<hr/>"}
 	,{name:"模拟网络不畅，全部缓冲",click:"setNetworkFail"}
 	,{name:"恢复网络",click:"setNetworkOk"}
-	,{html:"<span style='margin-right:30px'/>"}
+	,{html:'<span style="font-size:12px">模拟短时间内接收到大量数据，网络卡顿</span>'}
+	,{html:"<div/>"}
 	,{name:"暂停网络接收，全部丢弃",click:"receivePause"}
 	,{name:"恢复接收",click:"receiveResume"}
+	,{html:'<span style="font-size:12px">模拟服务器长时间没有数据发送</span>'}
 	
 	,{html:"<hr/>"}
 ]);
@@ -369,19 +381,12 @@ var WS_Open=function(){
 	
 	var wavMessage=function(){
 		//在pcmMessage的基础上，加一个wav编码，生成wav片段
-		pcmEncode=function(arr){
-			var pcm=new Int16Array(arr);
-			var recMock=Recorder({
-				type:"wav"
-				,sampleRate:loadPcmSampleRate
-				,bitRate:16
-			});
-			recMock.mock(pcm, loadPcmSampleRate);
-			recMock.stop(function(blob){
-				Runtime.ReadBlob(blob,function(arr){
-					addMessage(new Uint8Array(arr));
-				});
-			});
+		pcmEncode=function(pcm){
+			var header=Recorder.wav_header(1,1,loadPcmSampleRate,16,pcm.byteLength);
+			var bytes=new Uint8Array(header.length+pcm.byteLength);
+			bytes.set(header);
+			bytes.set(new Uint8Array(pcm.buffer), header.length);
+			addMessage(bytes);
 		};
 		
 		pcmMessage();

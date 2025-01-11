@@ -318,19 +318,23 @@ App.MiniProgramWx_WriteLocalFile=function(fileName,buffer,True,False){
 	
 	//如果上次还在写入，就等待，保证顺序写入
 	var tasks=writeTasks[savePath]=writeTasks[savePath]||[];
-	var tk={a:set,b:buffer,c:True,d:False};
-	if(tasks.length>0){ CLog("wx文件等待写入"+savePath,3);
-		set._tk=1; tasks.push(tk); return; }
+	var tk0=tasks[0], tk={a:set,b:buffer,c:True,d:False};
+	if(tk0 && tk0._r){ //还在写入，等待
+		CLog("wx文件等待写入"+savePath,3);
+		set._tk=1; tasks.push(tk); return;
+	}
 	if(set._tk) CLog("wx文件继续写入"+savePath);
-	tasks.splice(0,0,tk);
+	tasks.splice(0,0,tk); tk._r=1; //阻塞后续写入
 	
 	var mg=wx.getFileSystemManager(), fd=0;
-	var endCall=function(){ //操作完成，清理环境
+	var endCall=function(){ //操作完成 清理环境，延迟一下等操作完全结束
 		if(fd) mg.close({ fd:fd });
-		tasks.shift(); var tk=tasks.shift();
-		if(tk){ //执行等待的
-			setTimeout(function(){ App.MiniProgramWx_WriteLocalFile(tk.a,tk.b,tk.c,tk.d) });
-		}
+		setTimeout(function(){
+			tasks.shift(); var tk=tasks.shift();
+			if(tk){ //继续写入等待的
+				App.MiniProgramWx_WriteLocalFile(tk.a,tk.b,tk.c,tk.d);
+			}
+		});
 	};
 	var okCall=function(){ endCall(); True&&True(savePath) };
 	var failCall=function(e){ endCall();
@@ -341,7 +345,7 @@ App.MiniProgramWx_WriteLocalFile=function(fileName,buffer,True,False){
 	
 	if(seek>-1 || append){
 		mg.open({
-			filePath:savePath ,flag:"a"
+			filePath:savePath ,flag:seek>-1?"r+":"a"
 			,success:function(res){
 				fd=res.fd;
 				var opt={ fd:fd, data:buffer, success:okCall, fail:failCall };

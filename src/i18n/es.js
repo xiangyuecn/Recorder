@@ -720,6 +720,11 @@ i18n.put(putSet,
 ,"IHZd:"+ //args: {1}-{2}
        "Falló la llamada a input: sampleRate={1} de los datos es diferente de la anterior ={2}"
 
+//@@zh="延迟过大，已丢弃{1}ms {2}"
+//@@en="The delay is too large, {1}ms has been discarded, {2}"
+,"L8sC:"+ //args: {1}-{2}
+       "El retraso es demasiado grande, se han descartado {1}ms, {2}"
+
 //@@zh="{1}未调用start方法"
 //@@en="{1} did not call the start method"
 ,"TZPq:"+ //args: {1}

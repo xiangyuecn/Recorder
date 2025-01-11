@@ -348,6 +348,7 @@ var getTestAB=function(){
 	}
 	getTestAB.from=txt?1:2;
 	getTestAB.ab=ab;
+	getTestAB.txt=txt;
 	return true;
 };
 var errResult=function(tag,msg,e){
@@ -556,6 +557,40 @@ addBtn("文本转ArrayBuffer",function(tag){
 	if(getTestAB.from!=1){ errResult(tag,"请填写文本"); return; }
 	//ab=JsBinary.TextToArrayBuffer("文本"); //getTestAB已经将输入框文本转好了
 	setResult(tag,null,ab);
+});
+
+
+btns.push({html:"<hr/>"});
+var testIntToHex=function(tag,len,be){
+	if(!getTestAB())return; var num=getTestAB.txt;
+	if(!num || +num+""!=num){ errResult(tag,"需填写一个整数文本"); return; }
+	var ab=JsBinary.NumberToArrayBuffer(+num,len,!!be);
+	setResult(tag,JsBinary.ArrayBufferToHex(ab));
+};
+addBtn("Int32转Hex",function(tag){
+	testIntToHex(tag,4,0);
+});
+addBtn("Int64转Hex",function(tag){
+	testIntToHex(tag,8,0);
+});
+addBtn("Hex转Int*",function(tag){
+	if(!getTestAB())return; var ab=getTestAB.ab,hex=getTestAB.txt;
+	if(hex) try{ var ab=JsBinary.HexToArrayBuffer(hex); }catch(e){
+		errResult(tag,"HexToArrayBuffer 异常",e); return;
+	}
+	if(ab.byteLength>8){ errResult(tag,"最大支持8字节转Int"); return; }
+	setResult(tag,JsBinary.ArrayBufferToNumber(ab));
+});
+addBtn("Int64转Hex(大端)",function(tag){
+	testIntToHex(tag,8,1);
+});
+addBtn("Hex(大端)转Int*",function(tag){
+	if(!getTestAB())return; var ab=getTestAB.ab,hex=getTestAB.txt;
+	if(hex) try{ var ab=JsBinary.HexToArrayBuffer(hex); }catch(e){
+		errResult(tag,"HexToArrayBuffer 异常",e); return;
+	}
+	if(ab.byteLength>8){ errResult(tag,"最大支持8字节转Int"); return; }
+	setResult(tag,JsBinary.ArrayBufferToNumber(ab,true));
 });
 
 

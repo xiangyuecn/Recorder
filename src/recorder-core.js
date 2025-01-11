@@ -25,7 +25,7 @@ var ToJson=function(v){return JSON.stringify(v)};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2024-10-20 22:15";
+var LM=Recorder.LM="2025-01-11 09:28";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -478,8 +478,13 @@ var connWebM=function(){
 		};
 		reader.readAsArrayBuffer(e.data);
 	};
-	mr.start(~~(bufferSize/48));//按48k时的回调间隔
-	CLog($T("LMEm::Connect采用{1}，设置{2}可恢复使用{3}或老式{4}",0,MRWebMPCM,RecTxt+"."+ConnectEnableWebM+"=false",audioWorklet,scriptProcessor));
+	try{
+		mr.start(~~(bufferSize/48));//按48k时的回调间隔
+		CLog($T("LMEm::Connect采用{1}，设置{2}可恢复使用{3}或老式{4}",0,MRWebMPCM,RecTxt+"."+ConnectEnableWebM+"=false",audioWorklet,scriptProcessor));
+	}catch(e){ //存在视频流时可能会抛异常
+		CLog("mr start err",1,e);
+		connWorklet();
+	};
 };
 
 	connWebM();
@@ -1089,16 +1094,21 @@ Recorder.prototype=initFn.prototype={
 			if(callUmCount==1 && codeErr1(0,code)){ 
 				tryMsg=$T("KxE2::，将尝试禁用回声消除后重试");
 			}
-			This.CLog($T("xEQR::请求录音权限错误")+tryMsg+"|"+e,tryMsg?3:1,e);
+			var msg1=$T("xEQR::请求录音权限错误"),msg2=$T("bDOG::无法录音：");
+			This.CLog(msg1+tryMsg+"|"+e,(tryMsg||f2_e)?3:1,e);
 			
 			if(tryMsg){//重试
+				f2_c=code; f2_e=e; //重试如果还出错 返回第一个错误
 				callUserMedia(1);
+			}else if(f2_e){
+				This.CLog(msg1+"|"+f2_e,1,f2_e);
+				codeFail(f2_c,msg2+f2_e);
 			}else{
-				codeFail(code,$T("bDOG::无法录音：")+e);
+				codeFail(code,msg2+e);
 			};
 		};
 		
-		var callUmCount=0;
+		var callUmCount=0,f2_c,f2_e;
 		var callUserMedia=function(retry){
 			callUmCount++;
 			var atsTxt="audioTrackSet";
@@ -1380,6 +1390,7 @@ Recorder.prototype=initFn.prototype={
 		var asyncBegin=0,procTxt="rec.set.onProcess";
 		try{
 			asyncBegin=set.onProcess(buffers,powerLevel,duration,bufferSampleRate,bufferFirstIdx,asyncEnd);
+			asyncBegin=asyncBegin===true;
 		}catch(e){
 			//此错误显示不要用CLog，这样控制台内相同内容不会重复打印
 			console.error(procTxt+$T("gFUF::回调出错是不允许的，需保证不会抛异常"),e);
@@ -1390,7 +1401,7 @@ Recorder.prototype=initFn.prototype={
 			This.CLog(procTxt+$T("2ghS::低性能，耗时{1}ms",0,slowT),3);
 		};
 		
-		if(asyncBegin===true){
+		if(asyncBegin){
 			//开启了异步模式，onProcess已接管buffers新数据，立即清空，避免出现未处理的数据
 			var hasClear=0;
 			for(var i=bufferFirstIdx;i<bufferNextIdx;i++){
@@ -1777,6 +1788,7 @@ var WebM_Extract=function(inBytes, scope){
 			var track=tracks[trackNo];
 			if(!track){//不可能没有，数据出错？
 				CLog("WebM !Track"+trackNo,1,tracks);
+				return -1; //可能无法继续
 			}else if(track.idx===0){
 				var u8arr=new Uint8Array(bytes1.length-4);
 				for(var i=4;i<bytes1.length;i++){

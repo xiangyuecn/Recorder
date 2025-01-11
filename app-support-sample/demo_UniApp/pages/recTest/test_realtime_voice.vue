@@ -395,7 +395,7 @@ export default {
 		//播放实时的语音流
 		,streamPlay(pcm,sampleRate){
 			this.initStreamPlay();
-			if(sampleRate!=16000){ console.warn("未适配非16000采样率的pcm播放"); return; }
+			if(sampleRate!=16000){ console.warn("未适配非16000采样率的pcm播放：initStreamPlay中手写的16000采样率，使用其他采样率需要修改初始化代码"); return; }
 			
 			// #ifdef MP-WEIXIN
 			//微信环境，单独创建的播放器播放
@@ -407,6 +407,7 @@ export default {
 			var funcCode=`(function(pcm16k){ //这里需要独立执行
 				var sp=window.wsStreamPlay;
 				if(!sp || !sp.__isStart) return;
+				//if(播放新的) sp.clearInput(); //清除已输入但还未播放的数据，一般用于非实时模式打断老的播放
 				sp.input(pcm16k);
 			})`;
 			// #ifdef H5
@@ -437,6 +438,7 @@ export default {
 				}
 				var sp=Recorder.BufferStreamPlayer({
 					decode:false,sampleRate:16000
+					//,realtime:false //默认为true实时模式，设为false为非实时模式。要连续完整播放时要设为false，否则实时模式会丢弃延迟过大的数据并加速播放
 					,onInputError:function(errMsg, inputIndex){
 						window["console"].error(Tag+"第"+inputIndex+"次的音频片段input输入出错: "+errMsg);
 					}

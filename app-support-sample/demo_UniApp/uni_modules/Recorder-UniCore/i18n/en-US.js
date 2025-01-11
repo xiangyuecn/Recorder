@@ -60,10 +60,6 @@ i18n.put(putSet,
 ,"WpKg:"+ //no args
        "RecordApp.UniWebViewActivate has switched the WebView where the renderjs of the current page or component is located"
 
-//@@zh="RecordApp.UniRenderjsRegister 需在renderjs中调用并且传入当前模块的this"
-,"4jKV:"+ //no args
-       "RecordApp.UniRenderjsRegister needs to be called in renderjs and pass in this of the current module"
-
 //@@zh="RecordApp.UniRenderjsRegister 发生不应该出现的错误（可能需要升级插件代码）："
 ,"Uc9E:"+ //no args
        "An error occurred in RecordApp.UniRenderjsRegister that should not occur (the plugin code may need to be upgraded): "
@@ -95,6 +91,18 @@ i18n.put(putSet,
 //@@zh="检测到有其他页面或组件调用了RecordApp.UniPageOnShow（WvCid={1}），但未调用过RecordApp.UniWebViewActivate（当前WvCid={2}），部分功能会继续使用之前Activate的WebView和组件，请确保这是符合你的业务逻辑，不是因为忘记了调用UniWebViewActivate"
 ,"SWsy:"+ //args: {1}-{2}
        "It is detected that another page or component has called RecordApp.UniPageOnShow (WvCid={1}), but RecordApp.UniWebViewActivate (current WvCid={2}) has not been called. Some functions will continue to use the previously Activated WebView and components. Please make sure This is in line with your business logic, not because you forgot to call UniWebViewActivate"
+
+//@@zh="{1}未正确查询到节点，将使用传入的当前页面或组件this的$el.parentNode作为组件根节点。如果template下存在多个根节点(vue3 multi-root)，尽量在最外面再套一层view来避免兼容性问题"
+,"dX7B:"+ //args: {1}
+       "{1} does not query the node correctly, and will use the current page or component this's $el.parentNode as the component root node. If there are multiple root nodes under the template (vue3 multi-root), try to add another layer of view on the outermost to avoid compatibility issues"
+
+//@@zh="{1}需在renderjs中调用并且传入当前模块的this"
+,"dX5B:"+ //args: {1}
+       "{1} needs to be called in renderjs and pass in this of the current module"
+
+//@@zh="{1}需要传入当前页面或组件的this对象作为参数"
+,"dX6B:"+ //args: {1}
+       "{1} needs to pass in the this object of the current page or component as a parameter"
 
 //@@zh="当前不是App逻辑层"
 ,"TfJX:"+ //no args
@@ -240,10 +248,6 @@ i18n.put(putSet,
 ,"k7im:"+ //args: {1}
        "Canvas not found: {1}, please make sure this DOM is mounted (try $nextTick to wait for DOM update) "
 
-//@@zh="未找到Canvas：{1}，请确保此DOM已挂载（可尝试用$nextTick等待DOM更新）"
-,"dzX0:"+ //args: {1}
-       "Canvas not found: {1}, please make sure this DOM is mounted (try $nextTick to wait for DOM update) "
-
 //@@zh="RecordApp.UniFindCanvas未适配当前环境"
 ,"yI24:"+ //no args
        "RecordApp.UniFindCanvas does not adapt to the current environment"
@@ -308,10 +312,6 @@ i18n.put(putSet,
 ,"iKhe:"+ //no args
        "plus.ios requests recording permission, status value: "
 
-//@@zh="用户拒绝了录音权限"
-,"0caE:"+ //no args
-       "User denied recording permission"
-
 //@@zh="正在调用plus.android.requestPermissions请求Android原生录音权限"
 ,"7Noe:"+ //no args
        "Calling plus.android.requestPermissions to request Android native recording permissions"
@@ -324,10 +324,6 @@ i18n.put(putSet,
 ,"Ruxl:"+ //no args
        "plus.android requests recording permission: No permission"
 
-//@@zh="用户拒绝了录音权限"
-,"l7WP:"+ //no args
-       "User denied recording permission"
-
 //@@zh="plus.android请求录音权限出错："
 ,"0JQw:"+ //no args
        "plus.android error in requesting recording permission: "
@@ -335,6 +331,22 @@ i18n.put(putSet,
 //@@zh="调用plus的权限请求出错："
 ,"Mvl7:"+ //no args
        "An error occurred in the permission request to call plus: "
+
+//@@zh="用户拒绝了录音权限"
+,"0caE:"+ //no args
+       "User denied recording permission"
+
+//@@zh="正在调用原生插件请求录音权限"
+,"Lx5r:"+ //no args
+       "Calling the native plug-in to request recording permission"
+
+//@@zh="已获得录音权限"
+,"Lx6r:"+ //no args
+       "Recording permission obtained"
+
+//@@zh="无录音权限"
+,"Lx7r:"+ //no args
+       "No recording permission"
 
 //@@zh="无法调用RequestPermission："
 ,"ksoA:"+ //no args

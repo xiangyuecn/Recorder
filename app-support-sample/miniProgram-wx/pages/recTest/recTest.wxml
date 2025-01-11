@@ -107,8 +107,25 @@
 			</view>
 		</view>
 	</view>
+	<view style="padding-top:80px;"></view>
 	
-	<view style="margin-top:80px;height:10px;background:#eee"></view>
+	<!-- 更多功能按钮 -->
+	<view style="padding:10px 10px">
+		<view>
+			<button size="mini" bindtap="testWritePcm2Wav">pcm数据实时写入到wav文件测试</button>
+		</view>
+		<view>
+			<button size="mini" bindtap="testMethods">其他功能测试</button>
+			<button size="mini" bindtap="clearLogs" style="margin-left:10px">清除日志</button>
+		</view>
+		<view wx:for="{{testMsgs}}" wx:key="index" style="border-bottom:1px dashed #666;padding:5px 0;">
+			<view style="color:{{item.color==1?'red':item.color==2?'green':item.color}}">
+				{{item.msg}}
+			</view>
+		</view>
+	</view>
+	
+	<view style="height:10px;background:#eee"></view>
 	<view style="padding-top:10px;color:#0a0">
 		<text selectable="true" style="user-select:auto">RecordApp的微信小程序支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx (github可以换成gitee)</text>
 	</view>

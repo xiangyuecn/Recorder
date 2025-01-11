@@ -46,9 +46,16 @@
 ## 一、引入js文件
 1. 在你的项目根目录安装`recorder-core`：`npm install recorder-core --registry=https://registry.npmmirror.com/`
 2. 导入Recorder-UniCore组件：插件市场下载本组件，然后添加到你的项目中 `/uni_modules/Recorder-UniCore`
-3. 在需要录音的vue文件内编写以下代码，按需引入需要的js
+3. 项目配置好录音权限，参考下面的录音权限配置章节，**特别注意App后台录音配置、小程序权限声明**
+4. 在需要录音的vue文件script内编写以下代码，按需引入需要的js
 
 ``` html
+<template>
+    <view>
+        ... 建议template下只有一个根节点（最外面套一层view），如果不小心踩到了vue3的Fragments(multi-root 多个根节点)特性（vue2编译会报错，vue3不会），可能会出现奇奇怪怪的兼容性问题 
+    </view>
+</template>
+
 <script> /**这里是逻辑层**/
 //必须引入的Recorder核心（文件路径是 /src/recorder-core.js 下同），使用import、require都行
 import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
@@ -80,11 +87,14 @@ import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
 </script>
 ```
 
+5. 编译成app时，默认需要额外提供一个renderjs模块，请照抄下面这段代码放到vue文件末尾
 ``` html
 <!-- #ifdef APP -->
 <script module="yourModuleName" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
 /**需要编译成App时，你需要添加一个renderjs模块，然后一模一样的import上面那些js（微信的js除外）
-    ，因为App中默认是在renderjs（WebView）中进行录音和音频编码**/
+    ，因为App中默认是在renderjs（WebView）中进行录音和音频编码
+    。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
+    ，可不提供此renderjs模块，同时逻辑层中需要将相关import的条件编译去掉**/
 import 'recorder-core'
 import RecordApp from 'recorder-core/src/app-support/app'
 import '../../uni_modules/Recorder-UniCore/app-uni-support.js' //renderjs中似乎不支持"@/"打头的路径，如果编译路径错误请改正路径即可
@@ -123,7 +133,7 @@ export default {
 
 //RecordApp.UniNativeUtsPlugin={ nativePlugin:true };  //App中启用配套的原生录音插件支持，配置后会使用原生插件进行录音，没有原生插件时依旧使用renderjs H5录音
 //App中提升后台录音的稳定性：配置了原生插件后，可配置 `RecordApp.UniWithoutAppRenderjs=true` 禁用renderjs层音频编码（WebWorker加速），变成逻辑层中直接编码（但会降低逻辑层性能），后台运行时可避免部分手机WebView运行受限的影响
-//App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音也受影响），请调用配套原生插件的`androidNotifyService`接口，或使用第三方保活插件
+//App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要，参考录音权限配置），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音也受影响），请调用配套原生插件的`androidNotifyService`接口，或使用第三方保活插件
 
 export default {
 data() { return {} } //视图没有引用到的变量无需放data里，直接this.xxx使用
@@ -164,7 +174,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
         //录音配置信息
         var set={
             type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
-            /*,audioTrackSet:{ //可选，如果需要同时播放声音（比如语音通话），需要打开回声消除（打开后声音可能会从听筒播放，部分环境下（如小程序、App原生插件）可调用接口切换成扬声器外放）
+            /*,audioTrackSet:{ //可选，如果需要同时播放声音（比如语音通话），需要打开回声消除（并不一定会生效；打开后声音可能会从听筒播放，部分环境下（如小程序、App原生插件）可调用接口切换成扬声器外放）
                 //注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
                 echoCancellation:true,noiseSuppression:true,autoGainControl:true} */
             ,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
@@ -301,7 +311,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 
 *⠀*
 
-# 部分原理和需要注意的细节
+# 录音权限配置、需要注意的细节
 ## 编译成H5时录音和权限
 编译成H5时，录音功能由Recorder H5提供，无需额外处理录音权限。
 
@@ -312,6 +322,8 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 编译成微信小程序时，录音功能由小程序的`RecorderManager`提供，屏蔽了微信原有的底层细节（无录音时长限制）。
 
 小程序录音需要用户授予录音权限，调用`RecordApp.RequestPermission`的时候会检查是否能正常录音，如果用户拒绝了录音权限，会进入错误回调，回调里面你应当编写代码检查`wx.getSetting`中的`scope.record`录音权限，然后引导用户进行授权（可调用`wx.openSetting`打开设置页面，方便用户给权限）。
+
+**注意：上架小程序需要到小程序管理后台《[用户隐私保护指引](https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/miniprogram-intro.html)》中声明录音权限，否则正式版将无法调用录音功能（请求权限时会直接走错误回调）。**
 
 更多细节请参考 [miniProgram-wx](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx) 测试项目文档。
 

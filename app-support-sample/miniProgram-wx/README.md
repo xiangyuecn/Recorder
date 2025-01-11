@@ -52,6 +52,9 @@ fileName可以是："xxx.mp3" "文件夹/xxx.mp3" 或 传一个配置对象{}
     ,append:false //可选，是否追加写入到文件结尾，默认false会新建文件并写入数据
     ,seekOffset:-1 //可选，从现有文件指定位置写入并覆盖对应内容，取值：-1不指定（默认），0 到 文件长度（0为文件开头位置，append配置无效）
 }
+
+参考 pages/test_other__/test_other__.js 中的 realtimeWritePcm2Wav 方法
+，有用到实时写入pcm数据，并在结束时在文件开头写入wav头，即可生成wav文件
 ```
 
 ## 【静态方法】RecordApp.MiniProgramWx_DeleteLocalFile(savePath,True,False)
@@ -64,7 +67,7 @@ fileName可以是："xxx.mp3" "文件夹/xxx.mp3" 或 传一个配置对象{}
 
 [​](?)
 
-# 部分原理和需要注意的细节
+# 录音权限配置、需要注意的细节
 
 **上架小程序需要到小程序管理后台《[用户隐私保护指引](https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/miniprogram-intro.html)》中声明录音权限，否则正式版将无法调用录音功能（请求权限时会直接走错误回调）。**
 
