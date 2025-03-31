@@ -8,7 +8,7 @@
   "dependencies": {
     "recorder-core": "*"
 
-    ,"vue": "2.6.10"
+    ,"vue": "3.0.0"
     ,"webpack": "4.41.2"
     ,"webpack-cli": "3.3.10"
 
