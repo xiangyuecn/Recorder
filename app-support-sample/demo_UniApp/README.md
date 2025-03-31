@@ -9,6 +9,7 @@
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
 - 支持可视化波形显示；可配置回声消除、降噪；**注意：不支持通话时录音**
+- 支持PCM音频流式播放、完整播放，App端用原生插件边录音边播放更流畅
 - 支持离线使用，本组件和配套原生插件均不依赖网络
 - App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好
 
@@ -86,6 +87,7 @@ import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
 ```
 
 5. 编译成app时，默认需要额外提供一个renderjs模块，请照抄下面这段代码放到vue文件末尾
+
 ``` html
 <!-- #ifdef APP -->
 <script module="yourModuleName" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
@@ -167,7 +169,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
     //开始录音
     ,recStart(){
         //Android App如果要后台录音，需要启用后台录音保活服务（iOS不需要），需使用配套原生插件、或使用第三方保活插件
-        //RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{ title:"正在录音" ,content:"正在录音中，请勿关闭App运行" }).then(()=>{...}).catch((e)=>{...})
+        //RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{ title:"正在录音" ,content:"正在录音中，请勿关闭App运行" }).then(()=>{...}).catch((e)=>{...}) 注意必须RecordApp.RequestPermission得到权限后调用
         
         //录音配置信息
         var set={
@@ -352,8 +354,10 @@ NSMicrophoneUsageDescription
 
 [​](?)
 
-## 语音通话、回声消除、声音外放
-在App、H5中，使用[BufferStreamPlayer](../../src/extensions/buffer_stream.player.js)可以实时播放语音；其中App中需要在renderjs中加载BufferStreamPlayer，在逻辑层中调用`RecordApp.UniWebViewVueCall`等方法将逻辑层中接收到的实时语音数据发送到renderjs中播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
+## PCM音频流式播放、语音通话、回声消除、声音外放
+在App、H5中，均可使用H5版的[BufferStreamPlayer](../../src/extensions/buffer_stream.player.js)来实时流式播放语音；其中App中需要在renderjs中加载BufferStreamPlayer，在逻辑层中调用`RecordApp.UniWebViewVueCall`等方法将逻辑层中接收到的实时语音数据发送到renderjs中播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除；调用代码参考demo中的[test_realtime_voice.vue](pages/recTest/test_realtime_voice.vue)。
+
+App中如果搭配使用了配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)，可以调用原生实现的PcmPlayer播放器实时流式播放PCM音频，边录音边播放更流畅；同时也支持完整播放，比如AI语音合成的播放；调用代码参考demo中的[test_player_nativePlugin_pcmPlayer.vue](pages/recTest/test_player_nativePlugin_pcmPlayer.vue)。
 
 微信小程序请参考 [miniProgram-wx](../miniProgram-wx) 文档里面的同名章节，使用WebAudioContext播放。
 
@@ -614,8 +618,18 @@ RecordApp.UniNativeUtsPlugin={ //目前仅支持原生插件，uts插件不可�
 ```
 
 ### 【静态方法】RecordApp.UniNativeUtsPluginCallAsync(action,args)
-App 逻辑层中可调用，在集成了原生插件时，在App中可以通过本方法调用原生插件的部分扩展能力，主要为文件流读写。本方法异步返回调用结果，出错会抛异常
+App 逻辑层中可调用，在集成了原生插件时，在App中可以通过本方法调用原生插件的部分扩展能力，主要为文件流读写。本方法异步返回调用结果，出错会抛异常。
+
+### 【静态属性】RecordApp.UniNativeUtsPlugin_JsCall=(data)=>{ }
+App逻辑层中可绑定一个全局的函数回调，来接收原生插件的`jsCall`事件回调，通过`data.action`来区分不同事件；可以从这个函数里面自己写代码分发事件，比如用uni.$emit触发由uni.$on绑定的回调；不推荐使用，请直接用下面这个OnJsCall方法绑定事件。
+
+### 【静态方法】RecordApp.UniNativeUtsPlugin_OnJsCall(key,action,callback)
+App逻辑层中绑定原生插件某个事件的回调，相同的页面和处理功能请使用相同的key，相同key+action只会绑定最后的一次（建议页面创建时用一个随机字符串做key并绑定、销毁时解除），call为空时解除绑定，当绑定的原生层jsCall发来数据时，action相同就会触发回调；事件请参考下面的【事件回调】，调用代码参考demo中的[test_player_nativePlugin_pcmPlayer.vue](pages/recTest/test_player_nativePlugin_pcmPlayer.vue)。
+
+### 可用的接口
 ``` javascript
+【文档说明】
+下面的action中，开头的名字为UniNativeUtsPluginCallAsync的action参数，“参数”为args，“返回”为接口的异步返回值，调用例子：
 /**App中集成了原生插件后按下面代码进行调用，注意需要先配置RecordApp.UniNativeUtsPlugin
     参数：action 字符串，要调用的功能；args 对象，调用参数
     返回：any 根据功能定义返回对应的结果，出错会抛异常
@@ -626,7 +640,45 @@ try{
     console.error(e)
 }
 
-【部分可用action】
+
+【录音相关action】 注意：在使用Recorder-UniCore组件时会自动调用这些接口，请勿自行调用
+jsCall 【这是一个特殊方法】绑定原生层js回调，当原生层需要给js发送消息时，会进行回调（RecNP.request的回调方法会被反复调用）
+    参数：{}
+    返回：{ action:"", ... } //原生层会反复调用回调方法，通过其中的action来判断返回的是什么内容
+        {action:"noop"} //无需处理，多次调用jsCall时原生层释放老的回调
+        {action:"onLog",isError:false,tag:"xx",message:"xxx"} //原生层日志输出
+        {action:"onRecord",sampleRate:44100,pcmDataBase64:"base64"} //录音数据回调，pcm为16位单声道，sampleRate是pcm的采样率
+        {action:"onPcmPlayerEvent", ... } //PCM播放器事件回调，详细参考PcmPlayer
+            更多其他事件回调，请参考下面的【事件回调】
+
+recordPermission 请求录音权限
+    参数：{}
+    返回：1 //权限状态code数值：1有权限，3用户拒绝。（2未用到；此接口早期移植的时候忘记改成对象，保留数值格式）
+
+recordStart 开始录音，录音pcm数据会通过jsCall回调给js，事件的action为onRecord，开始后必须每5秒调用一次recordAlive；本方法会获取录音权限，但建议先调用recordPermission提前获取录音权限
+    参数：{
+        appNativePlugin_sampleRate:44100 //可选录制的采样率(24/09/05新增)，默认返回44100采样率的pcm数据，可取值48000（在js中使用Recorder.SampleData函数来转换成需要的任意采样率）；其他采样率值不一定可用，可能导致无法打开录音，请测试好后再提供
+        ,appNativePlugin_AEC_Enable:false //可选是否启用回声消除，默认不启用
+        
+        ,setSpeakerOff:{off:true,headset:true} //可选切换扬声器外放和听筒播放 (25/03/30新增)，参数和setSpeakerOff接口一致；不提供时固定off:false+headset:true，有耳机走耳机，没有耳机走扬声器；录音结束时会保留当前切换了的状态
+        
+        ,android_audioSource:0 //可选Android指定麦克风源 MediaRecorder.AudioSource，默认值为0，0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)。配置值除7外，会禁用回声消除
+        
+        ,ios_categoryOptions:0x1|0x4 //可选iOS的AVAudioSession setCategory的withOptions参数值，取值参考下面的iosSetDefault_categoryOptions；默认值为5(0x1|0x4)
+        ,ios_categoryResetPlayback_AEC:false //(25/03/30已移除，原因： 新版本AVAudioSession Category调整，录音或听筒播放时使用PlayAndRecord，其他时候使用Playback（蓝牙播放音质更好），不需要此参数重置了) 老版本可选iOS打开录音时重置录音环境，用于提高部分音频设备的兼容性(24/09/05新增)；iOS录音开启回声消除时，本原生插件可能无法感知到新插入的USB音频输入设备（如Lightning口/USB领夹麦克风），首次录音前插入的无此影响；可在录音时提供本true启用音频环境重置（默认false不重置），将能感知到所有音频输入设备，但会导致Start变慢；注意：录音中途新插入的USB设备可能任何配置下均无法感知到，需下次Start时才可以
+    }
+    返回：{} //空对象
+
+recordStop 停止录音
+    参数：{}
+    返回：{} //空对象
+
+recordAlive 定时心跳（开始录音后5秒发一次），如果超过30秒未发心跳（25/03/30以前为10秒），将会停止录音，防止未stop导致泄露
+    参数：{}
+    返回：{} //空对象
+
+
+【其他可用action】
 getInfo 获取插件信息
     参数：{}
     返回：{
@@ -640,7 +692,10 @@ debugInfo 获取调试信息 (24/09/05新增)
     参数：{}
     返回：{ appMemoryUsage:123 } //app内存占用大小（不一定准），单位字节；数据来源：Android Debug.getMemoryInfo.TotalPss，iOS task_info.TASK_VM_INFO.phys
 
-setSpeakerOff 切换扬声器外放和听筒播放，随时都可以调用；但需注意打开录音时可能会自动切换播放方式（24/09/05起打开录音默认off:false+headset:true），可在打开录音后调用一次切换成你需要的播放方式。iOS Bug：部分iOS系统版本首次切换或首次打开录音时，可能会导致已有的音频播放暂停但有播放进度变成假的无声，建议切换后或开始录音后再打开播放
+setSpeakerOff 切换扬声器外放和听筒播放，随时都可以调用；但需注意打开录音时可能会自动切换播放方式：
+    24/09/05起，打开录音固定off:false+headset:true，并且结束录音时会恢复成这个固定状态，可在打开录音后调用一次切换成你需要的播放方式
+    25/03/30起，打开录音默认off:false+headset:true，结束录音时会保留当前切换了的状态，并且打开录音时可提供同名同功能的setSpeakerOff参数指定切换方式
+    iOS Bug：25/03/30前的版本，部分iOS系统版本首次切换或首次打开录音时，可能会导致已有的音频播放暂停但有播放进度变成假的无声，建议切换后或开始录音后再打开播放；25/03/30之后的新版本由于不会自动停用AVAudioSession，此问题大幅减轻，使用uni自带的InnerAudioContext播放不会有播放暂停问题，但renderjs中使用audio标签播放100%会被暂停（用AudioContext播放不受影响）
     参数：{
         off:true //必填，true听筒播放，false扬声器播放，连接耳机时此配置无效
         headset:true //选填，默认true耳机播放，false扬声器播放（同时使用手机上的麦克风），连接耳机时此配置生效
@@ -649,11 +704,75 @@ setSpeakerOff 切换扬声器外放和听筒播放，随时都可以调用；但
     }
     返回：{  } //空对象
 
-iosSetDefault_categoryOptions iOS设置默认值，Android不可调用，为iOS的AVAudioSession setCategory的withOptions参数值；RecordApp.Start开始录音时如果未提供ios_categoryOptions参数，将会使用此默认值，提供了时将赋值给此默认值；setSpeakerOff调用时也会使用到此默认值
+iosSetDefault_categoryOptions iOS设置默认值，Android不可调用，为iOS的AVAudioSession setCategory的withOptions参数值；recordStart开始录音时、pcmPlayer_create创建播放器时，如果未提供ios_categoryOptions参数，将会使用此默认值，提供了时将赋值给此默认值；setSpeakerOff调用时也会使用到此默认值
     参数：{
         value:0x1|0x4 //必填，取值（多选，默认值5=0x1|0x4）：0 什么也不设置，0x1 MixWithOthers，0x2 DuckOthers，0x4 AllowBluetooth，0x8 DefaultToSpeaker（不可用，通过setSpeakerOff来切换），0x11 InterruptSpokenAudioAndMixWithOthers，0x20 AllowBluetoothA2DP，0x40 AllowAirPlay，0x80 OverrideMutedMicrophoneInterruption
     }
     返回：{  } //空对象
+
+ios_deactivationAVAudioSession iOS手动调用停用音频会话 (25/03/30新增)，Android不可调用；此版本开始AVAudioSession激活后不会自动停用，保持音频会话的连续性，减少对App内其他音频组件的干扰；iOS音频会话编程指南不建议停用，除非明确知道作用时需要停用会话
+    参数：{  }
+    返回：{  } //空对象
+
+
+
+pcmPlayer_create 创建一个PCM播放器 (25/03/30新增)，创建后会立即开始播放，通过pcmPlayer_input接口传入pcm数据，有数据就有声音，没数据就静音；播放器事件会通过jsCall回调传给js，事件的action为onPcmPlayerEvent，不同事件通过type区分，详细事件请参考下面的【事件回调】
+    参数：{
+        sampleRate:16000 //必填的待播放PCM采样率
+        ,realtime:true|{maxDelay:300} //是否开启实时模式，默认开启；设为true或提供配置对象时将开启实时模式，比如用于即时通话，如果未播放数据量超过maxDelay(默认值300ms)将会触发type=maxDelayDiscard事件，并丢弃部分老数据来保持播放的实时性；设为false时input的数据会按顺序排队完整播放（注意：会导致实时音频的延迟持续增大），比如用于语音合成播放
+        ,timeUpdateInterval:0 //是否要回调播放时间信息，默认0不提供回调，提供一个毫秒值到了指定间隔时间就会触发一次type=time事件，比如100ms触发一次
+        
+        ,setSpeakerOff:{off:true,headset:true} //可选切换扬声器外放和听筒播放，参数和setSpeakerOff接口一致
+        ,debug_writeToFile:"" //可选提供一个文件路径，将已真正播放了的数据写入到文件方便调试，如果input有停顿，文件中会存在静默，文件路径参考writeFile的path参数
+        ,ios_categoryOptions:0x1|0x4 //可选iOS的AVAudioSession setCategory的withOptions参数值，取值参考iosSetDefault_categoryOptions；默认值为5(0x1|0x4)
+    }
+    返回：{
+        player:"xxx" //播放器唯一标识，后续调用接口需要传这个值
+        ,debug_writeToFile:"完整路径" //如果提供了debug_writeToFile参数，就会返回对应的完整路径
+    }
+    
+pcmPlayer_destroy 关闭销毁一个PCM播放器
+    参数：{
+        player:"xxx" //创建播放器时的唯一标识
+        ,all:false //设为true时，关闭所有播放器，可不传player参数
+    }
+    返回：{ notDestroyCount:123 } //剩余未关闭的播放器数量
+
+pcmPlayer_input 往PCM播放器输入数据；如果配置的realtime=false(非实时模式)时，建议单次调用传入的数据量不超过512KB，并且根据time事件中实时传回的bufferSize余量来控制下次数据输入，缓冲未播放的字节数尽量不要超过10MB，来避免无限制的占用内存，过大的可以通过writeFile追加写入临时文件后续用readFile分段取出
+    参数：{
+        player:"xxx" //创建播放器时的唯一标识
+        ,pcmDataBase64:"base64" //传入PCM数据，必须是16位PCM，采样率为创建播放器时提供的采样率
+    }
+    返回：{
+        bufferSize:123 //缓冲未播放的字节数
+        ,bufferMs:123 //缓冲未播放的毫秒数
+    }
+
+pcmPlayer_clearInput 清除PCM播放器内还未播放的缓冲数据
+    参数：{
+        player:"xxx" //创建播放器时的唯一标识
+        ,keepDuration:false //false时总时长duration会减去清除了的时长，true时不减去
+    }
+    返回：{  } //空对象
+
+pcmPlayer_pause 暂停PCM播放
+    参数：{ player:"xxx" } //创建播放器时的唯一标识
+    返回：{  } //空对象
+
+pcmPlayer_resume 恢复PCM播放
+    参数：{ player:"xxx" } //创建播放器时的唯一标识
+    返回：{  } //空对象
+
+pcmPlayer_setVolume 设置播放音量，注意：此接口不是修改手机系统音量，是播放时pcm数据直接*volume
+    参数：{
+        player:"xxx" //创建播放器时的唯一标识
+        ,volume:1.0 //音量大小，取值0.0-5.0（超过5也行，但削峰严重音质明显变差），0.0没有声音，1.0不改变音量，0.5降低一倍音量，2.0放大一倍音量
+    }
+    返回：{
+        volume:1.0 //已设置的音量值
+    }
+
+
 
 writeFile 数据写入文件，可新建文件、追加写入（文件流写入）
     参数：{
@@ -730,6 +849,8 @@ listPath 读取文件夹内的文件
         ,fullPath:"/文件夹绝对路径" //结尾不带/
     }
 
+
+
 androidNotifyService 搭配常驻通知的Android后台录音保活服务(24/09/05新增)，iOS不可调用。注意：需要在项目根目录提供AndroidManifest.xml配置才可调用本接口，调用时App必须在前台（适配Android 12+），需要先调用请求录音权限后才能开启服务（适配Android 14+），详细请参考下面的“Android后台录音保活”
     参数：{
         title:"录音通知标题" //打开服务时必填，close为true时无需提供
@@ -745,6 +866,68 @@ androidNotifyService 搭配常驻通知的Android后台录音保活服务(24/09/
 androidStoragePermission__limited 简易获取Android的外部存储权限，iOS不可调用，当你需要读写当前应用数据以外的文件时（如手机的Download目录文件），需要先获取外部存储权限；注意这个只会请求WRITE_EXTERNAL_STORAGE权限，因此TargetSDK需小于33（Android 13），否则此权限永远是拒绝的（请自行用别的途径获取权限）
     参数：{}
     返回：{ code:1 } //权限状态：1有权限，3用户拒绝。（2未用到）
+
+
+
+【事件回调】
+> 搭配Recorder-UniCore前端组件使用时，可以参考上面的RecordApp.UniNativeUtsPlugin_OnJsCall绑定事件回调
+> 直接调用的原生插件时，也一样的参考上面这样绑定事件：RecNP.request({action:"jsCall",args:{}},function(data){ 这里面需要自己写代码分发事件，比如用uni.$emit触发由uni.$on绑定的回调 })
+下面的action为事件参数对象data.action，不同action的data中有不同的字段，下面是详细定义
+
+{action:"onLog" //原生层日志输出
+    ,isError:false //是否是错误消息
+    ,tag:"日志标签"
+    ,message:"日志消息内容"
+}
+
+{action:"onRecord" //录音时的录音数据回调
+    ,sampleRate:44100 //pcm数据的采样率
+    ,pcmDataBase64:"base64" //pcm数据base64字符串，为16位pcm
+}
+
+{action:"onRecError" //录音出现错误，录音已自动停止，收到此消息时应当处理录音错误，建议弹个框用户点击后重新打开录音，否则打开录音可能会出错
+    message:"错误消息"
+}
+
+{action:"onInterruptionBegin" //录音中断回调（目前只iOS上会触发）
+ action:"onInterruptionEnd" //录音中断结束回调（目前只iOS上会触发）
+        说明：当收到Begin事件时，录音会自动停止，如果js未停止录音，收到End时会自动恢复录音；如果收到End时js调用了停止录音，就不会自动恢复
+    fromSystem:true //是否是系统触发的事件，false时为自己的代码触发的事件
+    ,ios_userInfo:null||{} //系统触发时iOS上会提供一个对象，为AVAudioSessionInterruptionNotification的userInfo
+}
+
+{action:"onPcmPlayerEvent" //PCM播放器的事件回调，根据type区分不同事件
+    player:"xxx" //哪个播放器的事件，为创建播放器时的唯一标识
+    
+    ,type:"time" //播放时间回调，创建播放器时提供了timeUpdateInterval才会有这个回调
+        ,current:123 //当前播放时间ms
+        ,duration:123 //总时长ms，为input已输入的数据总时长（clearInput会减掉清除的）
+        ,volume:1.0 //播放音量
+        ,bufferSize:123 //缓冲未播放的字节数
+        ,bufferMs:123 //缓冲未播放的毫秒数
+    
+    ,type:"playEnd" //没有可播放的数据时回调（destroy一定会回调），已输入的数据已全部播放完了，可代表正在缓冲中或播放结束；之后如果继续input输入了新数据，播放完后会再次回调，因此会多次回调；非实时模式一次性输入了数据时，此回调相当于播放完成，可以destroy掉，重新创建播放器来input数据可达到循环播放效果
+        //没有更多字段
+    
+    ,type:"playSuspend" //播放被错误中断，不会自动恢复，可调用resume恢复播放，建议弹个框用户点击后resume，否则可能resume会出错
+        ,message:"错误消息"
+        ,bufferSize,bufferMs
+    
+    ,type:"playInterruptionBegin" //播放中断回调（目前只iOS上会触发）
+    ,type:"playInterruptionEnd" //播放中断结束回调（目前只iOS上会触发）
+            说明：当收到Begin事件时，播放会自动停止，如果js未暂停播放，收到End时会自动恢复播放；如果收到End时js调用了暂停播放，就不会自动恢复
+        ,fromSystem:true //是否是系统触发的事件，false时为自己的代码触发的事件
+        ,bufferSize,bufferMs
+    
+    ,type:"maxDelayDiscard" //实时模式时，如果未播放数据量超过maxDelay将会触发本事件，并丢弃部分老数据来保持播放的实时性
+        ,discardLen:123 //丢弃的pcm数据长度，值为二进制数据长度/2（按Int16算）
+        ,discardMs:123 //丢弃的pcm数据时长毫秒数
+        ,delayMs:123 //延迟多少ms导致的丢弃
+        ,inputOffset:123 //在所有input pcm的哪个Int16索引位置开始丢弃的
+        ,bufferSize,bufferMs
+}
+
+
 
 
 【支持的路径】

@@ -252,10 +252,6 @@ i18n.put(putSet,
 ,"yI24:"+ //no args
        "RecordApp.UniFindCanvas does not adapt to the current environment"
 
-//@@zh="{1}回传了未知内容，"
-,"dl4f:"+ //args: {1}
-       "{1} returned unknown content, "
-
 //@@zh="未配置RecordApp.UniNativeUtsPlugin原生录音插件"
 ,"H753:"+ //no args
        "RecordApp.UniNativeUtsPlugin native recording plug-in is not configured"

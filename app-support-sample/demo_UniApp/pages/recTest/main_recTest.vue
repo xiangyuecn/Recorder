@@ -163,36 +163,61 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			<button size="mini" type="default" @click="testRenderjsFunc">测试renderjs功能调用</button>
 			<TestPageRenderjsView ref="testRF" />
 		</view>
+		
+		<view style="margin:10px 0; border-top:1px dashed #666"></view>
 		<view style="padding-top:10px">
 			<button size="mini" type="default" @click="testShowNotifyService">显示后台录音保活通知(Android)</button>
 			<button size="mini" type="default" @click="testCloseNotifyService">关闭通知</button>
 		</view>
-		<view style="padding-bottom:10px;font-size:14px">
+		<view style="font-size:14px">
 			<checkbox :checked="useANotifySrv" @click="useANotifySrv=!useANotifySrv">本页面录音时自动尝试打开保活(Android)</checkbox>
 		</view>
 <!-- #endif -->
+
+		<view style="margin:10px 0; border-top:1px dashed #666"></view>
 		<view>
 			<button size="mini" type="default" @click="speakerOnClick">切换成扬声器外放</button>
 			<button size="mini" type="default" @click="speakerOffClick">切换成听筒播放</button>
 		</view>
 <!-- #ifdef APP -->
-		<view>
-			<button size="mini" type="default" @click="testWritePcm2Wav">pcm数据实时写入到wav文件测试(原生插件)</button>
+		<view style="font-size:14px">
+			<checkbox :checked="recStart_setSpeaker" @click="recStartSetSpeaker(1)">打开录音时默认：</checkbox>{
+			<text style="color:blue" @click="recStartSetSpeaker(2)">{{recStart_speakerOff?'off:true':'off:false'}}</text>,
+			<text style="color:blue" @click="recStartSetSpeaker(3)">{{recStart_speakerHds?'headset:true':'headset:false'}}</text>
+			}
 		</view>
+<!-- #endif -->
+		<view style="margin:5px 0; border-top:1px dashed #666"></view>
+		
+<!-- #ifdef APP -->
 		<view>
 			<button size="mini" type="default" @click="testNativePlugin">测试原生插件调用</button>
 			<button size="mini" type="default" @click="testShowMemoryUsage">显示内存占用</button>
 			<TestNativePluginView ref="testNP" />
 		</view>
-<!-- #endif -->
 		
-		<view>
-			<button size="mini" type="default" @click="clearLogs">清除日志</button>
-<!-- #ifdef APP || H5 -->
-			<button size="mini" type="default" @click="testH5Play5F">播放5分钟wav</button>
-<!-- #endif -->
+		<view style="font-size:13px">
+			pcm数据实时写入到wav文件测试(原生插件)<button size="mini" type="default" @click="testWritePcm2Wav" style="vertical-align: middle;">测试</button>
 		</view>
 		
+		<view style="margin:5px 0; border-top:1px dashed #666"></view>
+		<view>
+			<button size="mini" type="default" @click="testNP_PcmPlayerShow=!testNP_PcmPlayerShow">测试原生插件PcmPlayer流式播放器</button>
+		</view>
+		<TestNativePluginPcmPlayerView v-if="testNP_PcmPlayerShow"></TestNativePluginPcmPlayerView>
+<!-- #endif -->
+<!-- #ifdef APP || H5 -->
+		<view>
+			<button size="mini" type="default" @click="testH5Play5F">播放5分钟wav(h5)</button>
+			<button size="mini" type="default" @click="testUniPlay5F">播放5分钟wav(uni)</button>
+		</view>
+<!-- #endif -->
+		<view style="margin:5px 0; border-top:1px dashed #666"></view>
+		<view>
+			<button size="mini" type="default" @click="clearLogs">清除日志</button>
+		</view>
+		
+		<view class="testUniPlay5FView"></view>
 		<view class="testH5Play5FView"></view>
 		<view>
 			<view v-for="item in testMsgs" style="border-top:1px dashed #eee; padding:5px 0" :style="{color:item.color==1?'red':item.color==2?'green':item.color}">
@@ -251,6 +276,7 @@ import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放�
 import TestUploadView from './test_upload_saveFile.vue'; //上传功能界面
 import TestRtVoiceView from './test_realtime_voice.vue'; //实时语音通话聊天对讲
 import TestNativePluginView from './test_native_plugin.vue'; //测试原生插件功能
+import TestNativePluginPcmPlayerView from './test_player_nativePlugin_pcmPlayer.vue'; //测试pcmPlayer播放器
 import TestPageRenderjsView from './test_page_renderjs.vue'; //测试renderjs功能调用
 
 
@@ -318,7 +344,7 @@ RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //目前仅支持原生插件�
 
 
 export default {
-	components: { TestPlayer,TestUploadView,TestRtVoiceView,TestNativePluginView,TestPageRenderjsView },
+	components: { TestPlayer,TestUploadView,TestRtVoiceView,TestNativePluginView,TestNativePluginPcmPlayerView,TestPageRenderjsView },
 	data() {
 		return {
 			recType:"mp3"
@@ -338,6 +364,8 @@ export default {
 			,pageDeep:0,pageNewPath:"main_recTest"
 			,disableOgg:disableOgg
 			,evalExecCode:""
+			,recStart_setSpeaker:false, recStart_speakerOff:false, recStart_speakerHds:true
+			,testNP_PcmPlayerShow:false
 			,testMsgs:[],reclogs:[],reclogLast:""
 		}
 	},
@@ -446,6 +474,10 @@ export default {
 				,bitRate:this.recBitRate
 				,audioTrackSet:!this.useAEC?null:{ //配置回声消除，H5、App、小程序均可用，但并不一定会生效；注意：H5、App+renderjs中需要在请求录音权限前进行相同配置RecordApp.RequestPermission_H5OpenSet后此配置才会生效
 					noiseSuppression:true,echoCancellation:true,autoGainControl:true
+				}
+				
+				,setSpeakerOff:!this.recStart_setSpeaker? null : { //使用原生录音插件时，可以提供一个扬声器外放和听筒播放的切换默认配置
+					off:this.recStart_speakerOff, headset:this.recStart_speakerHds
 				}
 				
 				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
@@ -621,7 +653,7 @@ export default {
 		}
 		
 		
-		//Android App启用后台录音保活服务，需要原生插件支持
+		//Android App启用后台录音保活服务，需要原生插件支持，注意必须RecordApp.RequestPermission得到权限后调用
 		,tryStart_androidNotifyService(){
 			if(RecordApp.UniIsApp() && !this._tips_anfs){ this._tips_anfs=1;
 				this.reclog("App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）；可调用配套原生插件的androidNotifyService接口，或使用第三方保活插件","#4face6");
@@ -662,6 +694,7 @@ export default {
 				+":"+("0"+now.getSeconds()).substr(-2);
 			var txt="["+t+"]"+msg;
 			this.testMsgs.splice(0,0,{msg:txt,color:color});
+			this.reclogLast={txt:txt,color:color};
 		}
 		,reclog(msg,color,set){
 			var now=new Date();
@@ -848,6 +881,15 @@ export default {
 		,testCloseNotifyService(){
 			this.$refs.testNP.showNotifyService(false);
 		}
+		//打开录音时原生插件默认外放和听筒播放设置
+		,recStartSetSpeaker(type){
+			var err=RecordApp.UniCheckNativeUtsPluginConfig();
+			if(err) return this.reclog("打开录音时默认setSpeakerOff配置需要原生插件支持："+err,1);
+			if(type==1){ this.recStart_setSpeaker=!this.recStart_setSpeaker; return; }
+			this.recStart_setSpeaker=true;
+			if(type==2)this.recStart_speakerOff=!this.recStart_speakerOff;
+			else this.recStart_speakerHds=!this.recStart_speakerHds;
+		}
 		//切换扬声器外放和听筒播放
 		,speakerOnClick(){
 			this.__setSpeakerOff(false);
@@ -916,16 +958,72 @@ export default {
 					},function(err){ log(err,1); });
 				}); }
 			})`;
-			var logFn=(msg,color)=>{ this.addTestMsg("[Play5F]"+msg,color) };
+			var logFn=(msg,color)=>{ this.addTestMsg("[H5Play5F]"+msg,color) };
 			/*#ifdef H5*/ eval(jsCode)(logFn); return; /*#endif*/
 			/*#ifdef APP*/
-			var cb=RecordApp.UniMainCallBack_Register("Play5F",(data)=>{ logFn(data.msg,data.color) });
+			var cb=RecordApp.UniMainCallBack_Register("H5Play5F",(data)=>{ logFn(data.msg,data.color) });
 			RecordApp.UniWebViewEval(this,jsCode+`(function(msg,color){
 				RecordApp.UniWebViewSendToMain({action:"${cb}",msg:msg,color:color});
 			})`);
 			return;
 			/*#endif*/
 			this.reclog("当前环境未适配播放",1)
+		}
+		//uniapp innerAudioContext播放5分钟wav 
+		,testUniPlay5F(){
+			var statusFn=(msg)=>{ RecordApp.UniWebViewEval(this,`var el=document.querySelector(".testUniPlay5FView"); el.innerHTML=${JSON.stringify(msg)}`) };
+			var logFn=(msg,color)=>{ this.addTestMsg("[UniPlay5F]"+msg,color) };
+			var clearFn=()=>{ this.audioCtx.destroy(); this.audioCtx=null; };
+			if(this.audioCtx){
+				this.audioCtx.showDur("已关闭"," "); clearFn();
+				logFn("本次点击只关闭老播放器，请重新点击播放");
+				return;
+			}
+			statusFn("");
+			var minutes=+uni.getStorageSync("testUniPlay5FSaveTime")?2:5;
+			logFn("正在合成"+minutes+"分钟音频...");
+			var pcm5=new Int16Array(16000*60*minutes);
+			
+			//这个测试页面逻辑层没有import对应的文件，绕一下，import了就直接写
+			RecordApp.UniWebViewCallAsync(this,{tag:"生成wav"},`
+				var sr=16000;
+				var pcm=Recorder.NMN2PCM.GetExamples().Canon.get(sr).pcm;
+				var header=Recorder.wav_header(1,1,sr,16,${pcm5.byteLength});
+				CallSuccess({header:RecordApp.UniBtoa(header.buffer)}, pcm.buffer);
+			`).then((data)=>{
+				//直接pcm前面拼接一个wav头即可
+				var header=new Uint8Array(RecordApp.UniAtob(data.value.header));
+				var pcm=new Int16Array(data.bigBytes), n=0;
+				while(n<pcm5.length){
+					var s=Math.min(pcm.length, pcm5.length-n);
+					pcm5.set(s==pcm.length?pcm:pcm.subarray(0,s),n); n+=pcm.length
+				}
+				var bytes=new Uint8Array(header.length+pcm5.byteLength);
+				bytes.set(header);
+				bytes.set(new Uint8Array(pcm5.buffer), header.length);
+				
+				uni.setStorageSync("testUniPlay5FSaveTime", ""+Date.now());
+				//保存到本地文件
+				RecordApp.UniSaveLocalFile("temp-audio-UniPlay5F.wav",bytes.buffer,(savePath)=>{
+					logFn("再次点击按钮停止播放，正在使用uni.createInnerAudioContext播放wav文件: "+savePath);
+					if(minutes!=2)uni.setStorageSync("testUniPlay5FSaveTime", "0");
+					
+					var ctx=this.audioCtx=uni.createInnerAudioContext();
+					ctx.src=savePath;
+					var showDur=ctx.showDur=(msg,color)=>{ if(ctx==this.audioCtx)statusFn('<div style="color:'+(color==1?"red":(color||"#46a965"))+';text-align:center">'+msg+" "+this.formatTime(ctx.currentTime*1000)+"/"+this.formatTime(ctx.duration*1000)+"</div>") };
+					ctx.onError((res)=>{ clearFn(); showDur("播放失败：["+res.errCode+"]"+res.errMsg, 1); });
+					ctx.onEnded(()=>{
+						clearFn(); showDur("已播放结束");
+					});
+					ctx.onPlay(()=>{ showDur("UniPlay5F正在播放"); });
+					ctx.onTimeUpdate(()=>{ showDur("UniPlay5F正在播放"); });
+					ctx.play();
+				},(err)=>{
+					logFn("无法播放，保存文件失败："+err);
+				});
+			}).catch(e=>{
+				logFn("错误："+e.message,1);
+			});
 		}
 		
 		,loadVConsole(){

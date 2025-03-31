@@ -1,3 +1,7 @@
+## 1.0.250331（2025-03-31）
+增加RecordApp.UniNativeUtsPlugin_OnJsCall接口，App端搭配原生插件使用时，可绑定接收配套原生录音插件事件：原生插件新增PcmPlayer播放器，支持流式播放、完整播放，App端边录音边播放更流畅
+## 1.0.250111（2025-01-11）
+修复vue3 Fragments(multi-root 多个根节点)的兼容性问题；修复uniapp Android自带的XXPermissions库在后台无法请求权限的问题（仅限搭配原生录音插件可用）
 ## 1.0.241020（2024-10-20）
 适配HBuilder4.28 vue3 setup编译环境下$root.$scope无法读取的bug，HBuilder4.29已修复此编译bug，但似乎还是有不能使用的问题。如果setup内不能使用，可尝试新建个vue组件，然后使用选项式api来调用录音功能，页面的setup内使用此vue组件
 ## 1.0.240910（2024-09-10）

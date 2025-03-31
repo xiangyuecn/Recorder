@@ -368,7 +368,7 @@ packet.set(bytes,header.length); //拼接完成
 
 在Android App WebView中使用本库来H5录音，需要在App源码中实现以下几部分：
 
-1. 在`AndroidManifest.xml`声明需要用到的两个权限，第二个也必须的
+1. 在`AndroidManifest.xml`声明需要用到的两个权限，**第二个也必须的**
 ``` xml
 <uses-permission android:name="android.permission.RECORD_AUDIO"/>
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
@@ -376,7 +376,7 @@ packet.set(bytes,header.length); //拼接完成
 
 2. WebView的WebChromeClient中实现`onPermissionRequest`网页授权请求
 
-如果未实现此方法，WebView默认会拒绝H5录音权限；onPermissionRequest中需要先获取App的系统录音权限（Activity里面必须先用this.checkSelfPermission检测权限，否则直接this.requestPermissions会造成WebView触发touchcancel打断长按），然后再grant网页权限，可参考Android Demo中的[MainActivity.java](app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/MainActivity.java)中的实现代码。
+如果未实现此方法，**WebView默认会拒绝H5录音权限**；onPermissionRequest中需要先获取App的系统录音权限（Activity里面必须先用this.checkSelfPermission检测权限，否则直接this.requestPermissions会造成WebView触发touchcancel打断长按），然后再grant网页权限，可参考Android Demo中的[MainActivity.java](app-support-sample/demo_android/app/src/main/java/com/github/xianyuecn/recorder/MainActivity.java)中的实现代码。
 
 注：如果应用的`腾讯X5内核`，可能还须提供`android.permission.CAMERA`权限，和调用`webView.setWebChromeClientExtension`来重写X5的`IX5WebChromeClientExtension.onPermissionRequest`方法来进行权限处理
 
@@ -466,6 +466,8 @@ iOS 11.0-14.2：纯粹的H5录音在iOS WebView中是不支持的，需要有Nat
 ## 已知问题
 
 > 此处已清除7个已知问题，大部分无法解决的问题会随着时间消失；问题主要集中在iOS部分版本上（不同系统版本问题不重样），好在这玩意能更新
+
+*2025-03-06* 已知现有版本的Recorder.SampleData在部分条件下，录音实时转换采样率时，如果两个采样率不是倍数关系时（44100和16000互转），内部的每次转换会引入杂音，大部分情况下并不明显，有些蓝牙耳机录制的44100采样率数据（实际只有24000），经过转换后杂音会非常明显；后续版本会尝试修正这个转换错误。
 
 *2024-09-09* [#230](https://github.com/xiangyuecn/Recorder/issues/230) 已知open源码中的`trackSet[sampleRateTxt]=...`强制设置采样率会导致部分设备无法正常打开麦克风，导致录音无声（或无法使用蓝牙等外设），~~需要修改源码去掉这行源码，同时设置`Recorder.ConnectEnableWebM=false`，~~ 241020版本开始已移除此代码进行了修复，并增强了MediaRecorder的支持。
 
@@ -630,7 +632,7 @@ stop时返回的录音数据类型，取值：`blob`、`arraybuffer`，默认为
 ### 【方法】rec.envIn(pcmData,pcmAbsSum)
 本方法是一个内部使用的最为核心方法，如果你不知道用途，请勿随意调用，配套的有私有方法`envStart(mockEnvInfo,sampleRate)`（私有方法请自行阅读源码），这两方法控制着录音的开启、实时音频输入逻辑，起到隔离平台环境差异的作用（Recorder、RecordApp共享使用了本机制，实现了录音过程和平台环境无关）。
 
-通过调用本方法，会在当前正在录制的录音中追加进新的pcm数据，每次调用本方法都会触发onProcess回调；从而可以做到：在录音过程中插入音频数据、在新的录音中注入之前老的录音的buffers数据可以做到接续录音 等业务逻辑，可参考上面的Demo片段列表中的`新录音从老录音接续、或录制中途插入音频`例子。
+通过调用本方法，会在当前正在录制的录音中追加进新的pcm数据，每次调用本方法都会触发onProcess回调，也会触发takeoffEncodeChunk回调；从而可以做到：实时转码pcm成其他格式、在录音过程中插入音频数据、在新的录音中注入之前老的录音的buffers数据可以做到接续录音 等业务逻辑，可参考上面的Demo片段列表中的`新录音从老录音接续、或录制中途插入音频`例子；含有envStart的完整调用例子可以[参考这里面的testEnvIn方法](assets/node-codes/test-all-type.js)。
 
 `pcmData`：`[Int16,...]` 为一维数组，pcm音频数据的采样率必须是`rec.srcSampleRate` （如果不是，请用`Recorder.SampleData()`方法先转换好）
 

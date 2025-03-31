@@ -305,11 +305,6 @@ i18n.put(putSet,
 ,"yI24:"+ //no args
        "" /** TODO: translate to your-language **/
 
-//@@zh="{1}回传了未知内容，"
-//@@en="{1} returned unknown content, "
-,"dl4f:"+ //args: {1}
-       "" /** TODO: translate to your-language **/
-
 //@@zh="未配置RecordApp.UniNativeUtsPlugin原生录音插件"
 //@@en="RecordApp.UniNativeUtsPlugin native recording plug-in is not configured"
 ,"H753:"+ //no args

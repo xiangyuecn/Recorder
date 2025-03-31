@@ -11,6 +11,7 @@
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
 - 支持可视化波形显示；可配置回声消除、降噪；**注意：不支持通话时录音**
+- 支持PCM音频流式播放、完整播放，App端用原生插件边录音边播放更流畅
 - 支持离线使用，本组件和配套原生插件均不依赖网络
 - App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好
 
@@ -88,6 +89,7 @@ import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
 ```
 
 5. 编译成app时，默认需要额外提供一个renderjs模块，请照抄下面这段代码放到vue文件末尾
+
 ``` html
 <!-- #ifdef APP -->
 <script module="yourModuleName" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
@@ -169,7 +171,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
     //开始录音
     ,recStart(){
         //Android App如果要后台录音，需要启用后台录音保活服务（iOS不需要），需使用配套原生插件、或使用第三方保活插件
-        //RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{ title:"正在录音" ,content:"正在录音中，请勿关闭App运行" }).then(()=>{...}).catch((e)=>{...})
+        //RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{ title:"正在录音" ,content:"正在录音中，请勿关闭App运行" }).then(()=>{...}).catch((e)=>{...}) 注意必须RecordApp.RequestPermission得到权限后调用
         
         //录音配置信息
         var set={
@@ -354,8 +356,10 @@ NSMicrophoneUsageDescription
 
 *⠀*
 
-## 语音通话、回声消除、声音外放
-在App、H5中，使用[BufferStreamPlayer](https://gitee.com/xiangyuecn/Recorder/tree/master/src/extensions/buffer_stream.player.js)可以实时播放语音；其中App中需要在renderjs中加载BufferStreamPlayer，在逻辑层中调用`RecordApp.UniWebViewVueCall`等方法将逻辑层中接收到的实时语音数据发送到renderjs中播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除。
+## PCM音频流式播放、语音通话、回声消除、声音外放
+在App、H5中，均可使用H5版的[BufferStreamPlayer](https://gitee.com/xiangyuecn/Recorder/blob/master/src/extensions/buffer_stream.player.js)来实时流式播放语音；其中App中需要在renderjs中加载BufferStreamPlayer，在逻辑层中调用`RecordApp.UniWebViewVueCall`等方法将逻辑层中接收到的实时语音数据发送到renderjs中播放；播放声音的同时进行录音，声音可能会被录进去产生回声，因此一般需要打开回声消除；调用代码参考demo中的[test_realtime_voice.vue](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_UniApp/pages/recTest/test_realtime_voice.vue)。
+
+App中如果搭配使用了配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)，可以调用原生实现的PcmPlayer播放器实时流式播放PCM音频，边录音边播放更流畅；同时也支持完整播放，比如AI语音合成的播放；调用代码参考demo中的[test_player_nativePlugin_pcmPlayer.vue](https://gitee.com/xiangyuecn/Recorder/blob/master/app-support-sample/demo_UniApp/pages/recTest/test_player_nativePlugin_pcmPlayer.vue)。
 
 微信小程序请参考 [miniProgram-wx](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/miniProgram-wx) 文档里面的同名章节，使用WebAudioContext播放。
 
