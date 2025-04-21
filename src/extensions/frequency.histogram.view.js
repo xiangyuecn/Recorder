@@ -46,6 +46,7 @@ H5环境以上配置二选一
 		,spaceWidth:0 //柱子间空白固定基础宽度，柱子宽度自适应，当不为0时widthRatio无效，当视图不足容下所有柱子时将不会留空白，允许为负数，让柱子发生重叠
 		,minHeight:0 //柱子保留基础高度，position不为±1时应该保留点高度
 		,position:-1 //绘制位置，取值-1到1，-1为最底下，0为中间，1为最顶上，小数为百分比
+		,radius:-1 //圆角半径，取值-1到1，-1为柱子宽度的一半，0为不圆角，1为最大可能圆角，小数为百分比
 		,mirrorEnable:false //是否启用镜像，如果启用，视图宽度会分成左右两块，右边这块进行绘制，左边这块进行镜像（以中间这根柱子的中心进行镜像）
 		
 		,stripeEnable:true //是否启用柱子顶上的峰值小横条，position不是-1时应当关闭，否则会很丑
@@ -318,12 +319,32 @@ fn.prototype=FrequencyHistogramView.prototype={
 				if(originY!=0){
 					y=originY-h;
 					ctx.fillStyle=linear1;
-					ctx.fillRect(x, y, w, h);
+					var baseRadius = set.radius === -1 ? w/2 : Math.min(w/2, h) * Math.max(0, Math.min(1, set.radius));
+var radius = Math.min(baseRadius, h);
+ctx.beginPath();
+if(set.position === -1) {
+    ctx.roundRect(x, y, w, h, [0, 0, radius, radius]);
+} else if(set.position === 1) {
+    ctx.roundRect(x, y, w, h, [radius, radius, 0, 0]);
+} else {
+    var dynamicRadius = Math.min(radius, Math.min(w, h)/2);
+    ctx.roundRect(x, y, w, h, [dynamicRadius, dynamicRadius, 0, 0]); // 顶部圆角
+}
+ctx.fill();
 				};
 				//绘制下半部分
 				if(originY!=height){
 					ctx.fillStyle=linear2;
-					ctx.fillRect(x, originY, w, h);
+					var radius = Math.min(w/2, h);
+ctx.beginPath();
+if(set.position === -1) {
+    ctx.roundRect(x, originY, w, h, [0, 0, dynamicRadius, dynamicRadius]); // 底部圆角
+} else if(set.position === 1) {
+    ctx.roundRect(x, originY, w, h, [0, 0, radius, radius]);
+} else {
+    ctx.roundRect(x, originY, w, h, [0, 0, dynamicRadius, dynamicRadius]); // 底部圆角
+}
+ctx.fill();
 				};
 				
 				xFloat+=w;
