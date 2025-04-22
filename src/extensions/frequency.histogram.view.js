@@ -113,8 +113,25 @@ H5环境以上配置二选一
 	
 	canvas.width=width;
 	canvas.height=height;
-	var ctx=This.ctx=canvas.getContext("2d");
+	var ctx = This.ctx = canvas.getContext("2d");
 	
+	// 添加自定义roundRect实现
+	ctx.customRoundRect = function(x, y, w, h, r) {
+		if (w < 0) w = 0;
+		if (h < 0) h = 0;
+		if (typeof r === 'number') {
+			r = [r, r, r, r];
+		} else if (!Array.isArray(r)) {
+			r = [0, 0, 0, 0];
+		}
+		this.beginPath();
+		this.moveTo(x + r[0], y);
+		this.arcTo(x + w, y, x + w, y + h, r[1]);
+		this.arcTo(x + w, y + h, x, y + h, r[2]);
+		this.arcTo(x, y + h, x, y, r[3]);
+		this.arcTo(x, y, x + w, y, r[0]);
+		this.closePath();
+	};
 	if(!Recorder.LibFFT){
 		throw new Error($T.G("NeedImport-2",[ViewTxt,"src/extensions/lib.fft.js"]));
 	};
@@ -316,35 +333,35 @@ fn.prototype=FrequencyHistogramView.prototype={
 				h=Math.max(lastH[i],minHeight);
 				
 				//绘制上半部分
-				if(originY!=0){
-					y=originY-h;
-					ctx.fillStyle=linear1;
-					var baseRadius = set.radius === -1 ? w/2 : Math.min(w/2, h) * Math.max(0, Math.min(1, set.radius));
-var radius = Math.min(baseRadius, h);
-ctx.beginPath();
-if(set.position === -1) {
-    ctx.roundRect(x, y, w, h, [0, 0, radius, radius]);
-} else if(set.position === 1) {
-    ctx.roundRect(x, y, w, h, [radius, radius, 0, 0]);
-} else {
-    var dynamicRadius = Math.min(radius, Math.min(w, h)/2);
-    ctx.roundRect(x, y, w, h, [dynamicRadius, dynamicRadius, 0, 0]); // 顶部圆角
-}
-ctx.fill();
-				};
+				if (originY != 0) {
+				y = originY - h;
+				ctx.fillStyle = linear1;
+				var baseRadius = set.radius === -1 ? w/2 : Math.min(w/2, h) * Math.max(0, Math.min(1, set.radius));
+				var radius = Math.min(baseRadius, h);
+				ctx.beginPath();
+				if (set.position === -1) {
+				ctx.customRoundRect(x, y, w, h, [0, 0, radius, radius]);
+				} else if (set.position === 1) {
+				ctx.customRoundRect(x, y, w, h, [radius, radius, 0, 0]);
+				} else {
+				ctx.customRoundRect(x, y, w, h, [radius, radius, 0, 0]);
+				}
+				ctx.fill();
+				}
 				//绘制下半部分
 				if(originY!=height){
 					ctx.fillStyle=linear2;
-					var radius = Math.min(w/2, h);
-ctx.beginPath();
-if(set.position === -1) {
-    ctx.roundRect(x, originY, w, h, [0, 0, dynamicRadius, dynamicRadius]); // 底部圆角
-} else if(set.position === 1) {
-    ctx.roundRect(x, originY, w, h, [0, 0, radius, radius]);
-} else {
-    ctx.roundRect(x, originY, w, h, [0, 0, dynamicRadius, dynamicRadius]); // 底部圆角
-}
-ctx.fill();
+					var baseRadius = set.radius === -1 ? w/2 : Math.min(w/2, h) * Math.max(0, Math.min(1, set.radius));
+					var radius = Math.min(baseRadius, h);
+					ctx.beginPath();
+					if(set.position === -1) {
+						ctx.customRoundRect(x, originY, w, h, [0, 0, radius, radius]);
+					} else if(set.position === 1) {
+						ctx.customRoundRect(x, originY, w, h, [0, 0, radius, radius]);
+					} else {
+						ctx.customRoundRect(x, originY, w, h, [0, 0, radius, radius]);
+					}
+					ctx.fill();
 				};
 				
 				xFloat+=w;
