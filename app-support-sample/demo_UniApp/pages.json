@@ -45,9 +45,17 @@
 		{
 			"path" : "pages/recTest/page_renderjsWithout",
 			"style" : {
-				"navigationBarTitleText": "逻辑层编码UniWithoutAppRenderjs - uni-app"
+				"navigationBarTitleText": "后台录音更稳：逻辑层编码UniWithoutAppRenderjs - uni-app"
 			}
 		},
+		// #ifdef VUE3
+		{
+			"path" : "pages/recTest/vue3ComponentTest/vue3_Page",
+			"style" : {
+				"navigationBarTitleText": "RecordApp vue3子组件内可用性测试 - uni-app"
+			}
+		},
+		// #endif
 		{
 			"path" : "pages/recTest/page_vue3____composition_api",
 			"style" : {

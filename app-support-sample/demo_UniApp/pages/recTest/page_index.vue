@@ -2,7 +2,7 @@
 <view>
 	<view style="padding:5px 10px 0">
 		<view style="font-size:24px;color:#f60">Recorder App uni-app测试</view>
-		<view style="font-size:13px">本测试项目支持打包成：H5网页、Android App、iOS App、微信小程序，支持Vue2、Vue3</view>
+		<view style="font-size:13px">本测试项目支持打包成：H5网页、Android App、iOS App、鸿蒙App、微信小程序，支持Vue2、Vue3</view>
 	</view>
 	
 	<testMain ref="testMain"></testMain>

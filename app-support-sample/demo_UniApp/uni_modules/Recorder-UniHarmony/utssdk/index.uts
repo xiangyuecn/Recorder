@@ -1,0 +1,9 @@
+import { RequestPermissionResult, Harmony_RequestPermissionAsync__Define, Harmony_SaveLocalFile__Define } from './interface.uts';
+
+export const Harmony_RequestPermissionAsync : Harmony_RequestPermissionAsync__Define = async function(permissions : Array<string>) : Promise<Array<RequestPermissionResult>> {
+	throw new Error("不支持非鸿蒙App中调用Harmony_RequestPermissionAsync方法");
+};
+
+export const Harmony_SaveLocalFile : Harmony_SaveLocalFile__Define = (fileName : string, base64 : string) : string {
+	throw new Error("不支持非鸿蒙App中调用Harmony_SaveLocalFile方法");
+};

@@ -1,0 +1,24 @@
+/**
+ * 权限请求结果
+ * - 1 有权限
+ * - 3 无权限
+ * - 2 （未用到）
+*/
+export type RequestPermissionResult = 1 | 2 | 3;
+
+/**
+ * 请求权限，参数有几个权限，异步返回的结果对应的就有几个值。非鸿蒙app调用会直接抛异常
+ * 
+ * 调用例子：
+ * await Harmony_RequestPermissionAsync(["ohos.permission.MICROPHONE","xxxx"]) -> [1,3]
+*/
+export type Harmony_RequestPermissionAsync__Define = (permissions : Array<string>) => Promise<Array<RequestPermissionResult>>;
+
+
+/**
+ * 保存base64任意二进制数据到此文件名下，返回保存的完整路径。非鸿蒙app调用会直接抛异常
+ * 
+ * 调用例子：
+ * path=Harmony_SaveLocalFile("test.txt", "dGVzdDEyMw==")
+*/
+export type Harmony_SaveLocalFile__Define = (fileName : string, base64 : string) => string;

@@ -6,10 +6,11 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 <template>
 <view>
 	<view style="padding:5px 10px 0">
-		<view><text style="font-size:24px;color:#0b1">逻辑层编码UniWithoutAppRenderjs</text></view>
-		<view style="font-size:13px;color:#f60">
-			<view>App环境下，设置RecordApp.UniWithoutAppRenderjs=true后，RecordApp完全运行在逻辑层，此时录音和音频编码之类的操作全部在逻辑层，在后台录音时不受renderjs的WebView运行受限的影响录音更稳定，但会影响逻辑层的性能（正常情况轻微不明显），需要提供UniNativeUtsPlugin配置由原生插件进行录音，可视化绘制依旧可以在renderjs中进行。</view>
-			<view>搭配了原生插件，且需要在后台录音时，建议进行配置为true，可避免受renderjs的WebView在后台运行受限的影响，录音会更稳定。</view>
+		<view><text style="font-size:24px;color:#0b1">后台录音更稳：逻辑层编码UniWithoutAppRenderjs</text></view>
+		<view style="font-size:13px">
+			<view style="color:#f60">App环境下，设置RecordApp.UniWithoutAppRenderjs=true后，RecordApp完全运行在逻辑层，此时录音和音频编码之类的操作全部在逻辑层，在后台录音时不受renderjs的WebView运行受限的影响录音更稳定，但会影响逻辑层的性能（正常情况轻微不明显），需要提供UniNativeUtsPlugin配置由配套的原生插件进行录音，可视化绘制依旧可以在renderjs中进行。</view>
+			<view style="color:#0b1">搭配了配套的原生插件，且需要在后台录音时，建议进行配置为true，可避免受renderjs的WebView在后台运行受限的影响，录音会更稳定。</view>
+			<view>App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要，参考文档中的录音权限配置），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音也受影响），请调用配套原生插件的androidNotifyService接口，或使用第三方保活插件。</view>
 		</view>
 	</view>
 
@@ -108,8 +109,8 @@ export default {
 	},
 	mounted() {
 		RecordApp.Current=null;
-		RecordApp.UniWithoutAppRenderjs=true; //逻辑层进行录音和音频编码，需要原生录音插件支持
-		RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //启用原生插件配置
+		RecordApp.UniWithoutAppRenderjs=true; //逻辑层进行录音和音频编码，需要原生录音插件支持【实际用时建议放到import后面】
+		RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //启用原生插件配置【实际用时建议放到import后面】
 		
 		this.reclog("页面mounted");
 		this.isMounted=true; this.uniPage__onShow(); //onShow可能比mounted先执行，页面准备好了时再执行一次
@@ -118,13 +119,17 @@ export default {
 		var tag=/*#ifdef VUE3*/"unmounted"/*#endif*/ /*#ifndef VUE3*/"destroyed"/*#endif*/;
 		//清理资源，如果打开了录音没有关闭，这里将会进行关闭
 		RecordApp.Stop(null,()=>{
-			RecordApp.Current=null; //恢复环境
-			RecordApp.UniWithoutAppRenderjs=false; //恢复环境
+			RecordApp.Current=null; //恢复环境，测试用的
+			RecordApp.UniWithoutAppRenderjs=false; //恢复环境，测试用的
 			console.log(tag+" 已恢复环境");
 		});
 	},
 	onShow() { //当组件用时没这个回调
 		if(this.isMounted) this.uniPage__onShow(); //onShow可能比mounted先执行，页面可能还未准备好
+		this.reclog("onShow | "+this.recpowert); this.isHide=false;
+	},
+	onHide(){
+		this.reclog("onHide | "+this.recpowert); this.isHide=true;
 	},
 	methods:{
 		uniPage__onShow(){ //页面onShow时【必须调用】的函数，传入当前组件this
@@ -143,11 +148,11 @@ export default {
 		}
 		
 		,recReq(){
-			var err=RecordApp.UniCheckNativeUtsPluginConfig();//可以检查一下原生插件配置是否有效
-			if(err){
-				this.reclog(err,1);
-				return;
-			}
+			/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App、鸿蒙App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
+			获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
+			****/
+			//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
+			
 			RecordApp.UniNativeUtsPlugin_JsCall=(data)=>{ //可以绑定原生插件的jsCall回调
 				if(data.action=="onLog"){ //显示原生插件日志信息
 					this.reclog("[Native.onLog]["+data.tag+"]"+data.message, data.isError?1:"#bbb", {noLog:1});
@@ -164,13 +169,21 @@ export default {
 				}
 				this.reclog(this.currentKeyTag()+" "
 					+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
+				if(!RecordApp.UniNativeUtsPlugin){
+					this.reclog("请在项目manifest.json原生插件配置中勾选云端插件（先到插件市场 https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin 点试用，试用无任何限制），然后打包自定义基座后再测试（暂不支持鸿蒙）","#fa0");
+				}
 			});
 		}
 		,recStart(){
 			this.$refs.player.setPlayBytes(null);
 			this.takeEcChunks=[];
+			this.watchDogTimer=0; this.wdtPauseT=0; var processTime=0;
+			
+			this.tryStart_androidNotifyService(); //Android App+原生插件环境下，如需后台或锁屏录音，就必须启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音、原生插件录音均受影响），因此需要调用原生插件的`androidNotifyService`接口保活，或使用第三方保活插件
 			
 			this.reclog(this.currentKeyTag()+" 正在打开...");
+			//var prevChunk=null; //提供一个变量，在onProcess中实时提取得到pcm数据，注意开始新的转换时需要重置为null
+			
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
 			RecordApp.Start({
 				type:this.recType
@@ -178,18 +191,27 @@ export default {
 				,bitRate:this.recBitRate
 				
 				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
+					//全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+					//prevChunk=Recorder.SampleData(buffers,sampleRate,16000,prevChunk); //buffers的采样率不是固定的，要明确转换成需要的采样率
+					//var newPCM=prevChunk.data; //这个就是最新的pcm数据Int16Array，可以发送、保存等，参考下面takeoffEncodeChunk配置一样实时写入文件
+					
+					//可以同时得到mp3+pcm两种格式：takeoffEncodeChunk实时保存mp3、onProcess实时保存pcm
+					
 					if(buffers[newBufferIdx].length>=sampleRate/4)return;//测试注入的60秒数据，不显示动画
 					
 					//实时处理
 					this.recpowerx=powerLevel;
 					this.recpowert=this.formatTime(duration,1)+" / "+powerLevel;
+					processTime=Date.now();
 					
 					//可视化绘制要在renderjs中进行，必须手动到renderjs中执行，将pcm数据传送到renderjs
-					RecordApp.UniWebViewVueCall(this,`
-						if(this.waveView){
-							this.waveView.input(new Int16Array(BigBytes),${powerLevel},${sampleRate});
-						}
-					`,buffers[buffers.length-1].buffer);
+					if(!this.isHide){ //此处应当判断一下，如果app不在前台(onHide)，就不传送数据，否则WebView切换到前台恢复运行时可能收到大量积压的数据导致app崩溃
+						RecordApp.UniWebViewVueCall(this,`
+							if(this.waveView){
+								this.waveView.input(new Int16Array(BigBytes),${powerLevel},${sampleRate});
+							}
+						`,buffers[buffers.length-1].buffer);
+					};
 					
 					//实时释放清理内存，用于支持长时间录音；在指定了有效的type时，编码器内部可能还会有其他缓冲，必须同时提供takeoffEncodeChunk才能清理内存，否则type需要提供unknown格式来阻止编码器内部缓冲，App的onProcess_renderjs中需要进行相同操作
 					if(this.takeEcChunks){
@@ -203,7 +225,13 @@ export default {
 				}`
 				
 				,takeoffEncodeChunk:(chunkBytes)=>{
+					//全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
+					//App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
 					this.takeEcChunks.push(chunkBytes);
+					
+					//App中使用原生插件时，可方便的将数据实时保存到同一文件，第一帧时append:false新建文件，后面的append:true追加到文件
+					//参考demo中的 test_native_plugin.vue 的 realtimeWritePcm2Wav 方法，有用到实时写入pcm数据，并在结束时在文件开头写入wav头，即可生成wav文件，mp3没有文件头直接append即可
+					//RecordApp.UniNativeUtsPluginCallAsync("writeFile",{path:"xxx.mp3",append:回调次数!=1, dataBase64:RecordApp.UniBtoa(chunkBytes.buffer)}).then(...).catch(...)
 				}
 				,takeoffEncodeChunk_renderjs:`function(chunkBytes){
 					//此处代码不会执行，因为设置UniWithoutAppRenderjs后，录音操作均在逻辑层中
@@ -218,6 +246,21 @@ export default {
 				`,(canvas1)=>{
 					this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
 				});
+				
+				//【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+				if(RecordApp.Current.CanProcess()){
+					var wdt=this.watchDogTimer=setInterval(()=>{
+						if(wdt!=this.watchDogTimer){ clearInterval(wdt); return } //sync
+						if(Date.now()<this.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值this.wdtPauseT=Date.now()*2（永不监控），resume时赋值this.wdtPauseT=Date.now()+1000（1秒后再监控）
+						if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+							this.reclog(processTime?"录音被中断":"录音未能正常开始",1);
+							// ... 错误处理，关闭录音，提醒用户
+						}
+					},1000);
+				}else{
+					this.reclog("当前环境不支持onProcess回调，不启用watchDogTimer","#aaa"); //目前都支持回调
+				}
+				var startTime=Date.now();
 			},(msg)=>{
 				this.reclog(this.currentKeyTag()+" 开始录音失败："+msg,1);
 			});
@@ -225,16 +268,21 @@ export default {
 		,recPause(){
 			if(RecordApp.GetCurrentRecOrNull()){
 				RecordApp.Pause();
+				this.wdtPauseT=Date.now()*2; //永不监控onProcess超时
 				this.reclog("已暂停");
 			}
 		}
 		,recResume(){
 			if(RecordApp.GetCurrentRecOrNull()){
 				RecordApp.Resume();
+				this.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
 				this.reclog("继续录音中...");
 			}
 		}
 		,recStop(){
+			this.tryClose_androidNotifyService(); //关闭后台录音保活服务
+			this.watchDogTimer=0; //停止监控onProcess超时
+			
 			this.reclog("正在结束录音...");
 			RecordApp.Stop((aBuf,duration,mime)=>{
 				//全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
@@ -256,9 +304,43 @@ export default {
 				
 				//播放，部分格式会转码成wav播放
 				this.$refs.player.useAppRenderjs=true; //在renderjs中播放
+				this.$refs.player.parentPage=this;
 				this.$refs.player.setPlayBytes(aBuf,"",duration,mime,recSet,Recorder);
 			},(msg)=>{
 				this.reclog("结束录音失败："+msg,1);
+			});
+		}
+		
+		
+		//Android App启用后台录音保活服务，需要原生插件支持，注意必须RecordApp.RequestPermission得到权限后调用
+		,tryStart_androidNotifyService(){
+			if(RecordApp.UniIsApp() && !this._tips_anfs){ this._tips_anfs=1;
+				this.reclog("App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（App中H5录音也受影响），需要原生层提供搭配常驻通知的Android后台录音保活服务（Foreground services）；可调用配套原生插件的androidNotifyService接口，或使用第三方保活插件","#4face6");
+			}
+			if(RecordApp.UniIsApp()!=1) return; //非Android App不处理
+			if(!RecordApp.UniNativeUtsPlugin) return; //未使用原生插件
+			
+			this._NotifyService=false;
+			RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{
+				title:"正在录音"
+				,content:"正在录音中，请勿关闭App运行"
+			}).then((data)=>{
+				this._NotifyService=true;
+				var nCode=data.notifyPermissionCode, nMsg=data.notifyPermissionMsg;
+				this.reclog("搭配常驻通知的Android后台录音保活服务已打开，ForegroundService已运行(通知可能不显示或会延迟显示，并不影响服务运行)，通知显示状态(1有通知权限 3可能无权限)code="+nCode+" msg="+nMsg,2);
+			}).catch((e)=>{
+				this.reclog("原生插件的androidNotifyService接口调用出错："+e.message,1);
+				this.reclog("如果你已集成了配套的原生录音插件，并且是打包自定义基座运行，请检查本项目根目录的AndroidManifest.xml里面是否已经解开了注释，否则被注释掉的service不会包含在App中",1);
+			});
+		}
+		,tryClose_androidNotifyService(){
+			if(!this._NotifyService) return;   this._NotifyService=false;
+			RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{
+				close:true
+			}).then(()=>{
+				this.reclog("已关闭搭配常驻通知的Android后台录音保活服务");
+			}).catch((e)=>{
+				this.reclog("原生插件的androidNotifyService接口调用出错："+e.message,1);
 			});
 		}
 		
@@ -311,7 +393,7 @@ export default {
 				if(size<len){
 					rec.envIn(canon.subarray(offset,offset+n),0);
 					offset+=n;
-					var delay=20; if(Date.now()-t1>RecordApp.UniIsApp()==2?3000:10000){ delay=300; t1=Date.now() }
+					var delay=20; if(Date.now()-t1>(RecordApp.UniIsApp()==2?3000:10000)){ delay=300; t1=Date.now() }
 					setTimeout(run, delay);
 					if(size-tn>=sampleRate*60){
 						tn=size;
@@ -347,7 +429,12 @@ export default {
 
 
 <!-- #ifdef APP -->
-<script module="testMainVue" lang="renderjs">
+<script module="recModule" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
+/**需要编译成App时，你需要添加一个renderjs模块，然后一模一样的import上面那些js（微信的js除外）
+	，因为App中默认是在renderjs（WebView）中进行录音和音频编码
+	。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
+	，可不提供此renderjs模块，同时逻辑层中需要将相关import的条件编译去掉**/
+
 /**============= App中在renderjs中引入RecordApp，这里只进行音频可视化，不需要录音和编码 =============**/
 /** 先引入Recorder **/
 import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用

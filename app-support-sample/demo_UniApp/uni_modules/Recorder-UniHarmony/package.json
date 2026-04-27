@@ -1,0 +1,117 @@
+{
+	"id": "Recorder-UniHarmony",
+	"displayName": "鸿蒙App权限请求+Base64二进制文件保存",
+	"version": "1.0.260427",
+	"description": "鸿蒙App环境下专用，为跨平台Recorder录音插件Recorder-UniCore的配套组件，可以单独拿出来用和学习",
+	"keywords": [
+        "permission",
+        "saveFile"
+    ],
+	"repository": "https://github.com/xiangyuecn/Recorder",
+	"engines": {
+		"HBuilderX": "^3.6.8",
+		"uni-app": "^3.7.6",
+		"uni-app-x": "^3.7.6"
+	},
+	"dcloudext": {
+		"type": "uts",
+		"sale": {
+			"regular": {
+				"price": "0.00"
+			},
+			"sourcecode": {
+				"price": "0.00"
+			}
+		},
+		"contact": {
+			"qq": "753610399"
+		},
+		"declaration": {
+			"ads": "无",
+			"data": "插件不采集任何数据",
+			"permissions": "无"
+		},
+		"npmurl": "",
+		"darkmode": "√",
+		"i18n": "√",
+		"widescreen": "√"
+	},
+	"uni_modules": {
+		"dependencies": [],
+		"encrypt": [],
+		"platforms": {
+			"cloud": {
+				"tcb": "x",
+				"aliyun": "x",
+				"alipay": "x"
+			},
+			"client": {
+				"uni-app": {
+					"vue": {
+                        "vue2": {
+                            "extVersion": "1.0.260427",
+                            "minVersion": ""
+                        },
+                        "vue3": {
+                            "extVersion": "1.0.260427",
+                            "minVersion": ""
+                        }
+					},
+					"web": {
+						"safari": "x",
+						"chrome": "x"
+					},
+					"app": {
+                        "vue": {
+                            "extVersion": "1.0.260427",
+                            "minVersion": ""
+                        },
+                        "nvue": {
+                            "extVersion": "1.0.260427",
+                            "minVersion": ""
+                        },
+						"android": "x",
+						"ios": "x",
+						"harmony": {
+                            "extVersion": "",
+                            "minVersion": "13"
+                        }
+					},
+					"mp": {
+						"weixin": "x",
+						"alipay": "x",
+						"toutiao": "x",
+						"baidu": "x",
+						"kuaishou": "x",
+						"jd": "x",
+						"harmony": "x",
+						"qq": "x",
+						"lark": "x",
+						"xhs": "x"
+					},
+					"quickapp": {
+						"huawei": "x",
+						"union": "x"
+					}
+				},
+				"uni-app-x": {
+					"web": {
+						"safari": "x",
+						"chrome": "x"
+					},
+					"app": {
+						"android": "x",
+						"ios": "x",
+						"harmony": {
+                            "extVersion": "",
+                            "minVersion": "13"
+                        }
+					},
+					"mp": {
+						"weixin": "x"
+					}
+				}
+			}
+		}
+	}
+}

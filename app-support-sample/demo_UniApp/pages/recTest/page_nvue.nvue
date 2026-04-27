@@ -132,7 +132,7 @@ export default {
 	},
 	methods:{
 		recReq(){
-			/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
+			/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App、鸿蒙App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
 			获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
 			****/
 			//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
@@ -148,7 +148,7 @@ export default {
 				this.reclog((RecordApp.Current&&RecordApp.Current.Key||"[?]")
 					+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
 				if(!RecordApp.UniNativeUtsPlugin){
-					this.reclog("请在项目manifest.json原生插件配置中勾选云端插件（先到插件市场 https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin 点试用，试用无任何限制），然后打包自定义基座后再测试","#fa0");
+					this.reclog("请在项目manifest.json原生插件配置中勾选云端插件（先到插件市场 https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin 点试用，试用无任何限制），然后打包自定义基座后再测试（暂不支持鸿蒙）","#fa0");
 				}
 			});
 		}
@@ -156,6 +156,8 @@ export default {
 			this.$refs.player.setPlayBytes(null);
 			
 			this.reclog(RecordApp.Current.Key+" 正在打开...");
+			//var prevChunk=null; //提供一个变量，在onProcess中实时提取得到pcm数据，注意开始新的转换时需要重置为null
+			
 			RecordApp.Start({
 				type:this.recType
 				,sampleRate:+this.recSampleRate
@@ -163,12 +165,21 @@ export default {
 				
 				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
 					//全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+					//prevChunk=Recorder.SampleData(buffers,sampleRate,16000,prevChunk); //buffers的采样率不是固定的，要明确转换成需要的采样率
+					//var newPCM=prevChunk.data; //这个就是最新的pcm数据Int16Array，可以发送、保存等，参考下面takeoffEncodeChunk配置一样实时写入文件
+					
+					//可以同时得到mp3+pcm两种格式：takeoffEncodeChunk实时保存mp3、onProcess实时保存pcm
+					
 					this.recpowerx=~~(300*powerLevel/100)+"px"; //nvue不支持百分比
 					this.recpowert=this.formatTime(duration,1)+" / "+powerLevel;
 				}
 				
-				,takeoffEncodeChunk:!this.takeoffEncodeChunkSet?null:(chunkBytes)=>{
+				,takeoffEncodeChunk:true?null:(chunkBytes)=>{
 					//全平台通用：实时接收到编码器编码出来的音频片段数据，chunkBytes是Uint8Array二进制数据，可以实时上传（发送）出去
+					
+					//App中使用原生插件时，可方便的将数据实时保存到同一文件，第一帧时append:false新建文件，后面的append:true追加到文件
+					//参考demo中的 test_native_plugin.vue 的 realtimeWritePcm2Wav 方法，有用到实时写入pcm数据，并在结束时在文件开头写入wav头，即可生成wav文件，mp3没有文件头直接append即可
+					//RecordApp.UniNativeUtsPluginCallAsync("writeFile",{path:"xxx.mp3",append:回调次数!=1, dataBase64:RecordApp.UniBtoa(chunkBytes.buffer)}).then(...).catch(...)
 				}
 			},()=>{
 				this.reclog(RecordApp.Current.Key+" 录制中："+this.recType
@@ -202,6 +213,7 @@ export default {
 				this.$refs.player.useNvuePlayer=true; //nvue里面用不了h5播放
 				// #endif
 				//播放，部分格式会转码成wav播放
+				this.$refs.player.parentPage=this;
 				this.$refs.player.setPlayBytes(aBuf,"",duration,mime,recSet,Recorder);
 			},(msg)=>{
 				this.reclog("结束录音失败："+msg,1);

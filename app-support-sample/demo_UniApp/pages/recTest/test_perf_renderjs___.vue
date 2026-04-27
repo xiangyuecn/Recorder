@@ -47,12 +47,19 @@
 			<button size="mini" @click="testRenderJS_Bridge">renderjs UniViewJSBridge发送给 逻辑层 </button>
 			<button size="mini" @click="testStopRenderJS_Bridge">结束</button>
 		</view>
-		<view class="testPerfRJsLogs"></view>
 	</view>
+	
+	<view>
+		<button size="mini" @click="arrayBufferToBase64Test">uni.arrayBufferToBase64可靠性验证</button>
+	</view>
+	
+	<view class="testPerfRJsLogs"></view>
 </view>
 </template>
 
 <script>
+import RecordApp from 'recorder-core/src/app-support/app';
+
 export default {
 data() {
 	return {
@@ -63,7 +70,7 @@ data() {
 },
 mounted(){
 	if(!canTest)return;
-	CallWebView('testPerfRJsLog("逻辑层btoa: '+(btoa("AB\u00ce\u00a6CD")=='QULOpkNE'?"OK":"Fail")+'")');
+	CallWebView('testPerfRJsLog("逻辑层btoa: '+(typeof(btoa)=='undefined'?'-':btoa("AB\u00ce\u00a6CD")=='QULOpkNE'?"OK":"Fail")+'")');
 	this.callVue('callTestVue(-1,'+Date.now()+',"")');
 	CallWebView('callTestWebView(-1,'+Date.now()+',"")');
 },
@@ -90,13 +97,16 @@ methods: {
 		for(var k in globalThis){
 			//vals.push('globalThis.'+k);
 		}
-		for(var k in this){
+		for(var k of Object.getOwnPropertyNames(this)||[]){
 			vals.push('this.'+k+trace(this[k]));
 		}
-		for(var k in this.$){
+		vals.push('this.$==this._ = '+(this.$==this._));
+		vals.push('----------');
+		for(var k of this.$&&Object.getOwnPropertyNames(this.$)||[]){
 			vals.push('this.$.'+k+trace(this.$[k]));
 		}
-		for(var k in this.$root){
+		vals.push('----------');
+		for(var k of this.$root&&Object.getOwnPropertyNames(this.$root)||[]){
 			vals.push('this.$root.'+k+trace(this.$root[k]));
 		}
 		for(var k in this.$root.$vm){
@@ -187,6 +197,52 @@ methods: {
 				CallWebView(fn+'('+sid+','+Date.now()+',"'+txt+'")');
 			}
 		},1);
+	}
+	
+	,arrayBufferToBase64Test(){
+		//验证一下 uni.arrayBufferToBase64 方法是否会返回错误数据，有报告疑似这货有问题，目前无法复现
+		if(RecordApp.UniIsApp()) CallWebView(`
+			var els=document.querySelectorAll(".aBuf2BRes");
+			for(var i=0;i<els.length;i++){ els[i].className=""; els[i].innerHTML="-" }
+			testPerfRJsLog('arrayBufferToBase64Test<div class="aBuf2BRes"></div>');
+		`);
+		var count=0, err=0, size=0, t1=Date.now();
+		var runId=this.runId=(this.runId||0)+1;
+		var run=()=>{
+			if(runId!=this.runId) return;
+			for(var i0=0;i0<100;i0++){
+				var len=~~(1+Math.random()*20*1024);
+				var bytes=new Uint8Array(len);
+				for(var i2=0;i2<len;i2++){ bytes[i2]=~~(Math.random()*0x100) }
+				if(false){
+					var b64=uni.arrayBufferToBase64(bytes.buffer);
+					var aBuf=uni.base64ToArrayBuffer(b64);
+				}else{
+					var b64=RecordApp.UniBtoa(bytes.buffer);
+					var aBuf=RecordApp.UniAtob(b64);
+				}
+				var bytes2=new Uint8Array(aBuf);
+				if(bytes2.length!=len){
+					err++
+				}else{
+					for(var i=0;i<len;i++){
+						if(bytes[i]!=bytes2[i]){ err++; break }
+					}
+				}
+				size+=len;
+				count++;
+			}
+			
+			var sizeStr=(size+"").replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+			if(RecordApp.UniIsApp()){
+				CallWebView(`document.querySelector(".aBuf2BRes").innerHTML='count:${count} error:${err} bytes:${sizeStr}'`);
+			}else if(Date.now()-t1>1000){
+				t1=Date.now();
+				console.log("count:"+count+" error:"+err+" bytes:"+sizeStr);
+			}
+			setTimeout(()=>{ run() }, 100);
+		};
+		run();
 	}
 }
 }
@@ -419,10 +475,10 @@ window: ${typeof window}
 uni: ${typeof uni}
 uni.requireNativePlugin: ${!!uni.requireNativePlugin}
 plus: ${typeof plus!="undefined"}
-plus.os.name: ${typeof plus!="undefined" && plus.os.name}
+plus.os.name: ${typeof plus!="undefined" && plus.os && plus.os.name}
 UniViewJSBridge: ${typeof UniViewJSBridge}
-WebViewId: ${window.__WebVieW_Id__}
-btoa: ${btoa("AB\u00ce\u00a6CD")=='QULOpkNE'}
+WebViewId: ${window.__WebVieW_Id__==null?window.__id__:window.__WebVieW_Id__}
+btoa: ${typeof(btoa)=='undefined'?'-':btoa("AB\u00ce\u00a6CD")=='QULOpkNE'}
 		`.trim();
 	str+='</pre>';
 	log(str);
@@ -446,6 +502,21 @@ window.renderjsTraceThis=function(){
 	}
 	for(var k in uni){
 		str+='\n	uni.'+k+trace(uni[k]);
+	}
+	str+='\n-----';
+	for(var k in obj._){
+		str+='\n	this._.'+k+trace(obj._[k]);
+	}
+	str+='\n-----';
+	var keys=Object.keys(window); keys.sort();
+	for(var i=0;i<keys.length;i++){
+		var key=keys[i], wObj=window[key];
+		str+='\n	window.'+key+trace(wObj);
+		if(/(_bridge|__uniConfig|__NATIVE_PLUGINS__|__SYSTEM_INFO__|__PAGE_INFO__|__core-js_|__html5plus__|__renderjsModules)/i.test(key)){
+			for(var k in wObj){
+				str+='\n	window.'+key+'.'+k+trace(wObj[k]);
+			}
+		}
 	}
 	str+='</pre>';
 	log(str);

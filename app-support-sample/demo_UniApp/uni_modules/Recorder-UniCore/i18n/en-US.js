@@ -44,9 +44,9 @@ i18n.put(putSet,
  "RXs7:"+ //args: {1}
        "WeChat miniProgram requires: {1}"
 
-//@@zh="Recorder-UniCore目前只支持：H5、APP(Android iOS)、MP-WEIXIN，其他平台环境需要自行编写适配文件实现接入"
+//@@zh="Recorder-UniCore目前只支持：H5、APP(Android iOS HarmonyOS)、MP-WEIXIN，其他平台环境需要自行编写适配文件实现接入"
 ,"4ATo:"+ //no args
-       "Recorder-UniCore currently only supports: H5, APP (Android iOS), MP-WEIXIN, other platform environments need to write their own adaptation files to achieve access"
+       "Recorder-UniCore currently only supports: H5, APP (Android iOS HarmonyOS), MP-WEIXIN, other platform environments need to write their own adaptation files to achieve access"
 
 //@@zh="RecordApp.UniWebViewActivate 需要传入当前页面或组件的this对象作为参数"
 ,"GwCz:"+ //no args
@@ -71,6 +71,10 @@ i18n.put(putSet,
 //@@zh="RecordApp.UniRenderjsRegister 已注册当前页面renderjs模块"
 ,"7kJS:"+ //no args
        "RecordApp.UniRenderjsRegister has registered the renderjs module of the current page"
+
+//@@zh="无法获取组件的$page，已通过$getAppWebview获取页面"
+,"eDx9:"+ //no args
+       "Unable to obtain the $page of the component, The page has been obtained through $getAppWebview"
 
 //@@zh="严重兼容性问题：无法获取页面或组件this.$root.$scope或.$page"
 ,"KpY6:"+ //no args
@@ -260,6 +264,10 @@ i18n.put(putSet,
 ,"l6sY:"+ //no args
        "Setting RecordApp.UniNativeUtsPlugin is not supported in renderjs"
 
+//@@zh="配置了RecordApp.UniNativeUtsPlugin，但鸿蒙App环境暂未提供配套的原生录音插件"
+,"17sY:"+ //no args
+       "The RecordApp.UniNativeUtsPlugin has been configured, but the HarmonyOS App environment currently lacks a corresponding native recording plugin"
+
 //@@zh="当前App未打包进双端原生插件[{1}]，尝试加载单端[{2}]"
 ,"kSjQ:"+ //args: {1}-{2}
        "The current App is not packaged into the dual-end native plug-in [{1}], try to load the single-end [{2}]"
@@ -279,6 +287,10 @@ i18n.put(putSet,
 //@@zh="需在App逻辑层中调用原生插件功能"
 ,"MrBx:"+ //no args
        "The native plug-in function needs to be called in the App logic layer"
+
+//@@zh="鸿蒙App调用相关方法前需先配置 RecordApp.{1} ，请到demo中复制、或插件市场[ {2} ]下载此配套UTS组件，然后添加如下代码："
+,"CkR5:"+ //args: {1}-{2}
+       "Before calling related methods in the HarmonyOS App, you need to configure RecordApp.{1} . Please copy it from the demo or download the corresponding UTS component from the plugin market [ {2} ], and then add the following code: "
 
 //@@zh="未开始录音，不可以调用{1}"
 ,"0FGq:"+ //args: {1}
@@ -307,6 +319,26 @@ i18n.put(putSet,
 //@@zh="plus.ios请求录音权限，状态值: "
 ,"iKhe:"+ //no args
        "plus.ios requests recording permission, status value: "
+
+//@@zh="正在调用{1}请求鸿蒙原生录音权限"
+,"YrD0:"+ //args: {1}
+       "Invoking {1} to request HarmonyOS native recording permissions"
+
+//@@zh="已获得鸿蒙录音权限"
+,"YrD1:"+ //no args
+       "HarmonyOS recording permission granted"
+
+//@@zh="无鸿蒙录音权限"
+,"YrD2:"+ //no args
+       "No HarmonyOS recording permission"
+
+//@@zh="调用{1}请求录音权限出错："
+,"YrD5:"+ //args: {1}
+       "An error occurred while calling {1} to request recording permission: "
+
+//@@zh="调用鸿蒙权限请求出错："
+,"YrD6:"+ //no args
+       "Error occurred when invoking HarmonyOS permission request: "
 
 //@@zh="正在调用plus.android.requestPermissions请求Android原生录音权限"
 ,"7Noe:"+ //no args

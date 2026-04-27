@@ -1,0 +1,52 @@
+import { RequestPermissionResult, Harmony_RequestPermissionAsync__Define, Harmony_SaveLocalFile__Define } from '../interface.uts';
+import { abilityAccessCtrl, Permissions } from '@kit.AbilityKit';
+import { fileIo as fs } from '@kit.CoreFileKit';
+import { util } from '@kit.ArkTS';
+
+export const Harmony_RequestPermissionAsync : Harmony_RequestPermissionAsync__Define = async function(permissions : Array<string>) : Promise<Array<RequestPermissionResult>> {
+	//向用户申请授权 https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/request-user-authorization
+	//似乎不用判断是否已经有权限了，直接去请求拿结果
+	let psArr : Array<Permissions> = [];
+	for(let key of permissions){
+		psArr.push(key as Permissions);
+	}
+	
+	let atManager = abilityAccessCtrl.createAtManager();
+	let context = UTSHarmony.getUIAbilityContext();
+	let data = await atManager.requestPermissionsFromUser(context, psArr);
+	let codes = data.authResults as Array<number>;
+	let errs = data.errorReasons as Array<number>;
+	
+	let rtv : Array<RequestPermissionResult> =[];
+	for(let i=0,L=permissions.length; i<L; i++){
+		let key=permissions[i];
+		let err=errs[i];
+		if(err==1) throw new Error("权限名["+key+"]非法");
+		if(err==2) throw new Error("权限["+key+"]未声明");
+		
+		let code=codes[i];
+		rtv.push(code==0? 1 : 3);
+	}
+	return rtv;
+}
+
+
+
+export const Harmony_SaveLocalFile : Harmony_SaveLocalFile__Define = (fileName : string, base64 : string) : string {
+	let helper = new util.Base64Helper();
+	let buffer = helper.decodeSync(base64).buffer;
+	
+	let context = UTSHarmony.getUIAbilityContext();
+	let saveDir = context.filesDir+"/RecUniSaveFiles";
+	if (!fs.accessSync(saveDir)) {
+		fs.mkdirSync(saveDir, true);
+	}
+	
+	let filePath = saveDir+"/"+fileName;
+	
+	let file = fs.openSync(filePath, fs.OpenMode.WRITE_ONLY | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+	fs.writeSync(file.fd, buffer);
+	fs.closeSync(file);
+	
+	return filePath;
+};

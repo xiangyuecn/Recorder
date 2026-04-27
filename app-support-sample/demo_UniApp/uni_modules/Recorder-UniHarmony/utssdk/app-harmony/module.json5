@@ -1,0 +1,21 @@
+{
+	/*这个文件是鸿蒙权限配置文件，在打包时会合并到主工程项目中。
+		如果在uniapp项目根目录已存在 /harmony-configs/entry/src/main/module.json5 配置文件
+		，并且自行声明了麦克风权限，可以删掉此UTS组件中的 module.json5 和 resources目录
+	*/
+	
+	"module": {
+		"name": "uni_modules__recorder_uniharmony",
+		"type": "har",
+		// "deviceTypes": [ "default", "tablet", "2in1", ], //似乎不用放，uniapp编译的时候会自动加上，要是编译不过就解开这个注释
+		"requestPermissions": [
+			// 需要的权限声明放这里，可以自行添加
+			// 默认自带麦克风权限声明，reason字段对应的文字在 resources/base/element/string.json 里面添加修改
+			{
+				"name": "ohos.permission.MICROPHONE"
+				,"reason": "$string:microphone_reason__recorder_uniharmony"
+				,"usedScene": { "when": "inuse" }
+			},
+		],
+	}
+}

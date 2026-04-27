@@ -45,8 +45,8 @@ i18n.put(putSet,
  "RXs7:"+ //args: {1}
        "" /** TODO: translate to your-language **/
 
-//@@zh="Recorder-UniCore目前只支持：H5、APP(Android iOS)、MP-WEIXIN，其他平台环境需要自行编写适配文件实现接入"
-//@@en="Recorder-UniCore currently only supports: H5, APP (Android iOS), MP-WEIXIN, other platform environments need to write their own adaptation files to achieve access"
+//@@zh="Recorder-UniCore目前只支持：H5、APP(Android iOS HarmonyOS)、MP-WEIXIN，其他平台环境需要自行编写适配文件实现接入"
+//@@en="Recorder-UniCore currently only supports: H5, APP (Android iOS HarmonyOS), MP-WEIXIN, other platform environments need to write their own adaptation files to achieve access"
 ,"4ATo:"+ //no args
        "" /** TODO: translate to your-language **/
 
@@ -78,6 +78,11 @@ i18n.put(putSet,
 //@@zh="RecordApp.UniRenderjsRegister 已注册当前页面renderjs模块"
 //@@en="RecordApp.UniRenderjsRegister has registered the renderjs module of the current page"
 ,"7kJS:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="无法获取组件的$page，已通过$getAppWebview获取页面"
+//@@en="Unable to obtain the $page of the component, The page has been obtained through $getAppWebview"
+,"eDx9:"+ //no args
        "" /** TODO: translate to your-language **/
 
 //@@zh="严重兼容性问题：无法获取页面或组件this.$root.$scope或.$page"
@@ -315,6 +320,11 @@ i18n.put(putSet,
 ,"l6sY:"+ //no args
        "" /** TODO: translate to your-language **/
 
+//@@zh="配置了RecordApp.UniNativeUtsPlugin，但鸿蒙App环境暂未提供配套的原生录音插件"
+//@@en="The RecordApp.UniNativeUtsPlugin has been configured, but the HarmonyOS App environment currently lacks a corresponding native recording plugin"
+,"17sY:"+ //no args
+       "" /** TODO: translate to your-language **/
+
 //@@zh="当前App未打包进双端原生插件[{1}]，尝试加载单端[{2}]"
 //@@en="The current App is not packaged into the dual-end native plug-in [{1}], try to load the single-end [{2}]"
 ,"kSjQ:"+ //args: {1}-{2}
@@ -338,6 +348,11 @@ i18n.put(putSet,
 //@@zh="需在App逻辑层中调用原生插件功能"
 //@@en="The native plug-in function needs to be called in the App logic layer"
 ,"MrBx:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="鸿蒙App调用相关方法前需先配置 RecordApp.{1} ，请到demo中复制、或插件市场[ {2} ]下载此配套UTS组件，然后添加如下代码："
+//@@en="Before calling related methods in the HarmonyOS App, you need to configure RecordApp.{1} . Please copy it from the demo or download the corresponding UTS component from the plugin market [ {2} ], and then add the following code: "
+,"CkR5:"+ //args: {1}-{2}
        "" /** TODO: translate to your-language **/
 
 //@@zh="未开始录音，不可以调用{1}"
@@ -373,6 +388,31 @@ i18n.put(putSet,
 //@@zh="plus.ios请求录音权限，状态值: "
 //@@en="plus.ios requests recording permission, status value: "
 ,"iKhe:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="正在调用{1}请求鸿蒙原生录音权限"
+//@@en="Invoking {1} to request HarmonyOS native recording permissions"
+,"YrD0:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
+//@@zh="已获得鸿蒙录音权限"
+//@@en="HarmonyOS recording permission granted"
+,"YrD1:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="无鸿蒙录音权限"
+//@@en="No HarmonyOS recording permission"
+,"YrD2:"+ //no args
+       "" /** TODO: translate to your-language **/
+
+//@@zh="调用{1}请求录音权限出错："
+//@@en="An error occurred while calling {1} to request recording permission: "
+,"YrD5:"+ //args: {1}
+       "" /** TODO: translate to your-language **/
+
+//@@zh="调用鸿蒙权限请求出错："
+//@@en="Error occurred when invoking HarmonyOS permission request: "
+,"YrD6:"+ //no args
        "" /** TODO: translate to your-language **/
 
 //@@zh="正在调用plus.android.requestPermissions请求Android原生录音权限"

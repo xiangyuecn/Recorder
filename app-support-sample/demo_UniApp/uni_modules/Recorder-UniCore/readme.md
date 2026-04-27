@@ -7,13 +7,13 @@
 本组件使用`Recorder`开源库来进行录音和音频数据处理，使用`RecordApp`和本组件内的`app-uni-support.js`来适配到不同平台环境下进行录音。
 
 - 支持vue2、vue3、nvue
-- 支持编译成：H5、Android App、iOS App、微信小程序
+- 支持编译成：H5、Android App、iOS App、鸿蒙App、微信小程序
 - 支持已有的大部分录音格式：mp3、wav、pcm、amr、ogg、g711a、g711u等
 - 支持实时处理，包括变速变调、实时上传、ASR语音转文字
 - 支持可视化波形显示；可配置回声消除、降噪；**注意：不支持通话时录音**
 - 支持PCM音频流式播放、完整播放，App端用原生插件边录音边播放更流畅
 - 支持离线使用，本组件和配套原生插件均不依赖网络
-- App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好
+- App端有配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)可供搭配使用，兼容性和体验更好（暂无鸿蒙原生）
 
 **详细文档(含Demo项目)：** [https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp](https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp)
 
@@ -67,14 +67,22 @@ import RecordApp from 'recorder-core/src/app-support/app'
 //所有平台必须引入的uni-app支持文件（如果编译出现路径错误，请把@换成 ../../ 这种）
 import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
 
+
+// #ifdef APP-HARMONY
+//鸿蒙App适配：需要配置配套的UTS原生组件，来实现权限请求和文件保存。尽量加上条件编译，不加的话Android、iOS也会编译这个UTS又用不到。可到demo示例项目中复制，或插件市场下载此配套UTS组件 https://ext.dcloud.net.cn/plugin?name=Recorder-UniHarmony 
+import * as UniHarmonyUTS from '@/uni_modules/Recorder-UniHarmony';
+RecordApp.UniHarmonyUTS=UniHarmonyUTS;
+// #endif
+
+
 /** 需要编译成微信小程序时，引入微信小程序支持文件 **/
 // #ifdef MP-WEIXIN
     import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
 // #endif
 
 
-/** H5、小程序环境中：引入需要的格式编码器、可视化插件，App环境中在renderjs中引入 **/
-// 注意：如果App中需要在逻辑层中调用Recorder的编码/转码功能，需要去掉此条件编译，否则会报未加载编码器的错误
+/** H5、小程序环境中：引入需要的格式编码器、可视化插件，App环境中默认是在renderjs中引入 **/
+// 注意：如果App中配置了 RecordApp.UniWithoutAppRenderjs=true 时，需要去掉此条件编译，否则会报未加载编码器的错误
 // #ifdef H5 || MP-WEIXIN
     //按需引入你需要的录音格式支持文件，如果需要多个格式支持，把这些格式的编码引擎js文件统统引入进来即可
     import 'recorder-core/src/engine/mp3'
@@ -92,7 +100,7 @@ import '@/uni_modules/Recorder-UniCore/app-uni-support.js'
 
 ``` html
 <!-- #ifdef APP -->
-<script module="yourModuleName" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
+<script module="recModule" lang="renderjs"> //此模块内部只能用选项式API风格，vue2、vue3均可用，请照抄这段代码；不可改成setup组合式API风格，否则可能不能import vue导致编译失败
 /**需要编译成App时，你需要添加一个renderjs模块，然后一模一样的import上面那些js（微信的js除外）
     ，因为App中默认是在renderjs（WebView）中进行录音和音频编码
     。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
@@ -136,14 +144,15 @@ export default {
 //RecordApp.UniNativeUtsPlugin={ nativePlugin:true };  //App中启用配套的原生录音插件支持，配置后会使用原生插件进行录音，没有原生插件时依旧使用renderjs H5录音
 //App中提升后台录音的稳定性：配置了原生插件后，可配置 `RecordApp.UniWithoutAppRenderjs=true` 禁用renderjs层音频编码（WebWorker加速），变成逻辑层中直接编码（但会降低逻辑层性能），后台运行时可避免部分手机WebView运行受限的影响
 //App中提升后台录音的稳定性：需要启用后台录音保活服务（iOS不需要，参考录音权限配置），Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音也受影响），请调用配套原生插件的`androidNotifyService`接口，或使用第三方保活插件
+    //鸿蒙App中目前暂未提供配套的原生录音插件，需要判断鸿蒙环境下不要禁用renderjs
 
 export default {
-data() { return {} } //视图没有引用到的变量无需放data里，直接this.xxx使用
+data() { return {} }
 
 ,mounted() {
     this.isMounted=true;
     //页面onShow时【必须调用】的函数，传入当前组件this
-    RecordApp.UniPageOnShow(this);
+    RecordApp.UniPageOnShow(this); //vue3 setup里用 vue3This 变量
 }
 ,onShow(){ //onShow可能比mounted先执行，页面可能还未准备好
     if(this.isMounted) RecordApp.UniPageOnShow(this);
@@ -157,7 +166,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
         
         //RecordApp.RequestPermission_H5OpenSet={ audioTrackSet:{ noiseSuppression:true,echoCancellation:true,autoGainControl:true } }; //这个是Start中的audioTrackSet配置，在h5（H5、App+renderjs）中必须提前配置，因为h5中RequestPermission会直接打开录音
         
-        RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
+        RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView，vue3 setup里用 vue3This 变量
         RecordApp.RequestPermission(()=>{
             console.log("已获得录音权限，可以开始录音了");
         },(msg,isUserNotAllow)=>{
@@ -170,9 +179,10 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
     
     //开始录音
     ,recStart(){
-        //Android App如果要后台录音，需要启用后台录音保活服务（iOS不需要），需使用配套原生插件、或使用第三方保活插件
+        //Android App如果要后台录音，需要启用后台录音保活服务（iOS不需要），需使用配套原生插件、或使用第三方保活插件；请参考demo中 main_recTest.vue 的 tryStart_androidNotifyService 方法
         //RecordApp.UniNativeUtsPluginCallAsync("androidNotifyService",{ title:"正在录音" ,content:"正在录音中，请勿关闭App运行" }).then(()=>{...}).catch((e)=>{...}) 注意必须RecordApp.RequestPermission得到权限后调用
-        
+
+        var prevChunk=null; //提供一个变量，在onProcess中实时提取得到pcm数据，注意开始新的转换时需要重置为null
         //录音配置信息
         var set={
             type:"mp3",sampleRate:16000,bitRate:16 //mp3格式，指定采样率hz、比特率kbps，其他参数使用默认配置；注意：是数字的参数必须提供数字，不要用字符串；需要使用的type类型，需提前把格式支持文件加载进来，比如使用wav格式需要提前加载wav.js编码引擎
@@ -181,7 +191,11 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
                 echoCancellation:true,noiseSuppression:true,autoGainControl:true} */
             ,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
                 //全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
-                
+                prevChunk=Recorder.SampleData(buffers,sampleRate,16000,prevChunk); //buffers的采样率不是固定的，要明确转换成需要的采样率
+                var newPCM=prevChunk.data; //这个就是最新的pcm数据Int16Array，可以发送、保存等，参考下面takeoffEncodeChunk配置一样实时写入文件
+
+                //可以同时得到mp3+pcm两种格式：takeoffEncodeChunk实时保存mp3、onProcess实时保存pcm
+
                 //注意：App里面是在renderjs中进行实际的音频格式编码操作，此处的buffers数据是renderjs实时转发过来的，修改此处的buffers数据不会改变renderjs中buffers，所以不会改变生成的音频文件，可在onProcess_renderjs中进行修改操作就没有此问题了；如需清理buffers内存，此处和onProcess_renderjs中均需要进行清理，H5、小程序中无此限制
                 //注意：如果你要用只支持在浏览器中使用的Recorder扩展插件，App里面请在renderjs中引入此扩展插件，然后在onProcess_renderjs中调用这个插件；H5可直接在这里进行调用，小程序不支持这类插件；如果调用插件的逻辑比较复杂，建议封装成js文件，这样逻辑层、renderjs中直接import，不需要重复编写
                 
@@ -196,6 +210,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
                 this.clearBufferIdx=newBufferIdx; */
             }
             ,onProcess_renderjs:`function(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd){
+                //App中才会回调_renderjs结尾的方法(在WebView视图层中运行)，但如果配置了 RecordApp.UniWithoutAppRenderjs=true 将不会回调（后台运行更稳定 不受WebView暂停影响）
                 //App中在这里修改buffers会改变生成的音频文件，但注意：buffers会先转发到逻辑层onProcess后才会调用本方法，因此在逻辑层的onProcess中需要重新修改一遍
                 //本方法可以返回true，renderjs中的onProcess将开启异步模式，处理完后调用asyncEnd结束异步，注意：这里异步修改的buffers一样的不会在逻辑层的onProcess中生效
                 //App中是在renderjs中进行的可视化图形绘制，因此需要写在这里，this是renderjs模块的this（也可以用This变量）；如果代码比较复杂，请直接在renderjs的methods里面放个方法xxxFunc，这里直接使用this.xxxFunc(args)进行调用
@@ -216,6 +231,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
                 //App中如果未配置RecordApp.UniWithoutAppRenderjs时，建议提供此回调，因为录音结束后会将整个录音文件从renderjs传回逻辑层，由于uni-app的逻辑层和renderjs层数据交互性能实在太拉跨了，大点的文件传输会比较慢，提供此回调后可避免Stop时产生超大数据回传
                 
                 //App中使用原生插件时，可方便的将数据实时保存到同一文件，第一帧时append:false新建文件，后面的append:true追加到文件
+                //参考demo中的 test_native_plugin.vue 的 realtimeWritePcm2Wav 方法，有用到实时写入pcm数据，并在结束时在文件开头写入wav头，即可生成wav文件，mp3没有文件头直接append即可
                 //RecordApp.UniNativeUtsPluginCallAsync("writeFile",{path:"xxx.mp3",append:回调次数!=1, dataBase64:RecordApp.UniBtoa(chunkBytes.buffer)}).then(...).catch(...)
             }
             ,takeoffEncodeChunk_renderjs:true?null:`function(chunkBytes){
@@ -232,7 +248,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
             }`
         };
         
-        RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
+        RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView，vue3 setup里用 vue3This 变量
         RecordApp.Start(set,()=>{
             console.log("已开始录音");
             //【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
@@ -287,7 +303,7 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
             //如果是App、小程序环境，可以直接保存到本地文件，然后调用相关网络接口上传
             // #ifdef APP || MP-WEIXIN
                 RecordApp.UniSaveLocalFile("recorder.mp3",arrayBuffer,(savePath)=>{
-                    console.log(savePath); //app保存的文件夹为`plus.io.PUBLIC_DOWNLOADS`，小程序为 `wx.env.USER_DATA_PATH` 路径
+                    console.log(savePath); //app保存的文件夹为`plus.io.PUBLIC_DOWNLOADS` 鸿蒙为`Context.filesDir/RecUniSaveFiles`，小程序为 `wx.env.USER_DATA_PATH` 路径
                     //uni.uploadFile({filePath:savePath, ...}) //参考demo中的test_upload_saveFile.vue
                 },(errMsg)=>{ console.error(errMsg) });
             // #endif
@@ -314,8 +330,30 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 *⠀*
 
 # 录音权限配置、需要注意的细节
-## 编译成H5时录音和权限
-编译成H5时，录音功能由Recorder H5提供，无需额外处理录音权限。
+## 编译成App时录音和权限
+编译成App录音时，需要在uni-app项目的 `manifest.json` 中配置好Android、iOS、鸿蒙的录音权限声明：
+```
+//Android需要添加的权限，第二个也必须添加
+<uses-permission android:name="android.permission.RECORD_AUDIO"/>
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
+【注意】Android如果需要在后台录音，需要启用后台录音保活服务，Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音、原生插件录音均受影响），请调用配套原生插件的`androidNotifyService`接口，或使用第三方保活插件；同时配置RecordApp.UniWithoutAppRenderjs=true禁用renderjs避免部分手机WebView后台运行受限
+
+//iOS需要声明的权限
+NSMicrophoneUsageDescription
+【注意】iOS需要在 `App常用其它设置`->`后台运行能力`中提供`audio`配置，不然App切到后台后立马会停止录音
+
+//鸿蒙需要声明的权限
+鸿蒙App的编译运行，需要先下载 https://ext.dcloud.net.cn/plugin?name=Recorder-UniHarmony 组件放到uni_modules内
+鸿蒙录音权限声明在 @/uni_modules/Recorder-UniHarmony/utssdk/app-harmony/module.json5 内，对应权限声明为“正在申请使用麦克风权限，以便为您提供相应的服务”，可阅读此json5文件自行修改
+```
+
+App中录音时分两种情况：
+1. 默认未配置`RecordApp.UniNativeUtsPlugin`（未使用原生录音插件和uts插件）时，会在renderjs中使用Recorder H5进行录音，录音数据会实时回传到逻辑层。
+2. 配置了`RecordApp.UniNativeUtsPlugin`使用原生录音插件或uts插件时，会直接调用原生插件进行录音；录音数据默认会传递到renderjs中进行音频编码处理（WebWorker加速），然后再实时回传到逻辑层，如果配置了`RecordApp.UniWithoutAppRenderjs=true`时，音频编码处理将会在逻辑层中直接处理。
+
+当App是在renderjs中使用H5进行录音时（未使用原生录音插件和uts插件），iOS上只支持14.3以上版本，**且iOS上每次进入页面后第一次请求录音权限时、或长时间无操作再请求录音权限时WebView均会弹出录音权限对话框**，不同旧iOS版本（低于iOS17）下H5录音可能存在的问题在App中同样会存在；使用配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)或uts插件时无以上问题和版本限制（uts插件开发中暂不可用），Android也无以上问题。
+
+当App中音频编码是在renderjs中进行处理时，录音结束后会将整个录音文件传回逻辑层，由于uni-app的逻辑层和renderjs层大点的文件传输会比较慢，**建议Start时使用takeoffEncodeChunk实时获取音频文件数据可避免Stop时产生超大数据回传**；配置了`RecordApp.UniWithoutAppRenderjs=true`后，因为音频编码直接是在逻辑层中进行，将不存在传输性能损耗，但会影响逻辑层的性能（正常情况轻微不明显），需要配套使用原生录音插件才可以进行此项配置（暂无鸿蒙原生）。
 
 
 *⠀*
@@ -332,26 +370,9 @@ data() { return {} } //视图没有引用到的变量无需放data里，直接th
 
 *⠀*
 
-## 编译成App时录音和权限
-编译成App录音时，分两种情况：
-1. 默认未配置`RecordApp.UniNativeUtsPlugin`（未使用原生录音插件和uts插件）时，会在renderjs中使用Recorder H5进行录音，录音数据会实时回传到逻辑层。
-2. 配置了`RecordApp.UniNativeUtsPlugin`使用原生录音插件或uts插件时，会直接调用原生插件进行录音；录音数据默认会传递到renderjs中进行音频编码处理（WebWorker加速），然后再实时回传到逻辑层，如果配置了`RecordApp.UniWithoutAppRenderjs=true`时，音频编码处理将会在逻辑层中直接处理。
+## 编译成H5时录音和权限
+编译成H5时，录音功能由Recorder H5提供，无需额外处理录音权限。
 
-当App是在renderjs中使用H5进行录音时（未使用原生录音插件和uts插件），iOS上只支持14.3以上版本，**且iOS上每次进入页面后第一次请求录音权限时、或长时间无操作再请求录音权限时WebView均会弹出录音权限对话框**，不同旧iOS版本（低于iOS17）下H5录音可能存在的问题在App中同样会存在；使用配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)或uts插件时无以上问题和版本限制（uts插件开发中暂不可用），Android也无以上问题。
-
-当音频编码是在renderjs中进行处理时，录音结束后会将整个录音文件传回逻辑层，由于uni-app的逻辑层和renderjs层大点的文件传输会比较慢，**建议Start时使用takeoffEncodeChunk实时获取音频文件数据可避免Stop时产生超大数据回传**；配置了`RecordApp.UniWithoutAppRenderjs=true`后，因为音频编码直接是在逻辑层中进行，将不存在传输性能损耗，但会影响逻辑层的性能（正常情况轻微不明显），需要配套使用原生录音插件才可以进行此项配置。
-
-在调用`RecordApp.RequestPermission`的时候，`Recorder-UniCore`组件会自动处理好App的系统录音权限，只需要在uni-app项目的 `manifest.json` 中配置好Android和iOS的录音权限声明。
-```
-//Android需要勾选的权限，第二个也必须勾选
-<uses-permission android:name="android.permission.RECORD_AUDIO"/>
-<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
-【注意】Android如果需要在后台录音，需要启用后台录音保活服务，Android 9开始，锁屏或进入后台一段时间后App可能会被禁止访问麦克风导致录音静音、无法录音（renderjs中H5录音、原生插件录音均受影响），请调用配套原生插件的`androidNotifyService`接口，或使用第三方保活插件
-
-//iOS需要声明的权限
-NSMicrophoneUsageDescription
-【注意】iOS需要在 `App常用其它设置`->`后台运行能力`中提供`audio`配置，不然App切到后台后立马会停止录音
-```
 
 
 *⠀*
@@ -372,10 +393,10 @@ RecordApp.Start({
     ,audioTrackSet:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
     
     //Android指定麦克风源（App搭配原生插件、小程序可用），0 DEFAULT 默认音频源，1 MIC 主麦克风，5 CAMCORDER 相机方向的麦，6 VOICE_RECOGNITION 语音识别，7 VOICE_COMMUNICATION 语音通信(带回声消除)
-    ,android_audioSource:7 //提供此配置时优先级比audioTrackSet更高，默认值为0
+    ,android_audioSource:7 //不建议使用，提供此配置时优先级比audioTrackSet更高，默认值为0
     
     //iOS的AVAudioSession setCategory的withOptions参数值（App搭配原生插件可用），取值请参考配套原生插件文档中的iosSetDefault_categoryOptions
-    //,ios_categoryOptions:0x1|0x4 //默认值为5(0x1|0x4)
+    //,ios_categoryOptions:0x1|0x4 //不建议使用，默认值为5(0x1|0x4)
 });
 
 //App搭配原生插件时尝试切换听筒播放或外放
@@ -407,13 +428,13 @@ wx.setInnerAudioOption({ speakerOn:false或true })
 *⠀*
 
 # 本组件的授权许可限制
-**本组件内的app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App），不可用于正式发布或商用，正式发布或商用需先到DCloud插件市场购买[此带授权的插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android)（费用为¥199元，赠送Android版原生插件），即可获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权。
+**本组件内的app-uni-support.js文件在uni-app中编译到App平台时仅供测试用（App平台包括：Android App、iOS App、鸿蒙App），不可用于正式发布或商用，正式发布或商用需先到DCloud插件市场购买[此带授权的插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android)（费用为¥199元，赠送Android版原生插件），即可获得授权许可**；编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权。
 
 在App中，如果未获得授权许可，将会在App打开后第一次调用`RecordApp.RequestPermission`请求录音权限时，弹出“未获得商用授权时，App上仅供测试”提示框。
 
 在DCloud插件市场购买了[带授权的插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin-Android)获得了授权后，请在调用`RecordApp.RequestPermission`请求录音权限前，赋值`RecordApp.UniAppUseLicense="我已获得UniAppID=***的商用授权"`（星号为你项目的uni-app应用标识），就不会弹提示框了；或者直接使用配套的[原生录音插件](https://ext.dcloud.net.cn/plugin?name=Recorder-NativePlugin)，设置`RecordApp.UniNativeUtsPlugin`参数后，也不会弹提示框；其他情况请联系作者咨询，更多细节请参考[本组件的GitHub文档](https://gitee.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp)。
 
-获取授权、需要技术支持、或有不清楚的地方可以联系我们，客服联系方式：QQ 1251654593 ，或者直接联系作者QQ 753610399 （回复可能没有客服及时）。
+获取授权、需要技术支持、或有不清楚的地方，可以联系客服：本插件页面`进入交流群`，或`QQ(` `125` `165` `4593` `)` ，或者直接联系作者`QQ(` `753` `610` `399` `)` （回复可能没有客服及时）。
 
 插件开发维护不易，感谢支持~
 

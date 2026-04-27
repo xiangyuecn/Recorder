@@ -4,18 +4,7 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 -->
 
 <template>
-<view> <!-- 最外层最好是有唯一个view，否则可能会出现各种莫名其妙的bug -->
-<view style="padding:5px 10px 0">
-	<view><text style="font-size:24px;color:#0b1">页面内使用vue3组合式API的编写方法</text></view>
-	<view><text style="font-size:13px;color:#f60">在组合式 API (Composition API) 中使用 getCurrentInstance().proxy 拿到当前组件的this，使用上就和选项式 API (Options API) 没有任何区别了。</text></view>
-</view>
-
-<view v-if="!isVue3" style="font-size:32px;color:#aaa">
-	非vue3，不测试
-</view>
-
-<!-- #ifdef VUE3 -->
-<view v-if="isVue3">
+<view>
 	<!-- 控制按钮 -->
 	<view style="display: flex;padding-top:10px">
 		<view style="width:10px"></view>
@@ -32,6 +21,10 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 		<view style="width:10px"></view>
 	</view>
+	<view style="padding:10px 10px 0">
+		<button size="mini" type="default" @click="recPause">暂停</button>
+		<button size="mini" type="default" @click="recResume">继续</button>
+	</view>
 	
 	<!-- 可视化绘制 -->
 	<view style="padding:5px 0 0 10px">
@@ -45,10 +38,6 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		<view class="recwave">
 			<canvas type="2d" class="recwave-WaveView"></canvas>
 		</view>
-	</view>
-	
-	<view style="padding:5px 10px 0">
-		<view><checkbox :checked="appUseH5Rec" @click="appUseH5RecClick">App里面总是使用Recorder H5录音（勾选后不启用原生录音插件和uts插件）</checkbox></view>
 	</view>
 	
 	<!-- 手撸播放器 -->
@@ -65,25 +54,13 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 	</view>
 	
-	<!-- 测试 -->
-	<view style="padding-top:10px">
-		<view style="color:#f60" v-if="HBuilder_4_28V">{{HBuilder_4_28Tips}}</view>
-		<view>
-			<button size="mini" @click="traceThis">显示vue3This可用属性</button>
-		</view>
-		<view class="testPerfRJsLogs" v-html="traceThisHtml"></view>
-	</view>
-	
 	<view style="padding-top:80px"></view>
-</view>
-<!-- #endif -->
-
 </view>
 </template>
 
-<!-- #ifdef VUE3 -->
+
 <script setup>
-import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放器
+import TestPlayer from '../test_player___.vue'; //手撸的一个跨平台播放器
 
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
@@ -103,7 +80,7 @@ import Recorder from 'recorder-core';
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【所有平台必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+import '../../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
 // #ifdef MP-WEIXIN
 //可选引入微信小程序支持文件
@@ -121,8 +98,7 @@ RecordApp.UniHarmonyUTS=UniHarmonyUTS;
 
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app'
-const isVue3=ref(true);
-const appUseH5Rec=ref(false);
+const traceThisHtml=ref("");
 const recpowerx=ref(0);
 const recpowert=ref("");
 const reclogs=ref([]);
@@ -131,23 +107,17 @@ var vue3This=getCurrentInstance().proxy; //必须定义到最外面，getCurrent
 
 
 onMounted(()=>{
-	reclog("onMounted");
+	reclog("组件onMounted：component_CompositionAPI.vue");
 	vue3This.isMounted=true; RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面准备好了时再执行一次
 });
 onUnmounted(()=>{
 	RecordApp.Stop(); //清理资源，如果打开了录音没有关闭，这里将会进行关闭
 });
-onShow(()=>{
-	reclog("onShow");
+onShow(()=>{ //当组件用时没这个回调
 	if(vue3This.isMounted) RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面可能还未准备好
 });
 
 
-var appUseH5RecClick=()=>{
-	appUseH5Rec.value=!appUseH5Rec.value;
-	RecordApp.Current=null;
-	reclog('切换了appUseH5Rec='+appUseH5Rec.value+'，重新请求录音权限后生效',"#f60");
-};
 var currentKeyTag=()=>{
 	if(!RecordApp.Current) return "[?]";
 	// #ifdef APP
@@ -162,22 +132,12 @@ var currentKeyTag=()=>{
 
 
 
-
 var recReq=()=>{
-	if(appUseH5Rec.value){//测试时指定使用h5录音
-		RecordApp.UniNativeUtsPlugin=null;
-	}else{
-		RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //恢复原生插件配置值
-	}
-	
 	/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App、鸿蒙App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
 	获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
 	****/
 	//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
 	
-	if(RecordApp.UniIsApp()){
-		RecordApp.UniWebViewVueCall(vue3This,'this.testCall("这里测试一下直接调用renderjs中的方法")')
-	}
 	reclog("正在请求录音权限...");
 	RecordApp.UniWebViewActivate(vue3This); //App环境下必须先切换成当前页面WebView
 	RecordApp.RequestPermission(()=>{
@@ -189,7 +149,8 @@ var recReq=()=>{
 		reclog(currentKeyTag()+" "
 			+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
 	});
-}
+};
+
 var recStart=()=>{
 	vue3This.$refs.player.setPlayBytes(null);
 	
@@ -254,7 +215,7 @@ var recStart=()=>{
 			this.audioData=aBuf; //留着给Stop时进行转码成wav播放
 		}`
 	},()=>{
-		reclog(currentKeyTag()+" 录制中 mp3"+(appUseH5Rec.value?" appUseH5Rec":""),2);
+		reclog(currentKeyTag()+" 录制中",2);
 		
 		//创建音频可视化图形绘制，App环境下是在renderjs中绘制，H5、小程序等是在逻辑层中绘制，因此需要提供两段相同的代码（宽高值需要和canvas style的宽高一致）
 		RecordApp.UniFindCanvas(vue3This,[".recwave-WaveView"],`
@@ -265,7 +226,21 @@ var recStart=()=>{
 	},(msg)=>{
 		reclog(currentKeyTag()+" 开始录音失败："+msg,1);
 	});
-}
+};
+
+var recPause=()=>{
+	if(RecordApp.GetCurrentRecOrNull()){
+		RecordApp.Pause();
+		reclog("已暂停");
+	}
+};
+var recResume=()=>{
+	if(RecordApp.GetCurrentRecOrNull()){
+		RecordApp.Resume();
+		reclog("继续录音中...");
+	}
+};
+
 var recStop=()=>{
 	reclog("正在结束录音...");
 	RecordApp.Stop((aBuf,duration,mime)=>{
@@ -284,9 +259,7 @@ var recStop=()=>{
 	},(msg)=>{
 		reclog("结束录音失败："+msg,1);
 	});
-}
-
-
+};
 
 
 var reclog=vue3This.reclog=(msg,color)=>{ //别的地方会读取this.reclog
@@ -309,93 +282,7 @@ var formatTime=(ms,showSS)=>{
 	if(showSS)v+="″"+("00"+ss).substr(-3);;
 	return v;
 }
-
-//测试用，兼容性问题
-var isHBuilder_4_28=false;
-if((!vue3This.$root || !vue3This.$root.$scope) && vue3This.$scope){
-	isHBuilder_4_28=true;
-}
-const HBuilder_4_28V=ref(isHBuilder_4_28);
-const HBuilder_4_28Tips=ref('是否存在兼容问题：'+(isHBuilder_4_28?'存在':'不存在')+'，已知：仅限于使用vue3的组合式API写法时(setup)，在HBuilder 4.28.2024092502上存在和老版本不兼容问题（4.29已修复，其他新的版本未知），无法获取到vue3This.$root下面的属性，老版本4.24无此问题，使用选项式API也无此问题，新版本组件已做好了兼容适配。注意：当存在兼容问题时，别的测试页面中使用到的this.$XXX属性在组合式API中一样可能无法使用，比如this.$parent就不好使了');
-if(isHBuilder_4_28) console.warn(HBuilder_4_28Tips.value); else console.log(HBuilder_4_28Tips.value);
-
-//测试用，打印this里面的对象
-var traceThis=(function(){
-	var vals=["逻辑层可用：<pre style='white-space:pre-wrap'>"];
-	var trace=(val)=>{
-		if(/func/i.test(typeof val))val="[Func]";
-		try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
-		return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
-	}
-	for(var k in globalThis){
-		//vals.push('globalThis.'+k);
-	}
-	for(var k of Object.getOwnPropertyNames(this)||[]){
-		vals.push('this.'+k+trace(this[k]));
-	}
-	vals.push('this.$==this._ = '+(this.$==this._));
-	vals.push('----------');
-	for(var k of this.$&&Object.getOwnPropertyNames(this.$)||[]){
-		vals.push('this.$.'+k+trace(this.$[k]));
-	}
-	vals.push('----------');
-	vals.push('this.$root'+trace(this.$root));
-	for(var k of this.$root&&Object.getOwnPropertyNames(this.$root)||[]){
-		vals.push('this.$root.'+k+trace(this.$root[k]));
-	}
-	vals.push('this.$root.$vm'+trace(this.$root.$vm));
-	vals.push('this.$vm'+trace(this.$vm));
-	for(var k in this.$root.$vm){
-		vals.push('this.$root.$vm.'+k+trace(this.$root.$vm[k]));
-	}
-	vals.push('this.$root.$scope'+trace(this.$root.$scope));
-	vals.push('this.$scope'+trace(this.$scope));
-	if(this.$root.$scope){
-		for(var k in this.$root.$scope){
-			vals.push('this.$root.$scope.'+k+trace(this.$root.$scope[k]));
-		}
-		for(var k in this.$root.$scope.$page){
-			vals.push('this.$root.$scope.$page.'+k+trace(this.$root.$scope.$page[k]));
-		}
-	}else{
-		if(this.$scope){
-			for(var k in this.$scope){
-				vals.push('this.$scope.'+k+trace(this.$scope[k]));
-			}
-			for(var k in this.$scope.$page){
-				vals.push('this.$scope.$page.'+k+trace(this.$scope.$page[k]));
-			}
-		}
-		for(var k in this.$page){
-			vals.push('this.$page.'+k+trace(this.$page[k]));
-		}
-	}
-	vals.push("</pre>");
-	traceThisHtml.value=vals.join("\n	");
-	
-	setTimeout(()=>{
-		RecordApp.UniWebViewEval(this,'traceThis__vue3_capi()');
-	});
-}).bind(vue3This);
-const traceThisHtml=ref('');
 </script>
-<!-- #endif -->
-
-
-<!-- #ifndef VUE3 -->
-<script> //vue2
-export default {
-	data() {
-		return {
-			isVue3:false
-		}
-	}
-}
-</script>
-<!-- #endif -->
-
-
-
 
 
 
@@ -407,13 +294,9 @@ export default {
 	。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
 	，可不提供此renderjs模块，同时逻辑层中需要将相关import的条件编译去掉**/
 
-/**============= App中在renderjs中引入RecordApp，这样App中也能使用H5录音、音频可视化 =============**/
+/**============= App中在renderjs中引入RecordApp，这里只进行音频可视化，不需要录音和编码 =============**/
 /** 先引入Recorder **/
-import Recorder from 'recorder-core';
-
-//按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
-import 'recorder-core/src/engine/mp3.js'
-import 'recorder-core/src/engine/mp3-engine.js'
+import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 //可选引入可视化插件
 import 'recorder-core/src/extensions/waveview.js'
@@ -421,52 +304,23 @@ import 'recorder-core/src/extensions/waveview.js'
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+import '../../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
 export default {
 	mounted(){
 		//App的renderjs必须调用的函数，传入当前模块this
 		RecordApp.UniRenderjsRegister(this);
-		//测试用
-		rjsThis=this;
 	},
 	methods: {
 		//这里定义的方法，在逻辑层中可通过 RecordApp.UniWebViewVueCall(this,'this.xxxFunc()') 直接调用
 		//调用逻辑层的方法，请直接用 this.$ownerInstance.callMethod("xxxFunc",{args}) 调用，二进制数据需转成base64来传递
-		testCall(val){
-			this.$ownerInstance.callMethod("reclog",'逻辑层调用renderjs中的testCall结果：'+val);
-		}
 	}
-}
-
-//测试用，打印this里面的对象
-var rjsThis;
-window.traceThis__vue3_capi=function(){
-	var obj=rjsThis;
-	var str="renderjs可用：<pre style='white-space:pre-wrap'>";
-	var trace=(val)=>{
-		if(/func/i.test(typeof val))val="[Func]";
-		try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
-		return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
-	}
-	for(var k in obj){
-		str+='\n	this.'+k+trace(obj[k]);
-	}
-	for(var k in obj.$ownerInstance){
-		str+='\n	this.$ownerInstance.'+k+trace(obj.$ownerInstance[k]);
-	}
-	for(var k in obj.$ownerInstance.$vm){
-		str+='\n	this.$ownerInstance.$vm.'+k+trace(obj.$ownerInstance.$vm[k]);
-	}
-	for(var k in uni){
-		str+='\n	uni.'+k+trace(uni[k]);
-	}
-	str+='</pre>';
-	var el=document.querySelector('.testPerfRJsLogs');
-	el.innerHTML+=str;
 }
 </script>
 <!-- #endif -->
+
+
+
 
 <style>
 .recwave{

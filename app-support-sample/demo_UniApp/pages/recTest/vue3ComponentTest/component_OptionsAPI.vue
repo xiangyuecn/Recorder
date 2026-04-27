@@ -5,40 +5,25 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 
 <template>
 <view>
-	<!-- 语言选择 -->
-	<view style="padding:10px 10px 0">
-		Language: 
-		<checkbox :checked="lang=='zh-CN'" @click="langClick" data-lang="zh-CN">简体中文</checkbox>
-		<checkbox :checked="lang=='en-US'" @click="langClick" data-lang="en-US">English</checkbox>
-		<text style="font-size:12px;color:#999">{{moreLangs}}</text>
-	</view>
-	
-	<!-- 录音格式选择 -->
-	<view style="padding:10px 10px 0">
-		{{T_Type}}: {{recType}}
-		{{T_SampleRate}}: <input type="number" v-model.number="recSampleRate" style="width:60px;display:inline-block;border:1px solid #ddd"/>hz
-		{{T_BitRate}}：<input type="number" v-model.number="recBitRate" style="width:60px;display:inline-block;border:1px solid #ddd"/>kbps
-	</view>
-
 	<!-- 控制按钮 -->
 	<view style="display: flex;padding-top:10px">
 		<view style="width:10px"></view>
 		<view style="flex:1">
-			<button type="warn" @click="recReq" style="font-size:16px;line-height:1.2;padding:10px 15px" :style="{padding:T_req.length>10?'0 15px':''}">{{T_req}}</button>
+			<button type="warn" @click="recReq" style="font-size:16px;padding:0">请求录音权限</button>
 		</view>
 		<view style="width:10px"></view>
 		<view style="flex:1">
-			<button type="primary" @click="recStart" style="font-size:16px;line-height:1.2;padding:10px 15px">{{T_start}}</button>
+			<button type="primary" @click="recStart" style="font-size:16px;padding:0">开始录音</button>
 		</view>
 		<view style="width:10px"></view>
 		<view style="flex:1">
-			<button @click="recStop" style="font-size:16px;line-height:1.2;padding:10px 15px">{{T_stop}}</button>
+			<button @click="recStop" style="font-size:16px;padding:0">停止录音</button>
 		</view>
 		<view style="width:10px"></view>
 	</view>
 	<view style="padding:10px 10px 0">
-		<button size="mini" type="default" @click="recPause">{{T_pause}}</button>
-		<button size="mini" type="default" @click="recResume">{{T_resume}}</button>
+		<button size="mini" type="default" @click="recPause">暂停</button>
+		<button size="mini" type="default" @click="recResume">继续</button>
 	</view>
 	
 	<!-- 可视化绘制 -->
@@ -69,12 +54,13 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 	</view>
 	
+	<view style="padding-top:80px"></view>
 </view>
 </template>
 
 
 <script>
-import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放器
+import TestPlayer from '../test_player___.vue'; //手撸的一个跨平台播放器
 
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
@@ -94,61 +80,39 @@ import Recorder from 'recorder-core';
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【所有平台必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+import '../../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
 // #ifdef MP-WEIXIN
 //可选引入微信小程序支持文件
 import 'recorder-core/src/app-support/app-miniProgram-wx-support.js'
 // #endif
 
-//引入语言支持文件
-import 'recorder-core/src/i18n/en-US.js'
-import '../../uni_modules/Recorder-UniCore/i18n/en-US.js'
+
+// #ifdef APP-HARMONY
+//鸿蒙App适配：需要配置配套的UTS原生组件，来实现权限请求和文件保存。尽量加上条件编译，不加的话Android、iOS也会编译这个UTS又用不到。可到demo示例项目中复制，或插件市场下载此配套UTS组件 https://ext.dcloud.net.cn/plugin?name=Recorder-UniHarmony 
+import * as UniHarmonyUTS from '@/uni_modules/Recorder-UniHarmony';
+RecordApp.UniHarmonyUTS=UniHarmonyUTS;
+// #endif
 
 
-var $T=Recorder.i18n.$T;
+
 export default {
 	components: { TestPlayer },
 	data() {
 		return {
-			...this.getTexts()
-			,lang:""
+			traceThisHtml:""
 			
-			,recType:"mp3"
-			,recSampleRate:16000
-			,recBitRate:16
-	
 			,recpowerx:0
 			,recpowert:""
 			,reclogs:[]
 		}
 	},
 	mounted() {
-		//初始化根据当前语言设置lang
-		try{ var lang=uni.getStorageSync("test_page_lang"); }catch(e){}
-		lang=lang||(/\b(zh|cn)\b/i.test(uni.getLocale().replace(/_/g," "))?"zh-CN":"en-US");
-		this.setLang(lang);
-		
-		this.reclog($T("I2MO::页面mounted",":Page mounted ")
-			+"("+$T("t795::{1}层",":{1} pages",0,getCurrentPages().length)+")"
-			+"，Recorder.LM="+Recorder.LM
-			+"，RecordApp.LM="+RecordApp.LM
-			+"，UniSupportLM="+RecordApp.UniSupportLM
-			+"，UniJsSource="+RecordApp.UniJsSource.IsSource);
+		this.reclog("组件mounted：component_OptionsAPI.vue");
 		this.isMounted=true; this.uniPage__onShow(); //onShow可能比mounted先执行，页面准备好了时再执行一次
-		
-		//可选，立即显示出环境信息
-		this.reclog($T("ry5v::正在执行Install，请勿操作...",":Install is in progress, please do not operate..."),"#f60");
-		RecordApp.Install(()=>{
-			this.reclog($T("Cix5::Install成功，环境：",":Install successfully, environment: ")+this.currentKeyTag(),2);
-			this.reclog($T("K0HW::请先请求录音权限，然后再开始录音",":Please request recording permission before starting recording"));
-		},(err)=>{
-			this.reclog("RecordApp.Install"+$T("qrjB::出错：",": error: ")+err,1);
-		});
 	},
 	/*#ifdef VUE3*/unmounted()/*#endif*/ /*#ifndef VUE3*/destroyed()/*#endif*/ {
 		RecordApp.Stop(); //清理资源，如果打开了录音没有关闭，这里将会进行关闭
-		Recorder.i18n.lang="zh-CN"; //还原默认值
 	},
 	onShow() { //当组件用时没这个回调
 		if(this.isMounted) this.uniPage__onShow(); //onShow可能比mounted先执行，页面可能还未准备好
@@ -175,29 +139,29 @@ export default {
 			****/
 			//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
 			
-			this.reclog($T("k6jG::正在请求录音权限...",":Requesting recording permission..."));
+			this.reclog("正在请求录音权限...");
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
 			RecordApp.RequestPermission(()=>{
-				this.reclog(this.currentKeyTag()+" "+$T("ueCL::已获得录音权限，可以开始录音了",":The recording permission has been obtained and you can start recording."),2);
+				this.reclog(this.currentKeyTag()+" 已获得录音权限，可以开始录音了",2);
 			},(msg,isUserNotAllow)=>{
 				if(isUserNotAllow){//用户拒绝了录音权限
 					//这里你应当编写代码进行引导用户给录音权限，不同平台分别进行编写
 				}
 				this.reclog(this.currentKeyTag()+" "
-					+(isUserNotAllow?"isUserNotAllow,":"")+$T("cZuo::请求录音权限失败：",":Requesting recording permission failed: ")+msg,1);
+					+(isUserNotAllow?"isUserNotAllow,":"")+"请求录音权限失败："+msg,1);
 			});
 		}
 		,recStart(){
 			this.$refs.player.setPlayBytes(null);
 			
-			this.reclog(this.currentKeyTag()+" "+$T("HbiG::正在打开...",":Starting..."));
+			this.reclog(this.currentKeyTag()+" 正在打开...");
 			//var prevChunk=null; //提供一个变量，在onProcess中实时提取得到pcm数据，注意开始新的转换时需要重置为null
 			
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
 			RecordApp.Start({
-				type:this.recType
-				,sampleRate:this.recSampleRate
-				,bitRate:this.recBitRate
+				type:"mp3"
+				,sampleRate:16000
+				,bitRate:16
 				
 				,onProcess:(buffers,powerLevel,duration,sampleRate,newBufferIdx,asyncEnd)=>{
 					//全平台通用：可实时上传（发送）数据，配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm上传，或使用mock方法将新数据连续的转码成其他格式上传，可以参考Recorder文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
@@ -241,7 +205,7 @@ export default {
 				,takeoffEncodeChunk_renderjs:true?null:`function(chunkBytes){
 					//App中这里可以做一些仅在renderjs中才生效的事情，不提供也行，this是renderjs模块的this（也可以用This变量）
 				}`
-				
+		
 				,start_renderjs:`function(){
 					//App中可以放一个函数，在Start成功时renderjs中会先调用这里的代码，this是renderjs模块的this（也可以用This变量）
 					//放一些仅在renderjs中才生效的事情，比如初始化，不提供也行
@@ -251,8 +215,7 @@ export default {
 					this.audioData=aBuf; //留着给Stop时进行转码成wav播放
 				}`
 			},()=>{
-				this.reclog(this.currentKeyTag()+" "+$T("jCWZ::录制中：",":Recording: ")+this.recType
-					+" "+this.recSampleRate+" "+this.recBitRate+"kbps",2);
+				this.reclog(this.currentKeyTag()+" 录制中",2);
 				
 				//创建音频可视化图形绘制，App环境下是在renderjs中绘制，H5、小程序等是在逻辑层中绘制，因此需要提供两段相同的代码（宽高值需要和canvas style的宽高一致）
 				RecordApp.UniFindCanvas(this,[".recwave-WaveView"],`
@@ -261,30 +224,30 @@ export default {
 					this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
 				});
 			},(msg)=>{
-				this.reclog(this.currentKeyTag()+" "+$T("hgDD::开始录音失败：",":Failed to start recording: ")+msg,1);
+				this.reclog(this.currentKeyTag()+" 开始录音失败："+msg,1);
 			});
 		}
 		,recPause(){
 			if(RecordApp.GetCurrentRecOrNull()){
 				RecordApp.Pause();
-				this.reclog($T("BuDV::已暂停",":Paused"));
+				this.reclog("已暂停");
 			}
 		}
 		,recResume(){
 			if(RecordApp.GetCurrentRecOrNull()){
 				RecordApp.Resume();
-				this.reclog($T("eWM8::继续录音中...",":Resumed"));
+				this.reclog("继续录音中...");
 			}
 		}
 		,recStop(){
-			this.reclog($T("xmjS::正在结束录音...",":Stopping recording..."));
+			this.reclog("正在结束录音...");
 			RecordApp.Stop((aBuf,duration,mime)=>{
 				//全平台通用：aBuf是ArrayBuffer音频文件二进制数据，可以保存成文件或者发送给服务器
 				//App中如果在Start参数中提供了stop_renderjs，renderjs中的函数会比这个函数先执行
 				
-				var recSet=(RecordApp.GetCurrentRecOrNull()||{set:{type:this.recType}}).set;
-				this.reclog($T("nIyX::已录制[{1}]：{2} {3}字节",":Recorded [{1}]: {2} {3}bytes",0,mime,this.formatTime(duration,1),aBuf.byteLength)
-						+" "+recSet.sampleRate+"hz "+recSet.bitRate+"kbps",2);
+				var recSet=(RecordApp.GetCurrentRecOrNull()||{set:{type:"mp3"}}).set;
+				this.reclog("已录制["+mime+"]："+this.formatTime(duration,1)+" "+aBuf.byteLength+"字节 "
+						+recSet.sampleRate+"hz "+recSet.bitRate+"kbps",2);
 				
 				var aBuf_renderjs="this.audioData";
 				
@@ -292,19 +255,19 @@ export default {
 				this.$refs.player.parentPage=this;
 				this.$refs.player.setPlayBytes(aBuf,aBuf_renderjs,duration,mime,recSet,Recorder);
 			},(msg)=>{
-				this.reclog($T("5VqK::结束录音失败：",":Failed to end recording:")+msg,1);
+				this.reclog("结束录音失败："+msg,1);
 			});
 		}
 		
 		
 		
-		,reclog(msg,color){
+		,reclog(msg,color,set){
 			var now=new Date();
 			var t=("0"+now.getHours()).substr(-2)
 				+":"+("0"+now.getMinutes()).substr(-2)
 				+":"+("0"+now.getSeconds()).substr(-2);
 			var txt="["+t+"]"+msg;
-			console.log(txt);
+			if(!set||!set.noLog)console.log(txt);
 			this.reclogs.splice(0,0,{txt:txt,color:color});
 		}
 		
@@ -320,46 +283,6 @@ export default {
 			return v;
 		}
 		
-		
-		,getTexts(){
-			uni.setNavigationBarTitle({
-				title:$T("IkUi::RecordApp国际化多语言",":RecordApp internationalization in multiple languages")+" - uni-app"
-			});
-			return {
-				moreLangs:$T("hAh0::其他语言支持办法：复制Recorder和插件的i18n目录内的Template.js文件，改个文件名，然后翻译成对应的语言，然后在页面中引入此文件即可",":Other language support methods: Copy the Template.js file in the i18n directory of the Recorder and plug-in, change the file name, then translate it into the corresponding language, and then import this file into the page.")
-				,T_Type:$T("hLSC::类型",":Type")
-				,T_SampleRate:$T("3EHL::采样率",":SampleRate")
-				,T_BitRate:$T("L2Co::比特率",":BitRate")
-				,T_req:$T("9bU5::请求录音权限",":Request recording permission")
-				,T_start:$T("JUOj::开始录音",":Start recording")
-				,T_stop:$T("aod9::停止录音",":Stop recording")
-				,T_pause:$T("J45w::暂停",":Pause")
-				,T_resume:$T("npYY::继续",":Resume")
-			}
-		}
-		,langClick(e){
-			var val=e.target.dataset.lang;
-			if(val){
-				var old=this.lang;
-				this.setLang(val);
-				if(val!=old){
-					this.reclog($T("7nbd::已切换语言为：",":The language has been switched to: ")+val);
-				}
-			}
-		}
-		,setLang(val){
-			uni.setStorageSync("test_page_lang",val);
-			Recorder.i18n.lang=val;
-			//App中传送给renderjs里面，同样赋值
-			if(RecordApp.UniIsApp()){
-				RecordApp.UniWebViewEval(this,'Recorder.i18n.lang="'+val+'"');
-			}
-			this.lang=val;
-			var o=this.getTexts();
-			for(var k in o){
-				this[k]=o[k];
-			}
-		}
 	}
 }
 </script>
@@ -374,13 +297,9 @@ export default {
 	。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
 	，可不提供此renderjs模块，同时逻辑层中需要将相关import的条件编译去掉**/
 
-/**============= App中在renderjs中引入RecordApp，这样App中也能使用H5录音、音频可视化 =============**/
+/**============= App中在renderjs中引入RecordApp，这里只进行音频可视化，不需要录音和编码 =============**/
 /** 先引入Recorder **/
-import Recorder from 'recorder-core';
-
-//按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
-import 'recorder-core/src/engine/mp3.js'
-import 'recorder-core/src/engine/mp3-engine.js'
+import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
 
 //可选引入可视化插件
 import 'recorder-core/src/extensions/waveview.js'
@@ -388,11 +307,7 @@ import 'recorder-core/src/extensions/waveview.js'
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
-
-//引入语言支持文件
-import 'recorder-core/src/i18n/en-US.js'
-import '../../uni_modules/Recorder-UniCore/i18n/en-US.js'
+import '../../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
 export default {
 	mounted(){

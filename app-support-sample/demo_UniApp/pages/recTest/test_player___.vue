@@ -60,6 +60,7 @@ export default {
 		
 		
 		,getPage(){
+			if(this.parentPage) return this.parentPage; //直接返回上级指定的
 			var p=this.$parent;
 			while(p){
 				if(p.reclog) break;
