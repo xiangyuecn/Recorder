@@ -25,7 +25,7 @@ var ToJson=function(v){return JSON.stringify(v)};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2025-01-11 09:28";
+var LM=Recorder.LM="2025-07-16 09:48";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -253,10 +253,11 @@ var Connect=function(streamStore){
 				var pcm=new Int16Array(size);
 				var sum=0;
 				for(var j=0;j<size;j++){//floatTo16BitPCM 
-					var s=Math.max(-1,Math.min(1,float32Arr[j]));
+					var s=float32Arr[j];
+					if(s<-1)s=-1; else if(s>1)s=1; //Math.max(-1,Math.min(1,s))
 					s=s<0?s*0x8000:s*0x7FFF;
 					pcm[j]=s;
-					sum+=Math.abs(s);
+					sum+=s<0?-s:s; //Math.abs(s)
 				};
 			};
 			
@@ -575,8 +576,10 @@ option:{ 可选，配置项
 	index:0 pcmDatas已处理到的索引；比如每次都是单个pcm需要连续处理时，可每次调用前重置成0，pcmDatas仅需传入`[pcm]`固定一个元素
 	offset:0.0 已处理到的index对应的pcm中的偏移的下一个位置（提升采样率时为结果的pcm）
 	raisePrev:null 提升采样率时的前一个pcm结果采样值
+	downPrev:null 降低采样率时的前一个pcm未添加的一个元素 null|{v:123,at:0.1}
+	resizeCount:0 性能计数，内部调整输出缓冲区的次数，>0调整次数 0未发生调整 -1缓冲区发生溢出（-1需重设为0才会继续计数）
 	
-	//可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，小采样率大于高采样率的75%时不默认滤波），如果提供了配置但fn为null时将不滤波；sr、srn为此滤波函数对应的初始化采样率，当采样率和参数的不一致时将重新设为默认函数
+	//可定义，指定的一个滤波配置：默认使用Recorder.IIRFilter低通滤波（可有效抑制混叠产生的杂音，为一阶IIR速度快但能力一般），如果提供了配置但fn为null时将不滤波；sr、srn为此滤波函数对应的初始化采样率，当采样率和参数的不一致时将重新设为默认函数
 	filter:null||{fn:fn(sample),sr:pcmSampleRate,srn:newSampleRate}
 	
 	//仅作为返回值
@@ -591,18 +594,19 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	var index=prevChunkInfo.index||0;
 	var offset=prevChunkInfo.offset||0;
 	var raisePrev=prevChunkInfo.raisePrev||0;
+	var downPrev=prevChunkInfo.downPrev;
 	
 	var filter=prevChunkInfo.filter;
 	if(filter&&filter.fn&&(filter.sr&&filter.sr!=pcmSampleRate || filter.srn&&filter.srn!=newSampleRate)){
 		filter=null; CLog($T("d48C::{1}的filter采样率变了，重设滤波",0,Txt),3);
 	};
-	if(!filter){ //采样率差距比较大才开启低通滤波
-		if(newSampleRate<=pcmSampleRate){ //降低采样率或不变，最高频率用新采样率频率的3/4
-			var freq=newSampleRate>pcmSampleRate*3/4?0: newSampleRate/2 *3/4;
-			filter={fn:freq?Recorder.IIRFilter(true,pcmSampleRate,freq):0};
-		}else{ //提升采样率，最高频率用原始采样率频率的3/4
-			var freq=pcmSampleRate>newSampleRate*3/4?0: pcmSampleRate/2 *3/4;
-			filter={fn:freq?Recorder.IIRFilter(true,newSampleRate,freq):0};
+	if(!filter){ //尝试开启低通滤波
+		if(newSampleRate<pcmSampleRate){ //降低采样率或不变，最高频率用新采样率频率，可能为null
+			filter={fn:Recorder.IIRFilter(true,pcmSampleRate,newSampleRate/2)};
+		}else if(newSampleRate>pcmSampleRate){ //提升采样率，最高频率用原始采样率频率，可能为null
+			filter={fn:Recorder.IIRFilter(true,newSampleRate,pcmSampleRate/2)};
+		}else{
+			filter={fn:null};
 		};
 	};
 	filter.sr=pcmSampleRate;
@@ -629,15 +633,19 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	//采样 https://www.cnblogs.com/blqw/p/3782420.html
 	var step=pcmSampleRate/newSampleRate;
 	if(step>1){//新采样低于录音采样，进行抽样
-		size=Math.max(0,size-Math.floor(offset));
-		size=Math.floor(size/step);
+		size=Math.max(0,size-offset);
+		size=size/step; var sizeF=(size%1)*step;
+		size=Math.ceil(size); //有小数点 代表存在对应的索引 要+1
+		if(step%1 && sizeF>0 && sizeF<1) size--; //非整数倍刚好是最后一个位置时，依赖下一个值，留给下一次处理
+		if(downPrev) size++; //上次留了一个
 	}else if(step<1){//新采样高于录音采样，插值处理
 		var raiseStep=1/step;
+		size=size+offset;
 		size=Math.floor(size*raiseStep);
 	};
 	
 	size+=frameNext.length;
-	var res=new Int16Array(size);
+	var res=new Int16Array(size), resize=0, reCount=0;
 	var idx=0;
 	//添加上一次不够一帧的剩余数据
 	for(var i=0;i<frameNext.length;i++){
@@ -645,28 +653,38 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		idx++;
 	};
 	//处理数据
-	for (;index<nLen;index++) {
+	for(;index<nLen;index++){
 		var o=pcmDatas[index], isF32=o instanceof Float32Array;
 		var i=offset,il=o.length;
-		var F=filterFn&&filterFn.Embed,F1=0,F2=0,Fx=0,Fy=0;//低通滤波后的数据
+		var F=filterFn&&filterFn.Embed,Fx=0,Fy=0;//低通滤波后的数据
 		
-		if(step<1){ //提升采样率
-			var idx1=idx+i, prev=raisePrev;
+		if(step==1){ //采样率不变，直接复制
 			for(var i0=0;i0<il;i0++){
 				var oVal=o[i0];
 				if(isF32){//floatTo16BitPCM 
-					oVal=Math.max(-1,Math.min(1,oVal));
+					if(oVal<-1)oVal=-1; else if(oVal>1)oVal=1; //Math.max(-1,Math.min(1,oVal))
+					oVal=oVal<0?oVal*0x8000:oVal*0x7FFF;
+				}
+				res[idx]=oVal; idx++;
+			};
+			offset=0;
+		}else if(step<1){ //提升采样率
+			var idx1=idx+i, idx1_r=idx1, prev=raisePrev;
+			for(var i0=0;i0<il;i0++){
+				var oVal=o[i0];
+				if(isF32){//floatTo16BitPCM 
+					if(oVal<-1)oVal=-1; else if(oVal>1)oVal=1; //Math.max(-1,Math.min(1,oVal))
 					oVal=oVal<0?oVal*0x8000:oVal*0x7FFF;
 				}
 				
-				var pos=Math.floor(idx1);
-				idx1+=raiseStep;
-				var end=Math.floor(idx1);
+				var pos=~~idx1; //Math.floor(idx1) 内联优化
+				idx1=idx1_r+(i0+1)*raiseStep; //乘法减少 idx1+=raiseStep 浮点数累加误差
+				var end=~~idx1; //Math.floor(idx1)
 			
 				//简单的从prev平滑填充到cur，有效减少转换引入的杂音
 				var n=(oVal-prev)/(end-pos);
 				for(var j=1;pos<end;pos++,j++){
-					var s=Math.floor(prev+(j*n));
+					var s=~~(prev+(j*n)); //Math.floor()
 					if(F){//IIRFilter代码内置，比函数调用快4倍
 						Fx=s;
 						Fy=F.b0 * Fx + F.b1 * F.x1 + F.b0 * F.x2 - F.a1 * F.y1 - F.a2 * F.y2;
@@ -675,23 +693,23 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 					}else{ s=filterFn?filterFn(s):s; }
 					
 					if(s>0x7FFF) s=0x7FFF; else if(s<-0x8000) s=-0x8000; //Int16越界处理
-					if(useSum) _sum+=Math.abs(s);
+					if(useSum) _sum+=s<0?-s:s; //Math.abs(s)
 					res[pos]=s;
 					idx++;
 				};
 				
 				prev=raisePrev=oVal;
-				i+=raiseStep;//插值
+				i=offset+(i0+1)*raiseStep; //乘法减少 i+=raiseStep 浮点数累加误差
 			}
 			offset=i%1;
-			continue;
-		};
-		//降低采样率或不变
+		}else{
+		//降低采样率
+		var iAdd=0,vNext=0;
 		for(var i0=0,i2=0;i0<il;i0++,i2++){
 			if(i2<il){
 				var oVal=o[i2];
 				if(isF32){//floatTo16BitPCM 
-					oVal=Math.max(-1,Math.min(1,oVal));
+					if(oVal<-1)oVal=-1; else if(oVal>1)oVal=1; //Math.max(-1,Math.min(1,oVal))
 					oVal=oVal<0?oVal*0x8000:oVal*0x7FFF;
 				}
 				if(F){//IIRFilter代码内置，比函数调用快4倍
@@ -700,33 +718,56 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 					F.x2 = F.x1; F.x1 = Fx; F.y2 = F.y1; F.y1 = Fy;
 				}else{ Fy=filterFn?filterFn(oVal):oVal; }
 			}
-			F1=F2; F2=Fy;
-			if(i2==0){ i0--; continue; } //首次只计算o[0]
+			var val=vNext; vNext=Fy;
+			var addVal=true;
+			if(i2==0){
+				i0--; if(!downPrev) continue; //首次只计算o[0]，因为每次都要拿后面一个点来计算插值
+				
+				//添加上次插值缺少后一个点的计算值
+				iAdd--; //下面会++，需要还原，减少一次if判断
+				val=downPrev.v;
+				val=val+(vNext-val)*downPrev.at;
+				downPrev=null;
+			}else{
+				var before = ~~i;//Math.floor(i) 内联优化
+				if(i0!=before)continue; //只进行滤波计算
+				if(before!=i){ //正整数直接用val不需要计算插值
+					//https://www.cnblogs.com/xiaoqi/p/6993912.html
+					//浮点数i在两个索引之间，采用线性插值 +当前点的小数部分的增量，音质比直接简单抽样好些
+					var after = before+1; //Math.ceil(i) 已排除整数 恒定+1
+					var atPoint = i - before;
+					if(after>=il){ //后个点越界了，交给下次处理
+						addVal=false;
+						downPrev={v:val,at:atPoint};
+					}else{
+						val=val+(vNext-val)*atPoint;
+					};
+				};
+			};
 			
-			//https://www.cnblogs.com/xiaoqi/p/6993912.html
-			//当前点=当前点+到后面一个点之间的增量，音质比直接简单抽样好些
-			var before = Math.floor(i);
-			if(i0!=before)continue;
-			var after = Math.ceil(i);
-			var atPoint = i - before;
+			if(addVal){
+				if(val>0x7FFF) val=0x7FFF; else if(val<-0x8000) val=-0x8000; //Int16越界处理
+				if(useSum) _sum+=val<0?-val:val;//Math.abs(val)
+				if(idx==size){ //step是浮点数时，size计算不准可能缺1个，下面消除累加误差后未出现
+					if(!resize)resize=size; reCount++;
+					size++; var tmp=new Int16Array(res.length+1); tmp.set(res); res=tmp;
+				};
+				res[idx]=val; idx++;
+			};
 			
-			var beforeVal=F1;
-			var afterVal=after<il ? F2 : beforeVal; //后个点越界了，忽略不计
-			var val=beforeVal+(afterVal-beforeVal)*atPoint;
-			
-			if(val>0x7FFF) val=0x7FFF; else if(val<-0x8000) val=-0x8000; //Int16越界处理
-			if(useSum) _sum+=Math.abs(val);
-			res[idx]=val;
-			
-			idx++;
-			i+=step;//抽样
+			iAdd++; i=offset+iAdd*step; //抽样，乘法减少 i+=step 浮点数累加误差
 		};
 		offset=Math.max(0, i-il); //不太可能出现负数
+	}};
+	if(idx<size){ //提升采样率时可能缺多个，直接删除结尾的
+		if(!resize)resize=size; reCount++;
+		size=idx; res=new Int16Array(res.buffer.slice(0, size*2));
+	}else if(idx>size){
+		reCount=-1; //数据溢出，不太可能出现
 	};
-	if(step<1 && idx+1==size){ //提升采样率时可能缺1个，直接删除结尾1个
-		size--; res=new Int16Array(res.buffer.slice(0, size*2));
+	if(resize || idx!=size){ //最后一个数据位置不对，存在size计算错误
+		CLog(Txt+" idx:"+idx+" != size:"+(resize?resize+" resize:"+size:size),3);
 	};
-	if(idx-1!=size && idx!=size)CLog(Txt+" idx:"+idx+" != size:"+size,3); //越界1个
 	
 	//帧处理
 	frameNext=null;
@@ -741,6 +782,8 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 		index:index
 		,offset:offset
 		,raisePrev:raisePrev
+		,downPrev:downPrev
+		,resizeCount:prevChunkInfo.resizeCount==-1||reCount==-1?-1 :(prevChunkInfo.resizeCount||0)+reCount
 		,filter:filter
 		
 		,frameNext:frameNext
@@ -755,9 +798,14 @@ Recorder.SampleData=function(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,
 	useLowPass: true或false，true为低通滤波，false为高通滤波
 	sampleRate: 待处理pcm的采样率
 	freq: 截止频率Hz，最大频率为sampleRate/2，低通时会切掉高于此频率的声音，高通时会切掉低于此频率的声音，注意滤波并非100%的切掉不需要的声音，而是减弱频率对应的声音，离截止频率越远对应声音减弱越厉害，离截止频率越近声音就几乎无衰减
+	返回的是null，代表不支持此条件下进行滤波
 	返回的是一个函数，用此函数对pcm的每个采样值按顺序进行处理即可（不同pcm不可共用）；注意此函数返回值可能会越界超过Int16范围，自行限制一下即可：Math.min(Math.max(val,-0x8000),0x7FFF)
 可重新赋值一个函数，来改变Recorder的默认行为，比如SampleData中的低通滤波*/
-Recorder.IIRFilter=function(useLowPass, sampleRate, freq){
+Recorder.IIRFilter=Recorder.IIRFilter_Default=function(useLowPass, sampleRate, freq){
+	if(useLowPass){ //此算法是一阶IIR，滤波能力一般，但速度快，频率调低一点会干净点，比不滤波音质强很多
+		//if(freq*2>sampleRate*3/4) return null; //采样率差距比较大才开启低通滤波（老版本）
+		freq=Math.max(freq*3/4, freq-Math.abs(sampleRate/2-freq)/2); //最高频率用目标频率的3/4，差距不大时减去频率差值的一半
+	}
 	var ov = 2 * Math.PI * freq / sampleRate;
 	var sn = Math.sin(ov);
 	var cs = Math.cos(ov);
@@ -891,6 +939,10 @@ function initFn(set){
 				//同样可配置videoTrackSet，更多参考: https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
 		
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
+		
+		//,allowUpsample:false 当源采样率this.srcSampleRate<set.sampleRate（如set=48000但源只有44100）时是否要提升采样率
+			//默认不允许，同时set.sampleRate会被重设为源采样率；比如用最高音质录，但实时只取16k的pcm，默认false不影响音质；如果确实需要提升请设为true
+			//提升采样率的音质依赖重采样算法和计算复杂度，内置的SampleData+IIRFilter会引入轻微杂音
 		
 		//,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出
 				//当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；如果当前编码器或环境不支持实时编码处理，将在open时直接走fail逻辑
@@ -1189,12 +1241,17 @@ Recorder.prototype=initFn.prototype={
 	}
 	,_setSrcSR:function(sampleRate){
 		var This=this,set=This.set;
-		var setSr=set[sampleRateTxt];
+		var setSr=set[sampleRateTxt], msg="";
 		if(setSr>sampleRate){
-			set[sampleRateTxt]=sampleRate;
-		}else{ setSr=0 }
+			if(set.allowUpsample){
+				msg="upsample!!";
+			}else{ //不允许提升采样率时 重设set值
+				msg="!set.allowUpsample: "+setSr;
+				set[sampleRateTxt]=setSr=sampleRate;
+			}
+		}
 		This[srcSampleRateTxt]=sampleRate;
-		This.CLog(srcSampleRateTxt+": "+sampleRate+" set."+sampleRateTxt+": "+set[sampleRateTxt]+(setSr?" "+$T("UHvm::忽略")+": "+setSr:""), setSr?3:0);
+		This.CLog(srcSampleRateTxt+": "+sampleRate+" set."+sampleRateTxt+": "+setSr+" "+msg, msg?3:0);
 	}
 	,envCheck:function(envInfo){//平台环境下的可用性检查，任何时候都可以调用检查，返回errMsg:""正常，"失败原因"
 		//envInfo={envName:"H5",canProcess:true}
