@@ -6,9 +6,8 @@ https://github.com/xiangyuecn/Recorder
 https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder;
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
 	factory(rec);
 }(function(Recorder){ //需要在Worker中运行，不能使用Recorder里的方法，包括$T
 "use strict";
@@ -10519,7 +10518,7 @@ function Lame() {
         /****************************************************************/
         /* if a filter has not been enabled, see if we should add one: */
         /****************************************************************/
-        if (gfp.lowpassfreq == 0) {
+        if (gfp.lowpassfreq == 0) { //abort(); //fix cc 精简 2025-7-16禁用低通滤波 留着可配置
             var lowpass = 16000.;
 
             switch (gfp.VBR) {
@@ -10667,7 +10666,7 @@ function Lame() {
             gfc.highpass2 = 0;
         }
         /* apply user driven low pass filter */
-        if (gfp.lowpassfreq > 0) {
+        if (gfp.lowpassfreq > 0) { //abort(); //fix cc 精简 2025-7-16禁用低通滤波 留着可配置
             gfc.lowpass2 = 2. * gfp.lowpassfreq;
             if (gfp.lowpasswidth >= 0) {
                 abort();//fix cc 精简
@@ -10677,7 +10676,8 @@ function Lame() {
             gfc.lowpass1 /= gfp.out_samplerate;
             gfc.lowpass2 /= gfp.out_samplerate;
         } else {
-            abort();//fix cc 精简
+            gfc.lowpass1 = 0;
+            gfc.lowpass2 = 0;
         }
 
         /**********************************************************************/
@@ -11318,10 +11318,12 @@ function ID3Tag() {
     }
 }
 
-function Mp3Encoder(channels, samplerate, kbps) {
+function Mp3Encoder(channels, samplerate, kbps, config) {
     if (channels!=1) { //精简后的代码不支持双声道
         abort("fix cc: only supports mono")
     }
+    if(!config) config={};
+
     var lame = new Lame();
     var gaud = new GetAudio();
     var ga = new GainAnalysis();
@@ -11357,6 +11359,11 @@ function Mp3Encoder(channels, samplerate, kbps) {
     gfp.brate = kbps;
     gfp.mode = MPEGMode.STEREO;
     gfp.quality = 3;
+
+    //fix by xiangyuecn 2025-7-16可配置低通滤波，提供频率值（不超过采样率/2） 或 -1禁用，默认0用 optimum_bandwidth *1.5 自动取低通频率（截断超过的频率）
+    //16k采样率时16kbps低通3700*1.5=5550hz，声音沉闷但中低频厚实干净，需要32kbps才达到8000hz；如果禁用滤波，会保留8000hz，音色更丰富但会增加噪声，如金属音、水声。 highpassfreq lowpasswidth highpasswidth 这3个默认0无需配置
+    gfp.lowpassfreq = config.lowpassfreq||0;
+
     gfp.bWriteVbrTag = false;
     gfp.disable_reservoir = true;
     gfp.write_id3tag_automatic = false;
@@ -11366,6 +11373,8 @@ function Mp3Encoder(channels, samplerate, kbps) {
     var mp3buf_size = 0 | (1.25 * maxSamples + 7200);
     var mp3buf = new_byte(mp3buf_size);
 
+    this.lame=lame;
+    this.gfp=gfp;
     this.encodeBuffer = function (left, right) {
         if (channels == 1) {
             right = left;

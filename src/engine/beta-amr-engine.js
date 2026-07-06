@@ -6,9 +6,8 @@ https://github.com/xiangyuecn/Recorder
 https://raw.githubusercontent.com/BenzLeung/benz-amr-recorder/462c6b91a67f7d9f42d0579fb5906fad9edb2c9d/src/amrnb.js
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder;
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
 	factory(rec);
 }(function(Recorder){ //需要在Worker中运行，不能使用Recorder里的方法，包括$T
 "use strict";
@@ -94,7 +93,7 @@ function Create(){
 				encodeInBuffer.set(pcm.subarray(inOffset, inOffset + AMR.PCM_BUFFER_COUNT));
 				var n = AMR.Encoder_Interface_Encode(encoder, mode, encodeInBuffer.byteOffset, encodeOutBuffer.byteOffset, 0);
 				if (n != blockSize) {
-					console.error([n, blockSize]);
+					console.error("AMR.Encoder n!=b", n, blockSize);
 					break
 				}
 				inOffset += AMR.PCM_BUFFER_COUNT;
@@ -133,6 +132,14 @@ function Create(){
 		
 		,DecG_: function(){ return new Decoder() }
 		,dec__: function (amrBytes,True,False) {
+			var wbStr="#!AMR-WB\n";
+			if (String.fromCharCode.apply(null, amrBytes.subarray(0, wbStr.length)) == wbStr) {
+				var msg="AMR Decoder: Not support AMR-WB audio file(Only support AMR-NB)";
+				console.error(msg);
+				False(msg);
+				return;
+			}
+			
 			var This=this,decode=new Decoder();
 			var buffers=[],size=0;
 			var endFlush=function(){//flush没有结果，只做释放
@@ -158,9 +165,10 @@ function Create(){
 						return;
 					};
 				}catch(e){
-					console.error(e);
+					var msg="AMR Decoder: "+(hasHead?e.message:"Not an AMR-NB audio file");
+					console.error(msg, e);
 					endFlush();
-					False("AMR Decoder: "+(hasHead?e.message:"Not an amr audio file"));
+					False(msg);
 					return;
 				};
 				endFlush();
@@ -197,9 +205,10 @@ function Create(){
 						return;
 					};
 				}catch(e){ //精简代码调用了abort
-					console.error(e);
+					var msg="AMR Encoder: "+e.message;
+					console.error(msg, e);
 					endFlush();
-					False("AMR Encoder: "+e.message);
+					False(msg);
 					return;
 				};
 				endFlush();

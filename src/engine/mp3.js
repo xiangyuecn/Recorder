@@ -7,11 +7,10 @@ https://github.com/xiangyuecn/Recorder
 https://developer.mozilla.org/en-US/docs/Web/HTML/Supported_media_formats
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 var SampleS="48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000";
@@ -35,6 +34,10 @@ var NormalizeSet=function(set){
 		
 		set.sampleRate=s;
 		Recorder.CLog($T("zLTa::sampleRate已更新为{1}，因为{2}不在mp3支持的取值范围：{3}",0,s,sS,SampleS),3);
+	}
+	if(set.engine_mp3_lowpassfreq==null){ //允许全局进行配置
+		var gVal=Recorder.Set_engine_mp3_lowpassfreq;
+		if(gVal!=null) set.engine_mp3_lowpassfreq=gVal;
 	}
 };
 var ImportEngineErr=function(){
@@ -69,7 +72,7 @@ Recorder.prototype.mp3=function(res,True,False){
 		NormalizeSet(set);
 		//https://github.com/wangpengfei15975/recorder.js
 		//https://github.com/zhuker/lamejs bug:采样率必须和源一致，不然8k时没有声音，有问题fix：https://github.com/zhuker/lamejs/pull/11
-		var mp3=new Recorder.lamejs.Mp3Encoder(1,set.sampleRate,set.bitRate);
+		var mp3=new Recorder.lamejs.Mp3Encoder(1,set.sampleRate,set.bitRate,{ lowpassfreq:set.engine_mp3_lowpassfreq });
 		
 		var blockSize=57600;
 		var memory=new Int8Array(500000), mOffset=0;
@@ -107,6 +110,7 @@ Recorder.prototype.mp3=function(res,True,False){
 				var data=[memory.buffer.slice(0,mOffset)];
 				//去掉开头的标记信息帧
 				var meta=mp3TrimFix.fn(data,mOffset,size,set.sampleRate);
+				meta.lowpassfreq=(mp3.gfp||{}).lowpassfreq;
 				mp3TrimFixSetMeta(meta,set);
 				
 				True(data[0]||new ArrayBuffer(0),"audio/mp3");
@@ -163,7 +167,7 @@ var newContext=function(setOrNull,_badW){
 				
 				,pcmSize:0
 				,memory:new Int8Array(500000), mOffset:0
-				,encObj:new wk_lame.Mp3Encoder(1,ed.sampleRate,ed.bitRate)
+				,encObj:new wk_lame.Mp3Encoder(1,ed.sampleRate,ed.bitRate,{ lowpassfreq:ed.lowpassfreq })
 			};
 		}else if(!cur){
 			return;
@@ -203,9 +207,10 @@ var newContext=function(setOrNull,_badW){
 			};
 			break;
 		case "complete":
-			cur.isCp=1;
+			cur.isCp=1; var _lpf=null;
 			try{
 				var buf=cur.encObj.flush();
+				_lpf=(cur.encObj.gfp||{}).lowpassfreq;
 			}catch(e){ //精简代码调用了abort
 				cur.err=e;
 				console.error(e);
@@ -226,6 +231,7 @@ var newContext=function(setOrNull,_badW){
 			var data=[cur.memory.buffer.slice(0,cur.mOffset)];
 			//去掉开头的标记信息帧
 			var meta=wk_mp3TrimFix.fn(data,cur.mOffset,cur.pcmSize,cur.sampleRate);
+			meta.lowpassfreq=_lpf;
 			
 			worker.onmessage({
 				action:ed.action
@@ -266,6 +272,7 @@ var newContext=function(setOrNull,_badW){
 				,id:ctx.id
 				,sampleRate:setOrNull.sampleRate
 				,bitRate:setOrNull.bitRate
+				,lowpassfreq:setOrNull.engine_mp3_lowpassfreq
 				,takeoff:!!setOrNull.takeoffEncodeChunk
 				
 				,x:new Int16Array(5)//低版本浏览器不支持序列化TypedArray
