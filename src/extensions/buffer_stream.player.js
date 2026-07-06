@@ -42,16 +42,17 @@ BufferStreamPlayer可以用于：
 	//不要播放了就调用stop停止播放，关闭所有资源
 	stream.stop();
 	
+	//实时设置播放音量：取值0.0-5.0（超过5也行，但削峰严重音质明显变差），0.0静音，1.0不改变音量，0.5降低一倍音量，2.0放大一倍音量；注意：此参数不是修改设备系统音量，是播放时pcm数据直接*volume
+	stream.volume=0.5;
 
 
 注意：已知Firefox的AudioBuffer没法动态修改数据，所以对于带有这种特性的浏览器将采用先缓冲后再播放（类似assets/runtime-codes/fragment.playbuffer.js），音质会相对差一点；其他浏览器测试Android、IOS、Chrome无此问题；start方法中有一大段代码给浏览器做了特性检测并进行兼容处理。
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 var BufferStreamPlayer=function(set){
@@ -92,6 +93,7 @@ var fn=function(set){
 		o[k]=set[k];
 	};
 	This.set=set=o;
+	This.volume=1;
 	
 	if(!set.onInputError){
 		set.onInputError=function(err,n){ CLog(err,1); };
@@ -783,7 +785,7 @@ fn.prototype=BufferStreamPlayer.prototype={
 		this.pcmBuffer=[[],[]];
 	}
 	,_subWrite:function(buffer, pcmSize, offset, speed){
-		var This=this;
+		var This=this,vol=+This.volume||0;
 		var pcms=This.pcmBuffer;
 		var pcm0=pcms[0],pcm1=pcms[1];
 		
@@ -815,8 +817,16 @@ fn.prototype=BufferStreamPlayer.prototype={
 		
 		//写入到audioBuffer中
 		var channel=buffer.getChannelData(0);
-		for(var i=0;i<pcmSize;i++,offset++){
-			channel[offset]=pcm[i]/0x7FFF;
+		if(vol==1){
+			for(var i=0;i<pcmSize;i++,offset++){
+				channel[offset]=pcm[i]/0x7FFF;
+			}
+		}else{ //需要调整音量
+			for(var i=0;i<pcmSize;i++,offset++){
+				var s=pcm[i]/0x7FFF*vol;
+				s=Math.max(-0x8000, Math.min(0x7FFF, s));
+				channel[offset]=s;
+			}
 		}
 		
 		This._Tc+=pcmSize;//更新已播放时长
