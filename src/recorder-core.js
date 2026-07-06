@@ -2,20 +2,28 @@
 录音
 https://github.com/xiangyuecn/Recorder
 */
-(function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	factory(win,browser);
+(function(factory){ "use strict";
+	var browser=false, doc=typeof window=="object" && window.document, docEL=doc && doc.documentElement; //判断是否是浏览器环境
+	var bwSet=Object["Recorder-Core-IsBrowser"]; //有些环境会模拟全局变量，如果误判可以强制指定是否是浏览器
+	if(bwSet!=null){ browser=!!bwSet; }else if(docEL && docEL.style){ //用基础html功能检测是否是浏览器环境
+		try{ var css=doc.createElement("div").style; css.cssText="margin:6px !important"; browser=css.marginTop=="6px"; }catch(e){}
+	};
+	
+	var Export=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
+	var ExA0=Object["Recorder-Core-Alias"], ExAlias=ExA0||"Recorder"; //允许配置全局变量名
+	factory(Export,ExAlias,browser);
+	
+	var Recorder=Export[ExAlias];
+	Object[ExA0||"Recorder-Core-Export"]=Recorder; //2026-06-28固定挂载在Object下面导出
+	
 	//umd returnExports.js
 	if(typeof(define)=='function' && define.amd){
-		define(function(){
-			return win.Recorder;
-		});
+		define(function(){ return Recorder });
 	};
 	if(typeof(module)=='object' && module.exports){
-		module.exports=win.Recorder;
+		module.exports=Recorder;
 	};
-}(function(Export,isBrowser){
+}(function(Export,ExAlias,isBrowser){
 "use strict";
 
 var NOOP=function(){};
@@ -25,7 +33,7 @@ var ToJson=function(v){return JSON.stringify(v)};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2025-07-16 09:48";
+var LM=Recorder.LM="2026-06-28 00:00";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -34,12 +42,14 @@ var sampleRateTxt="sampleRate";
 var bitRateTxt="bitRate";
 var CatchTxt="catch";
 
-var WRec2=Export[RecTxt];//重复加载js
+var WRec2=Export[ExAlias];//重复加载js
 if(WRec2&&WRec2.LM==LM){
-	WRec2.CLog(WRec2.i18n.$T("K8zP::重复导入{1}",0,RecTxt),3);
+	WRec2.CLog(WRec2.i18n.$T("K8zP::重复导入{1}",0,RecTxt+(RecTxt==ExAlias?"":"@"+ExAlias)),3);
 	return;
 };
 
+Recorder.IsBrowser=isBrowser; //当前环境是否是浏览器
+Recorder.LoadTime=Date.now(); //js加载时间
 
 //是否已经打开了全局的麦克风录音，所有工作都已经准备好了，就等接收音频数据了
 Recorder.IsOpen=function(){
@@ -860,15 +870,17 @@ Recorder.PowerLevel=function(pcmAbsSum,pcmLength){
 
 /*计算音量，单位dBFS（满刻度相对电平）
 maxSample: 为16位pcm采样的绝对值中最大的一个（计算峰值音量），或者为pcm中所有采样的绝对值的平局值
+roundOff: 默认false结果会四舍五入成整数，传true会返回小数部分
 返回值：-100~0 （最大值0dB，最小值-100代替-∞）
+		采样值0x7FFF=0dB 2=-84.2dB 1=-90.3dB 0为-Infinity取-100dB
 */
-Recorder.PowerDBFS=function(maxSample){
+Recorder.PowerDBFS=function(maxSample, roundOff){
 	var val=Math.max(0.1, maxSample||0),Pref=0x7FFF;
 	val=Math.min(val,Pref);
 	//https://www.logiclocmusic.com/can-you-tell-the-decibel/
 	//https://blog.csdn.net/qq_17256689/article/details/120442510
 	val=20*Math.log(val/Pref)/Math.log(10);
-	return Math.max(-100,Math.round(val));
+	return Math.max(-100, roundOff?val:Math.round(val));
 };
 
 
@@ -1189,8 +1201,8 @@ Recorder.prototype=initFn.prototype={
 				mSet={audio:true, video:false};
 				pro=Recorder.Scope[getUserMediaTxt](mSet,f1,f2);
 			};
-			This.CLog(getUserMediaTxt+"("+ToJson(mSet)+") "+CtxState(ctx)
-				+$T("RiWe::，未配置 {1} 时浏览器可能会自动启用回声消除，移动端未禁用回声消除时可能会降低系统播放音量（关闭录音后可恢复）和仅提供16k采样率的音频流（不需要回声消除时可明确配置成禁用来获得48k高音质的流），请参阅文档中{2}配置",0,atsTxtJs,atsTxt)
+			This.CLog(getUserMediaTxt+"("+ToJson(mSet)+") "+CtxState(ctx)+" | "
+				+$T("RiWe::提示：未配置 {1} 时浏览器可能会自动启用回声消除（含降噪）；未禁用回声消除时可能会导致：open打开录音会很耗时（禁用后打开变快），移动端降低系统播放音量（关闭录音后可恢复）、录音音量很小或忽大忽小、和可能只提供16k采样率的音频流（禁用后获得48k高音质流）；请参阅文档中{2}配置",0,atsTxtJs,atsTxt)
 				+"("+GitUrl+") LM:"+LM+" UA:"+navigator.userAgent);
 			if(pro&&pro.then){
 				pro.then(f1)[CatchTxt](f2); //fix 关键字，保证catch压缩时保持字符串形式
@@ -1362,7 +1374,9 @@ Recorder.prototype=initFn.prototype={
 			var addTime=now-tsInPrev.t-pcmTime;//距离上次输入丢失这么多ms
 			if(addTime>pcmTime/5){//丢失超过本帧的1/5
 				var fixOpen=!set.disableEnvInFix;
-				This.CLog("["+now+"]"+i18n.get(fixOpen?$T("4Kfd::补偿{1}ms",1):$T("bM5i::未补偿{1}ms",1),[addTime]),3);
+				This.CLog("["+now+"]"+i18n.get(fixOpen?$T("4Kfd::补偿{1}ms",1):$T("bM5i::未补偿{1}ms",1),[addTime])
+					+" | "
+					+$T("bM6i::提示：在onProcess中打印buffers等二进制数据、部分WebView在后台运行受限，均可能导致卡顿"),3);
 				This.envInFix+=addTime;
 				
 				//用静默进行补偿
@@ -2023,7 +2037,7 @@ var Traffic=Recorder.Traffic=function(report){
 	if(!isBrowser)return;
 	report=report?"/"+RecTxt+"/Report/"+report:"";
 	var imgUrl=Recorder.TrafficImgUrl;
-	if(imgUrl){
+	if(imgUrl){ try{
 		var data=Recorder.Traffic;
 		var m=/^(https?:..[^\/#]*\/?)[^#]*/i.exec(location.href)||[];
 		var host=(m[1]||"http://file/");
@@ -2044,19 +2058,20 @@ var Traffic=Recorder.Traffic=function(report){
 		if(!data[idf]){
 			data[idf]=1;
 			
-			var img=new Image();
-			img.src=imgUrl;
+			var img=new Image(), delay=document.readyState=="complete"? 0 : 15000-(Date.now()-Recorder.LoadTime);
+			if(delay>0) setTimeout(function(){ img.src=imgUrl },delay); else img.src=imgUrl; //避免head中调用时img阻塞onload
 			CLog("Traffic Analysis Image: "+(report||RecTxt+".TrafficImgUrl="+Recorder.TrafficImgUrl));
 		};
-	};
+	}catch(e){} };
 };
 
 
 
 if(WRec2){
-	CLog($T("8HO5::覆盖导入{1}",0,RecTxt),1);
-	WRec2.Destroy();
+	CLog($T("8HO5::覆盖导入{1}",0,RecTxt+(RecTxt==ExAlias?"":"@"+ExAlias)),1);
+	WRec2.Destroy&&WRec2.Destroy();
+	Recorder.Export_Overwrite=WRec2; //如果是别的同名库冲突，可以通过这个属性找回
 };
-Export[RecTxt]=Recorder;
+Export[ExAlias]=Recorder;
 
 }));

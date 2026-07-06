@@ -8,25 +8,26 @@ https://github.com/xiangyuecn/Recorder
 
 可以仅使用RecordApp作为入口，可以不关心recorder-core中的方法，因为RecordApp已经对他进行了一次封装，并且屏蔽了非通用的功能。
 */
-(function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(win,rec,ni,ni.$T,browser);
+(function(factory){ "use strict";
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	
+	var browser=rec.IsBrowser, Export=browser?window:Object;
+	var ExAlias=Object["Recorder-App-Alias"]||"RecordApp"; //允许配置全局变量名
+	factory(Export, ExAlias, rec, rec.i18n.$T, browser);
+	
 	//umd returnExports.js
 	if(typeof(define)=='function' && define.amd){
-		define(function(){
-			return win.RecordApp;
-		});
+		define(function(){ return rec.RecordApp });
 	};
 	if(typeof(module)=='object' && module.exports){
-		module.exports=win.RecordApp;
+		module.exports=rec.RecordApp;
 	};
-}(function(Export,Recorder,i18n,$T,isBrowser){
+}(function(Export,ExAlias,Recorder,$T,isBrowser){
 "use strict";
 
 var App={
-LM:"2024-04-09 19:22"
+LM:"2026-06-28 00:00"
 
 //当前使用的平台实现
 ,Current:0
@@ -38,12 +39,12 @@ var AppTxt="RecordApp";
 var ReqTxt="RequestPermission";
 var RegTxt="RegisterPlatform";
 
-var WApp2=Export[AppTxt];//重复加载js
-if(WApp2&&WApp2.LM==App.LM){
-	WApp2.CLog($T("uXtA::重复导入{1}",0,AppTxt),3);
+var WApp2=Export[ExAlias];//重复加载js
+if(WApp2&&WApp2.LM==App.LM && WApp2==Recorder[AppTxt]){
+	WApp2.CLog($T("uXtA::重复导入{1}",0,AppTxt+(AppTxt==ExAlias?"":"@"+ExAlias)),3);
 	return;
 };
-Export[AppTxt]=App;
+Export[ExAlias]=App;
 Recorder[AppTxt]=App;
 
 
