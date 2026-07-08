@@ -27,7 +27,7 @@ https://github.com/xiangyuecn/Recorder
 "use strict";
 
 var App={
-LM:"2026-06-28 00:00"
+LM:"2026-07-08 20:43"
 
 //当前使用的平台实现
 ,Current:0

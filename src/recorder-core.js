@@ -14,7 +14,7 @@ https://github.com/xiangyuecn/Recorder
 	factory(Export,ExAlias,browser);
 	
 	var Recorder=Export[ExAlias];
-	Object[ExA0||"Recorder-Core-Export"]=Recorder; //2026-06-28固定挂载在Object下面导出
+	Object[ExA0||"Recorder-Core-Export"]=Recorder; //260708固定挂载在Object下面导出
 	
 	//umd returnExports.js
 	if(typeof(define)=='function' && define.amd){
@@ -33,7 +33,7 @@ var ToJson=function(v){return JSON.stringify(v)};
 var Recorder=function(set){
 	return new initFn(set);
 };
-var LM=Recorder.LM="2026-06-28 00:00";
+var LM=Recorder.LM="2026-07-08 20:16";
 var GitUrl="https://github.com/xiangyuecn/Recorder";
 var RecTxt="Recorder";
 var getUserMediaTxt="getUserMedia";
@@ -953,10 +953,12 @@ function initFn(set){
 		//,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能
 		
 		//,allowUpsample:false 当源采样率this.srcSampleRate<set.sampleRate（如set=48000但源只有44100）时是否要提升采样率
-			//默认不允许，同时set.sampleRate会被重设为源采样率；比如用最高音质录，但实时只取16k的pcm，默认false不影响音质；如果确实需要提升请设为true
+			//默认不允许，同时set.sampleRate会被重设为源采样率；比如用最高音质录，但实际只取16k的pcm，默认false不影响音质；如果确实需要提升请设为true
 			//提升采样率的音质依赖重采样算法和计算复杂度，内置的SampleData+IIRFilter会引入轻微杂音
 		
-		//,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出
+		//,engine_mp3_lowpassfreq:0 mp3专用配置，16kbps时配置成-1声音不沉闷可提升清晰度，但会增加噪声，详细请阅读文档中mp3编码器说明
+		
+		//,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，类似于onFrameRecorded，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出
 				//当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；如果当前编码器或环境不支持实时编码处理，将在open时直接走fail逻辑
 				//因此提供此回调后调用stop方法将无法获得有效的音频数据，因为编码器内没有音频数据，因此stop时返回的blob将是一个字节长度为0的blob
 				//大部分录音格式编码器都支持实时编码（边录边转码），比如mp3格式：会实时的将编码出来的mp3片段通过此方法回调，所有的chunkBytes拼接到一起即为完整的mp3，此种拼接的结果比mock方法实时生成的音质更加，因为天然避免了首尾的静默
