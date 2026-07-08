@@ -7,11 +7,10 @@ https://github.com/xiangyuecn/Recorder
 编码的代码和wav.js区别不大，pcm加上一个44字节wav头即成wav文件；所以要播放pcm就很简单了，直接转成wav文件来播放，已提供转换函数 Recorder.pcm2wav
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 Recorder.prototype.enc_pcm={

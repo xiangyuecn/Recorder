@@ -5,25 +5,22 @@ https://github.com/xiangyuecn/Recorder
 录音功能由微信小程序的RecorderManager录音接口提供（已屏蔽10分钟录音限制），因为js层已加载Recorder和相应的js编码引擎，所以，Recorder支持的录音格式，小程序内均可以做到支持。
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 var IsWx=typeof wx=="object" && !!wx.getRecorderManager;
 var App=Recorder.RecordApp;
+if(!App) throw new Error("Must import recorder-core/src/app-support/app first");
 var CLog=App.CLog;
 
 var platform={
 	Support:function(call){
 		if(IsWx && isBrowser){ //有的h5里面有wx对象，又有的wx里面有window对象
-			var win=window,doc=win.document,loc=win.location,body=doc.body;
-			if(loc && loc.href && loc.reload && body && body.appendChild){
-				CLog("识别是浏览器但又检测到wx",3);
-				call(false); return; //多判断一些稳妥一点
-			}
+			CLog("识别是浏览器但又检测到wx",3);
+			call(false); return;
 		}
 		call(IsWx);
 	}

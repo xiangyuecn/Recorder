@@ -60,6 +60,7 @@ function Run_minify(){
 	minify("../dist/engine/beta-amr.js",["engine/beta-amr.js","engine/beta-amr-engine.js","engine/wav.js"]);
 
 	fs.readdirSync("app-support").forEach(function(file){
+		if(file=="app.js.esm.js") return;
 		minify("../dist/app-support/"+file,["app-support/"+file]);
 	});
 	fs.readdirSync("extensions").forEach(function(file){
@@ -237,6 +238,7 @@ function Run_npm(){
 	copyFile("../recorder.mp3.min.js",npmFiles+"/recorder.mp3.min.js");
 	copyFile("../recorder.wav.min.js",npmFiles+"/recorder.wav.min.js");
 	copyFile("recorder-core.js",npmSrc+"/recorder-core.js");
+	copyFile("recorder-core.js.esm.js",npmSrc+"/recorder-core.js.esm.js");
 	srcDirs.forEach(function(dir){
 		var files=fs.readdirSync(dir);
 		fs.mkdirSync(npmSrc+"/"+dir);

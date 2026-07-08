@@ -29,11 +29,10 @@ Recorder.Sonic.Async(set)
 	.flush(callback) callback:fn(pcm)，和同步方法相同，只是返回值通过callback返回
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 //是否支持web worker

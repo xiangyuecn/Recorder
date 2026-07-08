@@ -9,11 +9,10 @@ https://github.com/katspaugh/wavesurfer.js https://github.com/collab-project/vid
 本扩展的波形绘制直接简单的使用PCM的采样数值大小来进行线条的绘制，同一段音频绘制出的波形和Audition内显示的波形外观上几乎没有差异。
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 var WaveSurferView=function(set){

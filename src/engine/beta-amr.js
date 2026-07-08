@@ -12,11 +12,10 @@ FFmpeg转码：
 [ wav->AMR-WB] ffmpeg.exe -i test.wav -acodec libvo_amrwbenc -ar 16000 -ab 23.85k -ac 1 amr-23.85.amr
 */
 (function(factory){
-	var browser=typeof window=="object" && !!window.document;
-	var win=browser?window:Object; //非浏览器环境，Recorder挂载在Object下面
-	var rec=win.Recorder,ni=rec.i18n;
-	factory(rec,ni,ni.$T,browser);
-}(function(Recorder,i18n,$T,isBrowser){
+	var rec=Object[Object["Recorder-Core-Alias"]||"Recorder-Core-Export"]; //Recorder挂载在Object下面
+	if(!rec) throw new Error("Must import recorder-core first");
+	factory(rec, rec.i18n.$T, rec.IsBrowser);
+}(function(Recorder,$T,isBrowser){
 "use strict";
 
 var BitS="4.75, 5.15, 5.9, 6.7, 7.4, 7.95, 10.2, 12.2";

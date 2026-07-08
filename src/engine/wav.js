@@ -124,7 +124,7 @@ wavBlob: wav音频文件blob对象 或 ArrayBuffer，仅支持raw pcm格式的wa
 True(pcm,sampleRate,wavInfo) pcm为Int16Array，16位单声道，采样率为sampleRate
 	wavInfo:{
 		bitRate:8 16 24 32 //wav文件位数
-		numCh:1 2 //声道数
+		numChannels:1 2 //声道数
 		dataPos:44 //数据开始位置，等于wav头长度
 	}
 False(msg)
@@ -196,7 +196,7 @@ Recorder.wav_decode=function(wavBlob,True,False){
 			False&&False($T("jXp3::非单或双声道wav raw pcm格式wav，不支持解码"));
 			return;
 		};
-		True&&True(pcm,sampleRate,{ bitRate:bitRate, numCh:numCh, dataPos:dataPos });
+		True&&True(pcm,sampleRate,{ bitRate:bitRate, numChannels:numCh, dataPos:dataPos });
 	};
 	
 	if(wavBlob instanceof ArrayBuffer){
