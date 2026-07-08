@@ -1,0 +1,312 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<link rel="shortcut icon" type="image/png" href="icon.png">
+
+<title>Recorder ES Module 导入测试</title>
+
+<script src="ztest-jquery.min-1.9.1.js"></script>
+</head>
+
+<body>
+<div class="main">
+	<div class="mainBox">
+		<span style="font-size:32px;color:#f60;">Recorder ES Module 导入测试</span>
+		<a href="https://github.com/xiangyuecn/Recorder">GitHub >></a> |
+		<a href="../">前往Demo页 >></a>
+	</div>
+	
+	<div class="mainBox mainCtrl">
+		<div class="btns">
+			<div>
+				<button onclick="recOpen()" style="margin-right:10px">打开录音,请求权限</button>
+				<button onclick="recClose()" style="margin-right:0">关闭录音,释放资源</button>
+			</div>
+			
+			<button onclick="recStart()">录制</button>
+			<button onclick="recStop()" style="margin-right:80px">停止</button>
+			
+			<button onclick="recPause()">暂停</button>
+			<button onclick="recResume()">继续</button>
+			<button onclick="recPlay()">播放</button>
+		</div>
+		<div style="padding-bottom:12px;padding-top:12px">
+			<div style="border:1px solid #ccc;display:inline-block;vertical-align:bottom"><div style="height:100px;width:300px;" class="recwave"></div></div>
+			
+			<div style="height:40px;width:300px;margin-top:5px;display:inline-block;vertical-align:bottom;background:#999;position:relative;">
+				<div class="recpowerx" style="height:40px;background:#0B1;position:absolute;"></div>
+				<div class="recpowert" style="padding-left:50px; line-height:40px; position: relative;"></div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="mainBox">
+		<div class="reclog"></div>
+	</div>
+</div>
+
+<script>
+function reclog(s,color){
+	var now=new Date();
+	var t=("0"+now.getHours()).substr(-2)
+		+":"+("0"+now.getMinutes()).substr(-2)
+		+":"+("0"+now.getSeconds()).substr(-2);
+	$(".reclog").prepend('<div style="color:'+(!color?"":color==1?"red":color==2?"#0b1":color)+'">['+t+']'+s+'</div>');
+};
+$(window).bind("error",function(e){
+	reclog('<span style="color:red">【Error】:<pre>'+(e.error?e.error.stack:event.message)+'</pre></span>');
+});
+
+var MyRecorder={ msg:"覆盖测试" };
+reclog("开始加载Recorder...");
+</script>
+
+
+<script type="module">
+import './ztest-rec-alias.js'; //测试全局改名，需要先于recorder-core import
+import Recorder from '../src/recorder-core.js.esm.js';
+import '../src/engine/mp3.js';
+import '../src/engine/mp3-engine.js';
+import '../src/extensions/waveview.js';
+
+reclog("已加载Recorder es模块OK~ "+Recorder.LM+" | Export_Overwrite="+JSON.stringify(Recorder.Export_Overwrite), 2);
+reclog("全局改名结果: window.Recorder="+window.Recorder+" | window.MyRecorder="+window.MyRecorder, "#aaa");
+
+//测试动态加载
+setTimeout(async function(){
+	reclog("测试动态加载RecordApp es模块... RecordApp="+typeof(Recorder.RecordApp));
+	try{
+		var RecordApp=(await import("../src/app-support/app.js.esm.js")).default;
+		reclog("测试动态加载RecordApp es模块OK~ RecordApp="+typeof(Recorder.RecordApp)+" "+MyRecordApp.LM,2);
+		reclog("全局改名结果: window.RecordApp="+window.RecordApp+" | window.MyRecordApp="+window.MyRecordApp, "#aaa");
+	}catch(e){
+		console.error("加载RecordApp es模块出错",e);
+		reclog("测试动态加载RecordApp es模块出错："+e.message,1);
+	}
+}, 200);
+
+
+
+
+
+
+
+var rec,processTime,wave,recBlob;
+/**调用open打开录音请求好录音权限**/
+window.recOpen=function(){
+	rec=null;
+	wave=null;
+	recBlob=null;
+	var newRec=Recorder({
+		type:"mp3",sampleRate:16000,bitRate:16
+		,onProcess:function(buffers,powerLevel,bufferDuration,bufferSampleRate,newBufferIdx,asyncEnd){
+			//录音实时回调，大约1秒调用12次本回调
+			document.querySelector(".recpowerx").style.width=powerLevel+"%";
+			document.querySelector(".recpowert").innerText=formatMs(bufferDuration,1)+" / "+powerLevel;
+			processTime=Date.now();
+			
+			//可视化图形绘制
+			wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+		}
+	});
+
+	newRec.open(function(){//打开麦克风授权获得相关资源
+		rec=newRec;
+		
+		//此处创建这些音频可视化图形绘制浏览器支持妥妥的
+		wave=Recorder.WaveView({elem:".recwave"});
+		
+		reclog("已打开录音，可以点击录制开始录音了",2);
+	},function(msg,isUserNotAllow){//用户拒绝未授权或不支持
+		reclog((isUserNotAllow?"UserNotAllow, ":"")+"打开录音失败："+msg,1);
+	});
+};
+
+
+
+/**关闭录音，释放资源**/
+window.recClose=function(){
+	if(rec){
+		rec.close();
+		reclog("已关闭");
+	}else{
+		reclog("未打开录音",1);
+	};
+};
+
+
+
+/**开始录音**/
+window.recStart=function(){//打开了录音后才能进行start、stop调用
+	if(rec&&Recorder.IsOpen()){
+		recBlob=null;
+		rec.start();
+		reclog("已开始录音... "+rec.set.type+" "+rec.set.sampleRate+" "+rec.set.bitRate+"kbps");
+		
+		//【稳如老狗WDT】可选的，监控是否在正常录音有onProcess回调，如果长时间没有回调就代表录音不正常
+		var wdt=rec.watchDogTimer=setInterval(function(){
+			if(!rec || wdt!=rec.watchDogTimer){ clearInterval(wdt); return } //sync
+			if(Date.now()<rec.wdtPauseT) return; //如果暂停录音了就不检测：puase时赋值rec.wdtPauseT=Date.now()*2（永不监控），resume时赋值rec.wdtPauseT=Date.now()+1000（1秒后再监控）
+			if(Date.now()-(processTime||startTime)>1500){ clearInterval(wdt);
+				reclog(processTime?"录音被中断":"录音未能正常开始",1);
+				// ... 错误处理，关闭录音，提醒用户
+			}
+		},1000);
+		var startTime=Date.now(); rec.wdtPauseT=0; processTime=0;
+	}else{
+		reclog("未打开录音",1);
+	};
+};
+
+/**暂停录音**/
+window.recPause=function(){
+	if(rec&&Recorder.IsOpen()){
+		rec.pause();
+		rec.wdtPauseT=Date.now()*2; //永不监控onProcess超时
+		reclog("已暂停");
+	}else{
+		reclog("未打开录音",1);
+	};
+};
+/**恢复录音  Resume recording**/
+window.recResume=function(){
+	if(rec&&Recorder.IsOpen()){
+		rec.resume();
+		rec.wdtPauseT=Date.now()+1000; //1秒后再监控onProcess超时
+		reclog("继续录音中...");
+	}else{
+		reclog("未打开录音",1);
+	};
+};
+
+/**结束录音，得到音频文件**/
+window.recStop=function(){
+	if(!(rec&&Recorder.IsOpen())){
+		reclog("未打开录音",1);
+		return;
+	};
+	rec.watchDogTimer=0; //停止监控onProcess超时
+	rec.stop(function(blob,duration){
+		console.log(blob,(window.URL||webkitURL).createObjectURL(blob),"时长:"+duration+"ms");
+		
+		recBlob=blob;
+		reclog("已录制mp3："+formatMs(duration)+"ms "+blob.size+"字节",2);
+	},function(msg){
+		reclog("录音失败: "+msg,1);
+	});
+};
+
+
+/**播放**/
+window.recPlay=function(){
+	if(!recBlob){
+		reclog("请先录音，然后停止后再播放",1);
+		return;
+	};
+	var cls=("a"+Math.random()).replace(".","");
+	reclog('播放中: <span class="'+cls+'"></span>');
+	var audio=document.createElement("audio");
+	audio.controls=true;
+	document.querySelector("."+cls).appendChild(audio);
+	//简单利用URL生成播放地址，注意不用了时需要revokeObjectURL，否则霸占内存
+	audio.src=(window.URL||webkitURL).createObjectURL(recBlob);
+	audio.play();
+};
+
+
+
+
+
+
+
+var formatMs=function(ms,all){
+	var ss=ms%1000;ms=(ms-ss)/1000;
+	var s=ms%60;ms=(ms-s)/60;
+	var m=ms%60;ms=(ms-m)/60;
+	var h=ms;
+	var t=(h?h+":":"")
+		+(all||h+m?("0"+m).substr(-2)+":":"")
+		+(all||h+m+s?("0"+s).substr(-2)+"″":"")
+		+("00"+ss).substr(-3);
+	return t;
+};
+</script>
+
+<!-- 加载打赏挂件 -->
+<script src="zdemo.widget.donate.js"></script>
+<script>
+DonateWidget({
+	log:function(msg){reclog(msg)}
+	,mobElem:$(".reclog").append('<div class="DonateView"></div>').find(".DonateView")[0]
+});
+</script>
+
+<style>
+body{
+	word-wrap: break-word;
+	background:#f5f5f5 center top no-repeat;
+	background-size: auto 680px;
+}
+pre{
+	white-space:pre-wrap;
+}
+a{
+	text-decoration: none;
+	color:#06c;
+}
+a:hover{
+	color:#f00;
+}
+
+.main{
+	max-width:700px;
+	margin:0 auto;
+	padding-bottom:80px
+}
+
+.mainBox{
+	margin-top:12px;
+	padding: 12px;
+	border-radius: 6px;
+	background: #fff;
+	--border: 1px solid #f60;
+	box-shadow: 2px 2px 3px #aaa;
+}
+
+
+.btns button{
+	display: inline-block;
+	cursor: pointer;
+	border: none;
+	border-radius: 3px;
+	background: #f60;
+	color:#fff;
+	padding: 0 15px;
+	margin:3px 20px 3px 0;
+	line-height: 36px;
+	height: 36px;
+	overflow: hidden;
+	vertical-align: middle;
+}
+.btns button:active{
+	background: #f00;
+}
+
+.pd{
+	padding:0 0 6px 0;
+}
+.lb{
+	display:inline-block;
+	vertical-align: middle;
+	background:#00940e;
+	color:#fff;
+	font-size:14px;
+	padding:2px 8px;
+	border-radius: 99px;
+}
+</style>
+
+</body>
+</html>

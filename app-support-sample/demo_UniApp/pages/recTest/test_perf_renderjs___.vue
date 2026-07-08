@@ -91,6 +91,7 @@ methods: {
 		var vals=["逻辑层可用：<pre style='white-space:pre-wrap'>"];
 		var trace=(val)=>{
 			if(/func/i.test(typeof val))val="[Func]";
+			if(typeof(val)=='symbol')val="["+val.toString()+"]";
 			try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
 			return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
 		}
@@ -105,24 +106,41 @@ methods: {
 		for(var k of this.$&&Object.getOwnPropertyNames(this.$)||[]){
 			vals.push('this.$.'+k+trace(this.$[k]));
 		}
+		for(var k of this.$&&this.$.vnode&&Object.getOwnPropertyNames(this.$.vnode)||[]){
+			vals.push('this.$.vnode.'+k+trace(this.$.vnode[k]));
+		}
+		for(var k of this.$&&this.$.subTree&&Object.getOwnPropertyNames(this.$.subTree)||[]){
+			vals.push('this.$.subTree.'+k+trace(this.$.subTree[k]));
+		}
 		vals.push('----------');
+		vals.push('this.$root'+trace(this.$root));
 		for(var k of this.$root&&Object.getOwnPropertyNames(this.$root)||[]){
 			vals.push('this.$root.'+k+trace(this.$root[k]));
 		}
+		vals.push('this.$root.$vm'+trace(this.$root.$vm));
+		vals.push('this.$vm'+trace(this.$vm));
 		for(var k in this.$root.$vm){
 			vals.push('this.$root.$vm.'+k+trace(this.$root.$vm[k]));
 		}
-		if(this.$root.$scope){
-			for(var k in this.$root.$scope){
-				vals.push('this.$root.$scope.'+k+trace(this.$root.$scope[k]));
-			}
-			for(var k in this.$root.$scope.$page){
-				vals.push('this.$root.$scope.$page.'+k+trace(this.$root.$scope.$page[k]));
-			}
+		vals.push('----------');
+		vals.push('this.$root.$scope'+trace(this.$root.$scope));
+		for(var k of this.$root.$scope&&Object.getOwnPropertyNames(this.$root.$scope)||[]){
+			vals.push('this.$root.$scope.'+k+trace(this.$root.$scope[k]));
 		}
-		for(var k in this.$root.$page){
+		vals.push('----------');
+		vals.push('this.$root.$page'+trace(this.$root.$page));
+		for(var k of this.$root.$page&&Object.getOwnPropertyNames(this.$root.$page)||[]){
 			vals.push('this.$root.$page.'+k+trace(this.$root.$page[k]));
 		}
+		vals.push('----------');
+		vals.push('this.$scope'+trace(this.$scope));
+		for(var k of this.$scope&&Object.getOwnPropertyNames(this.$scope)||[]){
+			vals.push('this.$scope.'+k+trace(this.$scope[k]));
+		}
+		for(var k of this.$page&&Object.getOwnPropertyNames(this.$page)||[]){
+			vals.push('this.$page.'+k+trace(this.$page[k]));
+		}
+		
 		vals.push("</pre>");
 		CallWebView('renderjsTraceThis(); testPerfRJsLog(`'+vals.join("\n	")+'`)');
 	}

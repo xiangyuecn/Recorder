@@ -4,7 +4,9 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 -->
 
 <template>
-<view>
+<view style="background:#e8fffe;padding:20px 0;margin-top:20px">
+	<view style="font-weight:bold;padding:0 10px">组合式Composition API子组件测试</view>
+	
 	<!-- 控制按钮 -->
 	<view style="display: flex;padding-top:10px">
 		<view style="width:10px"></view>
@@ -107,7 +109,12 @@ var vue3This=getCurrentInstance().proxy; //必须定义到最外面，getCurrent
 
 
 onMounted(()=>{
-	reclog("组件onMounted：component_CompositionAPI.vue");
+	reclog("组件onMounted：component_CompositionAPI.vue"
+		+"，WebViewId: root.page.id="+(vue3This.$root.$page&&vue3This.$root.$page.id||"?")
+		+" root.webview.id="+(vue3This.$root.$scope&&vue3This.$root.$scope.$getAppWebview&&vue3This.$root.$scope.$getAppWebview().id||"?")
+		+" page.id="+(vue3This.$page&&vue3This.$page.id||"?")
+		+"，ComponentId: _$id="+(vue3This._$id||"?")+" $.uid="+(vue3This.$&&vue3This.$.uid||"?")
+	);
 	vue3This.isMounted=true; RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面准备好了时再执行一次
 });
 onUnmounted(()=>{

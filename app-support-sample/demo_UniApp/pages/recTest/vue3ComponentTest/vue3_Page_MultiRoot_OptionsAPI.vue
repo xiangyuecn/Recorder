@@ -3,10 +3,15 @@ GitHub: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/de
 DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore
 -->
 
-<template>
-<view style="background:#e8f4ff;padding:20px 0;margin-top:20px">
-	<view style="font-weight:bold;padding:0 10px">选项式Options API子组件测试</view>
-	
+<template> <!-- 最外层最好是有唯一个view，否则可能会出现各种莫名其妙的bug。！！！这个页面是专门测试多个view的 请勿照抄！！！ -->
+<view style="color:#ccc">这是一个独立的根节点</view>
+
+<view style="padding:5px 10px 0">
+	<view><text style="font-size:24px;color:#0b1">vue3多个根节点兼容性测试 - 选项式Options API页面</text></view>
+	<view><text style="font-size:13px;color:#f60">正常使用时建议template下只有一个根节点（最外面套一层view），如果不小心踩到了vue3的Fragments(multi-root 多个根节点)特性（vue2编译会报错，vue3不会），可能会出现奇奇怪怪的兼容性问题。</text></view>
+</view>
+
+<view class="multiMain">
 	<!-- 控制按钮 -->
 	<view style="display: flex;padding-top:10px">
 		<view style="width:10px"></view>
@@ -22,10 +27,6 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			<button @click="recStop" style="font-size:16px;padding:0">停止录音</button>
 		</view>
 		<view style="width:10px"></view>
-	</view>
-	<view style="padding:10px 10px 0">
-		<button size="mini" type="default" @click="recPause">暂停</button>
-		<button size="mini" type="default" @click="recResume">继续</button>
 	</view>
 	
 	<!-- 可视化绘制 -->
@@ -56,12 +57,29 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 	</view>
 	
+	<!-- 测试 -->
+	<view style="padding-top:10px">
+		<view>
+			<button size="mini" @click="traceThis">显示vue3This可用属性</button>
+		</view>
+		<view class="testPerfRJsLogs" v-html="traceThisHtml"></view>
+	</view>
+	
 	<view style="padding-top:80px"></view>
 </view>
+
+<view style="color:#ccc">这是一个独立的根节点</view>
+<view>
+	<CompositionAPI />
+	<OptionsAPI />
+</view>
+
 </template>
 
-
 <script>
+import CompositionAPI from './component_CompositionAPI.vue';
+import OptionsAPI from './component_OptionsAPI.vue';
+
 import TestPlayer from '../test_player___.vue'; //手撸的一个跨平台播放器
 
 
@@ -99,7 +117,7 @@ RecordApp.UniHarmonyUTS=UniHarmonyUTS;
 
 
 export default {
-	components: { TestPlayer },
+	components: { TestPlayer, CompositionAPI, OptionsAPI },
 	data() {
 		return {
 			traceThisHtml:""
@@ -110,7 +128,7 @@ export default {
 		}
 	},
 	mounted() {
-		this.reclog("组件mounted：component_OptionsAPI.vue"
+		this.reclog("onMounted: MultiRoot"
 			+"，WebViewId: root.page.id="+(this.$root.$page&&this.$root.$page.id||"?")
 			+" root.webview.id="+(this.$root.$scope&&this.$root.$scope.$getAppWebview&&this.$root.$scope.$getAppWebview().id||"?")
 			+" page.id="+(this.$page&&this.$page.id||"?")
@@ -146,6 +164,9 @@ export default {
 			****/
 			//RecordApp.UniAppUseLicense='我已获得UniAppID=*****的商用授权';
 			
+			if(RecordApp.UniIsApp()){
+				RecordApp.UniWebViewVueCall(this,'this.testCall("这里测试一下直接调用renderjs中的方法")')
+			}
 			this.reclog("正在请求录音权限...");
 			RecordApp.UniWebViewActivate(this); //App环境下必须先切换成当前页面WebView
 			RecordApp.RequestPermission(()=>{
@@ -225,7 +246,7 @@ export default {
 				this.reclog(this.currentKeyTag()+" 录制中",2);
 				
 				//创建音频可视化图形绘制，App环境下是在renderjs中绘制，H5、小程序等是在逻辑层中绘制，因此需要提供两段相同的代码（宽高值需要和canvas style的宽高一致）
-				RecordApp.UniFindCanvas(this,[".recwave-WaveView"],`
+				RecordApp.UniFindCanvas(this,[".multiMain .recwave-WaveView"],`
 					this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
 				`,(canvas1)=>{
 					this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
@@ -233,18 +254,6 @@ export default {
 			},(msg)=>{
 				this.reclog(this.currentKeyTag()+" 开始录音失败："+msg,1);
 			});
-		}
-		,recPause(){
-			if(RecordApp.GetCurrentRecOrNull()){
-				RecordApp.Pause();
-				this.reclog("已暂停");
-			}
-		}
-		,recResume(){
-			if(RecordApp.GetCurrentRecOrNull()){
-				RecordApp.Resume();
-				this.reclog("继续录音中...");
-			}
 		}
 		,recStop(){
 			this.reclog("正在结束录音...");
@@ -290,6 +299,67 @@ export default {
 			return v;
 		}
 		
+		,traceThis(){
+			var vals=["逻辑层可用：<pre style='white-space:pre-wrap'>"];
+			var trace=(val)=>{
+				if(/func/i.test(typeof val))val="[Func]";
+				if(typeof(val)=='symbol')val="["+val.toString()+"]";
+				try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
+				return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
+			}
+			for(var k in globalThis){
+				//vals.push('globalThis.'+k);
+			}
+			for(var k of Object.getOwnPropertyNames(this)||[]){
+				vals.push('this.'+k+trace(this[k]));
+			}
+			vals.push('this.$==this._ = '+(this.$==this._));
+			vals.push('----------');
+			for(var k of this.$&&Object.getOwnPropertyNames(this.$)||[]){
+				vals.push('this.$.'+k+trace(this.$[k]));
+			}
+			for(var k of this.$&&this.$.vnode&&Object.getOwnPropertyNames(this.$.vnode)||[]){
+				vals.push('this.$.vnode.'+k+trace(this.$.vnode[k]));
+			}
+			for(var k of this.$&&this.$.subTree&&Object.getOwnPropertyNames(this.$.subTree)||[]){
+				vals.push('this.$.subTree.'+k+trace(this.$.subTree[k]));
+			}
+			vals.push('----------');
+			vals.push('this.$root'+trace(this.$root));
+			for(var k of this.$root&&Object.getOwnPropertyNames(this.$root)||[]){
+				vals.push('this.$root.'+k+trace(this.$root[k]));
+			}
+			vals.push('this.$root.$vm'+trace(this.$root.$vm));
+			vals.push('this.$vm'+trace(this.$vm));
+			for(var k in this.$root.$vm){
+				vals.push('this.$root.$vm.'+k+trace(this.$root.$vm[k]));
+			}
+			vals.push('----------');
+			vals.push('this.$root.$scope'+trace(this.$root.$scope));
+			for(var k of this.$root.$scope&&Object.getOwnPropertyNames(this.$root.$scope)||[]){
+				vals.push('this.$root.$scope.'+k+trace(this.$root.$scope[k]));
+			}
+			vals.push('----------');
+			vals.push('this.$root.$page'+trace(this.$root.$page));
+			for(var k of this.$root.$page&&Object.getOwnPropertyNames(this.$root.$page)||[]){
+				vals.push('this.$root.$page.'+k+trace(this.$root.$page[k]));
+			}
+			vals.push('----------');
+			vals.push('this.$scope'+trace(this.$scope));
+			for(var k of this.$scope&&Object.getOwnPropertyNames(this.$scope)||[]){
+				vals.push('this.$scope.'+k+trace(this.$scope[k]));
+			}
+			for(var k of this.$page&&Object.getOwnPropertyNames(this.$page)||[]){
+				vals.push('this.$page.'+k+trace(this.$page[k]));
+			}
+			
+			vals.push("</pre>");
+			this.traceThisHtml=vals.join("\n	");
+			
+			setTimeout(()=>{
+				RecordApp.UniWebViewEval(this,'traceThis__vue3_moapi()');
+			});
+		}
 	}
 }
 </script>
@@ -304,9 +374,13 @@ export default {
 	。如果配置了 RecordApp.UniWithoutAppRenderjs=true 且未调用依赖renderjs的功能时（如nvue、可视化、仅H5中可用的插件）
 	，可不提供此renderjs模块，同时逻辑层中需要将相关import的条件编译去掉**/
 
-/**============= App中在renderjs中引入RecordApp，这里只进行音频可视化，不需要录音和编码 =============**/
+/**============= App中在renderjs中引入RecordApp，这样App中也能使用H5录音、音频可视化 =============**/
 /** 先引入Recorder **/
-import Recorder from 'recorder-core'; //注意如果未引用Recorder变量，可能编译时会被优化删除（如vue3 tree-shaking），请改成 import 'recorder-core'，或随便调用一下 Recorder.a=1 保证强引用
+import Recorder from 'recorder-core';
+
+//按需引入需要的录音格式编码器，用不到的不需要引入，减少程序体积；H5、renderjs中可以把编码器放到static文件夹里面用动态创建script来引入，免得这些文件太大
+import 'recorder-core/src/engine/mp3.js'
+import 'recorder-core/src/engine/mp3-engine.js'
 
 //可选引入可视化插件
 import 'recorder-core/src/extensions/waveview.js'
@@ -320,15 +394,46 @@ export default {
 	mounted(){
 		//App的renderjs必须调用的函数，传入当前模块this
 		RecordApp.UniRenderjsRegister(this);
+		//测试用
+		rjsThis=this;
 	},
 	methods: {
 		//这里定义的方法，在逻辑层中可通过 RecordApp.UniWebViewVueCall(this,'this.xxxFunc()') 直接调用
 		//调用逻辑层的方法，请直接用 this.$ownerInstance.callMethod("xxxFunc",{args}) 调用，二进制数据需转成base64来传递
+		testCall(val){
+			this.$ownerInstance.callMethod("reclog",'逻辑层调用renderjs中的testCall结果：'+val);
+		}
 	}
+}
+
+//测试用，打印this里面的对象
+var rjsThis;
+window.traceThis__vue3_moapi=function(){
+	var obj=rjsThis;
+	var str="renderjs可用：<pre style='white-space:pre-wrap'>";
+	var trace=(val)=>{
+		if(/func/i.test(typeof val))val="[Func]";
+		try{ val=""+val;}catch(e){val="[?"+(typeof val)+"]"}
+		return '<span style="color:#bbb">='+val.substr(0,50)+'</span>';
+	}
+	for(var k in obj){
+		str+='\n	this.'+k+trace(obj[k]);
+	}
+	for(var k in obj.$ownerInstance){
+		str+='\n	this.$ownerInstance.'+k+trace(obj.$ownerInstance[k]);
+	}
+	for(var k in obj.$ownerInstance.$vm){
+		str+='\n	this.$ownerInstance.$vm.'+k+trace(obj.$ownerInstance.$vm[k]);
+	}
+	for(var k in uni){
+		str+='\n	uni.'+k+trace(uni[k]);
+	}
+	str+='</pre>';
+	var el=document.querySelector('.testPerfRJsLogs');
+	el.innerHTML+=str;
 }
 </script>
 <!-- #endif -->
-
 
 
 

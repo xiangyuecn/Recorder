@@ -53,6 +53,7 @@ import Recorder from 'recorder-core' //注意如果未引用Recorder变量，可
 //import './你clone的目录/src/recorder-core.js' //clone源码可以按这个方式引入，下同
 //require('./你clone的目录/src/recorder-core.js') //clone源码可以按这个方式引入，下同
 //<script src="你clone的目录/src/recorder-core.js"> //这是html中script方式引入，下同
+    //import Recorder from 'recorder-core/src/recorder-core.js.esm.js' //ES Module内请用此方式
 
 //按需引入你需要的录音格式支持文件，如果需要多个格式支持，把这些格式的编码引擎js文件统统引入进来即可
 import 'recorder-core/src/engine/mp3'
@@ -69,6 +70,7 @@ import 'recorder-core/src/extensions/waveview'
 
 //必须引入的RecordApp核心文件（文件路径是 /src/app-support/app.js）。注意：app.js会自动往window（浏览器环境）或Object（非浏览器环境）下挂载名称为RecordApp对象，全局可调用RecordApp
 import RecordApp from 'recorder-core/src/app-support/app'
+    //import RecordApp from 'recorder-core/src/app-support/app.js.esm.js' //ES Module内请用此方式
 
 //引入特定平台环境下的支持文件（也可以统统引入进来，非对应的环境下运行时会忽略掉）
 //import 'recorder-core/src/app-support/app-native-support.js' //App下的原生录音支持文件（App中未提供原生支持时可以不提供，统统走H5录音）
@@ -352,6 +354,13 @@ set配置默认值（和Recorder的初始化参数大部分相同）：
     
     //*******高级设置******
         //,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能，如果不清楚作用请勿随意使用
+
+        //,allowUpsample:false 当源采样率this.srcSampleRate<set.sampleRate（如set=48000但源只有44100）时是否要提升采样率，260708版本新增
+            //默认不允许，同时set.sampleRate会被重设为源采样率；比如用最高音质录，但实际只取16k的pcm，默认false不影响音质；如果确实需要提升请设为true
+            //提升采样率的音质依赖重采样算法和计算复杂度，内置的SampleData+IIRFilter会引入轻微杂音
+
+        //,engine_mp3_lowpassfreq:0 mp3专用配置，16kbps时配置成-1声音不沉闷可提升清晰度，但会增加噪声，详细请阅读Recorder文档中mp3编码器说明
+
         //,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出。
                 //当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；环境要求比较苛刻：如果当前环境不支持实时编码处理，将在Start时直接走fail逻辑
                 //因此提供此回调后调用Stop方法将无法获得有效的音频数据，因为编码器内没有音频数据，因此Stop时返回的数据长度为0

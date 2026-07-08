@@ -355,22 +355,22 @@ if(!window.localStorage){window.localStorage={
 		<button onclick="trackSetQueryDeviceList(1)" reclang="gNwv">重新拉取设备</button>
 	</div>
 	<div>
-		<span class="lb">noiseSuppression :</span>
-		<select class="trackSet_noise">
-			<option value="" reclang="3K14">不设置</option>
-			<option value="1">true</option>
-			<option value="2">false</option>
-		</select>
-		<span reclang="Q0lg">降噪（ANS）配置开关</span>
-	</div>
-	<div>
 		<span class="lb">echoCancellation :</span>
 		<select class="trackSet_aec">
 			<option value="" reclang="d6UL">不设置</option>
 			<option value="1">true</option>
 			<option value="2">false</option>
 		</select>
-		<span reclang="ujUi">回声消除（AEC）配置开关</span>
+		<span reclang="ujUi">回声消除 AEC（一般默认打开）</span>
+	</div>
+	<div>
+		<span class="lb">noiseSuppression :</span>
+		<select class="trackSet_noise">
+			<option value="" reclang="3K14">不设置</option>
+			<option value="1">true</option>
+			<option value="2">false</option>
+		</select>
+		<span reclang="Q0lg">降噪 ANS（依赖AEC未显式关闭）</span>
 	</div>
 	<div>
 		<span class="lb">autoGainControl :</span>
@@ -379,7 +379,7 @@ if(!window.localStorage){window.localStorage={
 			<option value="1">true</option>
 			<option value="2">false</option>
 		</select>
-		<span reclang="gjGg">自动增益（AGC）配置开关</span>
+		<span reclang="gjGg">自动增益 AGC（依赖AEC未显式关闭）</span>
 	</div>
 	<div>
 		<span class="lb" reclang="h7dA">sampleRate :</span>
@@ -387,8 +387,8 @@ if(!window.localStorage){window.localStorage={
 		<span reclang="h7dB">（仅供测试）强制指定流的采样率，可能会出现浏览器不能正确选用麦克风、移动端无法启用回声消除等现象</span>
 	</div>
 	<div>
-		<span style="color:#f60" reclang="fP77">以上参数设置后需重新打开录音</span><span reclang="7ots">；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效；这些参数不设置时浏览器给的默认状态是打开还是关闭将不确定；</span>
-		<span style="color:#aaa" reclang="40Wa">移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放音量变小），但iOS上如果关闭又可能导致录音没有声音，如需更改配置请Android和iOS分别配置，并测试好</span>
+		<span style="color:#f60" reclang="fP77">以上参数设置后需重新打开录音</span><span reclang="7ots">；均为set中的audioTrackSet高级配置，会直接传递给浏览器的getUserMedia方法，不同浏览器的支持程度不同，并不一定会生效；这些参数不设置时浏览器一般默认打开，一般AEC未被显式禁用时ANS、AGC才会有效；</span>
+		<span style="color:#f60" reclang="40Wa">移动端打开降噪、回声消除可能会表现的很怪异（包括系统播放音量变小），关闭又可能导致录音音量变小或非常小（尤其是iOS）</span>
 	</div>
 </div>
 
@@ -464,6 +464,13 @@ if(!window.localStorage){window.localStorage={
 		<span reclang="LqWd">；为set中disableEnvInFix配置值</span>
 	</label>
 	<div><a href="https://github.com/xiangyuecn/Recorder/issues/51">issues#51</a><span reclang="mpX0">如果没有进行补偿，录音时设备偶尔出现很卡的情况下（CPU被其他程序大量占用），浏览器采集到的音频是断断续续的，导致10秒的录音可能就只返回了5秒的数据量，这个时候最终编码得到的音频时长明显变短，播放时的效果就像快放一样。未禁用时会在卡顿时自动补偿静默音频，消除了快放效果，但由于丢失的音频已被静默数据代替，听起来就是数据本身的断断续续的效果。在设备不卡时录音没有此问题。</span></div>
+	
+	<div style="margin-top:12px;">
+		<span class="lb" reclang="MbeZ">MP3低通频率 :</span>
+		<input class="set_mp3Lowpassfreq" value="0" style="width:50px">
+		<span reclang="MbfZ">为set中的engine_mp3_lowpassfreq配置项（MP3编码器专用配置），默认0动态取低通截止频率，设为-1禁用，其他值为指定低通频率；16k采样率16kbps默认0时低通5550hz 声音沉闷但中低频厚实干净，禁用后满频8k 音色丰富可提升清晰度 但会增加噪声。</span>
+		<span style="color:#f60" reclang="EE8G">设置后需重新打开录音</span>
+	</div>
 	
 	<div style="margin-top:12px;">
 		<span class="lb">Destroy :</span>
@@ -635,6 +642,11 @@ function recopen(call){
 		reclog(Html_$T("Ysbv::已禁用设备卡顿时音频输入丢失补偿，可以通过别的程序大量占用CPU来模拟设备卡顿，然后录音听听未补偿时的播放效果，然后再试试不禁用的效果"));
 	};
 	
+	var mp3Lowpassfreq=+$(".set_mp3Lowpassfreq").val()||0;
+	if(mp3Lowpassfreq){
+		reclog("set engine_mp3_lowpassfreq: "+mp3Lowpassfreq);
+	};
+	
 	var enableWebM=$(".enableWebMSet")[0].checked;
 	Recorder.ConnectEnableWebM=enableWebM;
 	if(!enableWebM){
@@ -683,7 +695,7 @@ function recopen(call){
 	
 	var takeoffEncodeChunkSet=$(".takeoffEncodeChunkSet")[0].checked;
 	
-	rec=Recorder({
+	var set={
 		type:type
 		,bitRate:bit
 		,sampleRate:sample
@@ -739,7 +751,11 @@ function recopen(call){
 			}
 			takeoffChunks.push(chunkBytes);
 		}
-	});
+	};
+	if(mp3Lowpassfreq){
+		set.engine_mp3_lowpassfreq=mp3Lowpassfreq;
+	};
+	rec=Recorder(set);
 	
 	rec.open(function(){
 		var typeSize=", <span style='border:1px solid #bbb;background:#f5f5f5;'>";

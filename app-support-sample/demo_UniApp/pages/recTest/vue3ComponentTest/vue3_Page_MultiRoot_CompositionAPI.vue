@@ -3,19 +3,15 @@ GitHub: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/de
 DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-UniCore
 -->
 
-<template>
-<view> <!-- 最外层最好是有唯一个view，否则可能会出现各种莫名其妙的bug -->
+<template> <!-- 最外层最好是有唯一个view，否则可能会出现各种莫名其妙的bug。！！！这个页面是专门测试多个view的 请勿照抄！！！ -->
+<view style="color:#ccc">这是一个独立的根节点</view>
+
 <view style="padding:5px 10px 0">
-	<view><text style="font-size:24px;color:#0b1">页面内使用vue3组合式API的编写方法</text></view>
-	<view><text style="font-size:13px;color:#f60">在组合式 API (Composition API) 中使用 getCurrentInstance().proxy 拿到当前组件的this，使用上就和选项式 API (Options API) 没有任何区别了。</text></view>
+	<view><text style="font-size:24px;color:#0b1">vue3多个根节点兼容性测试 - 组合式Composition API页面</text></view>
+	<view><text style="font-size:13px;color:#f60">正常使用时建议template下只有一个根节点（最外面套一层view），如果不小心踩到了vue3的Fragments(multi-root 多个根节点)特性（vue2编译会报错，vue3不会），可能会出现奇奇怪怪的兼容性问题。</text></view>
 </view>
 
-<view v-if="!isVue3" style="font-size:32px;color:#aaa">
-	非vue3，不测试
-</view>
-
-<!-- #ifdef VUE3 -->
-<view v-if="isVue3">
+<view class="multiMain">
 	<!-- 控制按钮 -->
 	<view style="display: flex;padding-top:10px">
 		<view style="width:10px"></view>
@@ -47,10 +43,6 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 		</view>
 	</view>
 	
-	<view style="padding:5px 10px 0">
-		<view><checkbox :checked="appUseH5Rec" @click="appUseH5RecClick">App里面总是使用Recorder H5录音（勾选后不启用原生录音插件和uts插件）</checkbox></view>
-	</view>
-	
 	<!-- 手撸播放器 -->
 	<view style="padding-top:10px">
 		<TestPlayer ref="player" />
@@ -67,7 +59,6 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 	
 	<!-- 测试 -->
 	<view style="padding-top:10px">
-		<view style="color:#f60" v-if="HBuilder_4_28V">{{HBuilder_4_28Tips}}</view>
 		<view>
 			<button size="mini" @click="traceThis">显示vue3This可用属性</button>
 		</view>
@@ -76,14 +67,20 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 	
 	<view style="padding-top:80px"></view>
 </view>
-<!-- #endif -->
 
+<view style="color:#ccc">这是一个独立的根节点</view>
+<view>
+	<CompositionAPI />
+	<OptionsAPI />
 </view>
+
 </template>
 
-<!-- #ifdef VUE3 -->
 <script setup>
-import TestPlayer from './test_player___.vue'; //手撸的一个跨平台播放器
+import CompositionAPI from './component_CompositionAPI.vue';
+import OptionsAPI from './component_OptionsAPI.vue';
+
+import TestPlayer from '../test_player___.vue'; //手撸的一个跨平台播放器
 
 
 /** 先引入Recorder （ 需先 npm install recorder-core ）**/
@@ -103,7 +100,7 @@ import Recorder from 'recorder-core';
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【所有平台必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+import '../../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
 // #ifdef MP-WEIXIN
 //可选引入微信小程序支持文件
@@ -121,8 +118,6 @@ RecordApp.UniHarmonyUTS=UniHarmonyUTS;
 
 import { ref, getCurrentInstance, onMounted, onUnmounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app'
-const isVue3=ref(true);
-const appUseH5Rec=ref(false);
 const recpowerx=ref(0);
 const recpowert=ref("");
 const reclogs=ref([]);
@@ -131,7 +126,12 @@ var vue3This=getCurrentInstance().proxy; //必须定义到最外面，getCurrent
 
 
 onMounted(()=>{
-	reclog("onMounted");
+	reclog("onMounted: MultiRoot"
+		+"，WebViewId: root.page.id="+(vue3This.$root.$page&&vue3This.$root.$page.id||"?")
+		+" root.webview.id="+(vue3This.$root.$scope&&vue3This.$root.$scope.$getAppWebview&&vue3This.$root.$scope.$getAppWebview().id||"?")
+		+" page.id="+(vue3This.$page&&vue3This.$page.id||"?")
+		+"，ComponentId: _$id="+(vue3This._$id||"?")+" $.uid="+(vue3This.$&&vue3This.$.uid||"?")
+	);
 	vue3This.isMounted=true; RecordApp.UniPageOnShow(vue3This); //onShow可能比mounted先执行，页面准备好了时再执行一次
 });
 onUnmounted(()=>{
@@ -143,11 +143,6 @@ onShow(()=>{
 });
 
 
-var appUseH5RecClick=()=>{
-	appUseH5Rec.value=!appUseH5Rec.value;
-	RecordApp.Current=null;
-	reclog('切换了appUseH5Rec='+appUseH5Rec.value+'，重新请求录音权限后生效',"#f60");
-};
 var currentKeyTag=()=>{
 	if(!RecordApp.Current) return "[?]";
 	// #ifdef APP
@@ -164,12 +159,6 @@ var currentKeyTag=()=>{
 
 
 var recReq=()=>{
-	if(appUseH5Rec.value){//测试时指定使用h5录音
-		RecordApp.UniNativeUtsPlugin=null;
-	}else{
-		RecordApp.UniNativeUtsPlugin={nativePlugin:true}; //恢复原生插件配置值
-	}
-	
 	/****【在App内使用app-uni-support.js的授权许可】编译到App平台时仅供测试用（App平台包括：Android App、iOS App、鸿蒙App），不可用于正式发布或商用，正式发布或商用需先联系作者获得授权许可（编译到其他平台时无此授权限制，比如：H5、小程序，均为免费授权）
 	获得授权许可后，请解开下面这行注释，并且将**部分改成你的uniapp项目的appid，即可解除所有限制；使用配套的原生录音插件或uts插件时可不进行此配置
 	****/
@@ -254,10 +243,10 @@ var recStart=()=>{
 			this.audioData=aBuf; //留着给Stop时进行转码成wav播放
 		}`
 	},()=>{
-		reclog(currentKeyTag()+" 录制中 mp3"+(appUseH5Rec.value?" appUseH5Rec":""),2);
+		reclog(currentKeyTag()+" 录制中",2);
 		
 		//创建音频可视化图形绘制，App环境下是在renderjs中绘制，H5、小程序等是在逻辑层中绘制，因此需要提供两段相同的代码（宽高值需要和canvas style的宽高一致）
-		RecordApp.UniFindCanvas(vue3This,[".recwave-WaveView"],`
+		RecordApp.UniFindCanvas(vue3This,[".multiMain .recwave-WaveView"],`
 			this.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
 		`,(canvas1)=>{
 			vue3This.waveView=Recorder.WaveView({compatibleCanvas:canvas1, width:300, height:100});
@@ -310,14 +299,6 @@ var formatTime=(ms,showSS)=>{
 	return v;
 }
 
-//测试用，兼容性问题
-var isHBuilder_4_28=false;
-if((!vue3This.$root || !vue3This.$root.$scope) && vue3This.$scope){
-	isHBuilder_4_28=true;
-}
-const HBuilder_4_28V=ref(isHBuilder_4_28);
-const HBuilder_4_28Tips=ref('是否存在兼容问题：'+(isHBuilder_4_28?'存在':'不存在')+'，已知：仅限于使用vue3的组合式API写法时(setup)，在HBuilder 4.28.2024092502上存在和老版本不兼容问题（4.29已修复，其他新的版本未知），无法获取到vue3This.$root下面的属性，老版本4.24无此问题，使用选项式API也无此问题，新版本组件已做好了兼容适配。注意：当存在兼容问题时，别的测试页面中使用到的this.$XXX属性在组合式API中一样可能无法使用，比如this.$parent就不好使了');
-if(isHBuilder_4_28) console.warn(HBuilder_4_28Tips.value); else console.log(HBuilder_4_28Tips.value);
 
 //测试用，打印this里面的对象
 var traceThis=(function(){
@@ -378,28 +359,11 @@ var traceThis=(function(){
 	traceThisHtml.value=vals.join("\n	");
 	
 	setTimeout(()=>{
-		RecordApp.UniWebViewEval(this,'traceThis__vue3_capi()');
+		RecordApp.UniWebViewEval(this,'traceThis__vue3_mcapi()');
 	});
 }).bind(vue3This);
 const traceThisHtml=ref('');
 </script>
-<!-- #endif -->
-
-
-<!-- #ifndef VUE3 -->
-<script> //vue2
-export default {
-	data() {
-		return {
-			isVue3:false
-		}
-	}
-}
-</script>
-<!-- #endif -->
-
-
-
 
 
 
@@ -425,7 +389,7 @@ import 'recorder-core/src/extensions/waveview.js'
 /** 引入RecordApp **/
 import RecordApp from 'recorder-core/src/app-support/app.js'
 //【必须引入】uni-app支持文件
-import '../../uni_modules/Recorder-UniCore/app-uni-support.js'
+import '../../../uni_modules/Recorder-UniCore/app-uni-support.js'
 
 export default {
 	mounted(){
@@ -445,7 +409,7 @@ export default {
 
 //测试用，打印this里面的对象
 var rjsThis;
-window.traceThis__vue3_capi=function(){
+window.traceThis__vue3_mcapi=function(){
 	var obj=rjsThis;
 	var str="renderjs可用：<pre style='white-space:pre-wrap'>";
 	var trace=(val)=>{
@@ -471,6 +435,8 @@ window.traceThis__vue3_capi=function(){
 }
 </script>
 <!-- #endif -->
+
+
 
 <style>
 .recwave{

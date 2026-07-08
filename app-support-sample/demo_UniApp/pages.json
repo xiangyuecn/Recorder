@@ -55,6 +55,18 @@
 				"navigationBarTitleText": "RecordApp vue3子组件内可用性测试 - uni-app"
 			}
 		},
+		{
+			"path" : "pages/recTest/vue3ComponentTest/vue3_Page_MultiRoot_CompositionAPI",
+			"style" : {
+				"navigationBarTitleText": "vue3多个根节点兼容性测试 - 组合式Composition API页面 - uni-app"
+			}
+		},
+		{
+			"path" : "pages/recTest/vue3ComponentTest/vue3_Page_MultiRoot_OptionsAPI",
+			"style" : {
+				"navigationBarTitleText": "vue3多个根节点兼容性测试 - 选项式Options API页面 - uni-app"
+			}
+		},
 		// #endif
 		{
 			"path" : "pages/recTest/page_vue3____composition_api",

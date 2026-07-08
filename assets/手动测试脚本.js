@@ -46,6 +46,11 @@ console.timeEnd(1);
 crypto.subtle.digest("sha-1",pcm.buffer).then(v=>console.log(Array.from(new Uint8Array(v)).map(v=>("0"+v.toString(16)).substr(-2)).join("")))
 
 
+【测试wav解码】
+var dataSize=10;
+var head=Recorder.wav_header(1,1,16000,16,dataSize); wav=new Uint8Array(head.length+dataSize); wav.set(head);
+Recorder.wav_decode(wav.buffer, (a,b,c)=>console.log(a,b,c), (s)=>console.log(s))
+
 
 【WebM长时间解析测试】
 //Chrome 75.0.3770.100 64位 + Win7，未复现问题：录制超过1小时出现“WebM !Track4”错误消息

@@ -169,7 +169,7 @@ export default {
 					if(!isErr && /Path|File/.test(action)){
 						if(!data.fullPath) throw new Error(action+"接口没有返回fullPath");
 					}
-					msg=process&&process(data)||msg;
+					msg=process&&(await process(data,tasks))||msg;
 				}
 				this.addMsg(tag,msg||"符合预期");
 			}catch(e){
@@ -249,6 +249,26 @@ export default {
 				["readFile",{path:testFile,type:"text"},(data)=>{
 					if(data.data!=b64Txt)throw new Error("读取结果不一致");
 				}]
+			]);
+			
+			await this.exec("和UniSaveLocalFile互通",[
+				["deleteFile",{path:testFile},async (data, tasks)=>{
+					var sPath,run=async (tag, txt)=>{
+						sPath=await new Promise((resolve,reject)=>{
+							var u8arr=new Uint8Array(RecordApp.UniAtob(RecordApp.UniB64Enc(txt)));
+							RecordApp.UniSaveLocalFile("test-unisave-native.txt", u8arr.buffer, (path)=>{
+								resolve(path);
+							},(err)=>{
+								reject(new Error(tag+"写入出错:"+err));
+							});
+						});
+						var obj=await RecordApp.UniNativeUtsPluginCallAsync("readFile",{path:sPath,type:"text"});
+						if(obj.data!=txt) throw new Error(tag+"读取结果不一致");
+					};
+					await run("长文件",b64Txt+b64Txt+b64Txt+b64Txt);
+					await run("短文件",b64Txt); //检查写入是否重建了文件，不是只在原文件开头覆盖
+					return "OK "+sPath
+				}],
 			]);
 			
 			await this.exec("文件seek位置写入",[

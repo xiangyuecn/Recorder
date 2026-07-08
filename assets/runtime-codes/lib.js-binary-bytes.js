@@ -1,5 +1,5 @@
 /******************
-《【Demo库】js二进制转换-Base64/Hex/Int16Array/ArrayBuffer/Blob》
+《【Demo库】js二进制转换、基础知识-Base64/Hex/Int16Array/ArrayBuffer/Blob》
 作者：高坚果
 时间：2024-01-11 21:12
 
@@ -51,19 +51,43 @@ var Export=Recorder; //可以整个代码复制过去使用，删掉这句（结
 //var Export={}; export default Export; //import使用：import JsBinary from './copy.js'
 
 
-//=======TypedArray二进制拼接合并======
-	/*直接创建一个大的数组，调用set方法将两个小数组填充进去即可，下面Int16Array换成Uint8Array等其他TypedArray也是一样的
-		var pcm1=new Int16Array([1,2]),pcm2=new Int16Array([3,4,5,6]); //待合并的两个数组
-		var pcm=new Int16Array(pcm1.length+pcm2.length); //创建一个新的大数组
-		pcm.set(pcm1,0); //写入pcm1到开头位置
-		pcm.set(pcm2,pcm1.length); //写入pcm2到pcm1后面，完成拼接
-	*/
-
 //=======ArrayBuffer 和 TypedArray 互转（Uint8Array Int8Array Int16Array Uint16Array Int32Array Uint32Array Float32Array Float64Array）======
 	//【用 arr=new Int16Array(arrayBuffer) 就能创建TypedArray】无需编写转换函数
 	//【用 arr.buffer 就是 ArrayBuffer】无需编写转换函数
 			//注意：使用同一个arrayBuffer创建的多个TypedArray会共享同一块内存，修改一个TypedArray中的值，其他TypedArray中的值也会改变；如果不希望共享，可以使用arrayBuffer.slice(0)截取出一个新的ArrayBuffer再来创建TypedArray
 
+
+//=======多个二进制片段拼接合并成一个：多个pcm合并、TypedArray二进制拼接合并======
+/**
+多个二进制片段拼接合并成一个，比如多个小pcm合并成一个大pcm，
+	参数：[Int16Array,Int16Array,...] 片段数组，也可以修改下面代码用Uint8Array等其他类型
+	返回：Int16Array 合并后大的二进制数据
+*/
+Export.PCM_List_Merge=function(pcmList){
+	//例如 PCM_List_Merge([ new Int16Array([1,2]), new Int16Array([3,4,5,6]) ])
+	var size=0;for(var i=0;i<pcmList.length;i++) size+=pcmList[i].length;
+	var pcm=new Int16Array(size); //参数是Uint8Array就改成new Uint8Array(size);
+	for(var i=0,offset=0;i<pcmList.length;i++){
+		pcm.set(pcmList[i],offset); //循环写入到前一个的后面，完成拼接
+		offset+=pcmList[i].length;
+	};
+	return pcm;
+};
+/**
+往pcm前面加一个二进制数据，比如二进制封装包头，比如要发送特定封包格式的数据包
+	参数pcm：Int16Array pcm数据
+	参数header：Uint8Array 二进制数据
+	返回：Uint8Array 包含header+pcm的数据包
+*/
+Export.PCM_AddPacketHeader=function(pcm,header){
+	/*var header=new Uint8Array(2); //例如2字节包头
+	header[0]=0xEF; header[1]=0x01; //填充任意需要的内容*/
+	var bytes=new Uint8Array(pcm.buffer); //需要封装的pcm二进制数据，其他Uint8Array也是可以的（直接赋值）
+	var packet=new Uint8Array(header.length+bytes.length); //拼接
+	packet.set(header,0);
+	packet.set(bytes,header.length); //拼接完成
+	return packet;
+};
 
 
 //=======ArrayBuffer、String 和 Base64 互转==========
