@@ -244,9 +244,9 @@ i18n.put(putSet,
 ,"dPz9:"+ //no args
        "The native interface may not be available, depending on whether the native app has implemented the corresponding interface"
 
-//@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~"
+//@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519、④群 1027243616，口令recorder，联系群主（即作者），谢谢~"
 ,"Pea3:"+ //no args
-       "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519, password recorder, contact the group owner (ie the author), thank you~"
+       "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519、④group 1027243616, password recorder, contact the group owner (ie the author), thank you~"
 
 //@@zh="音乐播放测试 :"
 ,"2fWL:"+ //no args

@@ -146,7 +146,7 @@ var recReq=function(success){
 
 /**开始录音**/
 var recStart=function(success){
-    var processTime=0;
+    var processTime=0,clearBufferIdx=0;
     
     //开始录音的参数和Recorder的初始化参数大部分相同
     RecordApp.Start({
@@ -158,8 +158,20 @@ var recStart=function(success){
             //录音实时回调，大约1秒调用12次本回调，buffers为开始到现在的所有录音pcm数据块(16位小端LE)
             //可实时上传（发送）数据，可实时绘制波形，ASR语音识别，使用可参考Recorder
             processTime=Date.now();
+
+            //可实时绘制波形（extensions目录内的waveview.js、wavesurfer.view.js、frequency.histogram.view.js插件功能）
+            //wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+
+            /*实时释放清理内存，用于支持长时间录音；在指定了有效的type时，编码器内部可能还会有其他缓冲，必须同时提供takeoffEncodeChunk才能清理内存，否则type需要提供unknown格式来阻止编码器内部缓冲
+            //if(this.clearBufferIdx>newBufferIdx){ this.clearBufferIdx=0 } //变量改到this里面时，重新录音了，这样写可以重置this环境
+            for(var i=clearBufferIdx||0;i<newBufferIdx;i++) buffers[i]=null;
+            clearBufferIdx=newBufferIdx; */
         }
-        
+        ,takeoffEncodeChunk: "不设置"?null: function(chunkBytes){
+            //实时编码环境下接管编码器输出，类似于onFrameRecorded，当生成了一块音频数据就会回调
+            //chunkBytes为指定录音格式的二进制数据Uint8Array，提供此回调后编码器内将不会保存数据（调用Stop方法获得的音频数据长度将为0），需自行保存数据
+        }
+
         //...  不同环境的专有配置，根据文档按需配置
     },function(){
         //开始录音成功
@@ -295,7 +307,7 @@ uni-app项目当需要编译成Android、iOS App时，需要在 `manifest.json` 
 
 ## 【QQ群】交流与支持
 
-欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519，纯小写口令：`recorder`
+欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519、④群 1027243616，纯小写口令：`recorder`
 
 <img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
 
@@ -351,6 +363,7 @@ set配置默认值（和Recorder的初始化参数大部分相同）：
                 //asyncEnd：fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
                 //如果需要实时上传（发送）之类的，可以配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm，或使用mock方法将新数据连续的转码成其他格式，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+                //如果需要长时间录音，比如超过1小时，需要在onProcess内实时释放清理内存，参考实时上传中有释放代码，需要自行实现数据的保存
     
     //*******高级设置******
         //,disableEnvInFix:false 内部参数，禁用设备卡顿时音频输入丢失补偿功能，如果不清楚作用请勿随意使用
@@ -361,7 +374,7 @@ set配置默认值（和Recorder的初始化参数大部分相同）：
 
         //,engine_mp3_lowpassfreq:0 mp3专用配置，16kbps时配置成-1声音不沉闷可提升清晰度，但会增加噪声，详细请阅读Recorder文档中mp3编码器说明
 
-        //,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出。
+        //,takeoffEncodeChunk:NOOP //fn(chunkBytes) chunkBytes=[Uint8,...]：实时编码环境下接管编码器输出，类似于onFrameRecorded，当编码器实时编码出一块有效的二进制音频数据时实时回调此方法；参数为二进制的Uint8Array，就是编码出来的音频数据片段，所有的chunkBytes拼接在一起即为完整音频。本实现的想法最初由QQ2543775048提出。
                 //当提供此回调方法时，将接管编码器的数据输出，编码器内部将放弃存储生成的音频数据；环境要求比较苛刻：如果当前环境不支持实时编码处理，将在Start时直接走fail逻辑
                 //因此提供此回调后调用Stop方法将无法获得有效的音频数据，因为编码器内没有音频数据，因此Stop时返回的数据长度为0
     

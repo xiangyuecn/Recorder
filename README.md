@@ -11,7 +11,7 @@
 
 提供多个插件功能支持，拥有丰富的音频可视化、变速变调处理、语音识别、音频流播放等；搭配上强大的实时处理支持，可用于各种网页应用：从简单的录音，到复杂的实时语音识别（ASR），甚至音频相关的游戏，都能从容应对；提供转码支持，允许将录制的buffers数据或任意pcm数据转码成你需要的格式（参考`rec.mock`方法）。
 
-主要用于语音录制，因此仅对**单声道**进行支持（未适配双声道），支持超长时间录音（参考`rec.buffers`）；默认输出mp3格式，另外可选wav、pcm、g711a、g711u、ogg、amr、webm(beta)格式，支持任意格式扩展（前提有相应编码器）；使用recorder.mp3.min.js（150kb）即可录制mp3，使用recorder.wav.min.js（25kb）即可录制wav；均支持实时转码和实时传输。
+主要用于语音录制，因此仅对**单声道**进行支持（未适配双声道），支持超长时间录音（参考onProcess实时清理释放内存）；默认输出mp3格式，另外可选wav、pcm、g711a、g711u、ogg、amr、webm(beta)格式，支持任意格式扩展（前提有相应编码器）；使用recorder.mp3.min.js（150kb）即可录制mp3，使用recorder.wav.min.js（25kb）即可录制wav；均支持实时转码和实时传输。
 
 音频文件的上传和播放：可直接使用常规的`Audio HTML标签`来播放完整的音频文件，参考文档下面的【快速使用】部分，有上传和播放例子；上传了的录音直接将音频链接赋值给`audio.src`即可播放；本地的`blob音频文件`可通过`URL.createObjectURL`来生成本地链接赋值给`audio.src`即可播放，或者将blob对象直接赋值给`audio.srcObject`（兼容性没有src高）。实时的音频片段文件播放，可以使用本库自带的`BufferStreamPlayer`插件来播放，简单高效，或者采用别的途径播放。
 
@@ -95,7 +95,7 @@ iOS Demo App ：[下载源码](app-support-sample/demo_ios) 自行编译
 
 ## 【QQ群】交流与支持
 
-欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519，纯小写口令：`recorder`
+欢迎加QQ群：①群 781036591、②群 748359095、③群 450721519、④群 1027243616，纯小写口令：`recorder`
 
 <img src="https://gitee.com/xiangyuecn/Recorder/raw/master/assets/qq_group_781036591.png" width="220px">
 
@@ -185,7 +185,7 @@ import 'recorder-core/src/extensions/waveview'
 //①加载Recorder+mp3：await import("https://unpkg.com/recorder-core/recorder.mp3.min.js"); console.log("import ok")
 //②可视化插件和显示：await import("https://unpkg.com/recorder-core/src/extensions/waveview.js"); console.log("import ok"); div=document.createElement("div");div.innerHTML='<div style="height:100px;width:300px;" class="recwave"></div>';document.body.prepend(div);
 
-var rec,processTime,wave;
+var rec,processTime=0,clearBufferIdx=0,wave;
 /**调用open打开录音请求好录音权限**/
 var recOpen=function(success){//一般在显示出录音按钮或相关的录音界面时进行此方法调用，后面用户点击开始录音时就能畅通无阻了
     rec=Recorder({ //本配置参数请参考下面的文档，有详细介绍
@@ -198,6 +198,11 @@ var recOpen=function(success){//一般在显示出录音按钮或相关的录音
 
             //可实时绘制波形（extensions目录内的waveview.js、wavesurfer.view.js、frequency.histogram.view.js插件功能）
             wave&&wave.input(buffers[buffers.length-1],powerLevel,bufferSampleRate);
+
+            /*实时释放清理内存，用于支持长时间录音；在指定了有效的type时，编码器内部可能还会有其他缓冲，必须同时提供takeoffEncodeChunk才能清理内存，否则type需要提供unknown格式来阻止编码器内部缓冲
+            //if(this.clearBufferIdx>newBufferIdx){ this.clearBufferIdx=0 } //变量改到this里面时，重新录音了，这样写可以重置this环境
+            for(var i=clearBufferIdx||0;i<newBufferIdx;i++) buffers[i]=null;
+            clearBufferIdx=newBufferIdx; */
         }
         ,takeoffEncodeChunk: "不设置"?null: function(chunkBytes){
             //实时编码环境下接管编码器输出，类似于onFrameRecorded，当生成了一块音频数据就会回调
@@ -535,6 +540,7 @@ set={
                 //asyncEnd：fn() 如果onProcess是异步的(返回值为true时)，处理完成时需要调用此回调，如果不是异步的请忽略此参数，此方法回调时必须是真异步（不能真异步时需用setTimeout包裹）。
                 //如果需要绘制波形之类功能，需要实现此方法即可，使用以计算好的powerLevel可以实现音量大小的直观展示，使用buffers可以达到更高级效果
                 //如果需要实时上传（发送）之类的，可以配合Recorder.SampleData方法，将buffers中的新数据连续的转换成pcm，或使用mock方法将新数据连续的转码成其他格式，可以参考文档里面的：Demo片段列表 -> 实时转码并上传-通用版；基于本功能可以做到：实时转发数据、实时保存数据、实时语音识别（ASR）等
+                //如果需要长时间录音，比如超过1小时，需要在onProcess内实时释放清理内存，参考实时上传中有释放代码，需要自行实现数据的保存
     
     //*******高级设置******
         //,sourceStream:MediaStream Object
@@ -718,7 +724,7 @@ mockRec.stop(function(blob,duration){
 内置的简版国际化多语言支持实现，详细请参考下面的i18n章节。
 
 ### 【静态属性】Recorder.IsBrowser
-当前环境是否时浏览器环境，260708版本新增。
+当前环境是否是浏览器环境，260708版本新增。
 
 ### 【静态属性】Recorder.DefaultDataType
 全局默认stop时返回的录音数据类型，取值：`blob`、`arraybuffer`，默认为`blob`（返回Blob文件对象），非浏览器环境中一般需要设为`arraybuffer`（返回ArrayBuffer对象）；rec实例的`dataType`属性配置优先级更高。
@@ -758,8 +764,9 @@ mockRec.stop(function(blob,duration){
 ### 【静态方法】Recorder.SampleData(pcmDatas,pcmSampleRate,newSampleRate,prevChunkInfo,option)
 对pcm数据的采样率进行转换，支持流式转换，可配合mock方法可转换成音频文件，比如实时转换成小片段语音文件。
 
-注意：从241020版本开始，支持任意采样率转换；之前的老版本只会将高采样率的pcm转成低采样率的pcm，老版本由低转高时不会进行转换处理。
-注意：260708之前的版本，流式转换存在缺陷会增加噪音（单次完整转换正常），此版本已修复，流式转换结果和单次完整转换结果一致
+**注意：**从241020版本开始，支持任意采样率转换；之前的老版本只会将高采样率的pcm转成低采样率的pcm，老版本由低转高时不会进行转换处理。
+
+**注意：**260708之前的版本，流式转换存在缺陷会增加噪音（单次完整转换正常），此版本已修复，流式转换结果和单次完整转换结果一致
 
 `pcmDatas`: [[Int16,...]] pcm片段列表，二维数组，比如可以是：rec.buffers、onProcess中的buffers；二维数组里面是Int16Array，也可传Float32Array（会转成Int16Array）
 
@@ -1478,7 +1485,7 @@ False(msg)
 ## mp3 (CBR) 格式
 依赖文件：`mp3.js + mp3-engine.js`（或使用根目录的`recorder.mp3.min.js`一个文件即可），支持实时编码（边录边转码），采用的是[lamejs](https://github.com/zhuker/lamejs)(LGPL License)这个库的代码，`https://github.com/zhuker/lamejs/blob/bfb7f6c6d7877e0fe1ad9e72697a871676119a0e/lame.all.js`这个版本的文件代码；已对lamejs源码进行了部分改动，用于精简代码和修复发现的问题。LGPL协议涉及到的文件：`mp3-engine.js`；这些文件也采用LGPL授权，不适用MIT协议。源码366kb大小，压缩后130kb左右，开启gzip后60来k。[mp3转其他格式参考和测试](https://xiangyuecn.github.io/Recorder/assets/工具-代码运行和静态分发Runtime.html?jsname=lib.transform.mp32other)
 
-注意：mp3编码器内部默认会自动进行低通滤波处理，来保证低比特率时把有限的比特数留给更重要的中低频，主动切掉一部分人耳不敏感的超高频信号；会导致16k采样率16kbps默认低通5550hz，声音沉闷但中低频厚实干净，禁用低通滤波后满频8k 音色丰富可提升清晰度 但会增加噪声 如金属音、水声。
+**注意：**mp3编码器内部默认会自动进行低通滤波处理，来保证低比特率时把有限的比特数留给更重要的中低频，主动切掉一部分人耳不敏感的超高频信号；会导致16k采样率16kbps默认低通5550hz，声音沉闷但中低频厚实干净，禁用低通滤波后满频8k 音色丰富可提升清晰度 但会增加噪声 如金属音、水声。
 
 低通滤波行为可通过`set.engine_mp3_lowpassfreq`来配置，默认0动态取低通截止频率，设为-1禁用，其他值为指定低通频率；另外可通过`Recorder.Set_engine_mp3_lowpassfreq`来进行全局配置（优先级比set内的低）；为260708版本新增。
 

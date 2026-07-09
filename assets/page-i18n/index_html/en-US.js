@@ -280,9 +280,9 @@ i18n.put(putSet,
 ,"8Nn9:"+ //no args
        "(The pit has been filled). "
 
-//@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~"
+//@@zh="如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519、④群 1027243616，口令recorder，联系群主（即作者），谢谢~"
 ,"ERHy:"+ //no args
-       "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519, password recorder, contact the group owner (ie the author), thank you~"
+       "If you need custom development of recording functions, websites, apps, miniProgram, front-end and back-end development, etc., please join the Tencent QQ group: ①group 781036591、②group 748359095、③group 450721519、④group 1027243616, password recorder, contact the group owner (ie the author), thank you~"
 
 //@@zh="变速变调 :"
 ,"HW4d:"+ //no args
@@ -380,17 +380,33 @@ i18n.put(putSet,
 ,"mpX0:"+ //no args
        "If there is no compensation, when the device occasionally freezes during recording (the CPU is heavily occupied by other programs), the audio collected by the browser is intermittent, resulting in a 10-second recording that may only return 5 seconds of data. At this time, the duration of the final encoded audio is significantly shorter, and the effect is like fast playback during playback. When it is not disabled, it will automatically compensate the silent audio when it freezes, eliminating the fast forward effect, but since the lost audio has been replaced by silent data, it sounds like the intermittent effect of the data itself. Recording does not have this problem when the device is not stuck. "
 
+//@@zh="允许提升采样率 :"
+,"MbuK:"+ //no args
+       "Allow Upsample :"
+
+//@@zh="为set中allowUpsample配置项，可录96000采样率的wav测试；"
+,"MbmK:"+ //no args
+       "The allowUpsample configuration item in set allows recording WAV tests at a sampleRate of 96000. "
+
+//@@zh="设置后需重新打开录音。"
+,"MbnK:"+ //no args
+       "After setting, you need to reopen the recording. "
+
+//@@zh="当源采样率this.srcSampleRate小于set.sampleRate（如set=48000但源只有44100）时是否要提升采样率；默认不允许，同时set.sampleRate会被重设为源采样率；比如用最高音质录，但实际只取16k的pcm，默认false不影响音质；如果确实需要提升请设为true；提升采样率的音质依赖重采样算法和计算复杂度，内置的SampleData+IIRFilter会引入轻微杂音。"
+,"MboK:"+ //no args
+       "Should the sampleRate be increased when the source sampleRate this.srcSampleRate is less than set.sampleRate (e.g., set=48000 but the source is only 44100)? The default is not allowed, and set.sampleRate will be reset to the source sampleRate. For example, if you record at the highest quality but only take 16kbps of PCM, the default value false will not affect the sound quality. If you really need to increase the sampleRate, please set it to true. The sound quality of increasing the sampleRate depends on the resampling algorithm and computational complexity. The built-in SampleData+IIRFilter will introduce slight noise."
+
 //@@zh="MP3低通频率 :"
 ,"MbeZ:"+ //no args
        "MP3 low-pass frequency :"
 
-//@@zh="为set中的engine_mp3_lowpassfreq配置项（MP3编码器专用配置），默认0动态取低通截止频率，设为-1禁用，其他值为指定低通频率；16k采样率16kbps默认0时低通5550hz 声音沉闷但中低频厚实干净，禁用后满频8k 音色丰富可提升清晰度 但会增加噪声。"
+//@@zh="为set中的engine_mp3_lowpassfreq配置项（MP3编码器专用配置），默认0动态取低通截止频率，设为-1禁用，其他值为指定低通频率；16k采样率16kbps默认0时低通5550hz 声音沉闷但中低频厚实干净，禁用后满频8k 音色丰富可提升清晰度 但会增加噪声；"
 ,"MbfZ:"+ //no args
-       "The `engine_mp3_lowpassfreq` configuration item in `set` (MP3 encoder-specific configuration) has a default value of 0, which dynamically retrieves the low-pass cutoff frequency. Setting it to -1 disables it, while other values ​​specify the low-pass frequency. With a 16kHz sampleRate and 16kbps, the default low-pass frequency is 5550Hz, resulting in a muffled sound but a thick and clean mid-low frequency. Disabling it provides a full-frequency 8kHz sound with rich timbre and improved clarity, but it also increases noise."
+       "The `engine_mp3_lowpassfreq` configuration item in `set` (MP3 encoder-specific configuration) has a default value of 0, which dynamically retrieves the low-pass cutoff frequency. Setting it to -1 disables it, while other values ​​specify the low-pass frequency. With a 16kHz sampleRate and 16kbps, the default low-pass frequency is 5550Hz, resulting in a muffled sound but a thick and clean mid-low frequency. Disabling it provides a full-frequency 8kHz sound with rich timbre and improved clarity, but it also increases noise. "
 
-//@@zh="设置后需重新打开录音"
+//@@zh="设置后需重新打开录音。"
 ,"EE8G:"+ //no args
-       "After setting, you need to reopen the recording"
+       "After setting, you need to reopen the recording. "
 
 //@@zh="调用Recorder.Destroy()"
 ,"qTKw:"+ //no args

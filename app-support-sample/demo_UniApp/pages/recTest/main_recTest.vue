@@ -246,7 +246,7 @@ DCloud 插件市场下载组件: https://ext.dcloud.net.cn/plugin?name=Recorder-
 			<view>RecordApp的uni-app支持文档和示例: https://github.com/xiangyuecn/Recorder/tree/master/app-support-sample/demo_UniApp (github可以换成gitee)</view>
 		</view>
 		<view style="color:#0ab;font-size:22px;font-weight:bold">
-			如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519，口令recorder，联系群主（即作者），谢谢~
+			如需录音功能定制开发，网站、App、小程序、前端后端开发等需求，请加QQ群：①群 781036591、②群 748359095、③群 450721519、④群 1027243616，口令recorder，联系群主（即作者），谢谢~
 		</view>
 	</view>
 	

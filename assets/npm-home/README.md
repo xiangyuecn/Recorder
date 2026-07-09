@@ -37,7 +37,8 @@ npm install recorder-core
 npm login
 
 //发布包
-npm publish
+注意到npm-files目录执行！！！！！  npm publish
+	下载发布的文件 https://registry.npmjs.org/recorder-core/-/recorder-core-1.0.00000000.tgz
 
 //查询当前配置的源
 npm get registry
